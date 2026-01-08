@@ -1,0 +1,84 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '12px'}}}%%
+flowchart TB
+    subgraph Core["Core Libraries (Foundation)"]
+        Common["CommonStuffSAEmm.scad<br/>Bolt holes, utilities"]
+        Tubes["TubesLib.scad<br/>Tube dimensions"]
+    end
+
+    subgraph Components["Component Libraries"]
+        Fins["Fins.scad"]
+        NoseCone["NoseCone.scad"]
+        FinCan["FinCan2Lib.scad"]
+        Rail["RailGuide.scad"]
+        AltBay["AltBay.scad"]
+        Battery["BatteryHolderLib.scad"]
+        Petal["PetalDeploymentLib.scad"]
+        Spring["SpringEndsLib.scad"]
+        Cable["CableRelease*.scad"]
+        Stager["Stager3Lib.scad"]
+        Fairing["FairingJointLib.scad"]
+        EBay["ElectronicsBayLib.scad"]
+        Bearing["BearingLib.scad"]
+    end
+
+    subgraph Rockets["Complete Rocket Designs"]
+        R54["Rocket54.scad"]
+        R65["Rocket65.scad"]
+        R75["Rocket75*.scad"]
+        R98["Rocket98*.scad"]
+        R137["Rocket137*.scad"]
+        RBooster["RocketBoosterPooper*.scad"]
+    end
+
+    %% Core dependencies
+    Tubes --> Common
+    
+    %% Component dependencies on Core
+    Fins --> Common
+    NoseCone --> Common
+    FinCan --> Common
+    FinCan --> Fins
+    FinCan --> Tubes
+    Rail --> Common
+    AltBay --> Common
+    AltBay --> Tubes
+    Battery --> Common
+    Petal --> Common
+    Spring --> Common
+    Cable --> Common
+    Cable --> Bearing
+    Stager --> Common
+    Fairing --> Common
+    EBay --> Common
+    EBay --> Tubes
+    
+    %% Rocket dependencies
+    R98 --> Tubes
+    R98 --> FinCan
+    R98 --> NoseCone
+    R98 --> AltBay
+    R98 --> Battery
+    R98 --> Rail
+    R98 --> Petal
+    R98 --> Cable
+    
+    R75 --> Tubes
+    R75 --> FinCan
+    R75 --> NoseCone
+    
+    R137 --> Tubes
+    R137 --> FinCan
+    R137 --> Stager
+    R137 --> Spring
+    
+    RBooster --> Tubes
+    RBooster --> Stager
+    RBooster --> Spring
+
+    classDef core fill:#e1f5fe,stroke:#01579b
+    classDef comp fill:#f3e5f5,stroke:#4a148c
+    classDef rocket fill:#e8f5e9,stroke:#1b5e20
+    
+    class Common,Tubes core
+    class Fins,NoseCone,FinCan,Rail,AltBay,Battery,Petal,Spring,Cable,Stager,Fairing,EBay,Bearing comp
+    class R54,R65,R75,R98,R137,RBooster rocket

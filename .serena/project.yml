@@ -1,0 +1,12 @@
+# Serena MCP project configuration
+# https://github.com/oraios/serena
+
+project_name: Rocket-Parts
+read_only: false
+
+# OpenSCAD files - no LSP available, treat as text
+ignored_paths:
+  - "STL Files/"
+  - "Pictures/"
+  - "PDF Parachute/"
+  - "zOldCode/"
