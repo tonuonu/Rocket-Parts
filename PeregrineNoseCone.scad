@@ -41,38 +41,47 @@ NC_nRivets = 3;         // Number of rivet holes
 // Set to 0 for single piece, or body OD minus ~20mm for split
 NC_Cut_d = Peregrine_Body_OD - 20;  // ~80mm split diameter
 
-// Which part to render
-Render_Lower = false;   // true = bottom part, false = top part
+// ============================================
+// RENDER SELECTION - Change this value!
+// ============================================
+// 0 = Test ring (print first!)
+// 1 = Single piece nose cone
+// 2 = Two piece - TOP (tip section)
+// 3 = Two piece - BOTTOM (base/skirt section)
+
+Render_Part = 0;
 
 // ============================================
-// RENDER SELECTION
+// RENDERING LOGIC - Don't edit below
 // ============================================
 
-// Uncomment ONE of these to render:
+if (Render_Part == 0) {
+    // Test ring - print first to verify fit
+    TestRing();
+}
 
-// Option 1: Single piece (if length <= 250mm)
-// BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-//     L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-//     Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, Cut_d=0);
+if (Render_Part == 1) {
+    // Single piece (if length <= 250mm)
+    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
+        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
+        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, Cut_d=0);
+}
 
-// Option 2: Two piece - TOP (tip)
-BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-    L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-    Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
-    Cut_d=NC_Cut_d, LowerPortion=false, FillTip=true);
+if (Render_Part == 2) {
+    // Two piece - TOP (tip)
+    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
+        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
+        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
+        Cut_d=NC_Cut_d, LowerPortion=false, FillTip=true);
+}
 
-// Option 3: Two piece - BOTTOM (base/skirt)
-// BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-//     L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-//     Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
-//     Cut_d=NC_Cut_d, LowerPortion=true);
-
-// ============================================
-// TEST RING - Print this first to check fit!
-// ============================================
-
-// Uncomment to render a test ring
-// TestRing();
+if (Render_Part == 3) {
+    // Two piece - BOTTOM (base/skirt)
+    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
+        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
+        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
+        Cut_d=NC_Cut_d, LowerPortion=true);
+}
 
 module TestRing() {
     // Quick test piece to verify tube dimensions
@@ -87,15 +96,12 @@ module TestRing() {
 // PRINT NOTES
 // ============================================
 //
-// 1. Print test ring first to verify dimensions
-// 2. Print nose cone tip-down (no supports needed)
-// 3. For two-piece: glue halves with CA or epoxy
-// 4. Recommended: 3 perimeters, 15% infill
-// 5. Material: PETG or ASA for outdoor use
+// 1. Set Render_Part = 0, print test ring, verify fit
+// 2. Adjust Peregrine_Body_OD and Peregrine_Coupler_OD if needed
+// 3. Set Render_Part = 2, export STL, print top
+// 4. Set Render_Part = 3, export STL, print bottom
+// 5. Glue halves with CA or epoxy
 //
-// Estimated print times (P1S, 0.2mm layer):
-// - Test ring: ~15 min
-// - Upper section: ~4-5 hours  
-// - Lower section: ~3-4 hours
+// Print settings: 3 perimeters, 15% infill, PETG/ASA
 //
 // ***********************************
