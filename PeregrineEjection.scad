@@ -13,6 +13,9 @@
 
 include<NoseCone.scad>
 
+Overlap = 0.05;
+$fn = $preview ? 90 : 360;
+
 // ============================================
 // TUBE DIMENSIONS (from PeregrineNoseCone.scad)
 // ============================================
@@ -30,7 +33,6 @@ Wall_T = 2.2;           // Standard wall thickness
 Vega_L = 100;           // Length
 Vega_W = 33;            // Width  
 Vega_H = 21;            // Height (without antenna)
-Vega_Mount_Holes = 3;   // M3 mounting holes
 
 // ============================================
 // MG90S SERVO DIMENSIONS
@@ -49,26 +51,27 @@ Servo_Mount_Y = 16;     // Distance from bottom to mount tabs
 // ============================================
 
 nLugs = 3;              // Number of bayonet lugs (120° apart)
-Lug_W = 12;             // Lug width (circumferential)
-Lug_H = 4;              // Lug height (axial)
-Lug_D = 3;              // Lug depth (radial)
-Lug_Angle = 25;         // Rotation angle to unlock (degrees)
+Lug_W = 15;             // Lug width (circumferential)
+Lug_H = 5;              // Lug height (axial)
+Lug_D = 4;              // Lug depth (radial)
+Lug_Angle = 30;         // Rotation angle to unlock (degrees)
+
+// Lug position - must match between ring and base
+Lug_R = Coupler_OD/2 - 5;  // Radius to lug outer edge
 
 Spring_OD = 10;         // Compression spring outer diameter
-Spring_ID = 8;          // Spring inner diameter
-Spring_Free_L = 40;     // Free length
 Spring_Travel = 25;     // Compressed travel / ejection distance
 nSprings = 3;           // Number of springs (between lugs)
-Spring_Pocket_D = 12;   // Pocket diameter for spring
+Spring_R = Coupler_OD/2 - 20;  // Radius to spring centers
 
 // ============================================
 // E-BAY COUPLER DIMENSIONS  
 // ============================================
 
 EBay_L = 150;           // Total e-bay coupler length
-Mechanism_H = 35;       // Height for bayonet mechanism + servo
-Vega_Bay_H = 60;        // Height for Vega + wiring
-Battery_Bay_H = 45;     // Height for battery
+Mechanism_H = 40;       // Height for bayonet mechanism + servo
+Vega_Bay_H = 70;        // Height for Vega + wiring
+Battery_Bay_H = 40;     // Height for battery
 
 // ============================================
 // RENDER SELECTION
@@ -78,16 +81,15 @@ Battery_Bay_H = 45;     // Height for battery
 // 2 = Bayonet Ring (servo-driven rotating ring)
 // 3 = Nose Cone Base (with lugs, attaches to nose cone)
 // 4 = Servo Mount Bracket
-// 5 = Test fit ring
+// 5 = All parts exploded for print check
 
 Render_Part = 0;
 
 // ============================================
-// COMMON MODULES
+// VISUALIZATION MODULES
 // ============================================
 
 module MG90S_Servo() {
-    // Servo body visualization
     color("blue") {
         // Main body
         translate([-Servo_L/2, -Servo_W/2, 0])
@@ -102,55 +104,9 @@ module MG90S_Servo() {
 }
 
 module CATS_Vega() {
-    // Vega visualization
     color("green")
         translate([-Vega_L/2, -Vega_W/2, 0])
             cube([Vega_L, Vega_W, Vega_H]);
-}
-
-module SpringPocket(depth=15) {
-    // Pocket for compression spring
-    cylinder(d=Spring_Pocket_D, h=depth, $fn=36);
-    // Guide pin hole
-    translate([0, 0, -0.1])
-        cylinder(d=Spring_ID-1, h=depth+0.2, $fn=24);
-}
-
-// ============================================
-// BAYONET LUG PROFILES
-// ============================================
-
-module BayonetLug() {
-    // Single bayonet lug (L-shaped for twist lock)
-    hull() {
-        cube([Lug_D, Lug_W, Lug_H]);
-        translate([0, Lug_W, 0])
-            cube([Lug_D, 0.1, Lug_H]);
-    }
-}
-
-module BayonetLugCutout() {
-    // Cutout in ring for lug to pass through and lock
-    Entry_W = Lug_W + 2;  // Wider entry
-    Lock_W = Lug_W + 1;
-    
-    // Entry slot (vertical)
-    translate([0, -Entry_W/2, 0])
-        cube([Lug_D + 2, Entry_W, Lug_H + 5]);
-    
-    // Lock slot (rotated)
-    rotate([0, 0, -Lug_Angle])
-        translate([0, -Lock_W/2, 0])
-            cube([Lug_D + 2, Lock_W, Lug_H + 1]);
-    
-    // Transition between entry and lock
-    hull() {
-        translate([0, -Entry_W/2, 0])
-            cube([Lug_D + 2, Entry_W, 0.1]);
-        rotate([0, 0, -Lug_Angle])
-            translate([0, -Lock_W/2, 0])
-                cube([Lug_D + 2, Lock_W, 0.1]);
-    }
 }
 
 // ============================================
@@ -158,178 +114,217 @@ module BayonetLugCutout() {
 // ============================================
 
 module EBayCoupler() {
-    // Lower coupler section - holds Vega, servo, and bayonet mechanism base
+    // Lower coupler section - holds Vega, battery, servo
     
     difference() {
         union() {
             // Main coupler tube
-            Tube(OD=Coupler_OD, ID=Coupler_ID, Len=EBay_L, myfn=$preview? 90:360);
+            difference() {
+                cylinder(d=Coupler_OD, h=EBay_L);
+                translate([0, 0, Wall_T])
+                    cylinder(d=Coupler_ID, h=EBay_L);
+            }
             
-            // Bulkhead at bottom
-            cylinder(d=Coupler_OD, h=Wall_T, $fn=$preview? 90:360);
+            // Bottom bulkhead
+            cylinder(d=Coupler_OD, h=Wall_T);
             
-            // Servo mount platform
+            // Servo platform at top
             translate([0, 0, EBay_L - Mechanism_H])
-                cylinder(d=Coupler_ID - 2, h=Wall_T, $fn=$preview? 90:360);
+                difference() {
+                    cylinder(d=Coupler_ID - 1, h=Wall_T);
+                    // Center hole for wires
+                    cylinder(d=30, h=Wall_T + Overlap);
+                }
+            
+            // Vega mounting posts
+            for (a=[45, 135, 225, 315]) rotate([0, 0, a])
+                translate([Coupler_ID/2 - 8, 0, Wall_T])
+                    cylinder(d=8, h=Vega_Bay_H);
         }
         
-        // Vega mounting slot
-        translate([0, 0, 20])
-            rotate([90, 0, 0])
-                translate([-Vega_L/2 - 1, -1, -Coupler_ID/2])
-                    cube([Vega_L + 2, Vega_H + 5, Coupler_ID]);
-        
-        // Servo pocket
-        translate([0, 0, EBay_L - Mechanism_H + Wall_T]) {
-            // Servo body
-            translate([0, 0, 0])
-                cube([Servo_L + 1, Servo_W + 1, 30], center=true);
-            // Servo shaft clearance
-            translate([0, 0, 15])
-                cylinder(d=15, h=20, $fn=36);
-        }
-        
-        // Wire passage holes
-        for (a=[0, 120, 240]) rotate([0, 0, a])
-            translate([Coupler_ID/2 - 5, 0, 0])
-                cylinder(d=8, h=EBay_L, $fn=24);
+        // Vega mounting screw holes
+        for (a=[45, 135, 225, 315]) rotate([0, 0, a])
+            translate([Coupler_ID/2 - 8, 0, Wall_T + Vega_Bay_H - 10])
+                cylinder(d=3.2, h=15);
         
         // Vent holes
-        for (a=[60, 180, 300]) rotate([0, 0, a])
-            translate([0, Coupler_OD/2 - Wall_T/2, EBay_L/2])
+        for (a=[0:60:359]) rotate([0, 0, a])
+            translate([Coupler_OD/2, 0, EBay_L/2])
                 rotate([0, 90, 0])
-                    cylinder(d=5, h=Wall_T + 2, center=true, $fn=24);
+                    cylinder(d=6, h=Wall_T + 2, center=true, $fn=24);
+        
+        // Wire passage from Vega bay to servo
+        translate([Coupler_ID/2 - 15, 0, Vega_Bay_H])
+            cylinder(d=10, h=EBay_L - Vega_Bay_H);
     }
-    
-    // Vega mounting rails
-    for (y=[-1, 1]) 
-        translate([-Vega_L/2, y * (Vega_W/2 + 2), 20])
-            cube([Vega_L, 2, Vega_H]);
 }
 
 module BayonetRing() {
     // Rotating ring driven by servo - engages/releases nose cone lugs
     
-    Ring_H = Lug_H + 8;
-    Ring_OD = Coupler_ID - 1;
-    Ring_ID = Ring_OD - 10;
+    Ring_H = Lug_H + 10;
+    Ring_OD = Coupler_ID - 2;
+    Ring_ID = Coupler_ID - 20;
     
     difference() {
         union() {
-            // Main ring
-            Tube(OD=Ring_OD, ID=Ring_ID, Len=Ring_H, myfn=$preview? 90:360);
+            // Main ring body
+            difference() {
+                cylinder(d=Ring_OD, h=Ring_H);
+                translate([0, 0, -Overlap])
+                    cylinder(d=Ring_ID, h=Ring_H + Overlap*2);
+            }
             
-            // Servo arm attachment hub
-            translate([0, 0, Ring_H/2])
-                cylinder(d=20, h=Ring_H/2, $fn=36);
+            // Center hub for servo attachment
+            cylinder(d=25, h=Ring_H);
         }
         
-        // Bayonet lug slots
-        for (a=[0:360/nLugs:359]) rotate([0, 0, a])
-            translate([Ring_OD/2 - Lug_D, 0, 2])
-                BayonetLugCutout();
+        // Bayonet lug L-slots (entry + lock)
+        for (a=[0:360/nLugs:359]) rotate([0, 0, a]) {
+            // Vertical entry slot
+            translate([Lug_R - Lug_D - 1, -Lug_W/2 - 1, Ring_H - Lug_H - 2])
+                cube([Lug_D + 5, Lug_W + 2, Lug_H + 3]);
+            
+            // Horizontal lock slot (rotated)
+            rotate([0, 0, -Lug_Angle])
+                translate([Lug_R - Lug_D - 1, -Lug_W/2 - 1, 3])
+                    cube([Lug_D + 5, Lug_W + 2, Lug_H + 2]);
+        }
         
-        // Servo arm attachment hole
-        translate([0, 0, Ring_H - 5])
-            cylinder(d=6, h=6, $fn=36);
+        // Servo shaft hole (center)
+        translate([0, 0, -Overlap])
+            cylinder(d=8, h=Ring_H + Overlap*2, $fn=36);
         
         // Servo arm screw hole
-        translate([0, 0, Ring_H - 2])
-            cylinder(d=2.5, h=3, $fn=24);
+        translate([0, 0, Ring_H - 6])
+            cylinder(d=3, h=7, $fn=24);
     }
 }
 
 module NoseConeBase() {
     // Attaches to nose cone - has bayonet lugs and spring seats
     
-    Base_H = 30;
-    Lug_R = (Coupler_ID - 2) / 2 - Lug_D/2;  // Radius to lug center
-    Spring_R = Lug_R - 10;  // Springs inboard of lugs
+    Base_H = 35;
+    Plate_T = 5;  // Thicker bottom plate
     
     difference() {
         union() {
-            // Outer ring (matches nose cone ID interface)
-            Tube(OD=Body_OD, ID=Coupler_OD + 0.5, Len=Base_H, myfn=$preview? 90:360);
+            // Outer skirt (matches body tube OD for flush fit)
+            difference() {
+                cylinder(d=Body_OD, h=Base_H);
+                translate([0, 0, Plate_T])
+                    cylinder(d=Body_OD - Wall_T*2, h=Base_H);
+            }
             
-            // Inner structure
-            Tube(OD=Coupler_OD, ID=Coupler_OD - 8, Len=Base_H, myfn=$preview? 90:360);
+            // Inner ring that engages with bayonet
+            difference() {
+                cylinder(d=Coupler_OD, h=Base_H);
+                translate([0, 0, Plate_T])
+                    cylinder(d=Coupler_OD - 10, h=Base_H);
+            }
             
-            // Bottom plate
-            translate([0, 0, 0])
-                cylinder(d=Coupler_OD, h=Wall_T, $fn=$preview? 90:360);
+            // Solid bottom plate
+            cylinder(d=Coupler_OD, h=Plate_T);
             
-            // Bayonet lugs
+            // Bayonet lugs on inner ring
             for (a=[0:360/nLugs:359]) rotate([0, 0, a])
-                translate([Lug_R, -Lug_W/2, Wall_T])
-                    BayonetLug();
+                translate([Lug_R - Lug_D, -Lug_W/2, Plate_T])
+                    cube([Lug_D, Lug_W, Lug_H]);
             
-            // Spring guide posts
+            // Spring guide posts (connected to plate)
             for (a=[60, 180, 300]) rotate([0, 0, a])
-                translate([Spring_R, 0, Wall_T])
-                    cylinder(d=Spring_ID - 1.5, h=Spring_Travel, $fn=24);
+                translate([Spring_R, 0, 0])
+                    cylinder(d=Spring_OD - 2, h=Plate_T + Spring_Travel);
         }
         
-        // Spring pockets (in bottom plate)
+        // Spring pockets in bottom plate
         for (a=[60, 180, 300]) rotate([0, 0, a])
-            translate([Spring_R, 0, -0.1])
-                cylinder(d=Spring_Pocket_D, h=Wall_T + 0.2, $fn=36);
+            translate([Spring_R, 0, -Overlap])
+                cylinder(d=Spring_OD + 1, h=3);
         
         // Center hole for shock cord
-        translate([0, 0, -0.1])
-            cylinder(d=30, h=Base_H + 0.2, $fn=48);
+        translate([0, 0, -Overlap])
+            cylinder(d=35, h=Base_H + Overlap*2);
         
         // Rivet holes to attach to nose cone
-        for (a=[0:120:359]) rotate([0, 0, a + 60])
-            translate([Body_OD/2 - Wall_T/2, 0, Base_H/2])
+        for (a=[30, 150, 270]) rotate([0, 0, a])
+            translate([Body_OD/2 - Wall_T, 0, Base_H - 10])
                 rotate([0, 90, 0])
-                    cylinder(d=4, h=Wall_T + 2, center=true, $fn=24);
+                    cylinder(d=4, h=Wall_T*2, $fn=24);
     }
 }
 
 module ServoMountBracket() {
-    // Bracket to mount MG90S servo in e-bay
+    // Bracket to mount MG90S servo, attaches to e-bay top
     
-    Bracket_W = Servo_Mount_W + 8;
-    Bracket_D = Servo_W + 6;
-    Bracket_H = Servo_Mount_Y + Servo_Mount_H + 2;
+    Bracket_L = 50;
+    Bracket_W = Servo_Mount_W + 10;
+    Bracket_H = 25;
     
     difference() {
-        // Main bracket body
-        translate([-Bracket_W/2, -Bracket_D/2, 0])
-            cube([Bracket_W, Bracket_D, Bracket_H]);
+        union() {
+            // Base plate
+            translate([-Bracket_L/2, -Bracket_W/2, 0])
+                cube([Bracket_L, Bracket_W, 3]);
+            
+            // Side walls
+            translate([-Bracket_L/2, -Bracket_W/2, 0])
+                cube([3, Bracket_W, Bracket_H]);
+            translate([Bracket_L/2 - 3, -Bracket_W/2, 0])
+                cube([3, Bracket_W, Bracket_H]);
+            
+            // Servo mount rails
+            translate([-Servo_Mount_W/2 - 2, -Servo_W/2 - 2, 0])
+                cube([4, Servo_W + 4, Servo_Mount_Y + Servo_Mount_H]);
+            translate([Servo_Mount_W/2 - 2, -Servo_W/2 - 2, 0])
+                cube([4, Servo_W + 4, Servo_Mount_Y + Servo_Mount_H]);
+        }
         
-        // Servo body pocket
-        translate([-Servo_L/2 - 0.5, -Servo_W/2 - 0.5, 3])
-            cube([Servo_L + 1, Servo_W + 1, Bracket_H]);
+        // Servo body clearance
+        translate([-Servo_L/2 - 1, -Servo_W/2 - 1, 3])
+            cube([Servo_L + 2, Servo_W + 2, Bracket_H]);
         
-        // Servo tab slots
-        translate([-Servo_Mount_W/2 - 0.5, -Servo_W/2 - 0.5, Servo_Mount_Y])
-            cube([Servo_Mount_W + 1, Servo_W + 1, Servo_Mount_H + 1]);
+        // Servo tab slots  
+        translate([-Servo_Mount_W/2 - 1, -Servo_W/2 - 1, Servo_Mount_Y])
+            cube([Servo_Mount_W + 2, Servo_W + 2, Servo_Mount_H + 1]);
         
-        // Mounting screw holes
+        // Shaft hole through base
+        cylinder(d=15, h=5);
+        
+        // Mounting holes for bracket
         for (x=[-1, 1]) for (y=[-1, 1])
-            translate([x * (Bracket_W/2 - 4), y * (Bracket_D/2 - 4), -0.1])
-                cylinder(d=3.2, h=4, $fn=24);
+            translate([x * (Bracket_L/2 - 6), y * (Bracket_W/2 - 6), -Overlap])
+                cylinder(d=3.2, h=5, $fn=24);
     }
 }
 
-module TestFitRing() {
-    // Test ring to verify bayonet lug engagement
+// ============================================
+// ASSEMBLY PREVIEW
+// ============================================
+
+module Assembly() {
+    // E-Bay Coupler at bottom
+    color("tan", 0.5) EBayCoupler();
     
-    Ring_H = 20;
+    // Servo bracket on top of coupler
+    translate([0, 0, EBay_L - Mechanism_H + 5])
+        color("gray") ServoMountBracket();
     
-    difference() {
-        cylinder(d=Coupler_OD, h=Ring_H, $fn=90);
-        
-        // Lug slots
-        for (a=[0:360/nLugs:359]) rotate([0, 0, a])
-            translate([(Coupler_ID-2)/2 - Lug_D - 5, 0, 5])
-                BayonetLugCutout();
-        
-        // Center hole
-        translate([0, 0, -0.1])
-            cylinder(d=Coupler_ID - 20, h=Ring_H + 0.2, $fn=90);
-    }
+    // Servo in bracket
+    translate([0, 0, EBay_L - Mechanism_H + 8])
+        MG90S_Servo();
+    
+    // Bayonet ring above servo
+    translate([0, 0, EBay_L + 5])
+        color("orange", 0.7) BayonetRing();
+    
+    // Nose cone base on top (with gap to show separation)
+    translate([0, 0, EBay_L + 35])
+        color("yellow", 0.7) NoseConeBase();
+    
+    // Show Vega position
+    translate([0, 0, 30])
+        CATS_Vega();
 }
 
 // ============================================
@@ -337,23 +332,7 @@ module TestFitRing() {
 // ============================================
 
 if (Render_Part == 0) {
-    // Full assembly preview
-    color("tan", 0.3) EBayCoupler();
-    
-    translate([0, 0, EBay_L - 10])
-        color("orange") BayonetRing();
-    
-    translate([0, 0, EBay_L + 20])
-        color("yellow") NoseConeBase();
-    
-    // Show Vega position
-    translate([0, 0, 40])
-        rotate([90, 0, 0])
-            CATS_Vega();
-    
-    // Show servo position  
-    translate([0, 0, EBay_L - Mechanism_H + 10])
-        MG90S_Servo();
+    Assembly();
 }
 
 if (Render_Part == 1) {
@@ -373,21 +352,29 @@ if (Render_Part == 4) {
 }
 
 if (Render_Part == 5) {
-    TestFitRing();
+    // All parts laid out for print check
+    translate([-60, 0, 0]) EBayCoupler();
+    translate([60, 0, 0]) NoseConeBase();
+    translate([0, 70, 0]) BayonetRing();
+    translate([0, -50, 0]) ServoMountBracket();
 }
 
 // ============================================
 // ASSEMBLY NOTES
 // ============================================
 //
-// 1. E-Bay Coupler glues into body tube
-// 2. CATS Vega mounts on rails, connect servo to servo channel
-// 3. Bayonet Ring sits on top, servo arm attaches to hub
-// 4. Nose Cone Base attaches to nose cone with rivets
-// 5. Insert 3x compression springs (10mm OD, ~40mm free length)
-// 6. Twist nose cone to lock lugs, servo unlocks at apogee
+// Operation:
+// 1. Nose cone base attached to nose cone (rivets)
+// 2. Insert compression springs on guide posts
+// 3. Lower nose cone onto bayonet ring
+// 4. Twist clockwise ~30° to lock lugs
+// 5. At apogee, servo rotates ring counter-clockwise
+// 6. Lugs release, springs push nose cone off
 //
-// Springs: McMaster 9657K356 or similar
-// (10mm OD, 40mm free length, ~0.5N/mm rate)
+// Parts:
+// - 3x compression springs: 10mm OD, 30-40mm length, light rate
+// - MG90S servo
+// - CATS Vega flight computer
+// - M3 hardware for mounting
 //
 // ***********************************
