@@ -18,11 +18,11 @@ include<NoseCone.scad>
 // ============================================
 
 // Body tube dimensions - MEASURE YOUR TUBE!
-Peregrine_Body_OD = 100.5;  // Outside diameter of body tube
+Peregrine_Body_OD = 101.5;  // Outside diameter of body tube
 Peregrine_Body_ID = 99.0;   // Inside diameter of body tube
 
 // Coupler dimensions - measure or estimate as Body_ID - 2.5
-Peregrine_Coupler_OD = 96.5;  // What slides inside body tube
+Peregrine_Coupler_OD = 97.5;  // What slides inside body tube
 
 // ============================================
 // NOSE CONE PARAMETERS
@@ -84,12 +84,15 @@ if (Render_Part == 3) {
 }
 
 module TestRing() {
-    // Quick test piece to verify tube dimensions
+    // Test piece to verify tube dimensions
+    // OD should match body tube OD (flush fit, no step)
+    // ID is the shoulder that sits inside the body tube
     difference() {
         cylinder(d=Peregrine_Body_OD, h=15, $fn=90);
         translate([0,0,-0.1]) cylinder(d=Peregrine_Coupler_OD, h=15.2, $fn=90);
     }
-    // Should: slide into body tube (OD), coupler slides into it (ID)
+    // TEST: Place on top of body tube - should be flush (same OD)
+    // TEST: The ID hole should accept the coupler tube (or fit inside body tube)
 }
 
 // ============================================
