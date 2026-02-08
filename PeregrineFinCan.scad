@@ -51,7 +51,7 @@ Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 // Fin slot geometry (from OpenRocket)
 Fin_Root_L = 249;         // root chord length
 Fin_Tab_H = 30;           // tab height (how deep fin goes through wall)
-Fin_Tab_L = 203;          // maximized for Can_Len=245
+Fin_Tab_L = 187;          // adjusted for 24mm retainer
 Fin_Tab_Pos = 92;         // tab position from fin leading edge
 
 // ========== FIN CAN DIMENSIONS ==========
@@ -80,7 +80,7 @@ CR_Thickness = 4;         // ring axial thickness
 nCR = 3;                  // number of centering rings
 
 // Motor retainer (aft end)
-Retainer_Len = 8;         // retainer ring length
+Retainer_Len = 24;        // imported retainer height
 Retainer_Lip = 2;         // inward lip to hold motor
 
 // Fin slot position: at aft end, fins extend behind body tube
@@ -157,12 +157,8 @@ module FinCan(){
 					cylinder(d=MMT_OD, h=Can_Len - Coupler_Len + 2);
 			}
 
-			// Motor retainer ring (aft end, inward lip)
-			difference(){
-				cylinder(d=MMT_OD + Wall*2, h=Retainer_Len);
-				translate([0, 0, -1])
-					cylinder(d=MMT_ID, h=Retainer_Len + 2);
-			}
+			// Imported motor retainer (threaded male part)
+			import("38mm_motor_retainer.stl", convexity=10);
 
 			// Centering rings
 			for (z=CR_Positions)
