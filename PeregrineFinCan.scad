@@ -81,8 +81,8 @@ Thread_Chamfer = 0.8;     // lead-in chamfer at aft end
 // ========== FIN CAN DIMENSIONS ==========
 
 // Body section (above thread)
-Body_Len = 237;           // main body section length
-// Total print height = Thread_H + Body_Len = 249.7mm (P1S limit)
+Body_Len = 236;           // main body section length
+// Total print height = Thread_H + Body_Len = 248.7mm (P1S limit)
 
 // Wall thickness of printed fin can
 Wall = 2.4;               // 6 perimeters at 0.4mm
