@@ -97,7 +97,7 @@ Coupler_Screw_d = 3.5;    // #6 screw clearance
 // Shock cord channel (slot in forward centering ring)
 Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
 Cord_Slot_H = 5;          // slot height (two cord thicknesses + clearance)
-Cord_Slot_a = 60;           // between fins (Fin_Angle/2)
+Cord_Slot_a = 30;           // between fin (0°) and lightening hole (60°)
 
 // Centering rings
 CR_Thickness = 4;         // ring axial thickness
@@ -191,9 +191,8 @@ module FinCan(){
 				}
 
 			// Centering rings
-			for (i=[0:len(CR_Positions)-1])
-				CenteringRing(CR_Positions[i],
-					cord_slot = (i == len(CR_Positions)-1));
+			for (z=CR_Positions)
+				CenteringRing(z);
 
 			// Fin guide ribs (reinforcement along fin slots)
 			for (i=[0:Fin_Count-1])
@@ -220,6 +219,14 @@ module FinCan(){
 				translate([0, 0, Thread_H + Body_Len - Coupler_Len/2])
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
+
+		// Cord channel slot through forward CR and outer wall
+		rotate([0, 0, Cord_Slot_a])
+			translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2,
+				CR_Positions[len(CR_Positions)-1] - Overlap])
+				cube([Body_OD/2 - MMT_OD/2 + Wall + 1,
+					  Cord_Slot_W,
+					  CR_Thickness + 2*Overlap]);
 
 		// Thread lead-in chamfer at aft end (Z=0)
 		translate([0, 0, -Overlap])
@@ -279,7 +286,7 @@ module SectorPoly(r, angle){
 
 // ========== CENTERING RING ==========
 
-module CenteringRing(z_pos, cord_slot=false){
+module CenteringRing(z_pos){
 	translate([0, 0, z_pos])
 		difference(){
 			cylinder(d=Body_OD - Wall*2 + 0.1, h=CR_Thickness);
@@ -296,11 +303,6 @@ module CenteringRing(z_pos, cord_slot=false){
 							cylinder(d=Hole_D, h=CR_Thickness + 2);
 				}
 
-			// Cord channel slot (tubular nylon exits forward here)
-			if (cord_slot)
-				rotate([0, 0, Cord_Slot_a])
-					translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2, -1])
-						cube([Body_OD/2 - MMT_OD/2, Cord_Slot_W, Cord_Slot_H + 1]);
 		}
 }
 
