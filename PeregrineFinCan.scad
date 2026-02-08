@@ -227,14 +227,15 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord channel slot through forward centering ring only
-		// (cord exits into annular space between MMT and outer wall)
+		// Cord channel slot through forward CR and coupler base
+		// Accessible from above through coupler opening.
+		// Cord drops down through slot, wraps MMT, comes back up.
 		rotate([0, 0, Cord_Slot_a])
 			translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2,
 				CR_Positions[len(CR_Positions)-1] - Overlap])
 				cube([Body_OD/2 - Wall - MMT_OD/2 - Wall,
 					  Cord_Slot_W,
-					  CR_Thickness + 2*Overlap]);
+					  CR_Thickness + Wall + 2*Overlap]);
 
 		// Thread lead-in chamfer at aft end (Z=0)
 		translate([0, 0, -Overlap])
