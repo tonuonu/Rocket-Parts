@@ -38,8 +38,11 @@ echo(AltBayRev());
 // ***********************************
 //  ***** for STL output *****
 //
-// rotate([-90,0,0]) AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=2, DoorXtra_Y=2, ShowAlt=true);
-//
+
+AltBay54(Tube_OD=PML98Body_OD, Tube_ID=PML98Body_ID, Tube_Len=136, DoorXtra_X=2, DoorXtra_Y=2, ShowDoor=false);
+
+// rotate([-90,0,0]) AltDoor54(Tube_OD=PML98Body_OD, IsLoProfile=false, DoorXtra_X=2, DoorXtra_Y=2, ShowAlt=true);
+
 // rotate([90,0,0]) AltHolder();
 // AltBayBottom(CT_Len=75);
 // AltBayBody(BT_Len=95);

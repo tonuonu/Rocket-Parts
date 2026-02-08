@@ -39,7 +39,7 @@ Body_ID = 98;             // body tube inner diameter
 Body_Wall = (Body_OD - Body_ID) / 2;  // 1mm
 
 // Motor mount
-MMT_OD = 29;              // 29mm motor mount
+MMT_OD = 29.5;            // 29mm motor + 0.5mm clearance
 MMT_ID = 27;              // 29mm motor mount ID
 
 // Fins

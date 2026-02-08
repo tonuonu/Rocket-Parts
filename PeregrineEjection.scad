@@ -67,7 +67,7 @@ EBay_L = 120;
 // 3 = Nose Cone Base
 // 4 = Servo Bracket
 
-Render_Part = 0;
+Render_Part = 3;
 
 // ============================================
 // VISUALIZATION

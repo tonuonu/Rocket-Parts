@@ -39,7 +39,7 @@ Body_ID = 98;             // body tube inner diameter
 Body_Wall = (Body_OD - Body_ID) / 2;  // 1mm
 
 // Motor mount
-MMT_OD = 38;              // motor mount tube OD
+MMT_OD = 38.5;            // 38mm motor + 0.5mm clearance
 MMT_ID = 36;              // motor mount tube ID (for retainer)
 
 // Fins

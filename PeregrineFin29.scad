@@ -31,7 +31,7 @@ $fn=$preview? 36:90;
 // ========== FIN CAN PARAMETERS ==========
 
 Body_OD = 100;
-MMT_OD = 29;              // 29mm motor mount
+MMT_OD = 29.5;            // match fin can bore
 Fin_Slot_L = 203;
 
 // ========== FIN PARAMETERS ==========
