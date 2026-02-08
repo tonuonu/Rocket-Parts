@@ -220,11 +220,12 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord channel slot through forward CR and outer wall
+		// Cord channel slot through forward centering ring only
+		// (cord exits into annular space between MMT and outer wall)
 		rotate([0, 0, Cord_Slot_a])
 			translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2,
 				CR_Positions[len(CR_Positions)-1] - Overlap])
-				cube([Body_OD/2 - MMT_OD/2 + Wall + 1,
+				cube([Body_OD/2 - Wall - MMT_OD/2 - Wall,
 					  Cord_Slot_W,
 					  CR_Thickness + 2*Overlap]);
 
