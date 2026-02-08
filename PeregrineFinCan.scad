@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.2.0  2/8/2026
+// Revision: 0.3.0  2/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -31,6 +31,8 @@
 //                    matching original 38mm motor retainer cup.
 //                    Thread dimensions reverse-engineered from STL.
 //                    Can_Len adjusted to 237mm (total print 250mm).
+// 0.3.0  2/8/2026   Correct thread dims to imperial:
+//                    1-3/4" x 1-7/8" x 10 TPI, 1/2" height.
 //
 // ***********************************
 
@@ -358,7 +360,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.2.0 (threaded retainer)"));
+echo(str("Peregrine Fin Can v0.3.0 (threaded retainer)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread section: ", Thread_H, "mm (", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm)"));
 echo(str("Body section: ", Body_Len, "mm"));
