@@ -32,7 +32,7 @@ $fn=$preview? 36:90;
 
 Body_OD = 100;
 MMT_OD = 38.5;            // match fin can bore
-Fin_Slot_L = 187;         // match fin can slot
+Fin_Slot_L = 203;
 
 // ========== FIN PARAMETERS ==========
 
