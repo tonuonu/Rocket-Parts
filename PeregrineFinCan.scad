@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.3.0  2/8/2026
+// Revision: 0.4.0  2/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -12,7 +12,7 @@
 // Prints vertically on Bambu P1S (250mm max with AMS).
 //
 // Structure (bottom to top):
-//   - Male threaded retainer section at aft end (13mm, protrudes aft)
+//   - Male threaded retainer section at aft end (1/2", protrudes aft)
 //     Accepts original 38mm motor retainer cup (printed separately)
 //   - Outer wall at body tube OD (100mm)
 //   - Inner motor mount tube (38mm bore)
@@ -20,7 +20,8 @@
 //   - Fin slots through outer wall
 //   - Coupler shoulder at forward end (cardboard tube slides over)
 //   - Screw holes in coupler for securing body tube
-//   - Shock cord mount (12mm Al tube through coupler)
+//   - Cord channel slot in forward centering ring
+//     (tubular nylon wraps MMT, exits forward through slot)
 //
 // Fins are separate (plywood/G10/printed), slid into slots
 // and epoxied in place.
@@ -33,6 +34,9 @@
 //                    Can_Len adjusted to 237mm (total print 250mm).
 // 0.3.0  2/8/2026   Correct thread dims to imperial:
 //                    1-3/4" x 1-7/8" x 10 TPI, 1/2" height.
+// 0.4.0  2/8/2026   Replace Al tube shock mount with cord channel
+//                    slot in forward centering ring. Tubular nylon
+//                    wraps MMT, exits forward through slot.
 //
 // ***********************************
 
@@ -90,11 +94,10 @@ Coupler_Wall = 2.4;
 nCoupler_Screws = 6;      // retention screws
 Coupler_Screw_d = 3.5;    // #6 screw clearance
 
-// Shock cord mount (12mm aluminium tube through coupler)
-Al_Tube_d = 12.0;         // tube diameter
-Al_Tube_Boss = Al_Tube_d + 6;  // boss OD around tube
-Al_Tube_Z = Al_Tube_d/2 + 5;   // 5mm clearance for cord below tube
-ShockMount_a = 0;         // aligned with fin, between screws
+// Shock cord channel (slot in forward centering ring)
+Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
+Cord_Slot_H = 5;          // slot height (two cord thicknesses + clearance)
+Cord_Slot_a = 60;           // between fins (Fin_Angle/2)
 
 // Centering rings
 CR_Thickness = 4;         // ring axial thickness
@@ -188,8 +191,9 @@ module FinCan(){
 				}
 
 			// Centering rings
-			for (z=CR_Positions)
-				CenteringRing(z);
+			for (i=[0:len(CR_Positions)-1])
+				CenteringRing(CR_Positions[i],
+					cord_slot = (i == len(CR_Positions)-1));
 
 			// Fin guide ribs (reinforcement along fin slots)
 			for (i=[0:Fin_Count-1])
@@ -275,7 +279,7 @@ module SectorPoly(r, angle){
 
 // ========== CENTERING RING ==========
 
-module CenteringRing(z_pos){
+module CenteringRing(z_pos, cord_slot=false){
 	translate([0, 0, z_pos])
 		difference(){
 			cylinder(d=Body_OD - Wall*2 + 0.1, h=CR_Thickness);
@@ -291,6 +295,12 @@ module CenteringRing(z_pos){
 						translate([R_Mid, 0, -1])
 							cylinder(d=Hole_D, h=CR_Thickness + 2);
 				}
+
+			// Cord channel slot (tubular nylon exits forward here)
+			if (cord_slot)
+				rotate([0, 0, Cord_Slot_a])
+					translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2, -1])
+						cube([Body_OD/2 - MMT_OD/2, Cord_Slot_W, Cord_Slot_H + 1]);
 		}
 }
 
@@ -320,47 +330,20 @@ module FinSlot(){
 module Coupler(){
 	Coupler_ID = Coupler_OD - Coupler_Wall*2;
 
+	// Coupler tube
 	difference(){
-		union(){
-			// Coupler tube
-			difference(){
-				cylinder(d=Coupler_OD, h=Coupler_Len);
-				translate([0, 0, -1])
-					cylinder(d=Coupler_ID, h=Coupler_Len + 2);
-			}
-
-			// Transition ring at base of coupler
-			cylinder(d=Body_OD, h=Wall);
-
-			// Shock mount boss (solid around Al tube)
-			difference(){
-				intersection(){
-					translate([0, 0, Al_Tube_Z])
-						rotate([0, 0, ShockMount_a])
-							rotate([90, 0, 0])
-								cylinder(d=Al_Tube_Boss, h=Coupler_OD, center=true);
-					// Trim to coupler cylinder
-					cylinder(d=Coupler_OD - 1, h=Coupler_Len);
-				}
-				// Hollow center so cord can wrap
-				translate([0, 0, Al_Tube_Z])
-					rotate([0, 0, ShockMount_a])
-						rotate([90, 0, 0])
-							cylinder(d=Al_Tube_Boss + 1, h=Coupler_ID - 10, center=true);
-			}
-		}
-
-		// Al tube bore (through entire coupler width)
-		translate([0, 0, Al_Tube_Z])
-			rotate([0, 0, ShockMount_a])
-				rotate([90, 0, 0])
-					cylinder(d=Al_Tube_d, h=Body_OD, center=true);
+		cylinder(d=Coupler_OD, h=Coupler_Len);
+		translate([0, 0, -1])
+			cylinder(d=Coupler_ID, h=Coupler_Len + 2);
 	}
+
+	// Transition ring at base of coupler
+	cylinder(d=Body_OD, h=Wall);
 }
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.3.0 (threaded retainer)"));
+echo(str("Peregrine Fin Can v0.4.0 (threaded retainer, cord channel)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread section: ", Thread_H, "mm (", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm)"));
 echo(str("Body section: ", Body_Len, "mm"));
