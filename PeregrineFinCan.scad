@@ -64,10 +64,10 @@ Fin_Tab_Pos = 92;         // tab position from fin leading edge
 // Dimensions reverse-engineered from 38mm_motor_retainer.stl
 // Male thread on fin can aft end; original cup screws onto it.
 
-Thread_Minor_D = 44.14;    // thread root diameter (core OD)
-Thread_Major_D = 47.14;   // thread crest diameter
-Thread_Pitch = 2.6;       // mm per revolution
-Thread_H = 13.1;          // threaded section height
+Thread_Minor_D = 44.45;   // 1-3/4" thread root diameter
+Thread_Major_D = 47.625;  // 1-7/8" thread crest diameter
+Thread_Pitch = 25.4/10;   // 10 TPI = 2.54mm
+Thread_H = 12.7;          // 1/2" = 5 turns at 10 TPI
 Thread_Duty = 0.25;       // tooth width as fraction of pitch
 Thread_Chamfer = 0.8;     // lead-in chamfer at aft end
 
@@ -75,7 +75,7 @@ Thread_Chamfer = 0.8;     // lead-in chamfer at aft end
 
 // Body section (above thread)
 Body_Len = 237;           // main body section length
-// Total print height = Thread_H + Body_Len = 250.1mm (P1S limit)
+// Total print height = Thread_H + Body_Len = 249.7mm (P1S limit)
 
 // Wall thickness of printed fin can
 Wall = 2.4;               // 6 perimeters at 0.4mm
