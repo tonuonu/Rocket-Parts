@@ -96,7 +96,7 @@ Coupler_Screw_d = 3.5;    // #6 screw clearance
 
 // Shock cord channel (slot in forward centering ring)
 Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
-Cord_Slot_H = 5;          // slot height (two cord thicknesses + clearance)
+Cord_Slot_H = 4;          // slot height (flat cord + clearance)
 Cord_Slot_a = 30;           // between fin (0°) and lightening hole (60°)
 
 // Centering rings
@@ -133,9 +133,16 @@ assert(Total_H <= 250.5, "TOO TALL FOR P1S!");
 Render_Part = 0;
 // 0 = Assembly preview
 // 1 = Fin can for printing
+// 2 = Cross-section (verify internal features)
 
 if (Render_Part == 0) FinCanAssembly();
 if (Render_Part == 1) FinCan();
+if (Render_Part == 2) difference(){
+	FinCanAssembly();
+	// Cut away half to show cord slot and internal structure
+	rotate([0, 0, Cord_Slot_a])
+		translate([0, 0, -1]) cube([Body_OD, Body_OD, Total_H + 2]);
+}
 
 // ========== MODULES ==========
 
