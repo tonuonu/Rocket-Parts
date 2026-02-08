@@ -49,6 +49,7 @@ Body_Wall = (Body_OD - Body_ID) / 2;  // 1mm
 // Motor mount
 MMT_OD = 38.5;            // 38mm motor + 0.5mm clearance
 MMT_ID = 36;              // motor mount tube ID
+Motor_L = 337;            // AeroTech 38/720 case length
 
 // Fins
 Fin_Count = 3;
@@ -148,11 +149,10 @@ module FinCanAssembly(){
 						cylinder(d=Body_ID, h=Coupler_Len + 52);
 				}
 
-	// Show motor ghost (38mm case, extends forward)
+	// Show motor ghost (AeroTech 38/720, nozzle at aft end)
 	if ($preview)
 		color("Gray", 0.2)
-			translate([0, 0, -20])
-				cylinder(d=38, h=Total_H + 40);
+			cylinder(d=38, h=Motor_L);
 }
 
 module FinCan(){
