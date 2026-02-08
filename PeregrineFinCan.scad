@@ -97,7 +97,7 @@ Coupler_Screw_d = 3.5;    // #6 screw clearance
 // Shock cord channel (slot in forward centering ring)
 Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
 Cord_Slot_H = 4;          // slot height (flat cord + clearance)
-Cord_Slot_a = 30;           // between fin (0°) and lightening hole (60°)
+Cord_Slot_a = 60;           // midway between fins (0° and 120°)
 
 // Centering rings
 CR_Thickness = 4;         // ring axial thickness
