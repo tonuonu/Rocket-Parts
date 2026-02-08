@@ -3,28 +3,34 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.1.0  2/8/2026
+// Revision: 0.2.0  2/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
 //
 // 3D printed aft section (fin can) for Peregrine rocket.
-// Prints vertically on Bambu P1S (256mm max).
+// Prints vertically on Bambu P1S (250mm max with AMS).
 //
 // Structure (bottom to top):
-//   - Motor retainer ring at aft end
+//   - Male threaded retainer section at aft end (13mm, protrudes aft)
+//     Accepts original 38mm motor retainer cup (printed separately)
 //   - Outer wall at body tube OD (100mm)
 //   - Inner motor mount tube (38mm bore)
 //   - Centering rings connecting MMT to outer wall
 //   - Fin slots through outer wall
 //   - Coupler shoulder at forward end (cardboard tube slides over)
 //   - Screw holes in coupler for securing body tube
+//   - Shock cord mount (12mm Al tube through coupler)
 //
 // Fins are separate (plywood/G10/printed), slid into slots
 // and epoxied in place.
 //
 //  ***** History *****
 // 0.1.0  2/8/2026   Initial design.
+// 0.2.0  2/8/2026   Replace retainer lip with male threaded section
+//                    matching original 38mm motor retainer cup.
+//                    Thread dimensions reverse-engineered from STL.
+//                    Can_Len adjusted to 237mm (total print 250mm).
 //
 // ***********************************
 
@@ -40,7 +46,7 @@ Body_Wall = (Body_OD - Body_ID) / 2;  // 1mm
 
 // Motor mount
 MMT_OD = 38.5;            // 38mm motor + 0.5mm clearance
-MMT_ID = 36;              // motor mount tube ID (for retainer)
+MMT_ID = 36;              // motor mount tube ID
 
 // Fins
 Fin_Count = 3;
@@ -51,13 +57,25 @@ Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 // Fin slot geometry (from OpenRocket)
 Fin_Root_L = 249;         // root chord length
 Fin_Tab_H = 30;           // tab height (how deep fin goes through wall)
-Fin_Tab_L = 203;          // maximized for Can_Len=245
+Fin_Tab_L = 203;          // fin tab length in slot
 Fin_Tab_Pos = 92;         // tab position from fin leading edge
+
+// ========== THREADED MOTOR RETAINER ==========
+// Dimensions reverse-engineered from 38mm_motor_retainer.stl
+// Male thread on fin can aft end; original cup screws onto it.
+
+Thread_Minor_D = 44.14;    // thread root diameter (core OD)
+Thread_Major_D = 47.14;   // thread crest diameter
+Thread_Pitch = 2.6;       // mm per revolution
+Thread_H = 13.1;          // threaded section height
+Thread_Duty = 0.25;       // tooth width as fraction of pitch
+Thread_Chamfer = 0.8;     // lead-in chamfer at aft end
 
 // ========== FIN CAN DIMENSIONS ==========
 
-// Total can length: limited by printer
-Can_Len = 245;            // safe limit for Bambu P1S
+// Body section (above thread)
+Body_Len = 237;           // main body section length
+// Total print height = Thread_H + Body_Len = 250.1mm (P1S limit)
 
 // Wall thickness of printed fin can
 Wall = 2.4;               // 6 perimeters at 0.4mm
@@ -79,31 +97,30 @@ ShockMount_a = 0;         // aligned with fin, between screws
 CR_Thickness = 4;         // ring axial thickness
 nCR = 3;                  // number of centering rings
 
-// Motor retainer (aft end)
-Retainer_Len = 8;         // retainer ring length
-Retainer_Lip = 2;         // inward lip to hold motor
-
-// Fin slot position: at aft end, fins extend behind body tube
-// Tab starts right at the aft end of the can
-Fin_LE_from_Aft = 0;  // fin tab starts at aft end of can
-
 // ========== COMPUTED ==========
 
 Fin_Angle = 360 / Fin_Count;
 
-// Fin slot through outer wall:
-// Slot starts at Fin_Tab_Pos from fin leading edge
-// Slot is Fin_Tab_L long
-Slot_Start = Retainer_Len;  // start just above motor retainer
+// In the printed model:
+// Z = 0 to Thread_H: threaded retainer section (MMT only, no outer wall)
+// Z = Thread_H to Thread_H + Body_Len: main body
+// Total height = Thread_H + Body_Len
+
+// Fin slots start just above thread-to-body junction
+Slot_Start = Thread_H + CR_Thickness;  // leave room for first centering ring
 Slot_End = Slot_Start + Fin_Tab_L;
 
-// Centering ring positions (evenly spaced, avoiding slot)
-// Place at aft end, middle, and forward end
+// Centering ring positions
 CR_Positions = [
-	Retainer_Len,                        // just above retainer
-	Can_Len/2 - Coupler_Len/2,          // middle
-	Can_Len - Coupler_Len - CR_Thickness // just below coupler
+	Thread_H,                                          // at junction
+	Thread_H + Body_Len/2 - Coupler_Len/2,           // middle
+	Thread_H + Body_Len - Coupler_Len - CR_Thickness  // just below coupler
 ];
+
+// Total height check
+Total_H = Thread_H + Body_Len;
+echo(str("Total print height: ", Total_H, "mm"));
+assert(Total_H <= 250.5, "TOO TALL FOR P1S!");
 
 // ========== RENDER ==========
 
@@ -122,47 +139,51 @@ module FinCanAssembly(){
 	// Show body tube ghost
 	if ($preview)
 		color("Tan", 0.2)
-			translate([0, 0, Can_Len - Coupler_Len])
+			translate([0, 0, Thread_H + Body_Len - Coupler_Len])
 				difference(){
 					cylinder(d=Body_OD, h=Coupler_Len + 50);
 					translate([0, 0, -1])
 						cylinder(d=Body_ID, h=Coupler_Len + 52);
 				}
 
-	// Show motor tube ghost
+	// Show motor ghost (38mm case, extends forward)
 	if ($preview)
 		color("Gray", 0.2)
 			translate([0, 0, -20])
-				difference(){
-					cylinder(d=MMT_OD, h=Can_Len + 40);
-					translate([0, 0, -1])
-						cylinder(d=MMT_ID, h=Can_Len + 42);
-				}
+				cylinder(d=38, h=Total_H + 40);
 }
 
 module FinCan(){
 	difference(){
 		union(){
+			// === THREADED RETAINER SECTION (Z=0 to Thread_H) ===
+			// Core cylinder at thread root diameter
+			difference(){
+				cylinder(d=Thread_Minor_D, h=Thread_H);
+				translate([0, 0, -1])
+					cylinder(d=MMT_OD, h=Thread_H + 2);
+			}
+
+			// Helical male thread
+			MaleThread();
+
+			// === MAIN BODY SECTION (Z=Thread_H to Thread_H+Body_Len) ===
+
 			// Outer wall (body tube diameter)
-			difference(){
-				cylinder(d=Body_OD, h=Can_Len - Coupler_Len);
-				translate([0, 0, -1])
-					cylinder(d=Body_OD - Wall*2, h=Can_Len - Coupler_Len + 2);
-			}
+			translate([0, 0, Thread_H])
+				difference(){
+					cylinder(d=Body_OD, h=Body_Len - Coupler_Len);
+					translate([0, 0, -1])
+						cylinder(d=Body_OD - Wall*2, h=Body_Len - Coupler_Len + 2);
+				}
 
-			// Motor mount tube
-			difference(){
-				cylinder(d=MMT_OD + Wall*2, h=Can_Len - Coupler_Len);
-				translate([0, 0, -1])
-					cylinder(d=MMT_OD, h=Can_Len - Coupler_Len + 2);
-			}
-
-			// Motor retainer ring (aft end, inward lip)
-			difference(){
-				cylinder(d=MMT_OD + Wall*2, h=Retainer_Len);
-				translate([0, 0, -1])
-					cylinder(d=MMT_ID, h=Retainer_Len + 2);
-			}
+			// Motor mount tube (through body section)
+			translate([0, 0, Thread_H])
+				difference(){
+					cylinder(d=MMT_OD + Wall*2, h=Body_Len - Coupler_Len);
+					translate([0, 0, -1])
+						cylinder(d=MMT_OD, h=Body_Len - Coupler_Len + 2);
+				}
 
 			// Centering rings
 			for (z=CR_Positions)
@@ -174,16 +195,13 @@ module FinCan(){
 					FinRib();
 
 			// Coupler shoulder (forward end)
-			translate([0, 0, Can_Len - Coupler_Len])
+			translate([0, 0, Thread_H + Body_Len - Coupler_Len])
 				Coupler();
 		}
 
 		// MMT bore through everything
 		translate([0, 0, -1])
-			cylinder(d=MMT_OD, h=Can_Len + 2);
-
-		// Motor retainer bore (smaller, holds motor)
-		// Already handled by retainer ring above
+			cylinder(d=MMT_OD, h=Total_H + 2);
 
 		// Fin slots through outer wall
 		for (i=[0:Fin_Count-1])
@@ -193,13 +211,68 @@ module FinCan(){
 		// Coupler screw holes
 		for (i=[0:nCoupler_Screws-1])
 			rotate([0, 0, i * 360/nCoupler_Screws + 30])
-				translate([0, 0, Can_Len - Coupler_Len/2])
+				translate([0, 0, Thread_H + Body_Len - Coupler_Len/2])
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
+
+		// Thread lead-in chamfer at aft end (Z=0)
+		translate([0, 0, -Overlap])
+			difference(){
+				cylinder(d=Thread_Major_D + 2, h=Thread_Chamfer + Overlap);
+				cylinder(d1=Thread_Minor_D - 1, d2=Thread_Major_D + 1,
+						 h=Thread_Chamfer + Overlap);
+			}
 	}
 }
 
-// Centering ring: solid disk from MMT to outer wall
+// ========== MALE THREAD MODULE ==========
+// Creates helical male thread using twisted half-annulus method.
+// The 2D cross-section (annular sector) is extruded with twist to form helix.
+
+module MaleThread(){
+	thread_depth = (Thread_Major_D - Thread_Minor_D) / 2;
+	n_turns = Thread_H / Thread_Pitch;
+	duty_angle = Thread_Duty * 360;  // angular extent of tooth (25% = 90°)
+
+	intersection(){
+		// Limit to annular thread zone
+		difference(){
+			cylinder(d=Thread_Major_D, h=Thread_H);
+			translate([0, 0, -Overlap])
+				cylinder(d=Thread_Minor_D - Overlap, h=Thread_H + 2*Overlap);
+		}
+
+		// Twisted sector: creates helix
+		linear_extrude(height=Thread_H, twist=-360*n_turns, convexity=10,
+					   $fn=$preview? 72 : 180)
+			intersection(){
+				// Annular ring (larger than needed, intersection above trims it)
+				difference(){
+					circle(d=Thread_Major_D + 2);
+					circle(d=Thread_Minor_D - 2);
+				}
+				// Sector for duty cycle
+				// rotate half the duty angle so tooth is centered on X+
+				rotate([0, 0, -duty_angle/2])
+					SectorPoly(Thread_Major_D/2 + 2, duty_angle);
+			}
+	}
+}
+
+// 2D sector polygon from angle 0 to `angle` degrees at given radius
+module SectorPoly(r, angle){
+	steps = max(1, ceil(angle / 5));
+	polygon(
+		concat(
+			[[0, 0]],
+			[for (i=[0:steps]) [r * cos(i * angle/steps),
+								r * sin(i * angle/steps)]]
+		)
+	);
+}
+
+// ========== CENTERING RING ==========
+
 module CenteringRing(z_pos){
 	translate([0, 0, z_pos])
 		difference(){
@@ -219,9 +292,10 @@ module CenteringRing(z_pos){
 		}
 }
 
-// Fin reinforcement rib: thickened wall along each fin slot
+// ========== FIN RIB ==========
+
 module FinRib(){
-	Rib_W = Fin_Slot_W + Wall*2;  // wall on each side of slot
+	Rib_W = Fin_Slot_W + Wall*2;
 	Rib_R_Inner = MMT_OD/2 + Wall - 0.1;
 	Rib_R_Outer = Body_OD/2;
 
@@ -231,18 +305,16 @@ module FinRib(){
 			  Fin_Tab_L + 10]);
 }
 
-// Fin slot: cuts through outer wall and ribs
-module FinSlot(){
-	// Through outer wall
-	translate([Body_OD/2 - Wall - 1, -Fin_Slot_W/2, Slot_Start])
-		cube([Wall + 2, Fin_Slot_W, Fin_Tab_L]);
+// ========== FIN SLOT ==========
 
-	// Tab pocket inward (for fin tab to bond to MMT)
+module FinSlot(){
+	// Through outer wall and ribs
 	translate([MMT_OD/2 - 1, -Fin_Slot_W/2, Slot_Start])
 		cube([Body_OD/2 - MMT_OD/2 + 2, Fin_Slot_W, Fin_Tab_L]);
 }
 
-// Coupler shoulder
+// ========== COUPLER ==========
+
 module Coupler(){
 	Coupler_ID = Coupler_OD - Coupler_Wall*2;
 
@@ -286,10 +358,12 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can"));
-echo(str("Can length=", Can_Len, "mm"));
-echo(str("Body OD=", Body_OD, "mm, MMT=", MMT_OD, "mm"));
+echo(str("Peregrine Fin Can v0.2.0 (threaded retainer)"));
+echo(str("Total print height: ", Total_H, "mm"));
+echo(str("Thread section: ", Thread_H, "mm (", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm)"));
+echo(str("Body section: ", Body_Len, "mm"));
+echo(str("Body OD=", Body_OD, "mm, MMT bore=", MMT_OD, "mm"));
 echo(str("Fin slot: ", Fin_Slot_W, "mm wide, ", Fin_Tab_L, "mm long"));
 echo(str("Slot position: ", Slot_Start, "mm to ", Slot_End, "mm from aft"));
 echo(str("Coupler: ", Coupler_OD, "mm OD x ", Coupler_Len, "mm"));
-echo(str("Fits Bambu P1S: ", Can_Len <= 250 ? "YES" : "NO"));
+echo(str("Fits Bambu P1S: ", Total_H <= 250.5 ? "YES" : "NO"));
