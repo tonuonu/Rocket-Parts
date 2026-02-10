@@ -241,12 +241,12 @@ module FinCan(){
 			rotate([0, 0, i * Fin_Angle])
 				FinSlot();
 
-		// Ribbon passage through each rib (near top, at MMT surface)
-		// Allows flat recovery ribbon to wrap around MMT
+		// Ribbon passage through each rib (near top, hugs MMT surface)
+		// 8mm radial x 16mm tall — ribbon lays flat on motor tube
 		for (i=[0:Fin_Count-1])
 			rotate([0, 0, i * Fin_Angle])
-				translate([MMT_OD/2 - 0.5, -Fin_Slot_W/2 - Wall, Rib_Z_End - Cord_Pass_H])
-					cube([Slot_Inner_R - MMT_OD/2 + 1, Fin_Slot_W + Wall*2, Cord_Pass_H + 1]);
+				translate([MMT_OD/2 + Wall, -Fin_Slot_W/2 - Wall, Rib_Z_End - Cord_Pass_H])
+					cube([8, Fin_Slot_W + Wall*2, Cord_Pass_H + 1]);
 
 		// Coupler screw holes
 		for (i=[0:nCoupler_Screws-1])
