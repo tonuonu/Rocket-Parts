@@ -108,9 +108,7 @@ Coupler_Wall = 2.4;
 nCoupler_Screws = 6;      // retention screws
 Coupler_Screw_d = 3.5;    // #6 screw clearance
 
-// Shock cord channel (slot in forward centering ring)
-Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
-Cord_Slot_H = 4;          // slot height (flat cord + clearance)
+// Shock cord channel
 Cord_Slot_a = 60;         // midway between fins (0° and 120°)
 Cord_Pass_H = 16;         // ribbon passage height in ribs (cord width + clearance)
 
@@ -292,13 +290,15 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord channel slot through forward CR and coupler base
-		rotate([0, 0, Cord_Slot_a])
-			translate([MMT_OD/2 + Wall - 0.1, -Cord_Slot_W/2,
+		// Cord passage: round hole through forward CR into coupler base
+		// Same position/size as lightening hole at 60° but extends upward
+		rotate([0, 0, Cord_Slot_a]){
+			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
+			Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
+			translate([R_Mid, 0,
 				CR_Positions[len(CR_Positions)-1] - Overlap])
-				cube([Body_OD/2 - Wall - MMT_OD/2 - Wall,
-					  Cord_Slot_W,
-					  CR_Thickness + Wall + 2*Overlap]);
+				cylinder(d=Hole_D, h=CR_Thickness + Wall + 2*Overlap);
+		}
 
 		// Thread lead-in chamfer at aft end (Z=0)
 		translate([0, 0, -Overlap])
@@ -395,8 +395,15 @@ module SupportWeb(){
 	Web_Z_End = CR_Positions[len(CR_Positions)-1];  // bottom of fwd CR
 	Web_H = Web_Z_End - Web_Z_Start;
 
-	translate([Web_R_Inner, -Web_T/2, Web_Z_Start])
-		cube([Web_R_Outer - Web_R_Inner, Web_T, Web_H]);
+	difference(){
+		translate([Web_R_Inner, -Web_T/2, Web_Z_Start])
+			cube([Web_R_Outer - Web_R_Inner, Web_T, Web_H]);
+
+		// Ribbon passage near MMT (same Z and depth as rib passages)
+		translate([Web_R_Inner - 1, -Web_T/2 - 1,
+			Rib_Z_End - Cord_Pass_H])
+			cube([8 + 1, Web_T + 2, Cord_Pass_H]);
+	}
 }
 
 // ========== FIN RIB ==========
