@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.6.0  2/10/2026
+// Revision: 0.7.0  2/10/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -47,6 +47,10 @@
 //                    - Ribs clipped to body cylinder (no external lip)
 //                    - Lightweight ribs: thin web in inner zone
 //                    - 1mm slot clearance at top for fin insertion
+// 0.7.0  2/10/2026  Built-in print support and CR cleanup:
+//                    - Remove ineffective CR chamfers (were buried in walls)
+//                    - Add 3 support webs at 60/180/300° between CRs
+//                    - Webs serve as print support + anti-ovalizing
 //
 // ***********************************
 
@@ -233,6 +237,11 @@ module FinCan(){
 				rotate([0, 0, i * Fin_Angle])
 					FinRib();
 
+			// Support webs (print support for CRs + anti-ovalizing)
+			for (i=[0:Fin_Count-1])
+				rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
+					SupportWeb();
+
 			// Coupler shoulder (forward end)
 			translate([0, 0, Coupler_Z])
 				Coupler();
@@ -320,7 +329,6 @@ module SectorPoly(r, angle){
 // ========== CENTERING RING ==========
 
 // Centering ring: flat disc with small 45° chamfers on underside edges.
-CR_Chamfer = 1.5;  // small 45° chamfer on bottom edges
 
 module CenteringRing(z_pos){
 	CR_R_Inner = MMT_OD/2 + Wall - 0.05;
@@ -328,15 +336,13 @@ module CenteringRing(z_pos){
 
 	translate([0, 0, z_pos])
 		difference(){
-			// Flat disc with chamfered bottom edges
+			// Flat disc — supported by SupportWebs below
 			rotate_extrude(convexity=4)
 				polygon([
-					[CR_R_Inner - CR_Chamfer, 0],   // bottom inner (toward MMT)
-					[CR_R_Inner, CR_Chamfer],        // 45° up to disc
-					[CR_R_Inner, CR_Thickness],      // top inner
-					[CR_R_Outer, CR_Thickness],      // top outer
-					[CR_R_Outer, CR_Chamfer],        // 45° down from disc
-					[CR_R_Outer + CR_Chamfer, 0]     // bottom outer (toward wall)
+					[CR_R_Inner, 0],
+					[CR_R_Inner, CR_Thickness],
+					[CR_R_Outer, CR_Thickness],
+					[CR_R_Outer, 0]
 				]);
 
 			// Lightening holes (between fins)
@@ -349,6 +355,26 @@ module CenteringRing(z_pos){
 							cylinder(d=Hole_D, h=CR_Thickness + 2);
 				}
 		}
+}
+
+
+// ========== SUPPORT WEB ==========
+// Thin radial wall between CRs in sectors between fins.
+// Serves as built-in print support for CR undersides AND
+// structural anti-ovalizing reinforcement.
+// Placed at 60°, 180°, 300° (midway between fin ribs).
+// Cord slot at 60° cuts through the top — that's fine.
+
+module SupportWeb(){
+	Web_T = 1;  // wall thickness (2-3 perimeters)
+	Web_R_Inner = MMT_OD/2 + Wall - 0.05;
+	Web_R_Outer = Body_OD/2 - Wall + 0.05;
+	Web_Z_Start = CR_Positions[0] + CR_Thickness;  // top of aft CR
+	Web_Z_End = CR_Positions[len(CR_Positions)-1];  // bottom of fwd CR
+	Web_H = Web_Z_End - Web_Z_Start;
+
+	translate([Web_R_Inner, -Web_T/2, Web_Z_Start])
+		cube([Web_R_Outer - Web_R_Inner, Web_T, Web_H]);
 }
 
 // ========== FIN RIB ==========
@@ -412,7 +438,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.6.0"));
+echo(str("Peregrine Fin Can v0.7.0"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
 echo(str("Body: OD=", Body_OD, "mm, ID=", Body_ID, "mm, Len=", Body_Len, "mm"));
