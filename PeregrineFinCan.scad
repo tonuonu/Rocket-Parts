@@ -280,7 +280,7 @@ module FinCan(){
 
 		// Coupler screw holes
 		for (i=[0:nCoupler_Screws-1])
-			rotate([0, 0, i * 360/nCoupler_Screws + 30])
+			rotate([0, 0, i * 360/nCoupler_Screws])
 				translate([0, 0, Coupler_Z + Coupler_Len/2])
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
@@ -474,7 +474,7 @@ module Coupler(){
 	Gusset_W = 10;        // circumferential width
 	Gusset_H = Coupler_Len/2 + Coupler_Screw_d/2 + 1;  // base to just above screw
 	for (i=[0:nCoupler_Screws-1])
-		rotate([0, 0, i * 360/nCoupler_Screws + 30])
+		rotate([0, 0, i * 360/nCoupler_Screws])
 			translate([Coupler_ID/2 - Gusset_Depth, -Gusset_W/2, 0])
 				hull(){
 					// Base: full depth inward from wall
