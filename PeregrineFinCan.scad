@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.7.0  2/10/2026
+// Revision: 0.8.0  2/10/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -51,6 +51,13 @@
 //                    - Remove ineffective CR chamfers (were buried in walls)
 //                    - Add 3 support webs at 60/180/300° between CRs
 //                    - Webs serve as print support + anti-ovalizing
+// 0.8.0  2/10/2026  Structural and printability refinements:
+//                    - Lightweight ribs: thin web inner zone, 0.8mm back wall
+//                    - Vertical tubes through CR lightening holes
+//                    - Round cord passage replacing rectangular slot
+//                    - Ribbon passages through support webs
+//                    - Slots/ribs extended to forward CR
+//                    - 6 triangular gussets behind coupler screws
 //
 // ***********************************
 
