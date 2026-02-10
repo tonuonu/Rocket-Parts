@@ -232,6 +232,25 @@ module FinCan(){
 			for (z=CR_Positions)
 				CenteringRing(z);
 
+			// Vertical tubes through CR lightening holes
+			// Connects all CRs so slicer has continuous vertical
+			// geometry — eliminates support trees in pockets
+			for (i=[0:Fin_Count-1])
+				rotate([0, 0, i * Fin_Angle + Fin_Angle/2]){
+					R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
+					Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
+					Tube_Wall = 0.8;
+					Tube_Z0 = CR_Positions[0];
+					Tube_Z1 = CR_Positions[len(CR_Positions)-1] + CR_Thickness;
+					if (Hole_D > 5)
+						translate([R_Mid, 0, Tube_Z0])
+							difference(){
+								cylinder(d=Hole_D, h=Tube_Z1 - Tube_Z0);
+								translate([0, 0, -1])
+									cylinder(d=Hole_D - Tube_Wall*2, h=Tube_Z1 - Tube_Z0 + 2);
+							}
+				}
+
 			// Fin guide ribs (solid bridge from outer wall to MMT)
 			for (i=[0:Fin_Count-1])
 				rotate([0, 0, i * Fin_Angle])
@@ -402,10 +421,12 @@ module FinRib(){
 					  Wall,
 					  Rib_H]);
 
-			// Slot back wall: vertical plate at inner end of fin slot
-			// Connects both flanks to inner web in one printable piece
-			translate([Slot_Inner_R - Wall, -Rib_W/2, Rib_Z_Start])
-				cube([Wall, Rib_W, Rib_H]);
+			// Slot back wall: thin vertical plate at inner end of fin slot
+			// 0.8mm = single perimeter round-trip, just holds parts
+			// during assembly until epoxy cures
+			Back_Wall_T = 0.8;
+			translate([Slot_Inner_R - Back_Wall_T, -Rib_W/2, Rib_Z_Start])
+				cube([Back_Wall_T, Rib_W, Rib_H]);
 			// Outer zone: full width (flanks the fin slot)
 			translate([Slot_Inner_R, -Rib_W/2, Rib_Z_Start])
 				cube([Rib_R_Outer - Slot_Inner_R,
