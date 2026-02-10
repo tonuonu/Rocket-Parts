@@ -305,12 +305,26 @@ module SectorPoly(r, angle){
 
 // ========== CENTERING RING ==========
 
+// Centering ring with 45° underside chamfers (no supports needed).
+// Cross-section: flat top, 45° chamfers at inner/outer edges on bottom.
+CR_Chamfer = CR_Thickness - 0.5;  // 3.5mm at 45°, 0.5mm flat top margin
+
 module CenteringRing(z_pos){
+	CR_R_Inner = MMT_OD/2 + Wall - 0.05;
+	CR_R_Outer = Body_OD/2 - Wall + 0.05;
+
 	translate([0, 0, z_pos])
 		difference(){
-			cylinder(d=Body_OD - Wall*2 + 0.1, h=CR_Thickness);
-			translate([0, 0, -1])
-				cylinder(d=MMT_OD + Wall*2 - 0.1, h=CR_Thickness + 2);
+			// Trapezoid profile revolved: wide on top, chamfered bottom
+			rotate_extrude(convexity=4)
+				polygon([
+					[CR_R_Inner + CR_Chamfer, 0],      // bottom inner (narrowed)
+					[CR_R_Inner, CR_Chamfer],           // 45° inner chamfer
+					[CR_R_Inner, CR_Thickness],         // top inner (full width)
+					[CR_R_Outer, CR_Thickness],         // top outer (full width)
+					[CR_R_Outer, CR_Chamfer],           // 45° outer chamfer
+					[CR_R_Outer - CR_Chamfer, 0]        // bottom outer (narrowed)
+				]);
 
 			// Lightening holes (between fins)
 			for (i=[0:Fin_Count-1])
