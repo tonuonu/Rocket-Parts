@@ -474,7 +474,7 @@ module Coupler(){
 	Gusset_W = 10;        // circumferential width
 	Gusset_H = Coupler_Len/2 + Coupler_Screw_d/2 + 1;  // base to just above screw
 	for (i=[0:nCoupler_Screws-1])
-		rotate([0, 0, i * 360/nCoupler_Screws])
+		rotate([0, 0, i * 360/nCoupler_Screws + 30])
 			translate([Coupler_ID/2 - Gusset_Depth, -Gusset_W/2, 0])
 				hull(){
 					// Base: full depth inward from wall
@@ -487,7 +487,8 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.7.0"));
+echo(str("Peregrine Fin Can v0.8.0"));
+echo(str("Screw/gusset angle offset: 0 (at 0/60/120/180/240/300)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
 echo(str("Body: OD=", Body_OD, "mm, ID=", Body_ID, "mm, Len=", Body_Len, "mm"));
