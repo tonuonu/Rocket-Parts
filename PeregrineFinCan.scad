@@ -353,18 +353,26 @@ module CenteringRing(z_pos){
 
 module FinRib(){
 	Rib_W = Fin_Slot_W + Wall*2;
-	// Overlap into MMT bore zone so bore cut creates solid joint
 	Rib_R_Inner = MMT_OD/2 - 0.5;
 	Rib_R_Outer = Body_OD/2;
 	Rib_H = Rib_Z_End - Rib_Z_Start;
 
-	// Intersect with body cylinder to prevent flat rib face
-	// protruding past curved outer wall
+	// Clip to body cylinder (no protruding lips)
 	intersection(){
-		translate([Rib_R_Inner, -Rib_W/2, Rib_Z_Start])
-			cube([Rib_R_Outer - Rib_R_Inner,
-				  Rib_W,
-				  Rib_H]);
+		union(){
+			// Inner zone: thin web (Wall thick) from MMT to slot edge
+			// Only transfers radial loads, doesn't guide fins
+			translate([Rib_R_Inner, -Wall/2, Rib_Z_Start])
+				cube([Slot_Inner_R - Rib_R_Inner,
+					  Wall,
+					  Rib_H]);
+
+			// Outer zone: full width (flanks the fin slot)
+			translate([Slot_Inner_R, -Rib_W/2, Rib_Z_Start])
+				cube([Rib_R_Outer - Slot_Inner_R,
+					  Rib_W,
+					  Rib_H]);
+		}
 		translate([0, 0, Rib_Z_Start - 1])
 			cylinder(d=Body_OD, h=Rib_H + 2);
 	}
