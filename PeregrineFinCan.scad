@@ -238,10 +238,12 @@ module FinCan(){
 					FinRib();
 
 			// Support webs (print support for CRs + anti-ovalizing)
-			// Offset 30° from fins to avoid CR lightening holes at Fin_Angle/2
+			// 6 webs at 30/90/150/210/270/330° — symmetric, avoids
+			// fins (0/120/240°) and CR lightening holes (60/180/300°)
 			for (i=[0:Fin_Count-1])
-				rotate([0, 0, i * Fin_Angle + Fin_Angle/4])
-					SupportWeb();
+				for (offset=[Fin_Angle/4, 3*Fin_Angle/4])
+					rotate([0, 0, i * Fin_Angle + offset])
+						SupportWeb();
 
 			// Coupler shoulder (forward end)
 			translate([0, 0, Coupler_Z])
@@ -363,8 +365,8 @@ module CenteringRing(z_pos){
 // Thin radial wall between CRs in sectors between fins.
 // Serves as built-in print support for CR undersides AND
 // structural anti-ovalizing reinforcement.
-// Placed at 30°, 150°, 270° (quarter-way between fins).
-// Avoids CR lightening holes (at 60°, 180°, 300°).
+// 6 webs at 30°/90°/150°/210°/270°/330° (symmetric).
+// Avoids fins (0/120/240°) and CR holes (60/180/300°).
 
 module SupportWeb(){
 	Web_T = 1;  // wall thickness (2-3 perimeters)
