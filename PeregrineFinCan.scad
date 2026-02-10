@@ -68,7 +68,7 @@ Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 // Fin slot geometry
 Fin_Root_L = 249;         // root chord length
 Fin_Tab_H = 19;           // tab height (slot doesn't reach MMT)
-Fin_Tab_L = 185;          // fin tab length in slot
+Fin_Tab_L = 190;          // fin tab length in slot
 Slot_Clearance = 1;       // extra slot length at top for easy insertion
 Fin_Tab_Pos = 87;         // tab position from leading edge (shifted 5mm fwd)
 
@@ -358,10 +358,16 @@ module FinRib(){
 	Rib_R_Outer = Body_OD/2;
 	Rib_H = Rib_Z_End - Rib_Z_Start;
 
-	translate([Rib_R_Inner, -Rib_W/2, Rib_Z_Start])
-		cube([Rib_R_Outer - Rib_R_Inner,
-			  Rib_W,
-			  Rib_H]);
+	// Intersect with body cylinder to prevent flat rib face
+	// protruding past curved outer wall
+	intersection(){
+		translate([Rib_R_Inner, -Rib_W/2, Rib_Z_Start])
+			cube([Rib_R_Outer - Rib_R_Inner,
+				  Rib_W,
+				  Rib_H]);
+		translate([0, 0, Rib_Z_Start - 1])
+			cylinder(d=Body_OD, h=Rib_H + 2);
+	}
 }
 
 // ========== FIN SLOT ==========
