@@ -69,6 +69,7 @@ Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 Fin_Root_L = 249;         // root chord length
 Fin_Tab_H = 19;           // tab height (slot doesn't reach MMT)
 Fin_Tab_L = 190;          // fin tab length in slot (shortened from 203)
+Slot_Clearance = 1;       // extra slot length at top for easy insertion
 Fin_Tab_Pos = 87;         // tab position from leading edge (shifted 5mm fwd)
 
 // Gap between fin slot and MMT (full tube around motor)
@@ -349,7 +350,7 @@ module FinRib(){
 
 module FinSlot(){
 	translate([Slot_Inner_R, -Fin_Slot_W/2, Slot_Start])
-		cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W, Fin_Tab_L]);
+		cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W, Fin_Tab_L + Slot_Clearance]);
 }
 
 // ========== COUPLER ==========
