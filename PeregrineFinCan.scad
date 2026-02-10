@@ -402,17 +402,10 @@ module FinRib(){
 					  Wall,
 					  Rib_H]);
 
-			// Tie-back shelves: connect slot flanks through inner zone
-			// Full rib width, 1mm tall, evenly spaced along slot height
-			Shelf_T = 1;
-			Shelf_N = 4;
-			Slot_H = Slot_End - Slot_Start;
-			for (j=[1:Shelf_N])
-				translate([Rib_R_Inner, -Rib_W/2,
-					Slot_Start + j * Slot_H/(Shelf_N+1) - Shelf_T/2])
-					cube([Slot_Inner_R - Rib_R_Inner,
-						  Rib_W, Shelf_T]);
-
+			// Slot back wall: vertical plate at inner end of fin slot
+			// Connects both flanks to inner web in one printable piece
+			translate([Slot_Inner_R - Wall, -Rib_W/2, Rib_Z_Start])
+				cube([Wall, Rib_W, Rib_H]);
 			// Outer zone: full width (flanks the fin slot)
 			translate([Slot_Inner_R, -Rib_W/2, Rib_Z_Start])
 				cube([Rib_R_Outer - Slot_Inner_R,
