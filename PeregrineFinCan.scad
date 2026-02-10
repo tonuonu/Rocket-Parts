@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.5.0  2/9/2026
+// Revision: 0.6.0  2/10/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -41,6 +41,12 @@
 //                    - Ribs trimmed below coupler (body tube slides on)
 //                    - Recovery cord wraps in gap above ribs
 //                    - Fin tab shortened to 190mm
+// 0.6.0  2/10/2026  Printability and weight improvements:
+//                    - CR 45° chamfers on underside edges (no supports)
+//                    - Ribbon passages (8x16mm) through ribs at MMT
+//                    - Ribs clipped to body cylinder (no external lip)
+//                    - Lightweight ribs: thin web in inner zone
+//                    - 1mm slot clearance at top for fin insertion
 //
 // ***********************************
 
@@ -406,7 +412,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.5.0 (post-test-print fixes)"));
+echo(str("Peregrine Fin Can v0.6.0"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
 echo(str("Body: OD=", Body_OD, "mm, ID=", Body_ID, "mm, Len=", Body_Len, "mm"));
