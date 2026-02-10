@@ -466,6 +466,23 @@ module Coupler(){
 
 	// Transition ring at base of coupler
 	cylinder(d=Body_OD, h=Wall);
+
+	// Triangular gussets behind each screw hole
+	// Connect coupler wall to base — prevents layer separation,
+	// gives screws more grip material
+	Gusset_Depth = 6;     // inward from wall at base
+	Gusset_W = 10;        // circumferential width
+	Gusset_H = Coupler_Len/2 + Coupler_Screw_d/2 + 1;  // base to just above screw
+	for (i=[0:nCoupler_Screws-1])
+		rotate([0, 0, i * 360/nCoupler_Screws + 30])
+			translate([Coupler_ID/2 - Gusset_Depth, -Gusset_W/2, 0])
+				hull(){
+					// Base: full depth inward from wall
+					cube([Gusset_Depth, Gusset_W, 0.01]);
+					// Top: tapers to wall at screw height
+					translate([Gusset_Depth - 0.01, 0, Gusset_H])
+						cube([0.01, Gusset_W, 0.01]);
+				}
 }
 
 // ========== INFO ==========
