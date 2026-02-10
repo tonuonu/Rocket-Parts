@@ -37,7 +37,7 @@ Body_OD = 101.5;          // match fin can (was 100)
 MMT_OD = 38.5;            // match fin can bore
 Wall = 2.4;               // fin can wall thickness
 Slot_Gap = 10;            // gap between slot and MMT
-Fin_Slot_L = 190;         // match fin can (was 203)
+Fin_Slot_L = 185;         // match fin can
 
 // ========== FIN PARAMETERS ==========
 

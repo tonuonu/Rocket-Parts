@@ -68,7 +68,7 @@ Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 // Fin slot geometry
 Fin_Root_L = 249;         // root chord length
 Fin_Tab_H = 19;           // tab height (slot doesn't reach MMT)
-Fin_Tab_L = 190;          // fin tab length in slot (shortened from 203)
+Fin_Tab_L = 185;          // fin tab length in slot
 Slot_Clearance = 1;       // extra slot length at top for easy insertion
 Fin_Tab_Pos = 87;         // tab position from leading edge (shifted 5mm fwd)
 
