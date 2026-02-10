@@ -3,7 +3,7 @@
 // Filename: PeregrineFin.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.3.0  2/8/2026
+// Revision: 0.4.0  2/9/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -23,6 +23,9 @@
 // 0.1.0  2/8/2026   Initial.
 // 0.2.0  2/8/2026   NACA airfoil attempt.
 // 0.3.0  2/8/2026   Fixed axes, proper airfoil loft.
+// 0.4.0  2/9/2026   Post-test-print: Body_OD=101.5, shorter tab
+//                    (slot stops 10mm from MMT), tab shifted 5mm
+//                    from trailing edge (unprintable thin section).
 //
 // ***********************************
 
@@ -30,16 +33,19 @@ $fn=$preview? 36:90;
 
 // ========== FIN CAN PARAMETERS ==========
 
-Body_OD = 100;
+Body_OD = 101.5;          // match fin can (was 100)
 MMT_OD = 38.5;            // match fin can bore
-Fin_Slot_L = 203;
+Wall = 2.4;               // fin can wall thickness
+Slot_Gap = 10;            // gap between slot and MMT
+Fin_Slot_L = 190;         // match fin can (was 203)
 
 // ========== FIN PARAMETERS ==========
 
 Fin_T = 6.35;             // max thickness at root
 
 // Tab
-Tab_H = Body_OD/2 - MMT_OD/2;  // 31mm
+Slot_Inner_R = MMT_OD/2 + Wall + Slot_Gap;
+Tab_H = Body_OD/2 - Slot_Inner_R;  // ~19mm (slot stops short of MMT)
 Tab_L = Fin_Slot_L;
 
 // Planform
@@ -72,7 +78,8 @@ module PrintLayout(){
 
 module PeregrineFin(){
 	// Tab: flat slab
-	translate([Root_L - Tab_L, -Tab_H, -Fin_T/2])
+	// Tab shifted 5mm from trailing edge (slicer can't print thin TE)
+	translate([Root_L - Tab_L - 5, -Tab_H, -Fin_T/2])
 		cube([Tab_L, Tab_H + 0.01, Fin_T]);
 
 	// Airfoil body: lofted from root to tip
@@ -134,7 +141,7 @@ module NACA_Profile(chord, max_t){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin v0.3"));
+echo(str("Peregrine Fin v0.4.0 (post-test-print fixes)"));
 echo(str("Root=", Root_L, "mm, Tip=", Tip_L, "mm, Span=", Span, "mm"));
 echo(str("Tab=", Tab_L, "x", Tab_H, "mm"));
 echo(str("Thickness=", Fin_T, "mm (root t/c=", round(Fin_T/Root_L*1000)/10, "%)"));
