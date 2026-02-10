@@ -317,12 +317,12 @@ module CenteringRing(z_pos){
 			// Flat disc with chamfered bottom edges
 			rotate_extrude(convexity=4)
 				polygon([
-					[CR_R_Inner + CR_Chamfer, 0],   // inner chamfer start
-					[CR_R_Inner, CR_Chamfer],        // inner chamfer end
+					[CR_R_Inner - CR_Chamfer, 0],   // bottom inner (toward MMT)
+					[CR_R_Inner, CR_Chamfer],        // 45° up to disc
 					[CR_R_Inner, CR_Thickness],      // top inner
 					[CR_R_Outer, CR_Thickness],      // top outer
-					[CR_R_Outer, CR_Chamfer],        // outer chamfer end
-					[CR_R_Outer - CR_Chamfer, 0]     // outer chamfer start
+					[CR_R_Outer, CR_Chamfer],        // 45° down from disc
+					[CR_R_Outer + CR_Chamfer, 0]     // bottom outer (toward wall)
 				]);
 
 			// Lightening holes (between fins)
