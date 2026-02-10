@@ -102,6 +102,7 @@ Coupler_Screw_d = 3.5;    // #6 screw clearance
 Cord_Slot_W = 15;         // slot width (1/2" tubular nylon laid flat)
 Cord_Slot_H = 4;          // slot height (flat cord + clearance)
 Cord_Slot_a = 60;         // midway between fins (0° and 120°)
+Cord_Pass_H = 16;         // ribbon passage height in ribs (cord width + clearance)
 
 // Centering rings
 CR_Thickness = 4;         // ring axial thickness
@@ -239,6 +240,13 @@ module FinCan(){
 		for (i=[0:Fin_Count-1])
 			rotate([0, 0, i * Fin_Angle])
 				FinSlot();
+
+		// Ribbon passage through each rib (near top, at MMT surface)
+		// Allows flat recovery ribbon to wrap around MMT
+		for (i=[0:Fin_Count-1])
+			rotate([0, 0, i * Fin_Angle])
+				translate([MMT_OD/2 - 0.5, -Fin_Slot_W/2 - Wall, Rib_Z_End - Cord_Pass_H])
+					cube([Slot_Inner_R - MMT_OD/2 + 1, Fin_Slot_W + Wall*2, Cord_Pass_H + 1]);
 
 		// Coupler screw holes
 		for (i=[0:nCoupler_Screws-1])
