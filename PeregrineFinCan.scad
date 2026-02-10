@@ -139,13 +139,10 @@ CR_Positions = [
 	Thread_H + Body_Len - Coupler_Len - CR_Thickness  // just below coupler
 ];
 
-// Rib extends slightly past slot ends but stops well below coupler
-Rib_Margin = 3;           // extend past slot each end
+// Rib extends past slot bottom, and up to forward CR for rigidity
+Rib_Margin = 3;           // extend past slot at bottom end
 Rib_Z_Start = Slot_Start - Rib_Margin;
-Rib_Z_End = Slot_End + Rib_Margin;
-
-// Recovery cord wraps MMT in gap between rib top and forward CR
-Cord_Gap = CR_Positions[2] - Rib_Z_End;
+Rib_Z_End = CR_Positions[2];  // ribs touch forward CR — no gap
 
 Total_H = Thread_H + Body_Len;
 
@@ -153,11 +150,9 @@ echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Slot inner radius: ", Slot_Inner_R, "mm (", Slot_Gap, "mm gap from MMT)"));
 echo(str("Rib Z range: ", Rib_Z_Start, " to ", Rib_Z_End, "mm"));
 echo(str("Forward CR at Z=", CR_Positions[2], "mm"));
-echo(str("Cord wrap gap: ", Cord_Gap, "mm (between rib top and fwd CR)"));
 echo(str("Coupler base at Z=", Coupler_Z, "mm"));
 assert(Total_H <= 250.5, "TOO TALL FOR P1S!");
 assert(Rib_Z_End < Coupler_Z, "RIBS PROTRUDE INTO COUPLER ZONE!");
-assert(Cord_Gap >= 4, "NOT ENOUGH ROOM FOR CORD WRAP!");
 
 // ========== RENDER ==========
 
@@ -451,8 +446,10 @@ module FinRib(){
 // Recovery cord wraps through gap above rib tops.
 
 module FinSlot(){
+	// Slot extends from above aft CR to forward CR for full rigidity
+	Slot_Top = CR_Positions[2];
 	translate([Slot_Inner_R, -Fin_Slot_W/2, Slot_Start])
-		cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W, Fin_Tab_L + Slot_Clearance]);
+		cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W, Slot_Top - Slot_Start]);
 }
 
 // ========== COUPLER ==========
@@ -479,7 +476,7 @@ echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_P
 echo(str("Body: OD=", Body_OD, "mm, ID=", Body_ID, "mm, Len=", Body_Len, "mm"));
 echo(str("MMT bore=", MMT_OD, "mm"));
 echo(str("Fin slot: ", Fin_Slot_W, "mm W x ", Fin_Tab_L, "mm L, inner R=", Slot_Inner_R, "mm"));
-echo(str("Slot Z: ", Slot_Start, " to ", Slot_End, "mm"));
+echo(str("Slot Z: ", Slot_Start, " to ", CR_Positions[2], "mm (tab ends at ", Slot_End, ")"));
 echo(str("Rib Z: ", Rib_Z_Start, " to ", Rib_Z_End, "mm"));
 echo(str("Coupler: ", Coupler_OD, "mm OD x ", Coupler_Len, "mm"));
 echo(str("Fits Bambu P1S: ", Total_H <= 250.5 ? "YES" : "NO"));
