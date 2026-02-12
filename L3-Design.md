@@ -124,8 +124,10 @@ Same planform as L2 PeregrineFin v0.7.0. Composite construction.
 | CF overlay (inner) | 0.75 mm | Carbon fiber cloth + epoxy |
 | **Total** | **~8.5 mm** | |
 
-**Rod reinforcement:** 2× 4mm carbon fiber rods at 25% and 60% chord,
-spanning full length from tab to tip. Channels are 4.2mm diameter.
+**Rod reinforcement:** 4mm CF rod at 25% chord (4.2mm channel) and 2mm CF rod
+at 60% chord (2.2mm channel), spanning full length from tab to tip. The aft
+channel uses a thinner rod because the airfoil is too thin at 60% chord near
+the tip for a 4mm rod.
 
 **Print:** Split at 60% chord rod line. Each half prints standing on cut face
 (along-layer bending strength: 60 MPa for PPS). Rod provides alignment.
@@ -319,7 +321,7 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 | File | Description | Version |
 |---|---|---|
 | PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.3.0 |
-| PeregrineFin75.scad | Fin core for BT137/75mm | v0.1.0 |
+| PeregrineFin75.scad | Fin core for BT137/75mm | v0.2.0 |
 | (TBD) PeregrineNose75.scad | Nose cone for BT137 | — |
 | (TBD) PeregrineEbay75.scad | Electronics bay for BT137 | — |
 | (TBD) PeregrineL3.ork | OpenRocket simulation | — |

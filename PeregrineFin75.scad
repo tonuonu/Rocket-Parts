@@ -3,7 +3,7 @@
 // Filename: PeregrineFin75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.1.0  2/12/2026
+// Revision: 0.2.0  2/12/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -14,7 +14,7 @@
 //   - 75mm MMT (76mm bore in fin can)
 //   - Extended tab (240mm) for PeregrineFinCan75 slot
 //   - Thicker core (7mm) for carbon fiber overlay
-//   - Larger rod channels (4.2mm for 4mm CF rods)
+//   - Rod channels: 4.2mm fwd (4mm rod), 2.2mm aft (2mm rod)
 //
 // CONSTRUCTION: This is the 3D printed CORE only.
 // After printing, overlay with carbon fiber cloth + epoxy:
@@ -27,10 +27,10 @@
 //   2. Shear web between CF face sheets (sandwich beam)
 //   3. Airfoil shape definition
 //
-// Rod channels for 4mm carbon fiber rods:
-//   - At 25% and 60% local chord, Z=0 centerline
+// Rod channels:
+//   - 4mm rod at 25% chord (thick airfoil zone, structural)
+//   - 2mm rod at 60% chord (thin zone, split-print alignment)
 //   - Provide spanwise stiffness before CF overlay cures
-//   - Also serve as split-print alignment (same as PeregrineFin v0.7.0)
 //
 // Print orientation:
 //   Split print at 60% chord line (same as L2 fin v0.7.0).
@@ -41,6 +41,9 @@
 // 0.1.0  2/12/2026   Initial, adapted from PeregrineFin.scad v0.7.0.
 //                     BT137 body, 75mm MMT, 240mm tab, 7mm core,
 //                     4.2mm rod channels for 4mm CF rods.
+// 0.2.0  2/12/2026   Aft rod channel reduced to 2.2mm (2mm CF rod).
+//                     4.2mm at 60% chord broke through thin tip airfoil.
+//                     Forward channel stays 4.2mm (25% chord, thick zone).
 //
 // ***********************************
 
@@ -74,12 +77,14 @@ Sweep = 120;              // LE sweep distance
 // NACA airfoil
 NACA_N = 60;
 
-// Rod channels (4mm CF rods + 0.2mm clearance)
-Rod_Chan_D = 4.2;         // 4mm rod + 0.2mm clearance (was 2.2 for L2)
+// Rod channels
+Rod_Chan_D_Fwd = 4.2;     // 4mm rod + 0.2mm clearance (25% chord — thick zone)
+Rod_Chan_D_Aft = 2.2;     // 2mm rod + 0.2mm clearance (60% chord — thin zone)
 Rod_Chan_Fwd = 0.25;      // forward channel at 25% local chord
-Rod_Chan_Aft = 0.60;      // aft channel at 60% local chord
+Rod_Chan_Aft = 0.60;      // aft channel at 60% local chord (split-print cut line)
 // Both at Z=0 (centerline)
-// Root spacing: 87mm, tip spacing: 31mm
+// Aft channel uses 2mm rod: at 60% chord the tip airfoil is only ~3.7mm thick,
+// a 4.2mm channel breaks through the surface. 2.2mm fits safely.
 
 // ========== RENDER ==========
 
@@ -157,17 +162,31 @@ module PeregrineFin75(){
 }
 
 module RodChannels(){
-	for (frac = [Rod_Chan_Fwd, Rod_Chan_Aft]){
+	// Forward channel: 4mm rod (4.2mm hole)
+	let(frac = Rod_Chan_Fwd, d = Rod_Chan_D_Fwd){
 		x_root = frac * Root_L;
 		y_root = -Tab_H;
 		x_tip = Sweep + frac * Tip_L;
 		y_tip = Span;
-
 		hull(){
 			translate([x_root, y_root, 0])
-				sphere(d=Rod_Chan_D, $fn=24);
+				sphere(d=d, $fn=24);
 			translate([x_tip, y_tip, 0])
-				sphere(d=Rod_Chan_D, $fn=24);
+				sphere(d=d, $fn=24);
+		}
+	}
+	// Aft channel: 2mm rod (2.2mm hole) — thinner to avoid
+	// breaking through the thin airfoil near the tip
+	let(frac = Rod_Chan_Aft, d = Rod_Chan_D_Aft){
+		x_root = frac * Root_L;
+		y_root = -Tab_H;
+		x_tip = Sweep + frac * Tip_L;
+		y_tip = Span;
+		hull(){
+			translate([x_root, y_root, 0])
+				sphere(d=d, $fn=24);
+			translate([x_tip, y_tip, 0])
+				sphere(d=d, $fn=24);
 		}
 	}
 }
@@ -262,7 +281,7 @@ echo(str("Body: BT137 (", Body_OD, "mm OD), MMT: ", MMT_OD, "mm"));
 echo(str("Planform: Root=", Root_L, " Tip=", Tip_L, " Span=", Span, " Sweep=", Sweep));
 echo(str("Core thickness: ", Fin_T, "mm (+ ~1.5mm CF overlay → 8.5mm total)"));
 echo(str("Tab: ", Tab_L, "mm x ", Tab_H, "mm"));
-echo(str("Rod channels: 2× ", Rod_Chan_D, "mm at ", Rod_Chan_Fwd*100, "% and ", Rod_Chan_Aft*100, "% chord"));
+echo(str("Rod channels: fwd ", Rod_Chan_D_Fwd, "mm at ", Rod_Chan_Fwd*100, "%, aft ", Rod_Chan_D_Aft, "mm at ", Rod_Chan_Aft*100, "% chord"));
 echo(str("Slot inner R: ", Slot_Inner_R, "mm (gap=", Slot_Gap, "mm from MMT)"));
 
 Area = 0.5 * (Root_L + Tip_L) * Span;
