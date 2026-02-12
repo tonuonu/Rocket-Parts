@@ -78,13 +78,13 @@ Rod_Chan_Aft = 0.60;        // aft channel at 60% local chord
 
 // ========== RENDER ==========
 
-Render_Part = 2;
+Render_Part = 0;
 // 0 = Fin as mounted (full)
 // 1 = Print: full fin on trailing edge (original orientation)
 // 2 = Print: forward half (LE side) on cut face
 // 3 = Print: aft half (TE side) on cut face
 
-if (Render_Part == 0) PeregrineFin();
+if (Render_Part == 0) MountedView();
 if (Render_Part == 1) PrintLayoutFull();
 if (Render_Part == 2) PrintLayoutFwd();
 if (Render_Part == 3) PrintLayoutAft();
@@ -118,6 +118,19 @@ module PrintLayoutAft(){
 		rotate([0, 90, 0])
 			translate([-Rod_Chan_Aft * Root_L, 0, 0])
 				FinAftHalf();
+}
+
+module MountedView(){
+	PeregrineFin();
+	// Ghost body tube — translucent context
+	// Tube axis along X (chord direction = rocket body axis)
+	// Center at Y = -Body_OD/2 (body surface at Y=0)
+	%translate([Root_L/2, -Body_OD/2, 0])
+		rotate([0, 90, 0])
+			difference(){
+				cylinder(d=Body_OD, h=Root_L + 40, center=true, $fn=72);
+				cylinder(d=Body_OD - 2*Wall, h=Root_L + 42, center=true, $fn=72);
+			}
 }
 
 // ========== FIN ==========
