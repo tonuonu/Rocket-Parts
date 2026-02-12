@@ -26,7 +26,7 @@
 // 0.4.0  2/9/2026   Post-test-print: Body_OD=101.5, shorter tab
 //                    (slot stops 10mm from MMT), tab shifted 5mm
 //                    from trailing edge (unprintable thin section).
-// 0.5.0  2/12/2026  Add 2× 2.2mm rod channels at 20% and 60% chord,
+// 0.5.0  2/12/2026  Add 2× 2.2mm rod channels at 25% and 60% chord,
 //                    centered (Z=0), 100mm apart at root, 36mm at tip.
 //                    For optional 2mm carbon rods or epoxy fill.
 //
@@ -62,10 +62,10 @@ NACA_N = 60;               // points per side
 
 // Rod channels (optional 2mm carbon rod or epoxy reinforcement)
 Rod_Chan_D = 2.2;           // 2mm rod + 0.2mm clearance
-Rod_Chan_Fwd = 0.20;        // forward channel at 20% local chord
+Rod_Chan_Fwd = 0.25;        // forward channel at 25% local chord
 Rod_Chan_Aft = 0.60;        // aft channel at 60% local chord
 // Both at Z=0 (centerline) — bridges layer boundaries spanwise
-// Root spacing: 100mm, tip spacing: 36mm
+// Root spacing: 87mm, tip spacing: 31mm
 
 // ========== RENDER ==========
 
