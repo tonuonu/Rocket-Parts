@@ -26,9 +26,9 @@
 // 0.4.0  2/9/2026   Post-test-print: Body_OD=101.5, shorter tab
 //                    (slot stops 10mm from MMT), tab shifted 5mm
 //                    from trailing edge (unprintable thin section).
-// 0.5.0  2/12/2026  Add 2× 3.2mm rod channels at 30% chord, Z tapers
-//                    ±1.0mm (root) to 0mm (tip). For optional 3mm
-//                    carbon rods or epoxy fill. Accessible from tab.
+// 0.5.0  2/12/2026  Add 2× 2.2mm rod channels at 20% and 60% chord,
+//                    centered (Z=0), 100mm apart at root, 36mm at tip.
+//                    For optional 2mm carbon rods or epoxy fill.
 //
 // ***********************************
 
@@ -60,11 +60,12 @@ Sweep = 120;              // gentle LE sweep
 // NACA airfoil resolution
 NACA_N = 60;               // points per side
 
-// Rod channels (optional carbon rod or epoxy reinforcement)
-Rod_Chan_D = 3.2;           // 3mm rod + 0.2mm clearance
-Rod_Chan_X_Frac = 0.30;     // at 30% local chord (max airfoil thickness)
-Rod_Chan_Z_Root = 1.0;      // Z offset at root (±mm from centerline)
-Rod_Chan_Z_Tip = 0.0;       // Z offset at tip (tapered to center)
+// Rod channels (optional 2mm carbon rod or epoxy reinforcement)
+Rod_Chan_D = 2.2;           // 2mm rod + 0.2mm clearance
+Rod_Chan_Fwd = 0.20;        // forward channel at 20% local chord
+Rod_Chan_Aft = 0.60;        // aft channel at 60% local chord
+// Both at Z=0 (centerline) — bridges layer boundaries spanwise
+// Root spacing: 100mm, tip spacing: 36mm
 
 // ========== RENDER ==========
 
@@ -102,25 +103,26 @@ module PeregrineFin(){
 	}
 }
 
-// Two reinforcement channels following sweep, Z tapers root→tip
+// Two reinforcement channels at 20% and 60% local chord, Z=0
+// Spread chord-wise to bridge layer boundaries across the fin
 // Accessible from tab base for rod insertion
 module RodChannels(){
-	// Root end (extends through tab for insertion access)
-	x_root = Rod_Chan_X_Frac * Root_L;
-	y_root = -Tab_H;
+	for (frac = [Rod_Chan_Fwd, Rod_Chan_Aft]){
+		// Root end (extends through tab for insertion access)
+		x_root = frac * Root_L;
+		y_root = -Tab_H;
 
-	// Tip end
-	chord_tip = Tip_L;
-	x_tip = Sweep + Rod_Chan_X_Frac * chord_tip;
-	y_tip = Span;
+		// Tip end (follows local chord fraction)
+		x_tip = Sweep + frac * Tip_L;
+		y_tip = Span;
 
-	for (sign = [1, -1])
 		hull(){
-			translate([x_root, y_root, sign * Rod_Chan_Z_Root])
+			translate([x_root, y_root, 0])
 				sphere(d=Rod_Chan_D, $fn=24);
-			translate([x_tip, y_tip, sign * Rod_Chan_Z_Tip])
+			translate([x_tip, y_tip, 0])
 				sphere(d=Rod_Chan_D, $fn=24);
 		}
+	}
 }
 
 // Loft NACA airfoil from root to tip
@@ -179,7 +181,7 @@ module NACA_Profile(chord, max_t){
 // ========== INFO ==========
 
 echo(str("Peregrine Fin v0.5.0"));
-echo(str("Rod channels: ", Rod_Chan_D, "mm dia at 30% chord, Z=±", Rod_Chan_Z_Root, "→±", Rod_Chan_Z_Tip, "mm"));
+echo(str("Rod channels: 2× ", Rod_Chan_D, "mm dia at ", Rod_Chan_Fwd*100, "% and ", Rod_Chan_Aft*100, "% chord, Z=0"));
 echo(str("Root=", Root_L, "mm, Tip=", Tip_L, "mm, Span=", Span, "mm"));
 echo(str("Tab=", Tab_L, "x", Tab_H, "mm"));
 echo(str("Thickness=", Fin_T, "mm (root t/c=", round(Fin_T/Root_L*1000)/10, "%)"));
