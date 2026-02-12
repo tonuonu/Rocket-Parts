@@ -10,21 +10,24 @@ Design and generate STL files for 3D printing rocket components. All parts are p
 
 ## File Organization
 
-- **Root directory**: OpenSCAD source files (.scad)
+- **Root directory**: OpenSCAD source files (.scad) and some .3mf slicer files
 - **STL Files/**: Pre-rendered printable models
 - **Pictures/**: Reference images and renders
 - **PDF Parachute/**: Parachute construction documentation
 - **zOldCode/**: Archived/deprecated code
 
+## File Count
+
+~110+ .scad files, 3 .3mf files (Peregrine parts), 1 parts list (.txt)
+
 ## Naming Conventions
 
 ### Body Tube Diameters (RxxLib.scad pattern)
 
-- R54 = 54mm (2.1") - Minimum HPR
 - R65 = 65mm (2.6")
 - R75 = 75mm (3") - Common HPR
 - R98 = 98mm (4") - Standard HPR
-- R102 = 102mm (4") - Blue Tube variant
+- R102UL = 102mm (4") - ULine mailing tube variant
 - R137 = 137mm (5.5")
 - R157 = 157mm (6")
 - R203 = 203mm (8")
@@ -33,13 +36,20 @@ Design and generate STL files for 3D printing rocket components. All parts are p
 
 - `*Lib.scad` - Reusable component libraries (modules/functions)
 - `Rocket*.scad` - Complete rocket designs using libraries
-- `*.scad` (other) - Standalone components or utilities
+- `*.scad` (other) - Standalone components, tools, or utilities
+- `*.3mf` - Pre-sliced 3D print files (Peregrine project)
 
 ## Motor Standards
 
 Primarily designed for Aerotech RMS (Reloadable Motor System):
 - 29mm, 38mm, 54mm, 75mm, 98mm motor mounts
 - `AT_RMS_Lib.scad` contains motor tube dimensions
+
+## Custom/Tõnu Files
+
+- PeregrineEjection.scad - Active bayonet ejection for Apogee Peregrine
+- PeregrineNoseCone.scad - Nose cone for Peregrine (Bambu P1S compatible)
+- PeregrineEjection.3mf / PeregrineNoseCone.3mf / PeregrineEjectioncoupler.3mf
 
 ## Units
 
