@@ -13,12 +13,12 @@ reinforcement options, and safety margins.
 |---|---|
 | Root chord | 249 mm |
 | Tip chord | 90 mm |
-| Span | 114 mm |
+| Span | 137 mm |
 | LE sweep | 120 mm |
 | Root thickness | 6.35 mm (t/c = 2.55%) |
 | Tip thickness | 4.45 mm (t/c = 4.94%, tapers to 70%) |
-| Planform area | 19,323 mm² |
-| Aspect ratio | 0.67 |
+| Planform area | 23,222 mm² |
+| Aspect ratio | 0.81 |
 | Airfoil | NACA symmetric (0012-like coefficients) |
 
 ### Cross-Section Properties (Root)
@@ -66,18 +66,18 @@ extreme.
 Normal force coefficient per fin (thin airfoil theory with finite AR
 correction):
 
-    CN_alpha = 2π / (1 + 2/AR) = 2π / (1 + 2/0.67) = 1.576 /rad
+    CN_alpha = 2π / (1 + 2/AR) = 2π / (1 + 2/0.81) = 1.808 /rad
 
 | AoA | CN | Force/fin | Root moment | Root stress |
 |---|---|---|---|---|
-| 5° | 0.138 | 102 N (10.4 kg) | 4,654 N·mm | 6.4 MPa |
-| 10° | 0.276 | 204 N (20.8 kg) | 9,309 N·mm | 12.9 MPa |
-| 15° | 0.414 | 306 N (31.2 kg) | 13,963 N·mm | 19.3 MPa |
+| 5° | 0.158 | 140 N (14.3 kg) | 7,688 N·mm | 10.6 MPa |
+| 10° | 0.316 | 281 N (28.6 kg) | 15,375 N·mm | 21.3 MPa |
+| 15° | 0.473 | 421 N (42.9 kg) | 23,063 N·mm | 31.9 MPa |
 
 Root bending moment uses center of pressure at 40% span (appropriate
 for tapered planform):
 
-    M = F × (0.40 × Span) = F × 45.6 mm
+    M = F × (0.40 × Span) = F × 54.8 mm
 
 Root bending stress:
 
@@ -116,13 +116,16 @@ Using across-layer strength of 35 MPa for Bambu PC:
 
 | AoA | Stress | Safety Factor | Assessment |
 |---|---|---|---|
-| 5° | 6.4 MPa | 5.47 | Excellent |
-| 10° | 12.9 MPa | 2.72 | Adequate |
-| 15° | 19.3 MPa | 1.81 | Marginal |
+| 5° | 10.6 MPa | 3.29 | Good |
+| 10° | 21.3 MPa | 1.65 | **Below target** |
+| 15° | 31.9 MPa | 1.10 | Inadequate |
 
-**Conclusion:** Bambu PC without reinforcement is adequate for normal
-flight (SF > 2.7 at 10° AoA) but marginal under extreme gust loading.
-PLA would be marginal even at 10° (SF = 1.94).
+**Conclusion:** With the increased span (137mm vs original 114mm to match
+ORK planform area), Bambu PC without reinforcement falls below the SF 2.0
+target at 10° AoA. **Carbon rod reinforcement is strongly recommended**
+rather than optional. The increased span raises both the aerodynamic force
+(+38% from larger area and higher AR) and the moment arm (+20%), compounding
+the bending load. PLA is not viable (SF ≈ 1.18 at 10°).
 
 ## Rod Channel Design
 
@@ -140,7 +143,7 @@ face for inserting reinforcement material.
 | Root spacing | 87 mm | — |
 | Tip spacing | 31 mm | — |
 | Diameter | 2.2 mm (for 2mm rods + 0.1mm clearance per side) |
-| Length | ~150 mm each (root tab face to tip) |
+| Length | ~176 mm (fwd), ~158 mm (aft) — root tab face to tip |
 | Minimum wall | 0.58 mm (aft channel at tip) |
 
 Channels are straight (hull of two spheres in OpenSCAD), following the
@@ -236,23 +239,26 @@ RC aircraft wings.
 
 ### Option 4: Leave Empty
 
-With Bambu PC and good print settings, baseline SF = 2.72 at 10° AoA.
-This is adequate for L1/L2 flights. The channels remain as insurance —
-if a fin shows signs of weakness, reinforce it post-print.
+With the enlarged span, baseline SF = 1.65 at 10° AoA — below the 2.0
+target. **Leaving channels empty is no longer recommended.** At minimum,
+fill with epoxy. Carbon rods + epoxy is preferred.
 
 ## Summary
 
 | Configuration | Root I (mm⁴) | SF at 10° AoA | Recommendation |
 |---|---|---|---|
-| Bambu PC, no channels | 2,295 | 2.72 | Adequate |
-| Bambu PC, empty channels | 2,291 | 2.71 | Negligible penalty |
-| Bambu PC + 2mm carbon rods | 2,351 | 2.72 (+ delam resistance) | Recommended |
-| Bambu PC + epoxy fill | 2,309 | 2.72 (+ delam resistance) | Good alternative |
-| PLA, no channels | 2,295 | 1.94 | Marginal — not recommended |
+| Bambu PC, no channels | 2,295 | 1.65 | Below target — reinforce |
+| Bambu PC, empty channels | 2,291 | 1.64 | Below target — reinforce |
+| Bambu PC + 2mm carbon rods | 2,351 | 1.68 (+ delam resistance) | **Minimum recommended** |
+| Bambu PC + epoxy fill | 2,309 | 1.65 (+ delam resistance) | Marginal alternative |
+| PLA, no channels | 2,295 | 1.18 | **Not viable** |
 
 The rod channels add delamination resistance with negligible weight or
-structural penalty when empty. Reinforcement with 2mm carbon rods or
-epoxy is recommended but optional for Bambu PC.
+structural penalty when empty. With the enlarged span, **carbon rod
+reinforcement is strongly recommended** — the baseline SF of 1.65 at 10°
+AoA is below the 2.0 hobby rocketry target. Consider increasing fin
+thickness (6.35 → 8 mm) or using higher-strength filament if a SF ≥ 2.0
+without reinforcement is required.
 
 ## Assumptions and Limitations
 
