@@ -78,7 +78,7 @@ Rod_Chan_Aft = 0.60;        // aft channel at 60% local chord
 
 // ========== RENDER ==========
 
-Render_Part = 0;
+Render_Part = 2;
 // 0 = Fin as mounted (full)
 // 1 = Print: full fin on trailing edge (original orientation)
 // 2 = Print: forward half (LE side) on cut face
@@ -139,7 +139,7 @@ module PeregrineFin(){
 	}
 }
 
-// Two reinforcement channels at 20% and 60% local chord, Z=0
+// Two reinforcement channels at 25% and 60% local chord, Z=0
 // Spread chord-wise to bridge layer boundaries across the fin
 // Accessible from tab base for rod insertion
 module RodChannels(){

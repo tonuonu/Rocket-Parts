@@ -4,8 +4,8 @@
 
 Structural assessment of the 3D-printed Peregrine fin under aerodynamic
 bending loads, with particular attention to layer adhesion failure in the
-print orientation. Analysis covers baseline strength, rod channel
-reinforcement options, and safety margins.
+print orientation. Analysis covers two velocity scenarios, two print
+orientations, rod channel reinforcement options, and safety margins.
 
 ## Fin Geometry
 
@@ -26,53 +26,59 @@ reinforcement options, and safety margins.
 For a NACA symmetric airfoil, the second moment of area about the
 thickness axis is approximately:
 
-    I_xx ≈ 0.036 × chord × thickness³
-
-At root:
-
-    I_root = 0.036 × 249 × 6.35³ = 2,295 mm⁴
+    I_xx ≈ 0.036 × chord × thickness³ = 0.036 × 249 × 6.35³ = 2,295 mm⁴
     A_cross ≈ 0.68 × 249 × 6.35 = 1,075 mm²
 
-## Print Orientation and Critical Failure Mode
+## Print Orientations
 
-The fin is printed standing on its trailing edge, rotated 90° so each
-printed layer forms one airfoil cross-section slice. Layer lines run
-chord-wise (leading edge to trailing edge).
+### Option A: Full fin on trailing edge (Render_Part=1)
 
-**Critical loading:** Aerodynamic forces act normal to the fin planform
-(from angle of attack or wind gusts). This bending loads the fin in the
-span-wise direction, meaning tensile and compressive stresses act
-**across layer boundaries** — the weakest direction for FDM prints.
+The original orientation. Each printed layer forms one airfoil
+cross-section slice. Layer lines run chord-wise (LE to TE).
 
-This is the expected failure mode: layer delamination at the root under
-bending, not in-plane fracture.
+**Critical bending axis:** Span-wise bending loads stress **across layer
+boundaries** — the weakest direction for FDM prints. Relevant strength:
+**35 MPa** (cross-layer, Bambu PC).
+
+**Advantage:** Smooth airfoil surfaces straight off the printer (hundreds
+of layers define each cross-section).
+
+### Option B: Split at 60% chord, each half on cut face (Render_Part=2/3)
+
+The fin is cut along the 60% chord rod channel line. Each half prints
+standing on the cut face. Layers stack chord-wise.
+
+**Critical bending axis:** Span-wise bending loads stress **along layers**
+— the strong direction. Relevant strength: **60 MPa** (along-layer,
+Bambu PC).
+
+**Assembly:** The 2mm carbon rod at 60% chord sits in half-round channels
+on each cut face, providing self-centering alignment. Epoxy the joint.
+The 25% chord rod remains fully enclosed inside the forward (LE) half.
+
+**Advantage:** 1.7× higher effective strength in the bending direction.
+**Tradeoff:** Two prints per fin, bonding step, seam at 60% chord.
 
 ## Flight Conditions
 
-Estimated for Peregrine on AeroTech J420R motor:
+### Velocity Scenarios
 
-| Parameter | Value |
-|---|---|
-| Peak velocity | ~250 m/s (Mach 0.73) |
-| Air density (sea level) | 1.225 kg/m³ |
-| Dynamic pressure q | 38,281 Pa (38.3 kPa) |
+Two velocity cases are analyzed:
 
-### Angle of Attack Cases
+| Scenario | Motor | Peak velocity | Mach | Dynamic pressure q |
+|---|---|---|---|---|
+| **Current: J420R** | AeroTech J420R (ORK L2 sim) | 187.6 m/s | 0.55 | 21,556 Pa |
+| **Future: larger motor** | Higher-impulse J or K class | 250 m/s | 0.74 | 38,281 Pa |
 
-Effective angle of attack from wind gusts, launch rod whip, or
-asymmetric thrust. 5° is normal flight, 10° is a strong gust, 15° is
-extreme.
+The J420R values come from the PeregrineL2.ork OpenRocket simulation.
+The 250 m/s case covers potential future flights with faster motors.
+
+### Aerodynamic Loads
 
 Normal force coefficient per fin (thin airfoil theory with finite AR
 correction):
 
     CN_alpha = 2π / (1 + 2/AR) = 2π / (1 + 2/0.81) = 1.808 /rad
-
-| AoA | CN | Force/fin | Root moment | Root stress |
-|---|---|---|---|---|
-| 5° | 0.158 | 140 N (14.3 kg) | 7,688 N·mm | 10.6 MPa |
-| 10° | 0.316 | 281 N (28.6 kg) | 15,375 N·mm | 21.3 MPa |
-| 15° | 0.473 | 421 N (42.9 kg) | 23,063 N·mm | 31.9 MPa |
 
 Root bending moment uses center of pressure at 40% span (appropriate
 for tapered planform):
@@ -82,6 +88,22 @@ for tapered planform):
 Root bending stress:
 
     σ = M × (thickness/2) / I_root
+
+#### J420R (187.6 m/s)
+
+| AoA | CN | Force/fin | Root moment | Root stress |
+|---|---|---|---|---|
+| 5° | 0.158 | 79 N (8.1 kg) | 4,329 N·mm | 6.0 MPa |
+| 10° | 0.316 | 158 N (16.1 kg) | 8,658 N·mm | 12.0 MPa |
+| 15° | 0.473 | 237 N (24.2 kg) | 12,987 N·mm | 18.0 MPa |
+
+#### Future larger motor (250 m/s)
+
+| AoA | CN | Force/fin | Root moment | Root stress |
+|---|---|---|---|---|
+| 5° | 0.158 | 140 N (14.3 kg) | 7,688 N·mm | 10.6 MPa |
+| 10° | 0.316 | 281 N (28.6 kg) | 15,375 N·mm | 21.3 MPa |
+| 15° | 0.473 | 421 N (42.9 kg) | 23,063 N·mm | 31.9 MPa |
 
 ## Material Properties — Bambu PC
 
@@ -99,33 +121,42 @@ with enclosed chamber printing at appropriate temperatures (nozzle
 cross-layer strength to 20–25 MPa. Good drying and high chamber
 temperature are essential.
 
-**For comparison — other filaments across layers:**
-
-| Material | Across-layer tensile | Notes |
-|---|---|---|
-| PLA | ~25 MPa | Brittle, poor layer adhesion |
-| PETG | ~30 MPa | Better adhesion than PLA |
-| ASA | ~28 MPa | Moderate |
-| PC (Bambu) | ~35 MPa | Good adhesion, tough |
-
-## Safety Factors — Baseline (No Rods)
+## Safety Factors
 
 Design safety factor target: ≥2.0 for hobby rocketry.
 
-Using across-layer strength of 35 MPa for Bambu PC:
+### Option A: Full fin, standing on trailing edge (cross-layer: 35 MPa)
 
-| AoA | Stress | Safety Factor | Assessment |
-|---|---|---|---|
-| 5° | 10.6 MPa | 3.29 | Good |
-| 10° | 21.3 MPa | 1.65 | **Below target** |
-| 15° | 31.9 MPa | 1.10 | Inadequate |
+| AoA | J420R (187.6 m/s) | 250 m/s |
+|---|---|---|
+| 5° | **5.84** Excellent | **3.29** Good |
+| 10° | **2.92** Good | **1.65** Below target |
+| 15° | **1.95** Marginal | **1.10** Inadequate |
 
-**Conclusion:** With the increased span (137mm vs original 114mm to match
-ORK planform area), Bambu PC without reinforcement falls below the SF 2.0
-target at 10° AoA. **Carbon rod reinforcement is strongly recommended**
-rather than optional. The increased span raises both the aerodynamic force
-(+38% from larger area and higher AR) and the moment arm (+20%), compounding
-the bending load. PLA is not viable (SF ≈ 1.18 at 10°).
+### Option B: Split-print, halves on cut face (along-layer: 60 MPa)
+
+| AoA | J420R (187.6 m/s) | 250 m/s |
+|---|---|---|
+| 5° | **10.01** Excellent | **5.64** Excellent |
+| 10° | **5.01** Excellent | **2.82** Good |
+| 15° | **3.34** Good | **1.88** Marginal |
+
+### Summary
+
+| Configuration | SF at 10° AoA (J420R) | SF at 10° AoA (250 m/s) |
+|---|---|---|
+| Option A (full, cross-layer) | 2.92 | 1.65 |
+| Option A + carbon rods | 2.92 + delam resistance | 1.68 + delam resistance |
+| Option B (split, along-layer) | 5.01 | 2.82 |
+| PLA, Option A | 2.09 | 1.18 |
+
+**For J420R:** Option A without reinforcement is adequate (SF 2.92).
+Carbon rods add delamination resistance as insurance.
+
+**For 250 m/s motors:** Option A drops below 2.0 at 10° AoA. Either use
+Option B (split-print) for SF 2.82, or add carbon rod reinforcement to
+Option A for delamination resistance (bending SF still 1.65, but failure
+mode changes from brittle delamination to more ductile).
 
 ## Rod Channel Design
 
@@ -150,6 +181,24 @@ Channels are straight (hull of two spheres in OpenSCAD), following the
 local chord fraction from root to tip. The sweep causes both channels to
 angle forward along the span.
 
+**Note:** Early development used 3.2mm channels (visible in git history
+commit c07af82). The design settled on 2.2mm channels for 2mm pultruded
+carbon rods, which are widely available and provide sufficient
+reinforcement for this application.
+
+### Split-Print Joint (Option B)
+
+When printed as two halves, the aft rod channel (60% chord) is bisected
+by the cut plane, creating half-round grooves on each cut face. The
+2mm carbon rod drops into these grooves, acting as:
+
+1. **Alignment dowel** — self-centers the halves during glue-up
+2. **Structural pin** — carries shear across the joint
+3. **Delamination resistance** — continuous span-wise reinforcement
+
+Joint shear capacity: π × 2mm × 158mm × 20 MPa ≈ 19,800 N, versus
+max aero force of 281 N at 10° AoA (250 m/s). Safety factor: 70×.
+
 ### Why Horizontal Spread at Z=0
 
 Placing rods at Z=0 (neutral axis) rather than offset vertically:
@@ -160,7 +209,7 @@ Placing rods at Z=0 (neutral axis) rather than offset vertically:
 2. **Primary purpose is delamination resistance, not bending stiffness.**
    Rods at Z=0 don't add bending stiffness (they're on the neutral axis)
    but they provide continuous span-wise material that crosses every
-   printed layer boundary. This is the critical failure mode.
+   printed layer boundary. This is the critical failure mode for Option A.
 
 3. **Spreading chord-wise covers more of the fin.** Two channels 87mm
    apart at the root mean reinforcement in both the forward and aft
@@ -204,9 +253,9 @@ continuous span-wise fibers bonded with epoxy to the surrounding
 plastic. This changes the failure mode from brittle delamination to a
 more ductile fiber-pullout mechanism.
 
-**Sources:** RC hobby shops, drone suppliers, online (search "2mm carbon
-fiber rod pultruded"). Available in 1m lengths. Cut to ~150mm with a
-rotary tool. Rough surface with 220-grit sandpaper before bonding.
+**Sources:** RC hobby shops, drone suppliers, AliExpress (0.5m × 8pcs
+packs). Cut to ~160–180mm with a rotary tool. Rough surface with
+220-grit sandpaper before bonding.
 
 ### Option 2: Epoxy Fill
 
@@ -230,7 +279,7 @@ passes through. This is standard practice in reinforced 3D-printed
 RC aircraft wings.
 
 **Installation:**
-1. Dry-fit rod to check length (~150mm)
+1. Dry-fit rod to check length (~160–180mm depending on channel)
 2. Mix slow-cure epoxy (30-minute pot life recommended)
 3. Coat rod with epoxy
 4. Slide into channel from tab face
@@ -239,31 +288,17 @@ RC aircraft wings.
 
 ### Option 4: Leave Empty
 
-With the enlarged span, baseline SF = 1.65 at 10° AoA — below the 2.0
-target. **Leaving channels empty is no longer recommended.** At minimum,
-fill with epoxy. Carbon rods + epoxy is preferred.
+For J420R flights (187.6 m/s), Option A baseline SF = 2.92 at 10° AoA —
+adequate without reinforcement. The channels remain as insurance.
 
-## Summary
-
-| Configuration | Root I (mm⁴) | SF at 10° AoA | Recommendation |
-|---|---|---|---|
-| Bambu PC, no channels | 2,295 | 1.65 | Below target — reinforce |
-| Bambu PC, empty channels | 2,291 | 1.64 | Below target — reinforce |
-| Bambu PC + 2mm carbon rods | 2,351 | 1.68 (+ delam resistance) | **Minimum recommended** |
-| Bambu PC + epoxy fill | 2,309 | 1.65 (+ delam resistance) | Marginal alternative |
-| PLA, no channels | 2,295 | 1.18 | **Not viable** |
-
-The rod channels add delamination resistance with negligible weight or
-structural penalty when empty. With the enlarged span, **carbon rod
-reinforcement is strongly recommended** — the baseline SF of 1.65 at 10°
-AoA is below the 2.0 hobby rocketry target. Consider increasing fin
-thickness (6.35 → 8 mm) or using higher-strength filament if a SF ≥ 2.0
-without reinforcement is required.
+For faster motors (250+ m/s), **leaving channels empty is not
+recommended** in Option A (SF 1.65). Use Option B (split-print) or
+reinforce with carbon rods.
 
 ## Assumptions and Limitations
 
 1. **Thin airfoil theory** used for CN_alpha — valid for this subsonic regime
-   (Mach 0.73) and low aspect ratio.
+   (Mach 0.55–0.74) and low aspect ratio.
 2. **Uniform load distribution** assumed for center of pressure at 40% span.
    Real distribution is more complex but conservative for root moment.
 3. **Cross-layer strength of 35 MPa** assumes good print conditions (dry
@@ -276,3 +311,5 @@ without reinforcement is required.
    strength roughly proportionally.
 6. **NACA section properties** approximated with empirical coefficients
    (I = 0.036 × c × t³). Exact integration gives similar values.
+7. **Split-print joint** analysis assumes proper epoxy bonding of cut
+   faces and rod. Poor bonding would negate the orientation advantage.
