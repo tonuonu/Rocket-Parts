@@ -11,7 +11,7 @@
 
 The Peregrine L3 is a single-stage, dual-deploy high-power rocket designed for
 Tripoli Level 3 certification. It uses a BT137 (5.38") body tube with a 75mm
-motor mount, composite fins over 3D-printed cores, and a split-print fin can
+motor mount, 4 composite fins over 3D-printed cores, and a split-print fin can
 with fiberglass overwrap.
 
 The design reuses the proven PeregrineFin planform (NACA 0012 trapezoidal) from
@@ -74,7 +74,7 @@ Alternative motors (same case): M1500G-PS (Mojave Green, 5220 N·s).
 
 Length-to-diameter ratio: 12.4:1
 
-### 4.3 Fin Can — PeregrineFinCan75.scad v0.2.0
+### 4.3 Fin Can — PeregrineFinCan75.scad v0.3.0
 
 Split-print design for Bambu P1S (250mm max with AMS).
 
@@ -84,11 +84,11 @@ Split-print design for Bambu P1S (250mm max with AMS).
 | MMT bore | 76.0 mm |
 | Annular gap | ~27 mm |
 | Body length | 310 mm |
-| Fin slots | 3× 8.0mm W × 240mm L |
+| Fin slots | 4× 8.0mm W × 240mm L |
 | Centering rings | 4× 5mm thick |
 | Retainer thread | 3¼"/3⅜" 8 TPI |
-| Coupler | 35mm long, #8 screws |
-| Split joint | Interlocking step + 3× 4mm alignment pins |
+| Coupler | 35mm long, 8× #8 screws |
+| Split joint | Interlocking step + 4× 4mm alignment pins |
 | Lower half | ~171 mm |
 | Upper half | ~155 mm |
 
@@ -106,7 +106,7 @@ Same planform as L2 PeregrineFin v0.7.0. Composite construction.
 
 | Parameter | Value |
 |---|---|
-| Count | 3 |
+| Count | 4 |
 | Root chord | 249 mm |
 | Tip chord | 90 mm |
 | Exposed span | 137 mm |
@@ -134,22 +134,22 @@ spanning full length from tab to tip. Channels are 4.2mm diameter.
 
 | Component | Mass (g) | Notes |
 |---|---|---|
-| Fin can (printed + overwrap) | 1300 | PPS/Nylon + GF fabric |
-| Fins 3× (core + CF cloth) | 600 | 200g each |
+| Fin can (printed + overwrap) | 1350 | PPS/Nylon + GF fabric (4 fin slots) |
+| Fins 4× (core + CF cloth) | 800 | 200g each |
 | Main body tube | 325 | BT137 Blue Tube, 500mm |
 | Drogue body tube | 227 | BT137 Blue Tube, 350mm |
 | Nose cone | 500 | FG or 3D printed + FG |
-| Nose ballast | 300-500 | Lead shot for CG adjustment |
+| Nose ballast | 200-400 | Lead shot for CG adjustment |
 | Electronics bay | 700 | Dual altimeters + batteries |
 | Recovery system | 600 | Main + drogue + cord + hardware |
 | Misc hardware | 350 | Rail buttons, screws, epoxy |
-| **Dry mass** | **~4900-5100** | |
+| **Dry mass** | **~5050-5250** | |
 | Motor (loaded) | 4637 | M1297W-PS |
-| **Loaded mass** | **~9500-9700** | |
+| **Loaded mass** | **~9700-9900** | |
 
-**10 kg launch site limit: PASS** with ~300-500g margin.
+**10 kg launch site limit: PASS** with ~100-300g margin.
 
-Margin can be traded for additional nose ballast to tune stability.
+Margin is tighter with 4 fins + ballast. Exact tuning from ORK simulation.
 
 ## 6. Performance Estimates
 
@@ -162,7 +162,7 @@ is required before finalizing the design or submitting to TAPs.
 | Max velocity | 250-350 m/s | Mach 0.74-1.03 (see §6.1) |
 | Max dynamic pressure | 40,000-75,000 Pa | |
 | Altitude | 1500-3000 m | 5,000-10,000 ft |
-| Stability | 0.8-1.5 cal | Needs nose ballast tuning |
+| Stability | 0.9-1.4 cal | 4 fins + 200-400g nose ballast |
 
 ### 6.1 Velocity Note
 
@@ -179,12 +179,19 @@ achieve 250-350 m/s. The discrepancy is due to:
 
 ### 6.2 Stability Note
 
-The motor is 49% of loaded mass, concentrated at the aft end. This requires
-significant nose ballast (300-500g) to achieve the required 1.5+ caliber
-stability margin. The exact amount must be determined from ORK simulation.
+The motor is 48% of loaded mass, concentrated at the aft end. This requires
+nose ballast (200-400g) to achieve the required 1.5+ caliber stability margin.
+The exact amount must be determined from ORK simulation.
 
-This is normal for L3 rockets on minimum-M motors where the motor hardware
-dominates the mass budget.
+The design uses 4 fins instead of 3 to improve stability at equal mass.
+Barrowman analysis shows 4 fins moves CP ~53mm further aft compared to 3 fins,
+reducing ballast needs by ~200g. At 9.5 kg loaded, 3 fins cannot reach 1.5
+calibers within the 10 kg launch site limit; 4 fins can. Flutter speed is
+unchanged (same span per fin). The trade-off is ~5% more total drag, which
+is acceptable.
+
+This ballast requirement is normal for L3 rockets on minimum-M motors where
+the motor hardware dominates the mass budget.
 
 ## 7. Structural Analysis
 
@@ -221,7 +228,7 @@ The split-print fin can is not the primary structure after assembly. The
 fiberglass overwrap + epoxied fins create a composite shell that carries
 flight loads. The printed halves serve as mandrel/core.
 
-The fin tab epoxy joint (240mm × ~20mm × 8mm, 3 fins) provides massive
+The fin tab epoxy joint (240mm × ~20mm × 8mm, 4 fins) provides massive
 shear area for fin-to-body attachment.
 
 ## 8. Recovery
@@ -311,7 +318,7 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 
 | File | Description | Version |
 |---|---|---|
-| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.2.0 |
+| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.3.0 |
 | PeregrineFin75.scad | Fin core for BT137/75mm | v0.1.0 |
 | (TBD) PeregrineNose75.scad | Nose cone for BT137 | — |
 | (TBD) PeregrineEbay75.scad | Electronics bay for BT137 | — |

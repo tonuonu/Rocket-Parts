@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.2.0  2/12/2026
+// Revision: 0.3.0  2/12/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -50,6 +50,12 @@
 //                     4 centering rings (was 3).
 //                     Fin tab extended to 240mm (was 190mm).
 //                     Designed for GF fabric overwrap assembly.
+// 0.3.0  2/12/2026   Changed to 4 fins (was 3).
+//                     4 alignment pins (was 3).
+//                     8 coupler screws (was 6).
+//                     Cord slot angle 45° (was 60°).
+//                     Rationale: better stability at equal mass,
+//                     same flutter speed, stronger fin-body joint.
 //
 // ***********************************
 
@@ -71,7 +77,7 @@ MMT_ID = 74;              // motor mount tube ID
 Motor_L = 602.5;          // AeroTech 75/5120 case length
 
 // Fins (same planform as PeregrineFin.scad v0.7.0)
-Fin_Count = 3;
+Fin_Count = 4;
 Fin_Thickness = 7.5;      // 6.35mm printed core + 2×0.5mm composite overlay
 Fin_Slot_Clearance = 0.5; // total extra width in slot
 Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
@@ -107,11 +113,11 @@ Wall = 2.4;               // 6 perimeters at 0.4mm
 Coupler_OD = Body_ID - 0.6;  // snug fit inside body tube
 Coupler_Len = 35;         // overlap length
 Coupler_Wall = 2.4;
-nCoupler_Screws = 6;      // retention screws
+nCoupler_Screws = 8;      // 2 per fin quadrant
 Coupler_Screw_d = 4.2;    // #8 screw clearance
 
 // Shock cord channel
-Cord_Slot_a = 60;         // midway between fins
+Cord_Slot_a = 45;         // midway between fins (360/4/2)
 Cord_Pass_H = 16;         // ribbon passage height in ribs
 
 // Centering rings
@@ -132,7 +138,7 @@ Joint_Step_D = 2;         // radial depth of step (inward from OD)
 Joint_Clearance = 0.3;    // fit clearance on step
 
 // Alignment pin holes (for carbon rod alignment pins)
-nAlign_Pins = 3;          // between fins
+nAlign_Pins = 4;          // between fins (one per quadrant)
 Align_Pin_d = 4.2;        // 4mm carbon rod + 0.2mm clearance
 Align_Pin_Depth = 10;     // depth into each half
 
@@ -167,7 +173,7 @@ Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
 
-echo(str("=== PeregrineFinCan75 v0.2.0 ==="));
+echo(str("=== PeregrineFinCan75 v0.3.0 ==="));
 echo(str("Total height: ", Total_H, "mm (split print required)"));
 echo(str("Split at Z=", Split_Z, "mm"));
 echo(str("Lower half: ", Lower_H, "mm"));
@@ -192,7 +198,7 @@ assert(Slot_End <= CR_Positions[3], str("FIN SLOT EXTENDS PAST FORWARD CR: slot 
 
 // ========== RENDER ==========
 
-Render_Part = 0;
+Render_Part = 1;
 // 0 = Assembly preview (full, with split line shown)
 // 1 = Lower half for printing (retainer + lower body)
 // 2 = Upper half for printing (upper body + coupler)

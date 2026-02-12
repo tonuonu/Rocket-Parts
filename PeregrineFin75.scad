@@ -47,7 +47,7 @@
 $fn=$preview? 36:90;
 
 // ========== FIN CAN PARAMETERS ==========
-// Must match PeregrineFinCan75.scad v0.2.0
+// Must match PeregrineFinCan75.scad v0.3.0
 
 Body_OD = 140.1;          // BT137 body tube outer diameter
 MMT_OD = 76.0;            // 75mm motor mount bore
