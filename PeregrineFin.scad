@@ -3,7 +3,7 @@
 // Filename: PeregrineFin.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.6.0  2/12/2026
+// Revision: 0.7.0  2/12/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -11,8 +11,12 @@
 // Subsonic trapezoidal fin for Peregrine fin can.
 // NACA 0012 symmetric airfoil cross-section.
 //
-// Printed standing on trailing edge so each layer is
-// an airfoil cross-section — smooth surfaces off printer.
+// Two print modes:
+//   Render 1: Full fin standing on trailing edge (layers = airfoil slices,
+//             bending stress across layers, 35 MPa cross-layer).
+//   Render 2/3: Split at 60% chord rod. Each half stands on cut face
+//             (layers stack chord-wise, bending stress along layers,
+//             60 MPa along-layer). Rod self-centers halves during glue-up.
 //
 // Mounted orientation:
 //   X = chord (LE=0, TE=chord)
@@ -31,6 +35,9 @@
 //                    For optional 2mm carbon rods or epoxy fill.
 // 0.6.0  2/12/2026  Span 114→137mm to match ORK planform area (23130mm²)
 //                    for equivalent CP contribution. Fits P1S (diag 294mm).
+// 0.7.0  2/12/2026  Split-print option: cut at 60% chord rod, each half
+//                    prints standing on cut face for along-layer bending
+//                    strength (60 vs 35 MPa). Rod provides alignment.
 //
 // ***********************************
 
@@ -72,18 +79,45 @@ Rod_Chan_Aft = 0.60;        // aft channel at 60% local chord
 // ========== RENDER ==========
 
 Render_Part = 0;
-// 0 = Fin as mounted
-// 1 = Print orientation
+// 0 = Fin as mounted (full)
+// 1 = Print: full fin on trailing edge (original orientation)
+// 2 = Print: forward half (LE side) on cut face
+// 3 = Print: aft half (TE side) on cut face
 
 if (Render_Part == 0) PeregrineFin();
-if (Render_Part == 1) PrintLayout();
+if (Render_Part == 1) PrintLayoutFull();
+if (Render_Part == 2) PrintLayoutFwd();
+if (Render_Part == 3) PrintLayoutAft();
 
-module PrintLayout(){
+module PrintLayoutFull(){
 	// Stand on trailing edge, rotated diagonally on plate
 	Diag_Angle = atan((Tab_H + Span) / Root_L);
 	rotate([0, 0, Diag_Angle])
 		rotate([0, 90, 0])
 			PeregrineFin();
+}
+
+// Cut line angle from Y axis (due to sweep)
+Cut_Angle = atan2(
+	(Sweep + Rod_Chan_Aft * Tip_L) - (Rod_Chan_Aft * Root_L),
+	Span + Tab_H);
+
+module PrintLayoutFwd(){
+	// Forward (LE) half standing on cut face
+	// 1. Align cut line with Y axis
+	// 2. Rotate so cut face is on bed (Z=0)
+	rotate([0, 0, -Cut_Angle])
+		rotate([0, -90, 0])
+			translate([-Rod_Chan_Aft * Root_L, 0, 0])
+				FinForwardHalf();
+}
+
+module PrintLayoutAft(){
+	// Aft (TE) half standing on cut face
+	rotate([0, 0, -Cut_Angle])
+		rotate([0, 90, 0])
+			translate([-Rod_Chan_Aft * Root_L, 0, 0])
+				FinAftHalf();
 }
 
 // ========== FIN ==========
@@ -180,9 +214,60 @@ module NACA_Profile(chord, max_t){
 	polygon(concat(pts_upper, pts_lower));
 }
 
+// ========== SPLIT HALVES ==========
+
+// Cut plane follows 60% local chord line (the aft rod axis)
+// from root to tip, extruded through full thickness.
+// Intersection with each side yields two halves with
+// half-round rod channel exposed at cut face.
+
+module CutVolumeFwd(){
+	// Volume forward of (LE-side of) the 60% chord line
+	x_root = Rod_Chan_Aft * Root_L;
+	x_tip = Sweep + Rod_Chan_Aft * Tip_L;
+	big = 500;
+
+	linear_extrude(height=big, center=true)
+		polygon([
+			[-big, -Tab_H - 1],
+			[x_root, -Tab_H - 1],
+			[x_tip, Span + 1],
+			[-big, Span + 1]
+		]);
+}
+
+module CutVolumeAft(){
+	// Volume aft of (TE-side of) the 60% chord line
+	x_root = Rod_Chan_Aft * Root_L;
+	x_tip = Sweep + Rod_Chan_Aft * Tip_L;
+	big = 500;
+
+	linear_extrude(height=big, center=true)
+		polygon([
+			[x_root, -Tab_H - 1],
+			[big, -Tab_H - 1],
+			[big, Span + 1],
+			[x_tip, Span + 1]
+		]);
+}
+
+module FinForwardHalf(){
+	intersection(){
+		PeregrineFin();
+		CutVolumeFwd();
+	}
+}
+
+module FinAftHalf(){
+	intersection(){
+		PeregrineFin();
+		CutVolumeAft();
+	}
+}
+
 // ========== INFO ==========
 
-echo(str("Peregrine Fin v0.6.0"));
+echo(str("Peregrine Fin v0.7.0"));
 echo(str("Rod channels: 2× ", Rod_Chan_D, "mm dia at ", Rod_Chan_Fwd*100, "% and ", Rod_Chan_Aft*100, "% chord, Z=0"));
 echo(str("Root=", Root_L, "mm, Tip=", Tip_L, "mm, Span=", Span, "mm"));
 echo(str("Tab=", Tab_L, "x", Tab_H, "mm"));
@@ -191,3 +276,8 @@ echo(str("Sweep=", Sweep, "mm"));
 Diag = sqrt(Root_L*Root_L + (Tab_H+Span)*(Tab_H+Span));
 echo(str("Print diagonal=", round(Diag*10)/10, "mm — Fits P1S: ",
 	Diag <= 362 ? "YES" : "NO"));
+echo(str("Split print: cut at ", Rod_Chan_Aft*100, "% chord"));
+echo(str("  Fwd half (LE): root=", Rod_Chan_Aft*Root_L, "mm, tip=",
+	Rod_Chan_Aft*Tip_L, "mm"));
+echo(str("  Aft half (TE): root=", (1-Rod_Chan_Aft)*Root_L, "mm, tip=",
+	(1-Rod_Chan_Aft)*Tip_L, "mm"));
