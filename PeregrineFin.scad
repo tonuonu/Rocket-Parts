@@ -3,7 +3,7 @@
 // Filename: PeregrineFin.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.5.0  2/12/2026
+// Revision: 0.6.0  2/12/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -26,9 +26,11 @@
 // 0.4.0  2/9/2026   Post-test-print: Body_OD=101.5, shorter tab
 //                    (slot stops 10mm from MMT), tab shifted 5mm
 //                    from trailing edge (unprintable thin section).
-// 0.5.0  2/12/2026  Add 2× 2.2mm rod channels at 25% and 60% chord,
+// 0.5.0  2/12/2026  Add 2× 2.2mm rod channels at 25% and 60% chord.
 //                    centered (Z=0), 100mm apart at root, 36mm at tip.
 //                    For optional 2mm carbon rods or epoxy fill.
+// 0.6.0  2/12/2026  Span 114→137mm to match ORK planform area (23130mm²)
+//                    for equivalent CP contribution. Fits P1S (diag 294mm).
 //
 // ***********************************
 
@@ -54,7 +56,7 @@ Tab_L = Fin_Slot_L;
 // Planform
 Root_L = 249;              // original Peregrine root chord
 Tip_L = 90;               // tip chord
-Span = 114;               // original Peregrine span
+Span = 137;               // enlarged from 114 to match ORK planform area
 Sweep = 120;              // gentle LE sweep
 
 // NACA airfoil resolution
@@ -180,7 +182,7 @@ module NACA_Profile(chord, max_t){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin v0.5.0"));
+echo(str("Peregrine Fin v0.6.0"));
 echo(str("Rod channels: 2× ", Rod_Chan_D, "mm dia at ", Rod_Chan_Fwd*100, "% and ", Rod_Chan_Aft*100, "% chord, Z=0"));
 echo(str("Root=", Root_L, "mm, Tip=", Tip_L, "mm, Span=", Span, "mm"));
 echo(str("Tab=", Tab_L, "x", Tab_H, "mm"));
