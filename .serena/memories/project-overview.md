@@ -47,9 +47,22 @@ Primarily designed for Aerotech RMS (Reloadable Motor System):
 
 ## Custom/Tõnu Files
 
+### Fins
+- PeregrineFin.scad - Trapezoidal NACA 0012 fin for Peregrine (v0.7.0: Span=137mm, 2×2.2mm rod channels at 25%/60% chord, planform ~23,222mm²)
+- PeregrineFin-StructuralAnalysis.md - Structural analysis (SF 1.65 at 10° AoA, carbon rod reinforcement required)
+
+### Fin Cans
+- PeregrineFinCan.scad - 3-fin can for L2 (BT98/4"), 3 fins at 0°/120°/240°, tubes at 60°/180°/300°, cord passage 21×10mm at 0° fwd ring offset 8mm
+- PeregrineFinCan75.scad - 4-fin can for L3 (BT137/5.5"), split-print design, 4 fins
+
+### Other Peregrine Parts
 - PeregrineEjection.scad - Active bayonet ejection for Apogee Peregrine
 - PeregrineNoseCone.scad - Nose cone for Peregrine (Bambu P1S compatible)
 - PeregrineEjection.3mf / PeregrineNoseCone.3mf / PeregrineEjectioncoupler.3mf
+
+### Documentation
+- L2-PrintSettings.md - PC filament print settings (70% infill, no composite overwrap)
+- L3-Design.md - Complete L3 design document (M1297W motor, 4 fins, CF cloth required)
 
 ## Units
 
