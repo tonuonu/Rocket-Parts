@@ -302,8 +302,8 @@ module FinCan(){
 		// Cord route: retainer eyebolt → up through annular gap
 		//   (via ribbon passages in ribs) → through this hole
 		//   → coupler interior → body tube.
-		rotate([0, 0, 20]){  // 20° — clear of tube at 60° (7.8° gap)
-			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 6;  // 6mm toward MMT
+		rotate([0, 0, 38]){  // 38° — solid CR between web (30°) and tube (60°)
+			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;  // centered in annular gap
 			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
 			Cord_Hole_L = 14;     // radial
 			// Cut through forward CR and coupler transition ring
