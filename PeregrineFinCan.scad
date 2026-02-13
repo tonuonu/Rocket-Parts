@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.9.0  2/13/2026
+// Revision: 1.0.0  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -59,8 +59,10 @@
 //                    - Slots/ribs extended to forward CR
 //                    - 6 triangular gussets behind coupler screws
 // 0.9.0  2/13/2026  Removed redundant cord passage through forward CR.
-//                    Lightening hole + vertical tube at 60° already
-//                    provides cord routing.
+// 1.0.0  2/13/2026  Cord passage moved to coupler transition ring.
+//                    Round hole at 60° connects to vertical tube
+//                    interior (17mm), which routes through all CRs.
+//                    Old hole was on the CR where the tube blocked it.
 //
 // ***********************************
 
@@ -295,9 +297,18 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord passage: removed in v0.9.0. The lightening hole + vertical
-		// tube at 60° (between fins 0 and 1) already provides shock cord
-		// routing through all CRs. Dedicated hole was redundant.
+		// Cord passage: hole through coupler transition ring at 60°.
+		// Connects to the vertical tube interior below (17mm ID),
+		// which passes through all CRs. Cord route:
+		//   retainer area → tube interior → this hole → coupler → body tube
+		rotate([0, 0, Cord_Slot_a]){
+			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
+			Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
+			Tube_Wall = 0.8;
+			Cord_Hole_D = Hole_D - Tube_Wall*2;  // match tube interior
+			translate([R_Mid, 0, Coupler_Z - Overlap])
+				cylinder(d=Cord_Hole_D, h=Wall + 2*Overlap);
+		}
 
 		// Thread lead-in chamfer at aft end (Z=0)
 		translate([0, 0, -Overlap])
@@ -491,7 +502,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.9.0"));
+echo(str("Peregrine Fin Can v1.0.0"));
 echo(str("Screw/gusset angle offset: 0 (at 0/60/120/180/240/300)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
