@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.3.0  2/12/2026
+// Revision: 0.4.0  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -56,6 +56,9 @@
 //                     Cord slot angle 45° (was 60°).
 //                     Rationale: better stability at equal mass,
 //                     same flutter speed, stronger fin-body joint.
+// 0.4.0  2/13/2026   Cut fin slots through split joint step rings.
+//                     Male step (lower) and female recess (upper)
+//                     were continuous, blocking fin insertion.
 //
 // ***********************************
 
@@ -173,7 +176,7 @@ Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
 
-echo(str("=== PeregrineFinCan75 v0.3.0 ==="));
+echo(str("=== PeregrineFinCan75 v0.4.0 ==="));
 echo(str("Total height: ", Total_H, "mm (split print required)"));
 echo(str("Split at Z=", Split_Z, "mm"));
 echo(str("Lower half: ", Lower_H, "mm"));
@@ -249,6 +252,13 @@ module LowerHalf(){
 			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
 				translate([Align_Pin_R, 0, Split_Z + Joint_Step_H - Align_Pin_Depth])
 					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
+
+		// Fin slots through male step ring (so fins can span both halves)
+		for (i=[0:Fin_Count-1])
+			rotate([0, 0, i * Fin_Angle])
+				translate([Slot_Inner_R, -Fin_Slot_W/2, Split_Z - 1])
+					cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W,
+						  Joint_Step_H + 2]);
 	}
 }
 
@@ -290,6 +300,13 @@ module UpperHalf(){
 			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
 				translate([Align_Pin_R, 0, Split_Z - 1])
 					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
+
+		// Fin slots through female recess zone (so fins can span both halves)
+		for (i=[0:Fin_Count-1])
+			rotate([0, 0, i * Fin_Angle])
+				translate([Slot_Inner_R, -Fin_Slot_W/2, Split_Z - Joint_Step_H - 1])
+					cube([Body_OD/2 - Slot_Inner_R + 2, Fin_Slot_W,
+						  Joint_Step_H + 2]);
 	}
 }
 
