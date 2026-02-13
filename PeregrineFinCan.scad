@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 0.8.0  2/10/2026
+// Revision: 0.9.0  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -58,6 +58,9 @@
 //                    - Ribbon passages through support webs
 //                    - Slots/ribs extended to forward CR
 //                    - 6 triangular gussets behind coupler screws
+// 0.9.0  2/13/2026  Removed redundant cord passage through forward CR.
+//                    Lightening hole + vertical tube at 60° already
+//                    provides cord routing.
 //
 // ***********************************
 
@@ -292,15 +295,9 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord passage: round hole through forward CR into coupler base
-		// Same position/size as lightening hole at 60° but extends upward
-		rotate([0, 0, Cord_Slot_a]){
-			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
-			Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
-			translate([R_Mid, 0,
-				CR_Positions[len(CR_Positions)-1] - Overlap])
-				cylinder(d=Hole_D, h=CR_Thickness + Wall + 2*Overlap);
-		}
+		// Cord passage: removed in v0.9.0. The lightening hole + vertical
+		// tube at 60° (between fins 0 and 1) already provides shock cord
+		// routing through all CRs. Dedicated hole was redundant.
 
 		// Thread lead-in chamfer at aft end (Z=0)
 		translate([0, 0, -Overlap])
@@ -494,7 +491,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v0.8.0"));
+echo(str("Peregrine Fin Can v0.9.0"));
 echo(str("Screw/gusset angle offset: 0 (at 0/60/120/180/240/300)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
