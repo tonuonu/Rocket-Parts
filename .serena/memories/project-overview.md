@@ -47,6 +47,8 @@ Primarily designed for Aerotech RMS (Reloadable Motor System):
 
 ## Custom/Tõnu Files
 
+- PeregrineFin.scad - Trapezoidal NACA 0012 fin for Peregrine (v0.6.0: Span=137mm, rod channels, planform ~23,222mm²)
+- PeregrineFin-StructuralAnalysis.md - Structural analysis (SF 1.65 at 10° AoA with Span=137mm — carbon rod reinforcement strongly recommended)
 - PeregrineEjection.scad - Active bayonet ejection for Apogee Peregrine
 - PeregrineNoseCone.scad - Nose cone for Peregrine (Bambu P1S compatible)
 - PeregrineEjection.3mf / PeregrineNoseCone.3mf / PeregrineEjectioncoupler.3mf
