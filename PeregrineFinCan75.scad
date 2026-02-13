@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.4.0  2/13/2026
+// Revision: 0.5.0  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -59,6 +59,9 @@
 // 0.4.0  2/13/2026   Cut fin slots through split joint step rings.
 //                     Male step (lower) and female recess (upper)
 //                     were continuous, blocking fin insertion.
+// 0.5.0  2/13/2026   Removed cord passage through forward CR.
+//                     With 4 fins, lightening holes + tubes provide
+//                     cord routing. Hole was redundant.
 //
 // ***********************************
 
@@ -176,7 +179,7 @@ Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
 
-echo(str("=== PeregrineFinCan75 v0.4.0 ==="));
+echo(str("=== PeregrineFinCan75 v0.5.0 ==="));
 echo(str("Total height: ", Total_H, "mm (split print required)"));
 echo(str("Split at Z=", Split_Z, "mm"));
 echo(str("Lower half: ", Lower_H, "mm"));
@@ -201,7 +204,7 @@ assert(Slot_End <= CR_Positions[3], str("FIN SLOT EXTENDS PAST FORWARD CR: slot 
 
 // ========== RENDER ==========
 
-Render_Part = 1;
+Render_Part = 2;
 // 0 = Assembly preview (full, with split line shown)
 // 1 = Lower half for printing (retainer + lower body)
 // 2 = Upper half for printing (upper body + coupler)
@@ -438,14 +441,10 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord passage through forward CR
-		rotate([0, 0, Cord_Slot_a]){
-			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
-			Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
-			translate([R_Mid, 0,
-				CR_Positions[len(CR_Positions)-1] - Overlap])
-				cylinder(d=Hole_D, h=CR_Thickness + Wall + 2*Overlap);
-		}
+		// Cord passage: removed in v0.5.0. With 4 fins, the lightening
+		// holes and vertical tubes already provide cord routing paths.
+		// The tube at 45° (between fins 0 and 1) remains open through
+		// all lower CRs for shock cord passage.
 
 		// Thread lead-in chamfer at aft end
 		translate([0, 0, -Overlap])
