@@ -233,7 +233,73 @@ flight loads. The printed halves serve as mandrel/core.
 The fin tab epoxy joint (240mm × ~20mm × 8mm, 4 fins) provides massive
 shear area for fin-to-body attachment.
 
-## 8. Recovery
+## 8. 3D Print Settings
+
+### 8.1 Fin Can — PeregrineFinCan75 (2 halves)
+
+| Parameter | Value | Notes |
+|---|---|---|
+| Material | PC (Polycarbonate) | Tg ~147°C, high strength, near motor |
+| Wall loops | 6 | 2.4mm total wall (matches design Wall=2.4) |
+| Top/bottom layers | 5 | Solid faces on centering rings |
+| Layer height | 0.20 mm | Good resolution for thread + step joint |
+| Infill pattern | Gyroid | Isotropic, good shear, epoxy wicking |
+| Infill density | 50% | Slot edges carry fin shear loads |
+| Supports | None | Designed for supportless printing |
+| Print orientation | Split face down | Each half on flat split face |
+| Bed adhesion | Brim 5mm | Large footprint, PC tends to warp |
+| Chamber | Enclosed, heated | Required for PC |
+
+**Rationale:** PC chosen over PPS for fin can because it's easier to
+print reliably on the P1S and has excellent mechanical strength. The GF
+overwrap adds thermal insulation between the motor and printed core.
+The retainer thread at the aft end sees the most heat — PC at 147°C Tg
+is adequate since the aft closure and motor casing provide thermal mass.
+
+**Note:** Most of the fin can geometry (outer wall, MMT tube, ribs,
+support webs) is thin wall — effectively solid from wall loops alone.
+Infill only affects the thicker sections: centering rings, retainer
+thread zone, coupler gussets, and rib flanks around fin slots.
+
+### 8.2 Fins — PeregrineFin75 (4×, split print per fin = 8 halves)
+
+| Parameter | Value | Notes |
+|---|---|---|
+| Material | PPS (Polyphenylene Sulfide) | Best dimensional stability, epoxy bond |
+| Wall loops | 4 | ~1.6mm — airfoil shape accuracy |
+| Top/bottom layers | 4 | Solid skin for CF layup surface |
+| Layer height | 0.16 mm | Fine resolution for airfoil contour |
+| Infill pattern | Gyroid | Isotropic shear web between CF skins |
+| Infill density | 40% | Core is shear web only, CF carries bending |
+| Supports | None | Each half prints on cut face |
+| Print orientation | Cut face down | Along-layer bending strength |
+| Bed adhesion | Brim 3mm | |
+
+**Rationale:** PPS chosen for fins because it has excellent dimensional
+stability (low moisture absorption vs nylon), very high Tg (~280°C),
+and bonds well with epoxy for the CF cloth overlay. The printed core
+serves as a mandrel for layup and as the shear web in the final
+sandwich beam — it doesn't carry primary bending loads (CF skin does).
+
+**Alternative:** Nylon PA6-CF is acceptable if PPS is unavailable. It
+has good toughness and epoxy adhesion but absorbs moisture, which can
+cause dimensional changes after printing. Dry storage required.
+
+### 8.3 Material Summary
+
+| Part | Material | Reason |
+|---|---|---|
+| Fin can halves | PC | Strength, heat resistance, printability |
+| Fin cores | PPS | Dimensional stability, epoxy bond, Tg |
+| Motor retainer cup | PC | Heat exposure from aft closure |
+
+**Materials NOT suitable:**
+- PLA: Tg ~60°C, will deform near motor
+- PETG: Tg ~80°C, marginal for motor proximity
+- ABS/ASA: Tg ~100°C, borderline; poor epoxy bond
+- TPU: Too flexible for structural parts
+
+## 9. Recovery
 
 ### 8.1 Dual Deploy (Tripoli L3 requirement)
 
@@ -268,7 +334,7 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 - Length: 25-30 ft (body length × 5)
 - Attachment: forged eye bolts through bulkheads
 
-## 9. Materials List
+## 10. Materials List
 
 ### 9.1 Available (already ordered/owned)
 
@@ -291,16 +357,17 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 - 2× altimeters + batteries + switches
 - Recovery hardware (chutes, cord, quick links)
 - Rail buttons (1515 rail)
-- PPS or Nylon filament for fin can and fin cores
+- PC filament for fin can (Polycarbonate)
+- PPS filament for fin cores (Polyphenylene Sulfide)
 - Fiberglass cloth for fin can overwrap
 - Lead shot for nose ballast
 
-## 10. Build Sequence
+## 11. Build Sequence
 
 1. **Design validation:** OpenRocket simulation, TAP review
 2. **Sub-scale test:** L2 Peregrine serves as ~72% scale model (101.5/140.1)
-3. **Print fin can halves** (PPS/Nylon, split print)
-4. **Print fin cores** (PPS/Nylon, split print per fin)
+3. **Print fin can halves** (PC, split print)
+4. **Print fin cores** (PPS, split print per fin)
 5. **Assemble fin cores:** Glue halves with 4mm rod alignment
 6. **CF overlay on fins:** Wet layup CF cloth + epoxy, vacuum bag cure
 7. **Assemble fin can:** Insert alignment pins, slide fins through slots,
@@ -316,17 +383,17 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 16. **TAP inspection:** Pre-flight review by both TAP members
 17. **Flight**
 
-## 11. CAD Files
+## 12. CAD Files
 
 | File | Description | Version |
 |---|---|---|
-| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.3.0 |
+| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.4.0 |
 | PeregrineFin75.scad | Fin core for BT137/75mm | v0.2.0 |
 | (TBD) PeregrineNose75.scad | Nose cone for BT137 | — |
 | (TBD) PeregrineEbay75.scad | Electronics bay for BT137 | — |
 | (TBD) PeregrineL3.ork | OpenRocket simulation | — |
 
-## 12. Open Items
+## 13. Open Items
 
 - [ ] OpenRocket simulation for accurate velocity, altitude, stability
 - [ ] Exact nose ballast amount (from ORK CG/CP analysis)
@@ -339,7 +406,7 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 - [ ] Sub-scale test flight analysis (L2 Peregrine as proxy)
 - [ ] Cost estimate
 
-## 13. References
+## 14. References
 
 - Tripoli L3 Certification Requirements
 - AeroTech RMS-75/5120 motor data (ThrustCurve.org)
