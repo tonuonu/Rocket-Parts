@@ -242,7 +242,7 @@ shear area for fin-to-body attachment.
 | Material | PC (Polycarbonate) | Tg ~147°C, high strength, near motor |
 | Wall loops | 6 | 2.4mm total wall (matches design Wall=2.4) |
 | Top/bottom layers | 5 | Solid faces on centering rings |
-| Layer height | 0.20 mm | Good resolution for thread + step joint |
+| Layer height | 0.12 mm | High Quality profile, thread + step joint |
 | Infill pattern | Gyroid | Isotropic, good shear, epoxy wicking |
 | Infill density | 50% | Slot edges carry fin shear loads |
 | Supports | None | Designed for supportless printing |
@@ -268,7 +268,7 @@ thread zone, coupler gussets, and rib flanks around fin slots.
 | Material | PPS (Polyphenylene Sulfide) | Best dimensional stability, epoxy bond |
 | Wall loops | 4 | ~1.6mm — airfoil shape accuracy |
 | Top/bottom layers | 4 | Solid skin for CF layup surface |
-| Layer height | 0.16 mm | Fine resolution for airfoil contour |
+| Layer height | 0.12 mm | High Quality profile, airfoil contour |
 | Infill pattern | Gyroid | Isotropic shear web between CF skins |
 | Infill density | 40% | Core is shear web only, CF carries bending |
 | Supports | None | Each half prints on cut face |
@@ -280,6 +280,15 @@ stability (low moisture absorption vs nylon), very high Tg (~280°C),
 and bonds well with epoxy for the CF cloth overlay. The printed core
 serves as a mandrel for layup and as the shear web in the final
 sandwich beam — it doesn't carry primary bending loads (CF skin does).
+
+**Composite layup sequence:**
+1. CF cloth + epoxy wet layup on individual fins (flutter stiffness)
+2. Assemble fins into fin can, epoxy bond
+3. GF fabric + epoxy overwrap over entire fin can + fin root fillets
+   (structural shell, fin-to-body bonding, impact protection)
+
+Both layers are required — CF for flutter resistance on fins, GF for
+the overall fin can composite shell.
 
 **Alternative:** Nylon PA6-CF is acceptable if PPS is unavailable. It
 has good toughness and epoxy adhesion but absorbs moisture, which can
