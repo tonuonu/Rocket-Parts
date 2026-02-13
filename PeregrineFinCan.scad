@@ -303,7 +303,7 @@ module FinCan(){
 		//   (via ribbon passages in ribs) → through this hole
 		//   → coupler interior → body tube.
 		rotate([0, 0, Fin_Angle/4]){  // 30° — midway between fin and tube
-			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 3;  // 3mm toward MMT
+			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 6;  // 6mm toward MMT
 			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
 			Cord_Hole_L = 14;     // radial
 			// Cut through forward CR and coupler transition ring
