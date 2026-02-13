@@ -4,6 +4,29 @@
 
 Complete rockets follow the pattern `Rocket<diameter>[variant].scad` and import component libraries.
 
+## Peregrine (Tõnu's Custom - L2/L3 Certification)
+
+### Peregrine L2 (98mm / 4")
+Apogee Peregrine kit, modified with custom 3D-printed components. 98mm body, 54mm motor mount.
+- PeregrineFin.scad - NACA 0012 trapezoidal fins (v0.7.0, 3 fins)
+- PeregrineFinCan.scad - Integrated fin can (3 fins at 0°/120°/240°)
+- PeregrineNoseCone.scad - Custom nose cone
+- PeregrineEjection.scad - Active bayonet ejection
+- Target motors: H128W, I327DM, J420R
+- J420R sim: Vmax=187.6 m/s, Mach 0.55, Alt=1035m
+- Body tube fiberglass overwrap: R&G 201115 sleeve (100mm)
+- Print material: Bambu PC, 70% infill (no composite overwrap on printed parts)
+
+### Peregrine L3 (137mm / 5.5")
+Upscaled Peregrine for L3 certification. BT137 body, 75mm motor mount.
+- PeregrineFin75.scad - Composite fin core (same planform as L2)
+- PeregrineFinCan75.scad - Split-print fin can (4 fins, changed from 3)
+- L3-Design.md - Complete design document
+- Motor: AeroTech M1297W-PS (5417 N·s)
+- Total length: ~1741mm, loaded mass ~9.7-9.9 kg
+- Fin construction: 7mm PPS core + 2×0.75mm CF cloth = 8.5mm total
+- Branch: feature/fincan75, PR #7, Issue #6
+
 ## 38mm Rockets
 
 ### RocketU38.scad
@@ -155,3 +178,4 @@ Parts for LOC Graduator kit. MG90S servo, MR84-2RS bearings, STB mechanism.
 ## Altimeter
 
 Designs use Mission Control V3 altimeter. Bays sized accordingly.
+CATS Vega flight computer also being integrated for Peregrine (100×33mm board, 3×M3 mounting).
