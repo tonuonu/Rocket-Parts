@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan.scad
 // by Tõnu Samuel
 // Created: 2/8/2026
-// Revision: 1.0.2  2/13/2026
+// Revision: 1.0.3  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -60,8 +60,8 @@
 //                    - 6 triangular gussets behind coupler screws
 // 0.9.0  2/13/2026  Removed redundant cord passage through forward CR.
 // 1.0.0  2/13/2026  Cord passage: rectangular hole (18×14mm) through
-//                    top surface (fwd CR + coupler base) at 60°.
-//                    Connects tube interior to coupler interior above.
+//                    top surface at 30° (solid CR, no tube below).
+//                    Connects annular gap to coupler interior.
 //
 // ***********************************
 
@@ -296,15 +296,16 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord passage: rectangular hole through top surface at 60°.
-		// Cuts through coupler transition ring + forward CR, connecting
-		// the vertical tube interior to the coupler interior above.
-		// Cord route: retainer eyebolt → up through tube interior at 60°
-		//   → through this hole → coupler interior → body tube.
-		rotate([0, 0, Cord_Slot_a]){
+		// Cord passage: rectangular hole through top surface at 30°.
+		// Position is on solid CR area between fin rib (0°) and
+		// lightening hole tube (60°) — no tube blocking from below.
+		// Cord route: retainer eyebolt → up through annular gap
+		//   (via ribbon passages in ribs) → through this hole
+		//   → coupler interior → body tube.
+		rotate([0, 0, Fin_Angle/4]){  // 30° — midway between fin and tube
 			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
 			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
-			Cord_Hole_L = 14;     // radial (tube interior ~17mm, with margin)
+			Cord_Hole_L = 14;     // radial
 			// Cut through forward CR and coupler transition ring
 			translate([R_Mid - Cord_Hole_L/2, -Cord_Hole_W/2,
 				CR_Positions[len(CR_Positions)-1] - Overlap])
@@ -504,7 +505,7 @@ module Coupler(){
 
 // ========== INFO ==========
 
-echo(str("Peregrine Fin Can v1.0.2"));
+echo(str("Peregrine Fin Can v1.0.3"));
 echo(str("Screw/gusset angle offset: 0 (at 0/60/120/180/240/300)"));
 echo(str("Total print height: ", Total_H, "mm"));
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
