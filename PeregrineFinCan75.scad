@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.5.0  2/13/2026
+// Revision: 0.6.0  2/13/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -59,9 +59,10 @@
 // 0.4.0  2/13/2026   Cut fin slots through split joint step rings.
 //                     Male step (lower) and female recess (upper)
 //                     were continuous, blocking fin insertion.
-// 0.5.0  2/13/2026   Removed cord passage through forward CR.
-//                     With 4 fins, lightening holes + tubes provide
-//                     cord routing. Hole was redundant.
+// 0.5.0  2/13/2026   Removed old cord passage (tube blocked it).
+// 0.6.0  2/13/2026   Cord passage: rectangular hole (18×14mm) through
+//                     top surface at 22.5° (solid CR, no tube below).
+//                     6mm radial offset toward MMT.
 //
 // ***********************************
 
@@ -179,7 +180,7 @@ Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
 
-echo(str("=== PeregrineFinCan75 v0.5.0 ==="));
+echo(str("=== PeregrineFinCan75 v0.6.0 ==="));
 echo(str("Total height: ", Total_H, "mm (split print required)"));
 echo(str("Split at Z=", Split_Z, "mm"));
 echo(str("Lower half: ", Lower_H, "mm"));
@@ -441,10 +442,22 @@ module FinCan(){
 					rotate([90, 0, 0])
 						cylinder(d=Coupler_Screw_d, h=Body_OD, center=true);
 
-		// Cord passage: removed in v0.5.0. With 4 fins, the lightening
-		// holes and vertical tubes already provide cord routing paths.
-		// The tube at 45° (between fins 0 and 1) remains open through
-		// all lower CRs for shock cord passage.
+		// Cord passage: rectangular hole through top surface at 22.5°.
+		// Position is on solid CR area between fin rib (0°) and
+		// lightening hole tube (45°) — no tube blocking from below.
+		// Cord route: retainer eyebolt → up through annular gap
+		//   (via ribbon passages in ribs) → through this hole
+		//   → coupler interior → body tube.
+		rotate([0, 0, Fin_Angle/4]){  // 22.5° — midway between fin and tube
+			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 6;  // 6mm toward MMT
+			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
+			Cord_Hole_L = 14;     // radial
+			// Cut through forward CR and coupler transition ring
+			translate([R_Mid - Cord_Hole_L/2, -Cord_Hole_W/2,
+				CR_Positions[len(CR_Positions)-1] - Overlap])
+				cube([Cord_Hole_L, Cord_Hole_W,
+					CR_Thickness + Wall + 2*Overlap]);
+		}
 
 		// Thread lead-in chamfer at aft end
 		translate([0, 0, -Overlap])
