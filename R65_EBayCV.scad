@@ -3,7 +3,7 @@
 // Filename: R65_EBayCV.scad
 // by Tõnu Samuel
 // Created: 3/4/2026
-// Revision: 0.1.0  3/4/2026
+// Revision: 0.2.0  3/4/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -47,8 +47,9 @@
 // 2S LiPo battery (≤55 x 30 x 15mm recommended)
 //
 //  ***** History *****
-function R65_EBayCV_Rev()="R65_EBayCV 0.1.0";
+function R65_EBayCV_Rev()="R65_EBayCV 0.2.0";
 echo(R65_EBayCV_Rev());
+// 0.2.0  3/4/2026   Fix non-manifold gussets, export Sled_Len as function.
 // 0.1.0  3/4/2026   First code.
 //
 // ***********************************
@@ -64,6 +65,9 @@ use<ThreadLib.scad>
 
 CV_Overlap=0.05;
 CV_IDXtra=0.2;
+
+// Exported as function so use<> can access it
+function CV_EBay_Len() = 120;
 
 // ========== CATS Vega Board ==========
 CV_Board_W=33;        // width (X direction, across tube)
@@ -99,13 +103,15 @@ CV_Wall_t=1.2;        // outer wall ring thickness
 CV_Standoff_h=5;      // PCB standoff height from mounting wall
 CV_Standoff_d=7;      // standoff outer diameter
 CV_MountWall_t=3;     // vertical mounting wall thickness
-CV_Sled_Len=120;      // total sled height
+CV_Sled_Len=CV_EBay_Len();
 
 // ========== Calculated ==========
 // Board bottom Z relative to Z=0 (base plate bottom)
 CV_Board_Z=CV_Boss_t+4;  // above threaded bosses + clearance
 // Board center Z
 CV_BoardCenter_Z=CV_Board_Z+CV_Board_L/2;
+// Trim cylinder for coupler interior
+CV_Trim_d=LOC65Coupler_OD-CV_Wall_t*2-1;
 
 // ========== Modules ==========
 
@@ -135,11 +141,12 @@ module CV_BoardHolePattern(){
 	translate([0, 0, +CV_HoleSpace_Z/2]) children();                   // top-center
 } // CV_BoardHolePattern
 
-module CV_BasePlate(OD=LOC65Coupler_OD, IsTop=false, ShockCord_a=-30){
-	// Circular base plate disc with M6 center thread and M5 outer bolt bosses.
-	// IsTop=false: lower plate
-	// IsTop=true: upper plate (no motor tube clearance)
+module CV_TrimCoupler(OD=LOC65Coupler_OD){
+	// Cylinder used to trim parts to fit inside coupler
+	cylinder(d=OD-CV_Wall_t*2-1, h=CV_Sled_Len+1, $fn=$preview? 90:180);
+} // CV_TrimCoupler
 
+module CV_BasePlate(OD=LOC65Coupler_OD, IsTop=false, ShockCord_a=-30){
 	nOuterBolts=2;
 	Outer_BC_d=OD-11;
 
@@ -153,21 +160,17 @@ module CV_BasePlate(OD=LOC65Coupler_OD, IsTop=false, ShockCord_a=-30){
 					cylinder(d=CV_M5_d+5, h=CV_Boss_t, $fn=$preview? 36:90);
 		} // union
 
-		// M6 center threaded hole
 		translate([0,0,-CV_Overlap])
 			CV_M6_ThreadedHole(depth=CV_Boss_t+CV_Overlap*2);
 
-		// M5 outer threaded holes
 		for (j=[0:nOuterBolts-1]) rotate([0,0,360/nOuterBolts*j])
 			translate([0, Outer_BC_d/2, -CV_Overlap])
 				CV_M5_ThreadedHole(depth=CV_Boss_t+CV_Overlap*2);
 
-		// Shock cord hole
 		rotate([0,0,ShockCord_a])
 			translate([0, OD/2-CV_Wall_t-4, -CV_Overlap])
 				cylinder(d=6, h=CV_Plate_t+CV_Overlap*2, $fn=24);
 
-		// Motor tube clearance (bottom plate only)
 		if (!IsTop)
 			translate([0,0,-CV_Overlap])
 				cylinder(d=33, h=CV_Plate_t+CV_Overlap*2, $fn=36);
@@ -175,24 +178,17 @@ module CV_BasePlate(OD=LOC65Coupler_OD, IsTop=false, ShockCord_a=-30){
 } // CV_BasePlate
 
 module CV_MountingWall(OD=LOC65Coupler_OD){
-	// Vertical wall rising from base plate.
-	// Board screws to +Y face via standoffs.
-	// Wall centered at Y=0, board width in X, trimmed to fit coupler.
-
-	Wall_H=CV_Board_L+20;  // 10mm margin above and below board
-	Wall_W=CV_Board_W+6;   // 3mm wider each side than board
+	Wall_H=CV_Board_L+20;
+	Wall_W=CV_Board_W+6;
 
 	intersection(){
 		translate([-Wall_W/2, -CV_MountWall_t/2, CV_Board_Z-10])
 			cube([Wall_W, CV_MountWall_t, Wall_H]);
-		cylinder(d=OD-CV_Wall_t*2-1, h=CV_Sled_Len, $fn=$preview? 90:180);
+		CV_TrimCoupler(OD=OD);
 	} // intersection
 } // CV_MountingWall
 
 module CV_Standoffs(){
-	// 3x M3 standoffs projecting from +Y face of mounting wall.
-	// Board screws onto these with M3 bolts from +Y side.
-
 	translate([0, CV_MountWall_t/2, CV_BoardCenter_Z])
 		CV_BoardHolePattern()
 			rotate([-90,0,0])
@@ -205,69 +201,63 @@ module CV_Standoffs(){
 
 module CV_GussetRibs(OD=LOC65Coupler_OD){
 	// Triangular gussets connecting mounting wall base to base plate.
+	// Built on +X side, mirrored for -X side.
 
-	Gusset_H=30;
-	Gusset_t=2;
+	Gusset_H=25;     // height of tall edge (at wall)
+	Gusset_W=15;     // width of base edge (along base plate)
+	Gusset_t=2;      // thickness in Y
 
-	for (x_off=[-1,1]){
-		intersection(){
-			translate([x_off*(CV_Board_W/2+1), -Gusset_t/2, CV_Plate_t-CV_Overlap])
-				linear_extrude(height=Gusset_H)
-					square([abs(x_off)*Gusset_H*0.5, Gusset_t]);
-			// Triangle shape via hull
-			hull(){
-				translate([x_off*(CV_Board_W/2+1), -Gusset_t/2, CV_Plate_t])
-					cube([1, Gusset_t, Gusset_H]);
-				translate([x_off*(CV_Board_W/2+1+Gusset_H*0.5), -Gusset_t/2, CV_Plate_t])
-					cube([1, Gusset_t, 1]);
-			} // hull
-			// Trim to coupler
-			cylinder(d=OD-CV_Wall_t*2-1, h=CV_Sled_Len, $fn=$preview? 90:180);
-		} // intersection
+	for (m=[0,1]){
+		mirror([m,0,0])
+			intersection(){
+				translate([0, -Gusset_t/2, 0])
+					hull(){
+						// Tall thin edge at wall
+						translate([CV_Board_W/2+1, 0, CV_Plate_t])
+							cube([0.1, Gusset_t, Gusset_H]);
+						// Short wide base on base plate
+						translate([CV_Board_W/2+1, 0, CV_Plate_t])
+							cube([Gusset_W, Gusset_t, 0.1]);
+					} // hull
+				CV_TrimCoupler(OD=OD);
+			} // intersection
 	} // for
 } // CV_GussetRibs
 
+
 module CV_BattPocket(){
 	// 2S LiPo battery pocket — battery stands vertically.
-	// Dimensions: Batt_X (width) x Batt_Y (depth) x Batt_Z (height)
 	// Origin at pocket corner (0,0,0), pocket opens at +Z.
 
 	Outer_X=CV_Batt_X+CV_Batt_Wall*2;
 	Outer_Y=CV_Batt_Y+CV_Batt_Wall*2;
-	Outer_Z=CV_Batt_Z+CV_Batt_Wall;  // closed bottom, open top
+	Outer_Z=CV_Batt_Z+CV_Batt_Wall;
 
 	difference(){
 		cube([Outer_X, Outer_Y, Outer_Z]);
 
-		// Inner pocket
+		// Inner pocket (open top)
 		translate([CV_Batt_Wall, CV_Batt_Wall, CV_Batt_Wall])
 			cube([CV_Batt_X, CV_Batt_Y, CV_Batt_Z+CV_Overlap]);
 
 		// Wire exit slot (top, one end)
-		translate([Outer_X-CV_Batt_Wall-8, CV_Batt_Wall+2,
-				   Outer_Z-8])
+		translate([Outer_X-CV_Batt_Wall-8, CV_Batt_Wall+2, Outer_Z-8])
 			cube([10, CV_Batt_Y-4, 10]);
 
 		// Thumb push-out hole (bottom)
 		translate([Outer_X/2, Outer_Y/2, -CV_Overlap])
 			cylinder(d=12, h=CV_Batt_Wall+CV_Overlap*2, $fn=24);
 
-		// Side lightening cuts (reduce plastic, easier insertion)
-		translate([CV_Batt_Wall+5, -CV_Overlap, CV_Batt_Wall+8])
-			cube([CV_Batt_X-10, CV_Batt_Wall+CV_Overlap*2, CV_Batt_Z-15]);
-		translate([CV_Batt_Wall+5, Outer_Y-CV_Batt_Wall-CV_Overlap, CV_Batt_Wall+8])
-			cube([CV_Batt_X-10, CV_Batt_Wall+CV_Overlap*2, CV_Batt_Z-15]);
+		// Side windows (finger access, reduce mass)
+		// Inset fully inside walls — no edge overlap
+		translate([CV_Batt_Wall+5, 0, CV_Batt_Wall+8])
+			cube([CV_Batt_X-10, CV_Batt_Wall, CV_Batt_Z-15]);
+		translate([CV_Batt_Wall+5, Outer_Y-CV_Batt_Wall, CV_Batt_Wall+8])
+			cube([CV_Batt_X-10, CV_Batt_Wall, CV_Batt_Z-15]);
 	} // difference
 } // CV_BattPocket
 
 module R65_EBayCV_Sled(OD=LOC65Coupler_OD){
-	// Complete e-bay sled assembly.
-	// Print upright, base plate on bed.
-	//
-	// Layout: mounting wall at Y=0.
-	//   Board on +Y side (components face +Y toward tube wall).
-	//   Battery on -Y side (stands vertically).
-
 	Batt_Outer_X=CV_Batt_X+CV_Batt_Wall*2;
 	Batt_Outer_Y=CV_Batt_Y+CV_Batt_Wall*2;
 
@@ -277,34 +267,29 @@ module R65_EBayCV_Sled(OD=LOC65Coupler_OD){
 	// Vertical mounting wall
 	CV_MountingWall(OD=OD);
 
-	// Gusset ribs (stiffen wall-to-plate joint)
+	// Gusset ribs
 	CV_GussetRibs(OD=OD);
 
-	// CATS Vega standoffs on +Y face of wall
+	// CATS Vega standoffs
 	CV_Standoffs();
 
 	// Battery pocket on -Y side, standing vertically
-	// Centered in X, offset in -Y from mounting wall back face
 	intersection(){
 		translate([-Batt_Outer_X/2,
 				   -CV_MountWall_t/2-2-Batt_Outer_Y,
 				   CV_Board_Z])
 			CV_BattPocket();
-		// Trim to coupler interior
-		cylinder(d=OD-CV_Wall_t*2-1, h=CV_Sled_Len, $fn=$preview? 90:180);
+		CV_TrimCoupler(OD=OD);
 	} // intersection
 } // R65_EBayCV_Sled
 
 module R65_EBayCV_TopPlate(OD=LOC65Coupler_OD, ShockCord_a=-30){
-	// Top plate — closes e-bay from above.
 	CV_BasePlate(OD=OD, IsTop=true, ShockCord_a=ShockCord_a);
 } // R65_EBayCV_TopPlate
 
 // ========== Preview ==========
-// Uncomment one:
 // R65_EBayCV_Sled();
 // R65_EBayCV_TopPlate();
-//
-// Full assembly preview:
+// Full assembly:
 // R65_EBayCV_Sled();
 // translate([0,0,CV_Sled_Len+5]) rotate([180,0,0]) R65_EBayCV_TopPlate();

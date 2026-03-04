@@ -107,7 +107,7 @@
 //  ***** for Viewing *****
 //
 // ShowRocket(ShowInternals=false);
-// ShowRocket(ShowInternals=true);
+ ShowRocket(ShowInternals=true);
 //
 // *********************************************
 
@@ -158,7 +158,7 @@ CV_M5_d=5.0;       // outer plate bolts
 CV_M5_p=0.8;
 
 // ========== E-Bay dimensions ==========
-EBay_Len=CV_Sled_Len;  // 120mm, from R65_EBayCV.scad
+EBay_Len=CV_EBay_Len();  // 120mm, exported function from R65_EBayCV.scad
 
 // ========== 3D Printed Body Tube ==========
 // LOC65 dimensions: OD=67.6, ID=65, wall=1.3mm
