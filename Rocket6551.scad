@@ -107,7 +107,7 @@
 //  ***** for Viewing *****
 //
 // ShowRocket(ShowInternals=false);
- ShowRocket(ShowInternals=true);
+// ShowRocket(ShowInternals=true);
 //
 // *********************************************
 
@@ -123,6 +123,7 @@ use<FinCan2Lib.scad>         echo(FinCan2LibRev());
 use<NoseCone.scad>           echo(NoseConeRev());
 use<RailGuide.scad>          echo(RailGuideRev());
 use<R65Lib.scad>			 echo(R65Lib_Rev());
+include<Stager75BBLib.scad>  echo(Stager75BBLib_Rev());
 use<R65_EBayCV.scad>		 echo(R65_EBayCV_Rev());
 
 // Also included
@@ -306,6 +307,21 @@ Vinyl_d=0.3;
 TailCone_Len=30;
 TailConeExtra_OD=2;
 
+Thread1024_d=0.190*25.4;
+Thread25020_d=0.250*25.4;
+CRBBm_Activator_Bolt_a=[22.5,162,253,323];
+
+// constants for 65mm stager (from Stager75BBLib, overrides for our tube size)
+Default_nLocks=2;
+nLocks=Default_nLocks;
+DefaultBody_OD=LOC65Body_OD;
+DefaultBody_ID=LOC65Body_ID;
+DefaultMotorTube_OD=ULine38Body_OD;
+DefaultServo=ServoMG90S_ID;
+MainBearing_OD=Bearing6705_OD;
+MainBearing_ID=Bearing6705_ID;
+MainBearing_T=Bearing6705_T;
+
 // Spacer between MotorTubeTopper and E-Bay bottom plate
 // Adjusted for taller CATS Vega e-bay (was 25mm with Blue Raven 84mm e-bay)
 Spacer_Len=25;  // tune to pull nosecone tight against body tube
@@ -431,7 +447,8 @@ module Fincan(LowerHalfOnly=false, UpperHalfOnly=false, IsSustainer=false){
 	echo(str("Target OD = ", Body_OD+Vinyl_d));
 	
 	difference(){
-		FC2_FinCanLight(Body_OD=OD, Body_ID=Body_ID*CF_Comp, Can_Len=FinCan_Len,
+		union(){
+			FC2_FinCanLight(Body_OD=OD, Body_ID=Body_ID*CF_Comp, Can_Len=FinCan_Len,
 				MotorTube_OD=MotorTube_OD, 
 				nFins=nFins, HasIntegratedCoupler=true, HasFwdCenteringRing=false, Coupler_Len=10, nCouplerBolts=0,
 				HasMotorSleeve=HasMotorSleeve, 
@@ -440,13 +457,23 @@ module Fincan(LowerHalfOnly=false, UpperHalfOnly=false, IsSustainer=false){
 				LowerHalfOnly=LowerHalfOnly, UpperHalfOnly=UpperHalfOnly,
 				Wall_t=Wall_t,
 				AftClosure_OD=0, AftClosure_Len=0, IncludeCenteringRings=false);
+				
+			if (IsSustainer)				
+				difference(){
+					translate([0,0,-Overlap]) Tube(OD=OD, ID=MotorTubeHole_d, Len=FinInset_Len-1, myfn=$preview? 90:myfn);
+						
+					translate([0,0,-4-Overlap]) rotate([0,0,90]) Stager_CupHoles(Tube_OD=OD, nLocks=nLocks, BoltsOn=true, Collar_h=0);
+				} // difference
+			
+		} // union
 
-		// Wire path (metric: 8mm hole)
+		// Wire path
 		if (IsSustainer)
-			rotate([0,0,156]) translate([0,OD/2-8,-5]) cylinder(d=8+IDXtra, h=20);
+			rotate([0,0,156]) translate([0,OD/2-8,-5]) cylinder(d=5/16*25.4+IDXtra, h=20);
 		
 	} // difference
 } // Fincan
+
 
 // Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
 
