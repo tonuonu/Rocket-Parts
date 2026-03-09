@@ -16,7 +16,6 @@
 //  Uses one 4323CS spring and petal deployment system (non-pyro).
 //  All metric hardware: M6 center rod, M5 outer bolts, M3 board mount.
 //
-//  Body tube is 3D printed (no commercial tube needed).
 //
 //  Assemble single deploy for flight:
 //		1) Assemble entire ebay from spacer to NoseCone; parachutes, battery, everything.
@@ -97,8 +96,6 @@
 // rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
 // rotate([0,0,90]) RocketFin(HasSpiralVaseRibs=false, PrinterBrim_H=0.6);
 //
-// *** 3D Printed Body Tube (print in sections) ***
-// PrintedBodyTubeSection(Len=BodyTubeSection_Len);
 //
 // *** Rail Buttons ***
 // RailButton(OD=11, Flange_h=2, Slot_w=2.8);  // for 1010 Rail
@@ -107,7 +104,7 @@
 //  ***** for Viewing *****
 //
 // ShowRocket(ShowInternals=false);
-// ShowRocket(ShowInternals=true);
+ ShowRocket(ShowInternals=true);
 //
 // *********************************************
 
@@ -162,12 +159,6 @@ CV_M5_p=0.8;
 EBay_Len=CV_EBay_Len();  // 120mm, exported function from R65_EBayCV.scad
 
 // ========== 3D Printed Body Tube ==========
-// LOC65 dimensions: OD=67.6, ID=65, wall=1.3mm
-// Printed tube wall: 1.8mm (sturdier than cardboard)
-PrintedBody_OD=Body_OD;
-PrintedBody_ID=Body_OD-3.6;  // 1.8mm wall each side = 64.0mm ID
-BodyTubeSection_Len=240;     // max section length for P1S with AMS (250mm)
-BodyTubeJoint_Len=20;        // overlap joint between sections
 
 /*
 // Original nose cone
@@ -225,7 +216,7 @@ MotorBolt_d=CV_M6_d;          // M6 center rod
 MotorBoltPitch=CV_M6_p;
 
 MotorTubeLen=304;
-BodyTubeLen=18*25.4+36;       // 36mm longer for taller e-bay (120 vs 84)
+BodyTubeLen=18*25.4; // uncut estes tube
 
 NC_Len=185;
 NC_Base_L=6;
@@ -262,7 +253,7 @@ MotorBoltPitch=CV_M6_p;
 MotorTubeLen=304;
 BoosterMotorTubeLen=330; // 330 is min for 38/600 case, 380 is min for 38/720 case
 
-BodyTubeLen=764+36; // 36mm longer for taller e-bay
+BodyTubeLen=764; // uncut Loc tube
 BoosterBodyTubeLen=540;
 
 NC_Len=185;
@@ -331,17 +322,8 @@ CRBBm_Activator_Bolt_a=[22.5,162,253,323];
 // ========== Body Tube Printing ==========
 
 // Number of sections needed (auto-calculated)
-nBodySections=ceil(BodyTubeLen/BodyTubeSection_Len);
-echo(str("Body tube: ", nBodySections, " sections of ~", BodyTubeLen/nBodySections, "mm"));
 
-module PrintedBodyTubeSection(Len=BodyTubeSection_Len){
-	// Single body tube section for 3D printing.
-	// Print vertically. Join sections with coupler sleeve or overlap step.
 
-	Tube(OD=PrintedBody_OD, ID=PrintedBody_ID, Len=Len, myfn=$preview? 90:360);
-} // PrintedBodyTubeSection
-
-// PrintedBodyTubeSection();
 
 // ========== Viewing ==========
 
@@ -387,7 +369,7 @@ module ShowRocket(ShowInternals=false, IsSustainer=false){
 		
 	if (!ShowInternals)
 		translate([0,0,BodyTube_Z]) color("LightBlue") 
-			Tube(OD=PrintedBody_OD, ID=PrintedBody_ID, Len=BodyTubeLen-Overlap*2, myfn=$preview? 90:360);
+			Tube(OD=Body_OD, ID=Body_ID, Len=BodyTubeLen-Overlap*2, myfn=$preview? 90:360);
 		
 
 	
