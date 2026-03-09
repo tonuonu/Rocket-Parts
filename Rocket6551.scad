@@ -96,6 +96,9 @@
 // rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
 // rotate([0,0,90]) RocketFin(HasSpiralVaseRibs=false, PrinterBrim_H=0.6);
 //
+// *** Body Tube (print in sections, max 240mm for P1S) ***
+Tube(OD=Body_OD, ID=Body_ID, Len=240, myfn=$preview? 90:360);
+//
 //
 // *** Rail Buttons ***
 // RailButton(OD=11, Flange_h=2, Slot_w=2.8);  // for 1010 Rail
