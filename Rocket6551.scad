@@ -135,7 +135,7 @@ Bolt10Inset=5.5;
 LooseFit=0.8; // add to hole ID
 
 Body_OD=LOC65Body_OD;
-Body_ID=LOC65Body_ID;
+Body_ID=LOC65Coupler_OD+0.8; // 65.6mm, 0.8mm clearance over Coupler_OD for FDM fit
 Coupler_OD=LOC65Coupler_OD;
 Coupler_ID=Coupler_OD-1.8; // thin wall
 
