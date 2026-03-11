@@ -100,7 +100,7 @@
 // Tube(OD=Body_OD, ID=Body_ID, Len=240, myfn=$preview? 90:360);
 //
 // *** Motor Tube (slides through fin can, 240mm for 29/180 case) ***
-// Tube(OD=MotorTube_OD, ID=MotorTube_ID, Len=MotorTubeLen, myfn=$preview? 36:180);
+// (motor tube now integrated into fin can via HasMotorSleeve=true)
 //
 //
 // *** Rail Buttons ***
@@ -423,7 +423,7 @@ module NoseCone(){
 
 module Fincan(LowerHalfOnly=false, UpperHalfOnly=false, IsSustainer=false){
 	Wall_t=FinCanWall_t;
-	HasMotorSleeve=false;
+	HasMotorSleeve=true;
 	TailConeExtra_OD=0;
 		
 	TC_Len=IsSustainer? 0:TailCone_Len;
