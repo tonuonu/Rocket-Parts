@@ -424,7 +424,7 @@ module NoseCone(){
 module Fincan(LowerHalfOnly=false, UpperHalfOnly=false, IsSustainer=false){
 	Wall_t=FinCanWall_t;
 	HasMotorSleeve=true;
-	TailConeExtra_OD=0;
+	TailConeExtra_OD=2; // >0 needed: fixes 0.2mm paper-thin shell at cone base
 		
 	TC_Len=IsSustainer? 0:TailCone_Len;
 	OD=Body_OD*CF_Comp+Vinyl_d;
