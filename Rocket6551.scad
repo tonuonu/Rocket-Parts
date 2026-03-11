@@ -90,14 +90,17 @@
 //
 // *** Motor Mount ***
 // rotate([180,0,0]) R65_MotorTubeTopper(OD=Body_ID, ID=MotorTube_OD, MT_ID=MotorTube_ID-3);
-// R65_MotorNutStop(MT_ID=MotorTube_ID, Hole_d=MotorBolt_d);
+ R65_MotorNutStop(MT_ID=MotorTube_ID, Hole_d=MotorBolt_d);
 //
 // *** Fin Can and Fins ***
 // rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
 // rotate([0,0,90]) RocketFin(HasSpiralVaseRibs=false, PrinterBrim_H=0.6);
 //
 // *** Body Tube (print in sections, max 240mm for P1S) ***
-Tube(OD=Body_OD, ID=Body_ID, Len=240, myfn=$preview? 90:360);
+// Tube(OD=Body_OD, ID=Body_ID, Len=240, myfn=$preview? 90:360);
+//
+// *** Motor Tube (slides through fin can, 240mm for 29/180 case) ***
+// Tube(OD=MotorTube_OD, ID=MotorTube_ID, Len=MotorTubeLen, myfn=$preview? 36:180);
 //
 //
 // *** Rail Buttons ***
@@ -107,7 +110,7 @@ Tube(OD=Body_OD, ID=Body_ID, Len=240, myfn=$preview? 90:360);
 //  ***** for Viewing *****
 //
 // ShowRocket(ShowInternals=false);
- ShowRocket(ShowInternals=true);
+// ShowRocket(ShowInternals=true);
 //
 // *********************************************
 
@@ -187,7 +190,7 @@ MotorTube_ID=LOC29Body_ID;
 MotorBolt_d=CV_M6_d;          // M6 center rod
 MotorBoltPitch=CV_M6_p;
 
-MotorTubeLen=304;
+MotorTubeLen=240; // fits 29/180 case (194mm assembled)
 BodyTubeLen=18*25.4;
 
 NC_Len=155;
@@ -218,7 +221,7 @@ MotorTube_ID=LOC29Body_ID;
 MotorBolt_d=CV_M6_d;          // M6 center rod
 MotorBoltPitch=CV_M6_p;
 
-MotorTubeLen=304;
+MotorTubeLen=240; // fits 29/180 case (194mm assembled)
 BodyTubeLen=18*25.4; // uncut estes tube
 
 NC_Len=185;
@@ -253,7 +256,7 @@ MotorTube_ID=ULine38Body_ID;
 MotorBolt_d=CV_M6_d;          // M6 center rod
 MotorBoltPitch=CV_M6_p;
 
-MotorTubeLen=304;
+MotorTubeLen=240; // fits 29/180 case (194mm assembled)
 BoosterMotorTubeLen=330; // 330 is min for 38/600 case, 380 is min for 38/720 case
 
 BodyTubeLen=764; // uncut Loc tube
