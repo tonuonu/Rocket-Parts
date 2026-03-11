@@ -90,7 +90,7 @@
 //
 // *** Motor Mount ***
 // rotate([180,0,0]) R65_MotorTubeTopper(OD=Body_ID, ID=MotorTube_OD, MT_ID=MotorTube_ID-3);
- R65_MotorNutStop(MT_ID=MotorTube_ID, Hole_d=MotorBolt_d);
+// R65_MotorNutStop(MT_ID=MotorTube_ID, Hole_d=MotorBolt_d);
 //
 // *** Fin Can and Fins ***
 // rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
