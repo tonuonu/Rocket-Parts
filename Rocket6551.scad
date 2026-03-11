@@ -93,7 +93,7 @@
 // R65_MotorNutStop(MT_ID=MotorTube_ID, Hole_d=MotorBolt_d);
 //
 // *** Fin Can and Fins ***
-// rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
+ rotate([180,0,0]) Fincan(LowerHalfOnly=false, UpperHalfOnly=false);
 // rotate([0,0,90]) RocketFin(HasSpiralVaseRibs=false, PrinterBrim_H=0.6);
 //
 // *** Body Tube (print in sections, max 240mm for P1S) ***
@@ -243,7 +243,7 @@ Fin_Chamfer_L=20;
 FinInset_Len=5;
 Fin_TipBase=10;
 FinCan_Len=Fin_Root_L+FinInset_Len*2;
-FinCanWall_t=0.8;
+FinCanWall_t=1.2;
 /**/
 
 /*
