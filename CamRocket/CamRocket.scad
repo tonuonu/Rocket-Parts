@@ -220,30 +220,31 @@ module nosecone() {
 
     difference() {
         union() {
-            // Ogive
-            rotate_extrude($fn=$preview ? 90 : 360)
-                ogive_profile(nc_length, R);
+            // Hollow ogive shell (hollow FIRST, then add boss)
+            difference() {
+                rotate_extrude($fn=$preview ? 90 : 360)
+                    ogive_profile(nc_length, R);
+                rotate_extrude($fn=$preview ? 90 : 360)
+                    offset(-nc_wall)
+                        ogive_profile(nc_length, R);
+            }
 
             // Shoulder
             cylinder(d=body_id - 0.2, h=nc_shoulder);
 
-            // M12 lens boss: solid cylinder at tip for lens thread to cut into.
-            // Boss extends from (nc_length - m12_boss_h) to nc_length.
+            // M12 lens boss: solid cylinder at tip.
+            // Added AFTER hollow so it doesn't get eaten by the interior void.
+            // At z=140, the ogive hollow interior is 70mm+ diameter —
+            // the 18mm boss would vanish if added before hollowing.
             translate([0, 0, nc_length - m12_boss_h])
                 cylinder(d=m12_boss_od, h=m12_boss_h);
         }
-
-        // Hollow inside
-        rotate_extrude($fn=$preview ? 90 : 360)
-            offset(-nc_wall)
-                ogive_profile(nc_length, R);
 
         // Hollow shoulder
         translate([0, 0, -eps])
             cylinder(d=body_id - nc_wall*2 - 0.5, h=nc_shoulder + 5);
 
         // M12 camera lens bore (12mm x 0.5mm thread, forward-looking)
-        // Hole goes all the way through the boss and tip.
         translate([0, 0, nc_length - m12_boss_h - eps])
             cylinder(d=m12_thread_d, h=m12_boss_h + nc_wall + 2*eps);
     }
