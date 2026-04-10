@@ -75,12 +75,16 @@ ebay_bore_body = body_od - 2*ebay_wall;             // 71.0mm (body bore)
 //           See manual Figure 10 (page 19).
 //
 // Mounting hole pattern: 60mm x 27mm (from Figure 10, page 19)
-//   - Two holes at one END of the board, 27mm apart across width
-//   - One hole at the OTHER END, 60mm away along length
-//   (Pair is near pyro end, single near battery/switch end)
+// SOURCE: catsystems/cats-hardware NC drill file (CATS-Vega-Nutzen-RoundHoles.TXT)
+// Tool T11 = 3.2mm NPTH, board-local coords: (25,3), (85,3), (85,30)
 //
-// *** MEASURE YOUR ACTUAL BOARD AND VERIFY THESE POSITIONS ***
-// *** The single hole X offset is estimated — check your board ***
+// L-SHAPED pattern (NOT symmetric triangle):
+//   A and B on SAME long edge, 60mm apart along board length
+//   B and C at SAME end of board, 27mm apart across board width
+//   B is at the corner of the "L"
+//
+// Board local (origin = corner): A=(25,3), B=(85,3), C=(85,30)
+// Board relative (origin = center): A=(-25,-13.5), B=(+35,-13.5), C=(+35,+13.5)
 
 cv_pcb_l = 100;             // board length
 cv_pcb_w = 33;              // board width
@@ -90,15 +94,12 @@ cv_standoff_od = 7;         // standoff outer diameter
 cv_m3_tap = 2.5;            // M3 tap drill (2.5mm)
 
 // Hole positions: origin at board geometric center
-// X = across width (board is 33mm, range ±16.5)
-// Z = along length (board is 100mm, range ±50)
-// In coupler: X maps to coupler X, Z maps to coupler Z
-cv_hole_dx = 27;            // pair: across-width spacing
-cv_hole_dy = 60;            // pair-to-single: along-length spacing
+// [X, Y] where X = across width (33mm), Y = along length (100mm)
+// In coupler: X maps to coupler X, Y maps to coupler Z
 cv_holes = [
-    [-cv_hole_dx/2, -cv_hole_dy/2],  // A: pair, left,  pyro end
-    [ cv_hole_dx/2, -cv_hole_dy/2],  // B: pair, right, pyro end
-    [ 0,             cv_hole_dy/2]    // C: single, centered, battery end
+    [-13.5, -25],   // A: one edge, 25mm from end (far from antenna)
+    [-13.5, +35],   // B: same edge, 85mm from end (near antenna) — 60mm from A
+    [+13.5, +35]    // C: opposite edge, same end as B — 27mm from B
 ];
 
 // SMA antenna connector
