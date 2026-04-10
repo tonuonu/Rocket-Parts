@@ -71,7 +71,7 @@ module fin_can() {
         union() {
             // Shoulder (slides into body tube)
             translate([0, 0, fincan_body_len])
-                cylinder(d=body_id - 0.5, h=fincan_shoulder);
+                cylinder(d=body_id - 0.2, h=fincan_shoulder);
             
             // Main body tube section
             cylinder(d=body_od, h=fincan_body_len);
@@ -144,7 +144,7 @@ module nosecone() {
                 ogive_profile(nc_length, R);
             
             // Shoulder
-            cylinder(d=body_id - 0.5, h=nc_shoulder);
+            cylinder(d=body_id - 0.2, h=nc_shoulder);
         }
         
         // Hollow inside
