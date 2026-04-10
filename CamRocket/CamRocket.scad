@@ -110,12 +110,12 @@ door_w = 36;                // door opening width (> board 33mm)
 door_h = 85;                // door opening height
 door_corner_r = 3;          // rounded corner radius
 door_panel_t = 2.0;         // door panel thickness
-door_sill = 1.5;            // lip/sill width inside frame
+door_sill = 6;                // frame width around door opening
 door_bolt_d = 2.5;          // M2.5 bolt
 door_bolt_tap = 2.0;        // M2.5 tap drill
 door_bolt_boss_od = 6;      // boss around bolt hole
 door_bolt_boss_h = 4;       // boss height (projects inward)
-door_bolt_inset = 5;        // bolt center from door edge
+door_bolt_inset = 3;        // bolt center from panel edge
 
 // M12 camera lens placeholder (future nosecone camera)
 // M12 x 0.5mm thread, 12mm nominal OD
@@ -133,7 +133,7 @@ door_cz = ebay_shoulder_bot + ebay_body_h / 2;
 // Door bolt positions [x, z] relative to door center
 door_bolts = [
     for (sx = [-1, 1], sz = [-1, 1])
-        [sx * (door_w/2 - door_bolt_inset), sz * (door_h/2 - door_bolt_inset)]
+        [sx * (door_w/2 + door_sill - door_bolt_inset), sz * (door_h/2 + door_sill - door_bolt_inset)]
 ];
 
 // ***** EXISTING MODULES (unchanged) *****
