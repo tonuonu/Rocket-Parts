@@ -6,6 +6,7 @@
 // ***********************************
 // 3D printed rocket with CATS Vega e-bay
 // 4 parts: Nosecone, E-bay coupler, Body tube, Fin can
+// + separate door piece for e-bay access
 // Coordinate system: Z=0 at motor nozzle, Z+ toward nose
 // ***********************************
 
@@ -103,9 +104,18 @@ cv_holes = [
 // SMA antenna connector
 sma_hole_d = 6.5;           // SMA bulkhead clearance
 
-// USB access
-usb_slot_w = 14;            // slot width
-usb_slot_h = 8;             // slot height
+// Access door (on -Y side, opposite mounting rail)
+// Replaces USB slot — gives full access to CATS Vega
+door_w = 36;                // door opening width (> board 33mm)
+door_h = 85;                // door opening height
+door_corner_r = 3;          // rounded corner radius
+door_panel_t = 2.0;         // door panel thickness
+door_sill = 1.5;            // lip/sill width inside frame
+door_bolt_d = 2.5;          // M2.5 bolt
+door_bolt_tap = 2.0;        // M2.5 tap drill
+door_bolt_boss_od = 6;      // boss around bolt hole
+door_bolt_boss_h = 4;       // boss height (projects inward)
+door_bolt_inset = 5;        // bolt center from door edge
 
 // M12 camera lens placeholder (future nosecone camera)
 // M12 x 0.5mm thread, 12mm nominal OD
@@ -116,6 +126,15 @@ m12_boss_h = 10;
 
 // ***** Derived dimensions *****
 fincan_body_len = fincan_length - fincan_shoulder;
+
+// Door center Z in coupler local frame
+door_cz = ebay_shoulder_bot + ebay_body_h / 2;
+
+// Door bolt positions [x, z] relative to door center
+door_bolts = [
+    for (sx = [-1, 1], sz = [-1, 1])
+        [sx * (door_w/2 - door_bolt_inset), sz * (door_h/2 - door_bolt_inset)]
+];
 
 // ***** EXISTING MODULES (unchanged) *****
 
@@ -244,12 +263,13 @@ module nosecone() {
 //   z=120..145: Top socket (OD 75.0, bore 71.4) - receives nosecone
 //
 // Internal rail on +Y wall holds CATS Vega via 3 M3 standoffs.
+// Access door on -Y wall for USB, battery, switch access.
 // Open bore allows ejection gas to flow nose-ward.
 
 module ebay_coupler() {
     // Board mounting geometry
     // Board vertical: length along Z, width along X
-    // Component side faces -Y (toward tube center)
+    // Component side faces -Y (toward tube center / door side)
     // Rail on +Y bore wall
     board_z0 = ebay_shoulder_bot + 3;         // board bottom z
     board_cz = board_z0 + cv_pcb_l / 2;      // board center z
@@ -290,6 +310,14 @@ module ebay_coupler() {
                     rotate([-90, 0, 0])
                         cylinder(d=cv_standoff_od, h=cv_standoff_h + rail_t);
             }
+
+            // --- DOOR FRAME BOLT BOSSES (4x, inside coupler wall) ---
+            for (bp = door_bolts) {
+                translate([bp[0], 0, door_cz + bp[1]])
+                    rotate([90, 0, 0])
+                        translate([0, 0, bore_r - door_bolt_boss_h])
+                            cylinder(d=door_bolt_boss_od, h=door_bolt_boss_h + ebay_wall);
+            }
         }
 
         // --- M3 TAP HOLES through standoffs ---
@@ -301,17 +329,25 @@ module ebay_coupler() {
                     cylinder(d=cv_m3_tap, h=cv_standoff_h + rail_t + 2*eps);
         }
 
-        // --- USB ACCESS SLOT ---
-        // Through -Y wall (opposite to rail, accessible from outside).
-        // Adjust usb_z after checking your board's USB port position.
-        // USB-C is typically on one short edge of the board.
-        usb_z = board_cz;
-        translate([-usb_slot_w/2, -body_od/2 - eps, usb_z - usb_slot_h/2])
-            cube([usb_slot_w, body_od/2 - bore_r + ebay_wall + 2*eps, usb_slot_h]);
+        // --- ACCESS DOOR OPENING ---
+        // Large curved opening on -Y side for full CATS Vega access.
+        // Rounded rectangle projected through tube wall.
+        _door_opening();
+
+        // --- DOOR SILL (recessed lip for door panel to sit against) ---
+        // Slightly larger than door opening, slightly shallower
+        _door_sill();
+
+        // --- DOOR BOLT HOLES (M2.5 tap through bosses) ---
+        for (bp = door_bolts) {
+            translate([bp[0], 0, door_cz + bp[1]])
+                rotate([90, 0, 0])
+                    translate([0, 0, bore_r - door_bolt_boss_h - eps])
+                        cylinder(d=door_bolt_tap, h=door_bolt_boss_h + ebay_wall + 2*eps);
+        }
 
         // --- SMA ANTENNA HOLE ---
         // Centered, through top of coupler into nosecone cavity.
-        // Offset slightly in +Y (toward rail) if antenna is on board edge.
         translate([0, 0, ebay_total - 5])
             cylinder(d=sma_hole_d, h=10);
     }
@@ -338,6 +374,85 @@ module ebay_coupler() {
             // Bore: top socket (sized for nosecone shoulder)
             translate([0, 0, ebay_shoulder_bot + ebay_body_h])
                 cylinder(d=body_id, h=ebay_socket_top + eps);
+        }
+    }
+
+    // --- Door opening: rounded rectangle through -Y wall ---
+    module _door_opening() {
+        r = door_corner_r;
+        intersection() {
+            // Rounded rectangle, extruded radially through wall
+            translate([0, 0, door_cz])
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(door_w/2-r), -body_od, sz*(door_h/2-r)])
+                            rotate([-90, 0, 0])
+                                cylinder(r=r, h=body_od);
+                }
+            // Clip to tube wall annulus only
+            difference() {
+                cylinder(d=body_od + 1, h=ebay_total + 2*eps);
+                cylinder(d=ebay_bore_body - 0.1, h=ebay_total + 2*eps);
+            }
+        }
+    }
+
+    // --- Door sill: shallow recess for door panel to sit flush ---
+    module _door_sill() {
+        r = door_corner_r + door_sill;
+        sill_depth = door_panel_t + 0.2;  // door panel + clearance
+        intersection() {
+            translate([0, 0, door_cz])
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(door_w/2+door_sill-r), -body_od, sz*(door_h/2+door_sill-r)])
+                            rotate([-90, 0, 0])
+                                cylinder(r=r, h=body_od);
+                }
+            // Clip to outer sill depth only
+            difference() {
+                cylinder(d=body_od + 1, h=ebay_total + 2*eps);
+                cylinder(d=body_od - 2*sill_depth, h=ebay_total + 2*eps);
+            }
+        }
+    }
+}
+
+// ================================================
+// E-BAY DOOR (separate print)
+// ================================================
+// Curved panel that covers the access opening.
+// Print flat (inside face up) or curved side down.
+// 4x M2.5 clearance holes for bolts.
+
+module ebay_door() {
+    r = door_corner_r + door_sill - 0.3;  // slightly smaller for clearance
+    panel_w = door_w + 2*door_sill - 0.6;
+    panel_h = door_h + 2*door_sill - 0.6;
+
+    difference() {
+        // Curved door panel
+        intersection() {
+            // Rounded rectangle shape
+            translate([0, 0, 0])
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(panel_w/2-r), 0, sz*(panel_h/2-r)])
+                            rotate([-90, 0, 0])
+                                cylinder(r=r, h=body_od/2);
+                }
+            // Curved: shell between OD and OD-panel_t
+            difference() {
+                cylinder(d=body_od - 0.2, h=panel_h + 10, center=true);
+                cylinder(d=body_od - 0.2 - 2*door_panel_t, h=panel_h + 12, center=true);
+            }
+        }
+
+        // 4x M2.5 clearance holes
+        for (bp = door_bolts) {
+            translate([bp[0], -body_od/2, bp[1]])
+                rotate([-90, 0, 0])
+                    cylinder(d=door_bolt_d, h=body_od/2 + 5);
         }
     }
 }
@@ -396,6 +511,11 @@ if ($preview) {
         translate([0, 0, z_ebay])
             ebay_coupler();
 
+    // Door (orange, shown in place)
+    color("Orange", 0.9)
+        translate([0, 0, z_ebay + door_cz])
+            ebay_door();
+
     // CATS Vega ghost (green) inside e-bay
     translate([0, 0, z_ebay]) {
         _bz0 = ebay_shoulder_bot + 3;
@@ -418,3 +538,4 @@ if ($preview) {
 // body_tube();
 // nosecone();
 // ebay_coupler();
+// ebay_door();
