@@ -226,6 +226,11 @@ module nosecone() {
 
             // Shoulder
             cylinder(d=body_id - 0.2, h=nc_shoulder);
+
+            // M12 lens boss: solid cylinder at tip for lens thread to cut into.
+            // Boss extends from (nc_length - m12_boss_h) to nc_length.
+            translate([0, 0, nc_length - m12_boss_h])
+                cylinder(d=m12_boss_od, h=m12_boss_h);
         }
 
         // Hollow inside
@@ -237,11 +242,10 @@ module nosecone() {
         translate([0, 0, -eps])
             cylinder(d=body_id - nc_wall*2 - 0.5, h=nc_shoulder + 5);
 
-        // TODO: M12 camera lens bore at tip (future)
-        // Needs careful placement at ogive apex.
-        // Bore: cylinder(d=m12_thread_d, h=m12_boss_h) at tip
-        // Boss: add solid cylinder at tip before boring
-        // Defer until camera PCB dimensions are confirmed.
+        // M12 camera lens bore (12mm x 0.5mm thread, forward-looking)
+        // Hole goes all the way through the boss and tip.
+        translate([0, 0, nc_length - m12_boss_h - eps])
+            cylinder(d=m12_thread_d, h=m12_boss_h + nc_wall + 2*eps);
     }
 }
 
@@ -539,6 +543,6 @@ if ($preview) {
 // ***** For STL export, uncomment ONE: *****
 // fin_can();
 // body_tube();
-// nosecone();
+ nosecone();
 // ebay_coupler();
 // ebay_door();
