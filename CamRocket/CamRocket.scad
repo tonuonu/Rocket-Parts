@@ -105,9 +105,17 @@ cv_holes = [
 // SMA antenna connector
 sma_hole_d = 6.5;           // SMA bulkhead clearance
 
-// USB access
-usb_slot_w = 14;            // slot width
-usb_slot_h = 8;             // slot height
+// Access door (on -Y side, opposite mounting rail)
+// Frame projects INWARD from bore wall; bolt bosses at frame corners.
+door_w = 36;                // opening width (> board 33mm)
+door_h = 85;                // opening height
+door_r = 3;                 // corner radius
+door_frame_w = 5;           // frame border width around opening
+door_frame_t = 4;           // frame thickness projecting inward from bore
+door_panel_t = 2.0;         // door panel thickness
+door_bolt_d = 2.5;          // M2.5 clearance through door
+door_bolt_tap = 2.0;        // M2.5 tap in frame
+door_cz = ebay_shoulder_bot + ebay_body_h / 2;  // door center Z
 
 // M12 camera lens placeholder (future nosecone camera)
 // M12 x 0.5mm thread, 12mm nominal OD
@@ -248,104 +256,212 @@ module nosecone() {
 // Internal rail on +Y wall holds CATS Vega via 3 M3 standoffs.
 // Open bore allows ejection gas to flow nose-ward.
 
+// ================================================
+// E-BAY COUPLER MODULE
+// ================================================
+// Structure (bottom to top):
+//   z=0..20:  Bottom shoulder (OD 71.0, bore 67.0) - into body tube
+//   z=20..120: Exposed body (OD 75.0, bore 71.0) - houses CATS Vega
+//   z=120..145: Top socket (OD 75.0, bore 71.4) - receives nosecone
+//
+// Internal rail on +Y wall holds CATS Vega via 3 M3 standoffs.
+// Access door on -Y wall with inward-projecting frame + 4 bolt bosses.
+// Open bore allows ejection gas to flow nose-ward.
+
 module ebay_coupler() {
-    // Board mounting geometry
-    // Board vertical: length along Z, width along X
-    // Component side faces -Y (toward tube center)
-    // Rail on +Y bore wall
-    board_z0 = ebay_shoulder_bot + 3;         // board bottom z
-    board_cz = board_z0 + cv_pcb_l / 2;      // board center z
+    board_z0 = ebay_shoulder_bot + 3;
+    board_cz = board_z0 + cv_pcb_l / 2;
+    rail_t = 3;
+    rail_w = cv_pcb_w + 8;
+    rail_z0 = board_z0 - 3;
+    rail_h = cv_pcb_l + 6;
+    bore_r = ebay_bore_body / 2;
+    rail_front_y = bore_r - rail_t;
+    board_back_y = rail_front_y - cv_standoff_h;
 
-    // Rail geometry
-    rail_t = 3;                               // plate thickness
-    rail_w = cv_pcb_w + 8;                    // 41mm, wider than board
-    rail_z0 = board_z0 - 3;                   // starts 3mm below board
-    rail_h = cv_pcb_l + 6;                    // 106mm tall
-    bore_r = ebay_bore_body / 2;              // 35.5mm
-    rail_front_y = bore_r - rail_t;           // 32.5mm from center
-
-    // Board back face Y (sits on standoff tips)
-    board_back_y = rail_front_y - cv_standoff_h;  // 27.5mm from center
-    // Board component face at ~27.5 - 21 = 6.5mm from center
-    // Leaves ~42mm clear on -Y side for wires and gas flow
+    // Door bolt positions: in frame corners, OUTSIDE the opening
+    bolt_inset = door_frame_w / 2;
+    dbp = [
+        for (sx = [-1, 1], sz = [-1, 1])
+            [sx * (door_w/2 + bolt_inset), sz * (door_h/2 + bolt_inset)]
+    ];
 
     difference() {
         union() {
-            // --- HOLLOW COUPLER SHELL ---
             _ebay_shell();
 
-            // --- MOUNTING RAIL (inside bore, bonded to wall) ---
+            // Mounting rail (+Y wall)
             intersection() {
-                // Rail plate: extends 3mm into wall for structural bond
                 translate([-rail_w/2, rail_front_y, rail_z0])
                     cube([rail_w, rail_t + 3, rail_h]);
-                // Clip to outer shell envelope
                 cylinder(d=body_od - 0.2, h=ebay_total);
             }
 
-            // --- 3x STANDOFFS (triangle pattern) ---
+            // 3x standoffs (L-pattern)
             for (hole = cv_holes) {
-                hx = hole[0];   // board X → coupler X
-                hz = hole[1];   // board Y → coupler Z offset from center
-                // Standoff from board face to rail, grows in +Y
-                translate([hx, board_back_y, board_cz + hz])
+                translate([hole[0], board_back_y, board_cz + hole[1]])
                     rotate([-90, 0, 0])
                         cylinder(d=cv_standoff_od, h=cv_standoff_h + rail_t);
             }
+
+            // Door frame: solid block inside bore on -Y side
+            // Bolt bosses are at corners of this frame, outside the opening.
+            intersection() {
+                _door_frame_block();
+                // Clip to coupler body section
+                translate([0, 0, ebay_shoulder_bot])
+                    cylinder(d=body_od, h=ebay_body_h);
+            }
         }
 
-        // --- M3 TAP HOLES through standoffs ---
+        // M3 tap holes through standoffs
         for (hole = cv_holes) {
-            hx = hole[0];
-            hz = hole[1];
-            translate([hx, board_back_y - eps, board_cz + hz])
+            translate([hole[0], board_back_y - eps, board_cz + hole[1]])
                 rotate([-90, 0, 0])
                     cylinder(d=cv_m3_tap, h=cv_standoff_h + rail_t + 2*eps);
         }
 
-        // --- USB ACCESS SLOT ---
-        // Through -Y wall (opposite to rail, accessible from outside).
-        // Adjust usb_z after checking your board's USB port position.
-        // USB-C is typically on one short edge of the board.
-        usb_z = board_cz;
-        translate([-usb_slot_w/2, -body_od/2 - eps, usb_z - usb_slot_h/2])
-            cube([usb_slot_w, body_od/2 - bore_r + ebay_wall + 2*eps, usb_slot_h]);
+        // Door opening: cut through wall AND frame center
+        _door_opening();
 
-        // --- SMA ANTENNA HOLE ---
-        // Centered, through top of coupler into nosecone cavity.
-        // Offset slightly in +Y (toward rail) if antenna is on board edge.
+        // Door sill: shallow recess for panel to sit flush with OD
+        _door_sill();
+
+        // Door bolt tap holes (M2.5, radial through frame bosses)
+        for (bp = dbp) {
+            translate([bp[0], -body_od, door_cz + bp[1]])
+                rotate([-90, 0, 0])
+                    cylinder(d=door_bolt_tap, h=body_od);
+        }
+
+        // SMA antenna hole
         translate([0, 0, ebay_total - 5])
             cylinder(d=sma_hole_d, h=10);
     }
 
-    // --- Shell as nested module ---
+    // --- Nested geometry modules ---
+
     module _ebay_shell() {
         difference() {
             union() {
-                // Bottom shoulder
                 cylinder(d=ebay_shoulder_od, h=ebay_shoulder_bot);
-                // Exposed body
                 translate([0, 0, ebay_shoulder_bot])
                     cylinder(d=body_od, h=ebay_body_h);
-                // Top socket
                 translate([0, 0, ebay_shoulder_bot + ebay_body_h])
                     cylinder(d=body_od, h=ebay_socket_top);
             }
-            // Bore: shoulder (open bottom for gas flow)
             translate([0, 0, -eps])
                 cylinder(d=ebay_bore_sh, h=ebay_shoulder_bot + 2*eps);
-            // Bore: body section
             translate([0, 0, ebay_shoulder_bot])
                 cylinder(d=ebay_bore_body, h=ebay_body_h);
-            // Bore: top socket (sized for nosecone shoulder)
             translate([0, 0, ebay_shoulder_bot + ebay_body_h])
                 cylinder(d=body_id, h=ebay_socket_top + eps);
         }
     }
+
+    // Solid frame block: thick ring around door area on -Y bore wall
+    module _door_frame_block() {
+        fw = door_w + 2*door_frame_w;
+        fh = door_h + 2*door_frame_w;
+        fr = door_r + door_frame_w;
+        bore_inner = ebay_bore_body - 2*door_frame_t;
+
+        // Intersection: rounded-rect hull clipped to annulus (bore..OD)
+        intersection() {
+            translate([0, 0, door_cz])
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(fw/2-fr), 0, sz*(fh/2-fr)])
+                            rotate([90, 0, 0])
+                                cylinder(r=fr, h=body_od, $fn=24);
+                }
+            difference() {
+                cylinder(d=body_od + 1, h=ebay_total + 2);
+                cylinder(d=bore_inner, h=ebay_total + 4, $fn=$preview?48:120);
+            }
+        }
+    }
+
+    // Opening: rounded rect cutting through wall + frame center
+    module _door_opening() {
+        bore_inner = ebay_bore_body - 2*door_frame_t;
+        translate([0, 0, door_cz])
+            intersection() {
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(door_w/2-door_r), 0, sz*(door_h/2-door_r)])
+                            rotate([90, 0, 0])
+                                cylinder(r=door_r, h=body_od, $fn=24);
+                }
+                difference() {
+                    cylinder(d=body_od + 2, h=door_h + 10, center=true);
+                    cylinder(d=bore_inner - 1, h=door_h + 12, center=true, $fn=$preview?48:120);
+                }
+            }
+    }
+
+    // Sill: slightly wider/taller recess for door panel flush fit
+    module _door_sill() {
+        se = 1.5;  // sill extra per side
+        sw = door_w + 2*se;
+        sh = door_h + 2*se;
+        sr = door_r + se;
+        translate([0, 0, door_cz])
+            intersection() {
+                hull() {
+                    for (sx = [-1, 1], sz = [-1, 1])
+                        translate([sx*(sw/2-sr), 0, sz*(sh/2-sr)])
+                            rotate([90, 0, 0])
+                                cylinder(r=sr, h=body_od, $fn=24);
+                }
+                difference() {
+                    cylinder(d=body_od + 2, h=sh + 10, center=true);
+                    cylinder(d=body_od - 2*door_panel_t - 0.4, h=sh + 12, center=true, $fn=$preview?48:120);
+                }
+            }
+    }
 }
 
 // ================================================
-// CATS VEGA GHOST (preview only)
+// E-BAY DOOR (separate print)
+// ================================================
+// Curved panel that sits in sill recess, held by 4x M2.5 bolts.
+// Print: curved side down on build plate.
+
+module ebay_door() {
+    se = 1.5;
+    pw = door_w + 2*se - 0.4;
+    ph = door_h + 2*se - 0.4;
+    pr = door_r + se;
+
+    bolt_inset = door_frame_w / 2;
+    dbp = [
+        for (sx = [-1, 1], sz = [-1, 1])
+            [sx * (door_w/2 + bolt_inset), sz * (door_h/2 + bolt_inset)]
+    ];
+
+    difference() {
+        intersection() {
+            hull() {
+                for (sx = [-1, 1], sz = [-1, 1])
+                    translate([sx*(pw/2-pr), 0, sz*(ph/2-pr)])
+                        rotate([90, 0, 0])
+                            cylinder(r=pr, h=body_od/2, $fn=24);
+            }
+            difference() {
+                cylinder(d=body_od - 0.2, h=ph + 10, center=true);
+                cylinder(d=body_od - 0.2 - 2*door_panel_t, h=ph + 12, center=true, $fn=$preview?48:120);
+            }
+        }
+        // M2.5 clearance holes
+        for (bp = dbp) {
+            translate([bp[0], -body_od, bp[1]])
+                rotate([90, 0, 0])
+                    cylinder(d=door_bolt_d, h=body_od);
+        }
+    }
+}
+
 // ================================================
 // Simple visualization in mounted orientation.
 // Length along Z, width along X, components face -Y.
@@ -398,6 +514,11 @@ if ($preview) {
         translate([0, 0, z_ebay])
             ebay_coupler();
 
+    // Door (orange)
+    color("Orange", 0.9)
+        translate([0, 0, z_ebay + door_cz])
+            ebay_door();
+
     // CATS Vega ghost (green) inside e-bay
     translate([0, 0, z_ebay]) {
         _bz0 = ebay_shoulder_bot + 3;
@@ -419,4 +540,5 @@ if ($preview) {
 // fin_can();
 // body_tube();
 // nosecone();
- ebay_coupler();
+// ebay_coupler();
+// ebay_door();
