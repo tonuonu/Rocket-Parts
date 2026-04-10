@@ -74,13 +74,13 @@ ebay_bore_body = body_od - 2*ebay_wall;             // 71.0mm (body bore)
 //           NOT 4 corner holes!
 //           See manual Figure 10 (page 19).
 //
-// Mounting hole pattern: 60mm x 27mm
-//   - Two holes on one long edge, 60mm apart along length
-//   - One hole on the opposite long edge, centered between them
+// Mounting hole pattern: 60mm x 27mm (from Figure 10, page 19)
+//   - Two holes at one END of the board, 27mm apart across width
+//   - One hole at the OTHER END, 60mm away along length
+//   (Pair is near pyro end, single near battery/switch end)
 //
 // *** MEASURE YOUR ACTUAL BOARD AND VERIFY THESE POSITIONS ***
-// *** The PDF figure does not dimension individual hole offsets ***
-// *** from board edges. Adjust cv_holes[] after measuring. ***
+// *** The single hole X offset is estimated — check your board ***
 
 cv_pcb_l = 100;             // board length
 cv_pcb_w = 33;              // board width
@@ -91,13 +91,14 @@ cv_m3_tap = 2.5;            // M3 tap drill (2.5mm)
 
 // Hole positions: origin at board geometric center
 // X = across width (board is 33mm, range ±16.5)
-// Y = along length (board is 100mm, range ±50)
-cv_hole_dx = 27;            // cross-board spacing
-cv_hole_dy = 60;            // along-length spacing (same-side pair)
+// Z = along length (board is 100mm, range ±50)
+// In coupler: X maps to coupler X, Z maps to coupler Z
+cv_hole_dx = 27;            // pair: across-width spacing
+cv_hole_dy = 60;            // pair-to-single: along-length spacing
 cv_holes = [
-    [-cv_hole_dx/2, -cv_hole_dy/2],  // A: left side, 30mm below center
-    [-cv_hole_dx/2,  cv_hole_dy/2],  // B: left side, 30mm above center
-    [ cv_hole_dx/2,  0]              // C: right side, at center height
+    [-cv_hole_dx/2, -cv_hole_dy/2],  // A: pair, left,  pyro end
+    [ cv_hole_dx/2, -cv_hole_dy/2],  // B: pair, right, pyro end
+    [ 0,             cv_hole_dy/2]    // C: single, centered, battery end
 ];
 
 // SMA antenna connector
@@ -417,4 +418,4 @@ if ($preview) {
 // fin_can();
 // body_tube();
 // nosecone();
-// ebay_coupler();
+ ebay_coupler();
