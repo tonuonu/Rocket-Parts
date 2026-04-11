@@ -219,9 +219,16 @@ module nosecone() {
     R = body_od / 2;
 
     // Tip solid zone: don't hollow the top portion so the M12 bore
-    // has solid material to thread into. The ogive interior hollowing
-    // is clipped to stop below the lens boss area.
-    tip_solid_z = nc_length - m12_boss_h - 5;  // start solid 5mm below boss
+    // has solid material to thread into.
+    tip_solid_z = nc_length - m12_boss_h - 5;  // 135mm: solid from here to tip
+
+    // Truncate the ogive tip to avoid a thin spike artifact.
+    // The ogive tapers to a point, but we need a flat face for the lens.
+    // At z where ogive radius = m12_thread_d/2 + 1mm margin, we cut flat.
+    // Ogive radius at z: r(z) = sqrt(p^2-(L-z)^2) - (p-R)
+    // This is approximately z=138 for 7mm radius.
+    // We truncate at z=nc_length (the bore handles the rest).
+    tip_cut_z = nc_length - 1;  // truncate last 1mm for clean flat
 
     difference() {
         union() {
@@ -233,12 +240,15 @@ module nosecone() {
             cylinder(d=body_id - 0.2, h=nc_shoulder);
         }
 
-        // Hollow inside — but STOP before the tip to leave solid for lens
+        // Truncate tip: flat cut removes pointy spike
+        translate([0, 0, tip_cut_z])
+            cylinder(d=body_od, h=nc_length);
+
+        // Hollow inside -- stop before tip to leave solid for lens
         intersection() {
             rotate_extrude($fn=$preview ? 90 : 360)
                 offset(-nc_wall)
                     ogive_profile(nc_length, R);
-            // Only hollow up to tip_solid_z
             cylinder(d=body_od + 10, h=tip_solid_z);
         }
 
@@ -246,7 +256,7 @@ module nosecone() {
         translate([0, 0, -eps])
             cylinder(d=body_id - nc_wall*2 - 0.5, h=nc_shoulder + 5);
 
-        // M12 camera lens bore (12mm, forward-looking through solid tip)
+        // M12 camera lens bore (12mm, through solid tip and flat face)
         translate([0, 0, tip_solid_z - eps])
             cylinder(d=m12_thread_d, h=nc_length - tip_solid_z + 2*eps);
     }
@@ -542,6 +552,6 @@ if ($preview) {
 // ***** For STL export, uncomment ONE: *****
 // fin_can();
 // body_tube();
-// nosecone();
+ nosecone();
 // ebay_coupler();
 // ebay_door();
