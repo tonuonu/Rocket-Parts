@@ -218,35 +218,37 @@ module ogive_profile(L, R) {
 module nosecone() {
     R = body_od / 2;
 
+    // Tip solid zone: don't hollow the top portion so the M12 bore
+    // has solid material to thread into. The ogive interior hollowing
+    // is clipped to stop below the lens boss area.
+    tip_solid_z = nc_length - m12_boss_h - 5;  // start solid 5mm below boss
+
     difference() {
         union() {
-            // Hollow ogive shell (hollow FIRST, then add boss)
-            difference() {
-                rotate_extrude($fn=$preview ? 90 : 360)
-                    ogive_profile(nc_length, R);
-                rotate_extrude($fn=$preview ? 90 : 360)
-                    offset(-nc_wall)
-                        ogive_profile(nc_length, R);
-            }
+            // Solid ogive
+            rotate_extrude($fn=$preview ? 90 : 360)
+                ogive_profile(nc_length, R);
 
             // Shoulder
             cylinder(d=body_id - 0.2, h=nc_shoulder);
+        }
 
-            // M12 lens boss: solid cylinder at tip.
-            // Added AFTER hollow so it doesn't get eaten by the interior void.
-            // At z=140, the ogive hollow interior is 70mm+ diameter —
-            // the 18mm boss would vanish if added before hollowing.
-            translate([0, 0, nc_length - m12_boss_h])
-                cylinder(d=m12_boss_od, h=m12_boss_h);
+        // Hollow inside — but STOP before the tip to leave solid for lens
+        intersection() {
+            rotate_extrude($fn=$preview ? 90 : 360)
+                offset(-nc_wall)
+                    ogive_profile(nc_length, R);
+            // Only hollow up to tip_solid_z
+            cylinder(d=body_od + 10, h=tip_solid_z);
         }
 
         // Hollow shoulder
         translate([0, 0, -eps])
             cylinder(d=body_id - nc_wall*2 - 0.5, h=nc_shoulder + 5);
 
-        // M12 camera lens bore (12mm x 0.5mm thread, forward-looking)
-        translate([0, 0, nc_length - m12_boss_h - eps])
-            cylinder(d=m12_thread_d, h=m12_boss_h + nc_wall + 2*eps);
+        // M12 camera lens bore (12mm, forward-looking through solid tip)
+        translate([0, 0, tip_solid_z - eps])
+            cylinder(d=m12_thread_d, h=nc_length - tip_solid_z + 2*eps);
     }
 }
 
