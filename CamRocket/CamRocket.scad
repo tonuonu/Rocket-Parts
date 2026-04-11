@@ -120,7 +120,7 @@ door_cz = ebay_shoulder_bot + ebay_body_h / 2;  // door center Z
 // M12 camera lens placeholder (future nosecone camera)
 // M12 x 0.5mm thread, 12mm nominal OD
 // Evetar M13B0818IR or similar, 1/3" format
-m12_thread_d = 12.0;
+m12_thread_d = 14.0;           // measured optics OD
 m12_boss_od = 18;
 m12_boss_h = 10;
 
@@ -244,12 +244,18 @@ module nosecone() {
         translate([0, 0, tip_cut_z])
             cylinder(d=body_od, h=nc_length);
 
-        // Hollow inside -- stop before tip to leave solid for lens
+        // Hollow inside:
+        //   - START above shoulder (z=nc_shoulder) so shoulder wall survives
+        //   - STOP before tip (z=tip_solid_z) to leave solid for lens bore
+        // Without the z>=nc_shoulder limit, the ogive hollow (inner r=35.3mm)
+        // eats the shoulder (OD r=35.6mm) down to 0.3mm wall = paper thin.
         intersection() {
             rotate_extrude($fn=$preview ? 90 : 360)
                 offset(-nc_wall)
                     ogive_profile(nc_length, R);
-            cylinder(d=body_od + 10, h=tip_solid_z);
+            // Clip hollow to nc_shoulder..tip_solid_z
+            translate([0, 0, nc_shoulder])
+                cylinder(d=body_od + 10, h=tip_solid_z - nc_shoulder);
         }
 
         // Hollow shoulder
@@ -579,6 +585,6 @@ if ($preview) {
 // ***** For STL export, uncomment ONE: *****
 // fin_can();
 // body_tube();
-// nosecone();
- ebay_coupler();
+ nosecone();
+// ebay_coupler();
 // ebay_door();
