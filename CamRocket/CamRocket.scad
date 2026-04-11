@@ -488,10 +488,6 @@ module cats_vega_ghost() {
             rotate([-90, 0, 0])
                 cylinder(d=3, h=3, center=true, $fn=12);
     }
-    // SMA connector stub at top
-    color("Gold", 0.9)
-        translate([0, 0, cv_pcb_l/2])
-            cylinder(d=6, h=15, $fn=12);
 }
 
 // ***** Assembly *****
@@ -546,6 +542,6 @@ if ($preview) {
 // ***** For STL export, uncomment ONE: *****
 // fin_can();
 // body_tube();
- nosecone();
+// nosecone();
 // ebay_coupler();
 // ebay_door();
