@@ -358,19 +358,46 @@ module ebay_coupler() {
 
     // --- Nested geometry modules ---
 
+    // Coupling ring parameters: structural overlap at shoulder/body junctions
+    _ring_h = 10;       // coupling ring height extending into body section
+    _ring_bore = ebay_bore_sh;  // 67mm — same as shoulder bore
+
     module _ebay_shell() {
         difference() {
             union() {
+                // Bottom shoulder
                 cylinder(d=ebay_shoulder_od, h=ebay_shoulder_bot);
+                // Body section
                 translate([0, 0, ebay_shoulder_bot])
                     cylinder(d=body_od, h=ebay_body_h);
+                // Top socket
                 translate([0, 0, ebay_shoulder_bot + ebay_body_h])
                     cylinder(d=body_od, h=ebay_socket_top);
+
+                // Bottom coupling ring: extends shoulder wall UP into body
+                // OD=71 (shoulder OD), bore=67 (shoulder bore), 10mm tall
+                // Creates 2mm solid wall overlap bonding shoulder to body
+                translate([0, 0, ebay_shoulder_bot])
+                    cylinder(d=ebay_bore_body + 1, h=_ring_h);  // 72mm, overlaps body bore by 0.5mm
+
+                // Top coupling ring: extends socket wall DOWN into body
+                // Bonds body section to top socket
+                translate([0, 0, ebay_shoulder_bot + ebay_body_h - _ring_h])
+                    cylinder(d=ebay_bore_body + 1, h=_ring_h);  // 72mm, overlaps body bore by 0.5mm
             }
+            // Shoulder bore (z=0 to shoulder top)
             translate([0, 0, -eps])
-                cylinder(d=ebay_bore_sh, h=ebay_shoulder_bot + 2*eps);
-            translate([0, 0, ebay_shoulder_bot])
-                cylinder(d=ebay_bore_body, h=ebay_body_h);
+                cylinder(d=_ring_bore, h=ebay_shoulder_bot + 2*eps);
+            // Bottom coupling ring bore (same as shoulder bore)
+            translate([0, 0, ebay_shoulder_bot - eps])
+                cylinder(d=_ring_bore, h=_ring_h + 2*eps);
+            // Body bore (only the middle section between rings)
+            translate([0, 0, ebay_shoulder_bot + _ring_h])
+                cylinder(d=ebay_bore_body, h=ebay_body_h - 2*_ring_h);
+            // Top coupling ring bore (same as shoulder bore)
+            translate([0, 0, ebay_shoulder_bot + ebay_body_h - _ring_h - eps])
+                cylinder(d=_ring_bore, h=_ring_h + 2*eps);
+            // Top socket bore
             translate([0, 0, ebay_shoulder_bot + ebay_body_h])
                 cylinder(d=body_id, h=ebay_socket_top + eps);
         }
@@ -552,6 +579,6 @@ if ($preview) {
 // ***** For STL export, uncomment ONE: *****
 // fin_can();
 // body_tube();
- nosecone();
-// ebay_coupler();
+// nosecone();
+ ebay_coupler();
 // ebay_door();
