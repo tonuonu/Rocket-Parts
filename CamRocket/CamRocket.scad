@@ -219,7 +219,7 @@ module nosecone() {
     R = body_od / 2;
 
     // Tip solid zone: solid from here to tip for lens thread
-    tip_solid_z = nc_length - m12_boss_h - 5;  // 135mm
+    tip_solid_z = 126;  // ogive radius here = 11.2mm, enough for 14mm bore + 2.2mm wall
 
     // Shoulder parameters
     shoulder_od = body_id - 2*shoulder_clearance;  // 71.0mm
