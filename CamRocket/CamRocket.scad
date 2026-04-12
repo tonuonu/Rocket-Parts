@@ -218,17 +218,12 @@ module ogive_profile(L, R) {
 module nosecone() {
     R = body_od / 2;
 
-    // Tip solid zone: don't hollow the top portion so the M12 bore
-    // has solid material to thread into.
-    tip_solid_z = nc_length - m12_boss_h - 5;  // 135mm: solid from here to tip
+    // Tip solid zone: solid from here to tip for lens thread
+    tip_solid_z = nc_length - m12_boss_h - 5;  // 135mm
 
-    // Truncate the ogive tip to avoid a thin spike artifact.
-    // The ogive tapers to a point, but we need a flat face for the lens.
-    // At z where ogive radius = m12_thread_d/2 + 1mm margin, we cut flat.
-    // Ogive radius at z: r(z) = sqrt(p^2-(L-z)^2) - (p-R)
-    // This is approximately z=138 for 7mm radius.
-    // We truncate at z=nc_length (the bore handles the rest).
-    tip_cut_z = nc_length - 1;  // truncate last 1mm for clean flat
+    // Shoulder parameters
+    shoulder_od = body_id - 2*shoulder_clearance;  // 71.0mm - slides into e-bay socket
+    shoulder_bore = shoulder_od - 2*nc_wall;        // 66.6mm
 
     difference() {
         union() {
@@ -236,33 +231,24 @@ module nosecone() {
             rotate_extrude($fn=$preview ? 90 : 360)
                 ogive_profile(nc_length, R);
 
-            // Shoulder
-            cylinder(d=body_id - 0.2, h=nc_shoulder);
+            // Shoulder tube (slides into e-bay top socket)
+            cylinder(d=shoulder_od, h=nc_shoulder);
         }
 
-        // Truncate tip: flat cut removes pointy spike
-        translate([0, 0, tip_cut_z])
+        // Truncate tip: flat cut 1mm from point
+        translate([0, 0, nc_length - 1])
             cylinder(d=body_od, h=nc_length);
 
-        // Hollow inside:
-        //   - START above shoulder (z=nc_shoulder) so shoulder wall survives
-        //   - STOP before tip (z=tip_solid_z) to leave solid for lens bore
-        // Without the z>=nc_shoulder limit, the ogive hollow (inner r=35.3mm)
-        // eats the shoulder (OD r=35.6mm) down to 0.3mm wall = paper thin.
-        intersection() {
-            rotate_extrude($fn=$preview ? 90 : 360)
-                offset(-nc_wall)
-                    ogive_profile(nc_length, R);
-            // Clip hollow to nc_shoulder..tip_solid_z
-            translate([0, 0, nc_shoulder])
-                cylinder(d=body_od + 10, h=tip_solid_z - nc_shoulder);
-        }
-
-        // Hollow shoulder
+        // Hollow interior: plain CYLINDER, NOT ogive offset.
+        // Using offset(-nc_wall) on the ogive profile creates an inner
+        // surface at r=35.3mm which eats the shoulder (r=35.5mm).
+        // A cylinder leaves the ogive walls naturally thick (tapering
+        // from nc_wall at base to solid at tip). This is the approach
+        // that works — learned from past nosecone issues.
         translate([0, 0, -eps])
-            cylinder(d=body_id - nc_wall*2 - 0.5, h=nc_shoulder + 5);
+            cylinder(d=shoulder_bore, h=tip_solid_z + 2*eps);
 
-        // M12 camera lens bore (12mm, through solid tip and flat face)
+        // Camera lens bore (14mm, through solid tip)
         translate([0, 0, tip_solid_z - eps])
             cylinder(d=m12_thread_d, h=nc_length - tip_solid_z + 2*eps);
     }
