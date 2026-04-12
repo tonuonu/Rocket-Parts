@@ -222,7 +222,7 @@ module nosecone() {
     tip_solid_z = nc_length - m12_boss_h - 5;  // 135mm
 
     // Shoulder parameters
-    shoulder_od = body_id - 2*shoulder_clearance;  // 71.0mm - slides into e-bay socket
+    shoulder_od = body_id - 2*shoulder_clearance;  // 71.0mm
     shoulder_bore = shoulder_od - 2*nc_wall;        // 66.6mm
 
     difference() {
@@ -239,14 +239,25 @@ module nosecone() {
         translate([0, 0, nc_length - 1])
             cylinder(d=body_od, h=nc_length);
 
-        // Hollow interior: plain CYLINDER, NOT ogive offset.
-        // Using offset(-nc_wall) on the ogive profile creates an inner
-        // surface at r=35.3mm which eats the shoulder (r=35.5mm).
-        // A cylinder leaves the ogive walls naturally thick (tapering
-        // from nc_wall at base to solid at tip). This is the approach
-        // that works — learned from past nosecone issues.
+        // SHOULDER ZONE hollow (z=0 to nc_shoulder): plain cylinder.
+        // Cannot use ogive offset here because inner ogive r=35.3mm
+        // eats shoulder r=35.5mm (only 0.2mm difference).
         translate([0, 0, -eps])
-            cylinder(d=shoulder_bore, h=tip_solid_z + 2*eps);
+            cylinder(d=shoulder_bore, h=nc_shoulder + 2*eps);
+
+        // OGIVE ZONE hollow (z=nc_shoulder to tip_solid_z): ogive offset.
+        // Must follow ogive taper! A straight cylinder bore breaks
+        // through the ogive wall at z=98mm (bore r=33.3 > ogive r).
+        // Ogive offset follows the curve and maintains nc_wall thickness.
+        // Clipped to start at nc_shoulder so it doesn't eat the shoulder.
+        intersection() {
+            rotate_extrude($fn=$preview ? 90 : 360)
+                offset(-nc_wall)
+                    ogive_profile(nc_length, R);
+            // Clip: only hollow between shoulder top and tip solid zone
+            translate([0, 0, nc_shoulder])
+                cylinder(d=body_od + 10, h=tip_solid_z - nc_shoulder);
+        }
 
         // Camera lens bore (14mm, through solid tip)
         translate([0, 0, tip_solid_z - eps])
