@@ -218,50 +218,47 @@ module ogive_profile(L, R) {
 module nosecone() {
     R = body_od / 2;
 
-    // Tip solid zone: solid from here to tip for lens thread
-    tip_solid_z = 126;  // ogive radius here = 11.2mm, enough for 14mm bore + 2.2mm wall
-
     // Shoulder parameters
     shoulder_od = body_id - 2*shoulder_clearance;  // 71.0mm
     shoulder_bore = shoulder_od - 2*nc_wall;        // 66.6mm
 
+    // Layout: shoulder at z=0..nc_shoulder, ogive at z=nc_shoulder..nc_shoulder+nc_length
+    // Shoulder hangs BELOW ogive base so it's visible and slides into e-bay.
+    ogive_z0 = nc_shoulder;                          // ogive base z
+    ogive_tip = nc_shoulder + nc_length;              // ogive tip z (175mm)
+    tip_solid_z = ogive_z0 + 126;                     // solid from here to tip
+
     difference() {
         union() {
-            // Solid ogive
-            rotate_extrude($fn=$preview ? 90 : 360)
-                ogive_profile(nc_length, R);
-
-            // Shoulder tube (slides into e-bay top socket)
+            // Shoulder tube (z=0..25, slides into e-bay top socket)
             cylinder(d=shoulder_od, h=nc_shoulder);
+
+            // Ogive (z=25..175, sits above shoulder)
+            translate([0, 0, ogive_z0])
+                rotate_extrude($fn=$preview ? 90 : 360)
+                    ogive_profile(nc_length, R);
         }
 
-        // Truncate tip: flat cut 1mm from point
-        translate([0, 0, nc_length - 1])
+        // Truncate tip
+        translate([0, 0, ogive_tip - 1])
             cylinder(d=body_od, h=nc_length);
 
-        // SHOULDER ZONE hollow (z=0 to nc_shoulder): plain cylinder.
-        // Cannot use ogive offset here because inner ogive r=35.3mm
-        // eats shoulder r=35.5mm (only 0.2mm difference).
+        // Shoulder hollow (z=0..nc_shoulder)
         translate([0, 0, -eps])
             cylinder(d=shoulder_bore, h=nc_shoulder + 2*eps);
 
-        // OGIVE ZONE hollow (z=nc_shoulder to tip_solid_z): ogive offset.
-        // Must follow ogive taper! A straight cylinder bore breaks
-        // through the ogive wall at z=98mm (bore r=33.3 > ogive r).
-        // Ogive offset follows the curve and maintains nc_wall thickness.
-        // Clipped to start at nc_shoulder so it doesn't eat the shoulder.
-        intersection() {
-            rotate_extrude($fn=$preview ? 90 : 360)
-                offset(-nc_wall)
-                    ogive_profile(nc_length, R);
-            // Clip: only hollow between shoulder top and tip solid zone
-            translate([0, 0, nc_shoulder])
-                cylinder(d=body_od + 10, h=tip_solid_z - nc_shoulder);
-        }
+        // Ogive hollow (z=nc_shoulder..tip_solid_z): follows ogive taper
+        translate([0, 0, ogive_z0])
+            intersection() {
+                rotate_extrude($fn=$preview ? 90 : 360)
+                    offset(-nc_wall)
+                        ogive_profile(nc_length, R);
+                cylinder(d=body_od + 10, h=tip_solid_z - ogive_z0);
+            }
 
         // Camera lens bore (14mm, through solid tip)
         translate([0, 0, tip_solid_z - eps])
-            cylinder(d=m12_thread_d, h=nc_length - tip_solid_z + 2*eps);
+            cylinder(d=m12_thread_d, h=ogive_tip - tip_solid_z + 2*eps);
     }
 }
 
