@@ -2,80 +2,66 @@
 // Project: 3D Printed Rocket
 // Filename: MotorAdapter29.scad
 // Motor adapter for using 18mm or 24mm motors in a 29mm MMT
-// Revision: 0.6 - removed exhaust throat (it was over-engineering).
-//                 Single motor-sized bore from aft end to thrust ring.
-//                 Matches conventional model rocket motor adapters.
-//           0.5 - thrust RING (open center) for ejection gas pass-through
+// Revision: 0.7 - motor protrudes 5mm past adapter aft face so the
+//                 rocket's aft retainer catches the motor rim
+//                 directly (not the adapter).  Adapter length is
+//                 now motor-dependent, not MMT-dependent.
+//           0.6 - removed exhaust throat
+//           0.5 - thrust RING (open center)
 //           0.4 - Klima 18mm and TSP E20-P 24mm presets
 //           0.3 - Motor_Class selector
-//           0.2 - motor-length-aware bore with (now-removed) throat
-//           0.1 - single-bore full length (superseded, then re-adopted)
+//           0.2 - motor-length-aware bore with (removed) throat
+//           0.1 - single-bore full length (superseded)
 // Units: mm
 // ***********************************
 //
 // PURPOSE:
-//   Printed adapter sleeve that fits inside a 29mm motor mount tube
-//   (MMT) so you can fly smaller standard motors (18mm or 24mm) in
-//   the same rocket.
+//   Printed adapter for flying 18mm or 24mm motors in a rocket
+//   with a 29mm MMT.
 //
-// DESIGN:
-//   Two zones along the length:
+// DESIGN (v0.7):
+//   Adapter is sized to the motor, not to the MMT.  Length is:
+//       Adapter_L = Motor_L + Thrust_Ring_T - Motor_Stick_Out
 //
-//     - "Motor bore" from aft to just behind the thrust ring.
-//       Sized exactly to motor OD + 0.3mm clearance.  Motor slides
-//       in from the open aft end, forward rim bottoms against the
-//       thrust ring.  The aft end of the motor (nozzle) protrudes
-//       out of the adapter as in any normal motor installation.
+//   With Motor_Stick_Out = 5mm (standard), the motor's aft end
+//   (nozzle) protrudes 5mm past the adapter's aft face.  This
+//   puts the motor's aft rim in the same axial position it would
+//   be in if a native 29mm motor were installed, so the rocket's
+//   existing aft retainer grips the motor rim directly.
 //
-//     - "Thrust ring" at the forward end - an ANNULUS (not a solid
-//       cap).  Inner opening ≈ motor's internal diameter so the
-//       paper forward cap (on motors with ejection charges) can
-//       blow through freely and ejection gases pass into the
-//       rocket body unrestricted.
-//
-//   The adapter fills the full MMT depth, so the rocket's existing
-//   29mm aft retainer engages the adapter's aft rim (the retainer
-//   holds the adapter; the adapter holds the motor).
+//   The adapter then sits loose in the forward portion of the MMT,
+//   held by:
+//     - Its forward face pressed against the rocket's thrust ring
+//     - The motor inside it pressed forward by thrust (during burn)
+//       and by the aft retainer (always)
 //
 //
-//   FORWARD (thrust ring end)                            AFT
-//   ═════════════════════════════════════════════════════════
-//   ring │            MOTOR BORE                           │
-//   [O]  │        Ø(Motor_OD+0.3), full length             │
-//   ═════════════════════════════════════════════════════════
-//   3.5mm                  MMT_Depth - 3.5mm
+//   Rocket thrust ring ("edge")                Rocket aft retainer
+//                ↓                                      ↓
+//   ═══════════════════════════════════════════════════════════
+//   ring │       Ø Motor_OD+0.3 bore         │[  motor nozzle 5mm  out ]
+//   [O]  │          = Motor_L                │
+//   ═════════════════════════════════════════════════════════════
+//   3.5mm              Motor_L                5mm   MMT depth - adapter - 5
+//   ←──────── adapter total ────────────→←stick-out → ← empty MMT behind →
 //
-//   Ring [O] has an OPEN center Ø (Motor_OD - 2mm).  Motor's
-//   tube-wall rim (outer annulus of its forward face) bears on
-//   the ring; the motor's paper forward cap sits over the open
-//   center.
+//   Ring [O] has OPEN center Ø (Motor_OD - 2mm) = motor ID, so:
+//     - Motor's paper forward cap can blow through cleanly
+//       (for motors with ejection charge)
+//     - Ejection gases pass unrestricted into the rocket body
+//     - Plugged (-P) motors: ring center is harmless
 //
-//   Motor position:
-//     - Forward rim against the thrust ring
-//     - Nozzle sticks out of the aft end of the adapter by
-//       (MMT_Depth - Thrust_Ring_T - Motor_L)
-//     - That empty aft space is harmless - same as any normal
-//       motor-in-MMT installation where the motor is shorter
-//       than the MMT.
-//
-//   Thrust path:
+//   Thrust path during burn:
 //     motor forward rim -> thrust ring aft face
 //                       -> adapter wall
-//                       -> rocket thrust ring ("the edge")
+//                       -> rocket thrust ring
 //                       -> rocket body
-//
-//   Ejection path (motors with ejection charge):
-//     ejection charge fires -> paper cap blows through the ring
-//     open center -> gases fill rocket body -> deployment.
-//
-//   Plugged (-P) motors: ring center is harmless (no gas flow).
-//   Use altimeter/electronic ejection for deployment.
 //
 // ===========================================================
 // HOW TO USE:
 //   Pick ONE of the preset motor classes by setting Motor_Class
 //   below.  Motor_OD and Motor_L are auto-set from the preset
-//   table.
+//   table.  Adapter length is then auto-computed from motor length.
 // ===========================================================
 //
 //   Motor_Class | Target motor                | OD | L  | Echo tag
@@ -88,24 +74,13 @@
 //        5      | 18mm Klima (plugged)        | 18 | 69 | 18mm-Klima
 //        6      | 24mm TSP E20-P (plugged)    | 24 | 94 | 24mm-TSP-E20P
 //
-//   For a non-preset motor (or another rocket with different MMT
-//   depth), set Motor_Class = -1 and override Motor_OD / Motor_L
-//   manually.
+//   For a non-preset motor, set Motor_Class = -1 and override
+//   Motor_OD / Motor_L manually.
 //
-// MOTOR TYPES SUPPORTED (any of these):
-//   - Motors with standard ejection charge (Estes, Klima non-plugged)
-//   - Plugged "-P" motors (Klima plugged, TSP E20-P, etc.)
-//   - Composite reloads (Aerotech 24/40, etc.)
-//
-// MOTOR RETENTION (aft) - NOT integrated. Use either:
-//   (a) Masking tape around the adapter aft end and motor aft
-//   (b) Traditional wire motor hook taped to adapter outside
-//   (c) Rocket's existing 29mm aft retainer: the retainer catches
-//       the adapter's 28.7mm OD aft rim; the motor is held inside
-//       the adapter by friction + thrust + (if applicable) ejection
-//       back-pressure.
-//       Note: with -P plugged motors there is no ejection back-
-//       pressure, so tape wrap or motor hook is recommended.
+// MOTOR RETENTION:
+//   Rocket's existing 29mm aft retainer catches the MOTOR rim
+//   (not the adapter) because the motor protrudes past the
+//   adapter's aft face.  No tape or hook needed.
 //
 // ***********************************
 
@@ -115,7 +90,7 @@ Overlap = 0.05;
 // HOST MMT
 // ============================================
 MMT_ID    = 29.0;      // MMT inner bore
-MMT_Depth = 113;       // depth from aft end to forward thrust ring
+MMT_Depth = 113;       // for info only (adapter no longer fills MMT)
 
 // ============================================
 // MOTOR CLASS  (set this to select your motor)
@@ -123,7 +98,7 @@ MMT_Depth = 113;       // depth from aft end to forward thrust ring
 Motor_Class = 5;       // <- EDIT THIS   (5 = 18mm Klima, 6 = 24mm TSP E20-P)
 
 // ============================================
-// PRESET TABLE  (append new entries at the end)
+// PRESET TABLE
 // ============================================
 //                   class:  0         1         2           3           4           5           6
 Preset_OD    = [          18,        18,        24,          24,         24,         18,         24             ];
@@ -131,7 +106,7 @@ Preset_L     = [          45,        70,        70,          89,         95,    
 Preset_Name  = ["18mm-short", "18mm-std", "24mm-EstesD", "24mm-AT2440", "24mm-EstesE", "18mm-Klima", "24mm-TSP-E20P" ];
 
 // ============================================
-// MANUAL OVERRIDE  (only used when Motor_Class = -1)
+// MANUAL OVERRIDE  (Motor_Class = -1)
 // ============================================
 Manual_Motor_OD = 24;
 Manual_Motor_L  = 70;
@@ -139,17 +114,23 @@ Manual_Motor_L  = 70;
 // ============================================
 // PRINT CLEARANCES
 // ============================================
-Clear_OD = 0.3;        // adapter OD = MMT_ID - Clear_OD  (slip fit)
-Clear_ID = 0.3;        // motor bore = Motor_OD + Clear_ID
+Clear_OD = 0.3;        // adapter OD = MMT_ID - Clear_OD  (slip fit in MMT)
+Clear_ID = 0.3;        // motor bore = Motor_OD + Clear_ID (motor slides in)
 
 // ============================================
 // THRUST RING (forward end, annular)
 // ============================================
 Thrust_Ring_T         = 3.5;   // axial thickness of the ring
-Ring_Inner_Reduction  = 2.0;   // ring inner Ø = Motor_OD - this (matches motor ID)
-                               // 2mm works for paper cases (typical).
-                               // Increase to 3-4mm if using thicker-walled
-                               // motor casings (some composite reloads).
+Ring_Inner_Reduction  = 2.0;   // ring inner Ø = Motor_OD - this
+
+// ============================================
+// MOTOR PROTRUSION  (key v0.7 parameter)
+// ============================================
+// How far the motor sticks out of the adapter aft face.  The
+// rocket's aft retainer catches the motor rim at this position.
+// 5mm is the typical protrusion of a 29mm motor in a 29mm MMT
+// with a screw-on retainer cap.
+Motor_Stick_Out = 5.0;
 
 // ============================================
 // RENDER
@@ -170,69 +151,73 @@ Motor_Label = (Motor_Class == -1) ? "manual"        : Preset_Name[Motor_Class];
 // ============================================
 Adapter_OD      = MMT_ID - Clear_OD;
 Motor_Bore_ID   = Motor_OD + Clear_ID;
-Motor_Bore_L    = MMT_Depth - Thrust_Ring_T;         // full length (aft to ring)
-Thrust_Ring_ID  = Motor_OD - Ring_Inner_Reduction;   // open-center size
+Thrust_Ring_ID  = Motor_OD - Ring_Inner_Reduction;
 
-// Aft empty space behind the motor (for info only)
-Aft_Empty_L    = Motor_Bore_L - Motor_L;             // space behind motor
+// Adapter length is driven by the motor, not the MMT
+Adapter_L       = Motor_L + Thrust_Ring_T - Motor_Stick_Out;
+Motor_Bore_L    = Adapter_L - Thrust_Ring_T;   // = Motor_L - Motor_Stick_Out
 
 // Walls (for reporting)
 Motor_Wall_T   = (Adapter_OD - Motor_Bore_ID) / 2;
-Ring_Wall_T    = (Adapter_OD - Thrust_Ring_ID) / 2;
-Ring_Bearing_W = (Motor_OD - Thrust_Ring_ID) / 2;    // radial overlap with motor rim
+Ring_Bearing_W = (Motor_OD - Thrust_Ring_ID) / 2;
+
+// How much MMT space sits empty behind the adapter
+MMT_Empty_L    = MMT_Depth - Adapter_L - Motor_Stick_Out;
 
 // ============================================
 // REPORT / SANITY CHECKS
 // ============================================
-echo(str("=== MotorAdapter29 v0.6 ==="));
+echo(str("=== MotorAdapter29 v0.7 ==="));
 echo(str("  Motor class:    ", Motor_Class,
         " (", Motor_Label, ")"));
 echo(str("  Target motor:   ", Motor_OD, "mm OD, ",
         Motor_L, "mm long"));
 echo(str("  Adapter OD:     ", Adapter_OD,
         " mm  (in ", MMT_ID, "mm MMT)"));
-echo(str("  Total length:   ", MMT_Depth, " mm"));
-echo(str("  Thrust ring:    Ø", Thrust_Ring_ID,
-        " inner x ", Thrust_Ring_T,
-        " mm thick (motor rim contact ",
-        Ring_Bearing_W, " mm radial)"));
+echo(str("  Adapter length: ", Adapter_L, " mm",
+        "   (motor ", Motor_L, "mm + ring ", Thrust_Ring_T,
+        "mm - stick-out ", Motor_Stick_Out, "mm)"));
 echo(str("  Motor bore:     Ø", Motor_Bore_ID,
         " x ", Motor_Bore_L, " mm (wall ",
         Motor_Wall_T, " mm)"));
-echo(str("  Aft empty space: ", Aft_Empty_L,
-        " mm behind motor (nozzle sits in here)"));
+echo(str("  Thrust ring:    Ø", Thrust_Ring_ID,
+        " inner x ", Thrust_Ring_T,
+        " mm thick (rim contact ", Ring_Bearing_W, " mm)"));
+echo(str("  Motor aft stick-out: ", Motor_Stick_Out,
+        " mm past adapter aft face"));
+echo(str("  MMT empty behind adapter: ", MMT_Empty_L,
+        " mm (just air, harmless)"));
 
-if (Motor_L + Thrust_Ring_T > MMT_Depth)
-    echo(str("  !! ERROR: motor too long! ", Motor_L + Thrust_Ring_T,
-            "mm required vs ", MMT_Depth, "mm available."));
 if (Motor_Wall_T < 1.5)
     echo("  !! WARNING: motor-bore wall < 1.5mm - use 4+ perimeters.");
 if (Ring_Bearing_W < 0.8)
-    echo("  !! WARNING: ring-motor bearing overlap < 0.8mm - motor rim may slip through.");
+    echo("  !! WARNING: ring-motor bearing overlap < 0.8mm.");
+if (Motor_Stick_Out >= Motor_L)
+    echo("  !! ERROR: Motor_Stick_Out >= Motor_L, adapter length would be negative.");
+if (Adapter_L + Motor_Stick_Out > MMT_Depth)
+    echo(str("  !! ERROR: adapter + motor stick-out (",
+            Adapter_L + Motor_Stick_Out,
+            ") exceeds MMT depth (", MMT_Depth, ")"));
 
 // ============================================
 // MAIN ADAPTER
 // ============================================
-// Z=0 is the aft (open) end.
-// Z=MMT_Depth is the forward end (thrust ring against rocket's thrust ring).
-//
-// Interior Z-zones:
-//   [0, MMT_Depth - Thrust_Ring_T]          -> motor bore Ø Motor_Bore_ID
-//   [MMT_Depth - Thrust_Ring_T, MMT_Depth]  -> ring open center Ø Thrust_Ring_ID
+// Z=0 is the aft (open) end of the adapter.
+// Z=Adapter_L is the forward end (thrust ring face).
 //
 module MotorAdapter() {
     difference() {
-        // Outer cylinder (fits inside MMT)
-        cylinder(d = Adapter_OD, h = MMT_Depth, $fn = 180);
+        // Outer cylinder
+        cylinder(d = Adapter_OD, h = Adapter_L, $fn = 180);
 
-        // Motor bore - single cylinder from aft end to thrust ring
+        // Motor bore (aft end to thrust ring)
         translate([0, 0, -Overlap])
             cylinder(d = Motor_Bore_ID,
                      h = Motor_Bore_L + Overlap,
                      $fn = 120);
 
         // Thrust ring open center
-        translate([0, 0, MMT_Depth - Thrust_Ring_T - Overlap])
+        translate([0, 0, Adapter_L - Thrust_Ring_T - Overlap])
             cylinder(d = Thrust_Ring_ID,
                      h = Thrust_Ring_T + 2 * Overlap,
                      $fn = 60);
@@ -240,7 +225,7 @@ module MotorAdapter() {
 }
 
 // ============================================
-// DUMMY MOTOR (preview only, not printed)
+// DUMMY MOTOR (preview only)
 // ============================================
 module DummyMotor(len = 70) {
     color("silver", 0.7)
@@ -249,7 +234,7 @@ module DummyMotor(len = 70) {
         // Aft nozzle indentation
         translate([0, 0, -Overlap])
             cylinder(d = Motor_OD * 0.4, h = 6, $fn = 36);
-        // Forward paper cap (visualize as recess at forward end)
+        // Forward paper cap recess
         translate([0, 0, len - 0.5])
             cylinder(d = Motor_OD - 2, h = 0.5 + Overlap, $fn = 60);
     }
@@ -258,19 +243,19 @@ module DummyMotor(len = 70) {
 // ============================================
 // ASSEMBLY PREVIEW  (cross-section)
 // ============================================
-// Motor is seated against the thrust ring at the forward end.
-// Motor's aft end (nozzle) is part-way up from the adapter's aft end.
+// Motor forward rim bears on thrust ring.
+// Motor aft face is at Z = -Motor_Stick_Out (protrudes below adapter).
 //
-module AssemblyPreview(motor_len = 70) {
+module AssemblyPreview(motor_len = Motor_L) {
     difference() {
         union() {
             color("tan", 0.6) MotorAdapter();
-            translate([0, 0, MMT_Depth - Thrust_Ring_T - motor_len])
+            translate([0, 0, Adapter_L - Thrust_Ring_T - motor_len])
                 DummyMotor(len = motor_len);
         }
         // Cut away -Y half to reveal cross-section
-        translate([-MMT_ID, -MMT_ID, -10])
-            cube([2 * MMT_ID, MMT_ID, MMT_Depth + 20]);
+        translate([-MMT_ID, -MMT_ID, -Motor_Stick_Out - 5])
+            cube([2 * MMT_ID, MMT_ID, Adapter_L + Motor_Stick_Out + 10]);
     }
 }
 
@@ -284,54 +269,43 @@ if (Render_Part == 2) AssemblyPreview(motor_len = Motor_L);
 // NOTES / PRINT ADVICE
 // ============================================
 //
-// FILE NAMING CONVENTION WHEN EXPORTING:
-//   Rename the exported STL/3MF to include the motor class:
-//     MotorAdapter29_18mm-Klima.stl
-//     MotorAdapter29_24mm-TSP-E20P.stl
+// FILE NAMING:
+//   MotorAdapter29_18mm-Klima.stl
+//   MotorAdapter29_24mm-TSP-E20P.stl
 //
 // PRINT SETTINGS (Bambu P1S, PC or PC-CF):
-//   - Orientation: vertical, aft end (open) down on the bed.
-//     The thrust ring prints last; its open center needs no
-//     support because the ring is thin (3.5mm) and bridges
-//     the motor-bore opening.
-//   - Walls: 4+ perimeters (for 24mm the motor-bore wall is
-//     only ~2.2mm, and the thrust ring needs strength).
+//   - Orientation: vertical, aft end down.  Thrust ring prints
+//     last and bridges the bore opening.
+//   - Walls: 4+ perimeters
 //   - Infill: 40-60%
-//   - Layer height: 0.2mm fine
+//   - Layer height: 0.2mm
 //   - Brim recommended
 //
 // MATERIAL CHOICE:
-//   - PC-CF (carbon-fiber filled PC): excellent - high Tg, low
-//     thermal expansion, good dimensional stability under heat.
-//   - PC (polycarbonate): recommended, Tg ~150 C.
-//   - PETG: OK for single use.
-//   - PLA: NOT recommended - softens at motor casing temperature.
-//   - ABS / ASA: acceptable alternative.
+//   - PC-CF: excellent
+//   - PC: recommended
+//   - PETG: OK
+//   - PLA: NOT recommended (softens near motor casing)
+//   - ABS / ASA: OK
 //
 // TESTING BEFORE FLIGHT:
-//   1. Print adapter. Verify it slip-fits your 29mm MMT.
-//   2. Test-insert the motor from the aft end. It should slide
-//      smoothly through the full bore and bottom cleanly against
-//      the thrust ring.
-//   3. Look through the ring opening from the forward end - you
-//      should see the motor's paper forward cap.
-//   4. Inspect the thrust ring for layer splits. This takes all
-//      the motor thrust - must be sound.
+//   1. Slip-fit check: adapter into 29mm MMT, light friction only.
+//   2. Motor fit: slides in from aft, bottoms on thrust ring,
+//      aft rim protrudes Motor_Stick_Out mm past adapter aft face.
+//   3. Retainer check: rocket's existing aft retainer catches the
+//      motor rim (not the adapter).
+//   4. Look through the ring from the forward end - you should
+//      see the motor's paper forward cap.
 //
 // EJECTION-CHARGE MOTORS (Estes A-E, Klima non-plugged):
-//   - Ground-test deployment with the adapter in place once per
-//     motor type before the first real flight.
-//   - Verify the paper forward cap passes cleanly through the ring.
+//   - Ground-test deployment once per motor type before flying.
 //
-// PLUGGED-MOTOR FLIGHT CHECKLIST (Klima-P, TSP -P, etc.):
-//   - Altimeter / flight computer armed and verified.
-//   - Backup ejection (pyro or servo) ground-tested.
-//   - Aft motor retention (tape/hook) - plugged motors have no
-//     ejection back-pressure to hold the motor forward after burnout.
+// PLUGGED-MOTOR CHECKLIST (Klima-P, TSP -P):
+//   - Flight computer armed.
+//   - Backup ejection tested.
 //
 // SAFETY:
-//   - Never widen the ring inner opening beyond the motor tube OD -
-//     the motor would slip through and thrust would not transfer.
+//   - Don't widen ring beyond motor tube OD.
 //   - Don't reuse a severely scorched adapter.
 //
 // ***********************************
