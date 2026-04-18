@@ -2,139 +2,197 @@
 // Project: 3D Printed Rocket
 // Filename: MotorAdapter29.scad
 // Motor adapter for using 18mm or 24mm motors in a 29mm MMT
-// Revision: 0.1 - initial design
+// Revision: 0.2 - motor-length-aware bore + widened exhaust throat
+//           0.1 - single-bore full length (superseded)
 // Units: mm
 // ***********************************
 //
 // PURPOSE:
-//   A printed adapter sleeve that fits inside a 29mm motor mount tube
-//   (MMT) and allows using a smaller standard motor (18mm or 24mm).
+//   Printed adapter sleeve that fits inside a 29mm motor mount tube
+//   (MMT) so you can fly smaller standard motors (18mm or 24mm) in
+//   the same rocket.
 //
-// HOW IT WORKS:
-//   - Adapter is a 29mm-OD tube slightly smaller than MMT_ID (slip fit)
-//   - Adapter's inner bore matches your chosen motor OD + clearance
-//   - Forward end of adapter is closed by an integrated "thrust cap"
-//   - Motor slides in from the open aft end until its forward rim
-//     bottoms against the thrust cap
-//   - Thrust path during burn:
-//         motor fwd rim  ->  adapter thrust cap  ->
-//         rocket thrust ring (the "edge")  ->  rocket body
-//   - A vent hole through the thrust cap allows motor ejection gases
-//     (if any) to pass into the rocket body
+// KEY IDEA (v0.2):
+//   Smaller motors are SHORTER than the 29mm motors the rocket was
+//   designed for.  The adapter has two distinct inner-bore zones:
 //
-// MOTOR RETENTION (aft):
-//   This adapter does NOT integrate aft motor retention in v0.1.
-//   Use ONE of:
-//     (a) Masking tape: wrap 3-4 turns around adapter aft end + motor
-//     (b) Motor hook: a thin wire clip taped to adapter outside;
-//         aft end of hook bent inward to catch motor aft rim
-//     (c) Rely on the rocket's existing 29mm aft retainer.
-//         The retainer retains the ADAPTER (which is 29mm OD);
-//         the motor is retained inside the adapter by friction +
-//         continuous thrust/ejection pressure against the thrust cap.
-//         If motor can jump aft during ejection, use (a) or (b).
+//     - "Motor bore" at the forward end, sized to the motor OD.
+//     - "Exhaust throat" at the aft end, wider than the motor, so
+//       the motor's nozzle plume has room to expand and isn't
+//       blasting hot gas right against a thin 18mm/24mm wall.
 //
-// TYPICAL MOTOR LENGTHS (longest in a class):
-//   18mm Estes:       A8-3 = 45mm, B6 = 70mm, C6 = 70mm
-//   18mm Quest:       A/B/C ~ 54-76mm
-//   24mm Estes:       D12 = 70mm, E9/E12 = 95mm
-//   24mm Aerotech:    24/40 casing = 89mm (reloadable)
+//   The adapter still fills the full 113mm MMT depth, so the
+//   rocket's existing 29mm retainer engages the adapter's aft rim
+//   (the retainer holds the adapter; the adapter holds the motor).
 //
-// EJECTION NOTES:
-//   - If using motor ejection: leave Vent_D as default (6mm).
-//   - If using altimeter/electronic ejection only: use "-P" plugged
-//     motor variants, or seal the vent hole with tape after install.
-//   - Vent must NOT be smaller than ~4mm or pressure can burst the cap.
 //
-// PARAMETRIC:
-//   Set Motor_OD to 18 or 24 and regenerate. Other rockets with
-//   different MMT depth: adjust MMT_Depth.
+//   FORWARD (thrust ring end)                            AFT
+//   ═════════════════════════════════════════════════════════
+//    cap            MOTOR BORE                    THROAT
+//    [V]    Ø(Motor_OD+0.3), fits motor       Ø wider, cool air
+//   ═════════════════════════════════════════════════════════
+//   3.5mm   Motor_L + 2mm buffer                remainder
+//
+//   Thrust path:
+//     motor fwd rim  ->  adapter thrust cap
+//                    ->  rocket thrust ring ("edge")
+//                    ->  rocket body
+//
+// ===========================================================
+// PRESETS - set Motor_OD and Motor_L below to match your motor:
+// ===========================================================
+//
+//   | Target motor                 | Motor_OD | Motor_L |
+//   |------------------------------|----------|---------|
+//   | 18mm 1/2A (Estes 1/2A6-2)    |    18    |   45    |
+//   | 18mm Estes A8 / B6 / C6      |    18    |   70    |
+//   | 24mm Estes D12               |    24    |   70    |
+//   | 24mm Aerotech 24/40 reload   |    24    |   89    |
+//   | 24mm Estes E9 / E12          |    24    |   95    |
+//   | 24mm Aerotech 24/60 reload   |    24    |   139   | (*)
+//
+//   (*) 24/60 at 139mm does NOT fit in a 113mm MMT. A different
+//       rocket or deeper MMT is required.
+//
+//   If you plan to fly MULTIPLE motor lengths in one adapter, set
+//   Motor_L to the LONGEST one. Shorter motors sit against the
+//   thrust cap as usual; the throat just becomes longer behind
+//   them (which is fine, more exhaust room).
+//
+// MOTOR RETENTION (aft) - NOT integrated in v0.2. Use either:
+//   (a) Masking tape around the adapter aft end and motor aft
+//   (b) Traditional wire motor hook taped to adapter outside
+//   (c) Rocket's existing 29mm aft retainer: the retainer catches
+//       the adapter's 28.7mm OD aft rim; the motor is retained
+//       inside the adapter by friction and continuous thrust/
+//       ejection pressure pushing it against the thrust cap.
+//
+// EJECTION:
+//   Default Vent_D = 6mm allows motor ejection gases through the
+//   thrust cap into the rocket body.  For altimeter/electronic
+//   ejection only, use "-P" plugged motor variants OR seal the
+//   vent hole with a bit of tape after motor install.
 //
 // ***********************************
 
 Overlap = 0.05;
 
 // ============================================
-// HOST MMT (29mm motor mount tube)
+// HOST MMT
 // ============================================
-// Adjust to your rocket. Default: 113mm deep, 29.0mm ID.
-
-MMT_ID = 29.0;
-MMT_Depth = 113;
+MMT_ID    = 29.0;      // MMT inner bore
+MMT_Depth = 113;       // depth from aft end to forward thrust ring
 
 // ============================================
-// TARGET MOTOR
+// TARGET MOTOR  (change these for your motor)
 // ============================================
-// 18 = 18mm standard (Estes A/B/C/D)
-// 24 = 24mm standard (Estes D/E, Aerotech 24/40)
-
-Motor_OD = 24;
+Motor_OD = 24;         // 18 or 24
+Motor_L  = 70;         // LONGEST motor length you plan to fly
 
 // ============================================
 // PRINT CLEARANCES
 // ============================================
-
-Clear_OD = 0.3;          // adapter OD smaller than MMT_ID by this (slip fit)
-Clear_ID = 0.3;          // motor bore larger than Motor_OD by this
-Chamfer  = 1.0;          // aft-end chamfer to aid motor insertion
+Clear_OD = 0.3;        // adapter OD = MMT_ID - Clear_OD  (slip fit)
+Clear_ID = 0.3;        // motor bore = Motor_OD + Clear_ID
 
 // ============================================
-// THRUST CAP (forward closure)
+// THRUST CAP (forward)
 // ============================================
+Thrust_Cap_T = 3.5;    // thickness of forward cap
+Vent_D       = 6.0;    // vent hole through cap
 
-Thrust_Cap_T = 3.5;      // thickness of cap at forward end
-Vent_D       = 6.0;      // vent hole diameter through cap
+// ============================================
+// EXHAUST THROAT (aft of motor bore)
+// ============================================
+Throat_Clearance = 3.0;   // throat ID = Motor_OD + Throat_Clearance (requested)
+Min_Throat_Wall  = 1.5;   // minimum wall thickness in throat zone
+Min_Throat_L     = 5.0;   // if remaining axial space < this, skip throat
+Motor_Buffer_L   = 2.0;   // bore length beyond nominal motor length
 
 // ============================================
 // RENDER
 // ============================================
-// 1 = adapter body  (print this)
+// 1 = adapter body (PRINT THIS)
 // 2 = adapter + dummy motor, cross-sectioned for inspection
-
 Render_Part = 1;
 
 // ============================================
-// DERIVED VALUES
+// DERIVED
 // ============================================
+Adapter_OD    = MMT_ID - Clear_OD;
+Motor_Bore_ID = Motor_OD + Clear_ID;
 
-Adapter_OD = MMT_ID - Clear_OD;
-Adapter_ID = Motor_OD + Clear_ID;
-Wall_T     = (Adapter_OD - Adapter_ID) / 2;
+// Throat bore: requested OR wall-limited, whichever forces thinner wall
+Throat_ID_Requested = Motor_OD + Throat_Clearance;
+Throat_ID_WallLimit = MMT_ID - 2 * Min_Throat_Wall;
+Throat_ID           = min(Throat_ID_Requested, Throat_ID_WallLimit);
 
-echo(str("=== MotorAdapter29 for ", Motor_OD, "mm motor ==="));
-echo(str("  Adapter OD:     ", Adapter_OD, " mm"));
-echo(str("  Adapter ID:     ", Adapter_ID, " mm"));
-echo(str("  Wall thickness: ", Wall_T, " mm"));
-echo(str("  Length:         ", MMT_Depth, " mm"));
+Motor_Bore_L  = Motor_L + Motor_Buffer_L;
+Throat_L_Raw  = MMT_Depth - Thrust_Cap_T - Motor_Bore_L;
+Use_Throat    = (Throat_L_Raw >= Min_Throat_L) &&
+                (Throat_ID   >  Motor_Bore_ID + 1.0);
 
-if (Wall_T < 1.5)
-    echo("  !! WARNING: wall thickness < 1.5mm, may be weak");
+// If throat zone too short/thin to matter, just extend motor bore
+Throat_L      = Use_Throat ? Throat_L_Raw : 0;
+Bore_Actual_L = Use_Throat ? Motor_Bore_L : MMT_Depth - Thrust_Cap_T;
+
+// Walls (for reporting)
+Motor_Wall_T  = (Adapter_OD - Motor_Bore_ID) / 2;
+Throat_Wall_T = Use_Throat ? (Adapter_OD - Throat_ID) / 2 : Motor_Wall_T;
+
+// ============================================
+// REPORT / SANITY CHECKS
+// ============================================
+echo(str("=== MotorAdapter29 v0.2 ==="));
+echo(str("  Target motor:   ", Motor_OD, "mm OD, ", Motor_L, "mm long"));
+echo(str("  Adapter OD:     ", Adapter_OD, " mm  (in ", MMT_ID, "mm MMT)"));
+echo(str("  Total length:   ", MMT_Depth, " mm"));
+echo(str("  Motor bore:     Ø", Motor_Bore_ID,
+        " mm x ", Bore_Actual_L, " mm long (wall ",
+        Motor_Wall_T, " mm)"));
+if (Use_Throat)
+    echo(str("  Exhaust throat: Ø", Throat_ID,
+            " mm x ", Throat_L, " mm long (wall ",
+            Throat_Wall_T, " mm)"));
+else
+    echo("  Exhaust throat: (none - motor bore extends full length)");
+
+if (Motor_L + Thrust_Cap_T > MMT_Depth)
+    echo(str("  !! ERROR: motor too long! ", Motor_L + Thrust_Cap_T,
+            "mm required vs ", MMT_Depth, "mm available."));
+if (Motor_Wall_T < 1.5)
+    echo("  !! WARNING: motor-bore wall < 1.5mm - use 4+ perimeters.");
+if (Use_Throat && Throat_Wall_T < 1.5)
+    echo("  !! WARNING: throat wall < 1.5mm - use 4+ perimeters.");
 if (Motor_OD != 18 && Motor_OD != 24)
-    echo("  !! NOTE: non-standard Motor_OD, verify carefully");
+    echo("  !! NOTE: non-standard Motor_OD - verify preset.");
 
 // ============================================
 // MAIN ADAPTER
 // ============================================
-
+// Z=0 is the aft (open) end.
+// Z=MMT_Depth is the forward end (against thrust ring).
+//
 module MotorAdapter() {
     difference() {
-        // Outer cylinder
+        // Outer cylinder (fits inside MMT)
         cylinder(d = Adapter_OD, h = MMT_Depth, $fn = 180);
 
-        // Motor bore (closed at forward by thrust cap)
-        translate([0, 0, -Overlap])
-            cylinder(d = Adapter_ID,
-                     h = MMT_Depth - Thrust_Cap_T + Overlap,
+        // Exhaust throat (aft zone, wider bore) - if used
+        if (Use_Throat) {
+            translate([0, 0, -Overlap])
+                cylinder(d = Throat_ID,
+                         h = Throat_L + Overlap,
+                         $fn = 120);
+        }
+
+        // Motor bore (forward zone, motor-sized)
+        translate([0, 0, Throat_L - Overlap])
+            cylinder(d = Motor_Bore_ID,
+                     h = Bore_Actual_L + 2 * Overlap,
                      $fn = 120);
 
-        // Aft chamfer (1mm x 45deg) for easier motor insertion
-        translate([0, 0, -Overlap])
-            cylinder(d1 = Adapter_ID + 2 * Chamfer,
-                     d2 = Adapter_ID,
-                     h  = Chamfer + Overlap,
-                     $fn = 120);
-
-        // Forward vent hole
+        // Vent hole through thrust cap
         translate([0, 0, MMT_Depth - Thrust_Cap_T - Overlap])
             cylinder(d = Vent_D,
                      h = Thrust_Cap_T + 2 * Overlap,
@@ -145,7 +203,6 @@ module MotorAdapter() {
 // ============================================
 // DUMMY MOTOR (preview only, not printed)
 // ============================================
-
 module DummyMotor(len = 70) {
     color("silver", 0.7)
     difference() {
@@ -153,26 +210,24 @@ module DummyMotor(len = 70) {
         // Aft nozzle indentation
         translate([0, 0, -Overlap])
             cylinder(d = Motor_OD * 0.4, h = 6, $fn = 36);
-        // Forward cap recess (approx)
-        translate([0, 0, len - 2])
-            cylinder(d = Motor_OD * 0.7, h = 2 + Overlap, $fn = 36);
     }
 }
 
 // ============================================
-// ASSEMBLY PREVIEW (cross-section)
+// ASSEMBLY PREVIEW  (cross-section)
 // ============================================
-
 module AssemblyPreview(motor_len = 70) {
+    // Motor is seated against the thrust cap at the forward end.
+    //   Motor forward face at Z = MMT_Depth - Thrust_Cap_T
+    //   Motor aft face at    Z = MMT_Depth - Thrust_Cap_T - motor_len
     difference() {
         union() {
             color("tan", 0.6) MotorAdapter();
-            // Motor seated at forward end
             translate([0, 0, MMT_Depth - Thrust_Cap_T - motor_len])
                 DummyMotor(len = motor_len);
         }
-        // Cut away +Y half to reveal cross-section
-        translate([-MMT_ID, 0, -10])
+        // Cut away -Y half to reveal cross-section
+        translate([-MMT_ID, -MMT_ID, -10])
             cube([2 * MMT_ID, MMT_ID, MMT_Depth + 20]);
     }
 }
@@ -180,42 +235,49 @@ module AssemblyPreview(motor_len = 70) {
 // ============================================
 // RENDER
 // ============================================
-
 if (Render_Part == 1) MotorAdapter();
-if (Render_Part == 2) AssemblyPreview(motor_len = 70);
+if (Render_Part == 2) AssemblyPreview(motor_len = Motor_L);
 
 // ============================================
 // NOTES / PRINT ADVICE
 // ============================================
 //
 // PRINT SETTINGS (Bambu P1S, PC or PETG):
-//   - Orientation: vertical (cap down, aft up) or cap up
-//   - Walls: 4+ perimeters (wall is thin near the motor bore)
-//   - Infill: 40-60% (not critical since walls are thick for 18mm)
-//   - Layer: 0.2mm fine
+//   - Orientation: vertical, cap down, aft up (so the thrust cap
+//     prints first on a solid layer; the vent prints as a simple
+//     bridge/overhang near the end of the print).
+//     Alt: cap up, aft down (vent printed early over bed).
+//   - Walls: 4+ perimeters (especially for 24mm where the motor-
+//     bore wall is only ~2.2mm)
+//   - Infill: 40-60% (mostly hollow shell anyway)
+//   - Layer height: 0.2mm fine
 //   - Brim recommended if printing vertically
 //
 // MATERIAL CHOICE:
-//   - PC (polycarbonate): best for repeated use and thermal margin
-//   - PETG: OK for single motor (cheap alternative)
-//   - PLA: NOT recommended - softens near motor case heat
-//   - ABS / ASA: acceptable
+//   - PC (polycarbonate): recommended for repeated use, best heat
+//     tolerance (Tg ~150 C, softening above that).
+//   - PETG: OK for single use, cheap. May sag slightly near the
+//     nozzle on higher-thrust motors.
+//   - PLA: NOT recommended - softens near motor casing temp.
+//   - ABS / ASA: acceptable alternative.
 //
 // TESTING BEFORE FLIGHT:
-//   1. Print adapter. Verify it slip-fits into your 29mm MMT
-//      (should slide in with light friction, no force)
-//   2. Test-insert the target motor. It should slide through the
-//      bore with very light friction and bottom cleanly against
+//   1. Print adapter. Verify it slip-fits the 29mm MMT.
+//      Slight friction is OK; no force required.
+//   2. Test-insert the motor. Should slide cleanly through the
+//      throat (if present), into the motor bore, bottom against
 //      the thrust cap.
-//   3. Inspect the thrust cap for print defects / layer gaps.
-//      This cap takes the full motor thrust - MUST be solid.
-//   4. Verify the vent hole is clear.
+//   3. Inspect the thrust cap for print defects / layer separation.
+//      This cap takes the full motor thrust - MUST be sound.
+//   4. Confirm vent hole is open.
+//   5. For a new adapter/new material: start with the smallest
+//      motor class (A8, not D12). Ground-test ejection if using
+//      motor ejection.
 //
 // SAFETY:
-//   - Test with smallest motor class first.
-//   - Ground-test ejection if using motor ejection through the
-//     adapter - make sure vent flow is adequate.
-//   - Do NOT remove the thrust cap to make a "through-hole" adapter -
-//     thrust will have nowhere to transfer.
+//   - Never remove the thrust cap. Without it, thrust has no
+//     path to the airframe - motor goes forward, rocket stays.
+//   - Don't reuse a severely scorched adapter. Plastic near
+//     the nozzle degrades with each flight.
 //
 // ***********************************
