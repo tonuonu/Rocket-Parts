@@ -2,7 +2,8 @@
 // Project: 3D Printed Rocket
 // Filename: MotorAdapter29.scad
 // Motor adapter for using 18mm or 24mm motors in a 29mm MMT
-// Revision: 0.3 - single Motor_Class selector (auto-sets OD and length)
+// Revision: 0.4 - added Klima 18mm and TSP E20-P 24mm presets
+//           0.3 - single Motor_Class selector (auto-sets OD and length)
 //           0.2 - motor-length-aware bore + widened exhaust throat
 //           0.1 - single-bore full length (superseded)
 // Units: mm
@@ -47,31 +48,43 @@
 //   preset table. No need to remember two numbers.
 // ===========================================================
 //
-//   Motor_Class | Target motor           | OD | L  | Echo tag
-//   ------------|------------------------|----|----|---------------
-//        0      | 18mm 1/2A (short)      | 18 | 45 | 18mm-short
-//        1      | 18mm Estes A8/B6/C6    | 18 | 70 | 18mm-std
-//        2      | 24mm Estes D12         | 24 | 70 | 24mm-EstesD
-//        3      | 24mm Aerotech 24/40    | 24 | 89 | 24mm-AT2440
-//        4      | 24mm Estes E9 / E12    | 24 | 95 | 24mm-EstesE
+//   Motor_Class | Target motor                | OD | L  | Echo tag
+//   ------------|-----------------------------|----|----|----------------
+//        0      | 18mm 1/2A (short)           | 18 | 45 | 18mm-short
+//        1      | 18mm Estes A8/B6/C6         | 18 | 70 | 18mm-std
+//        2      | 24mm Estes D12              | 24 | 70 | 24mm-EstesD
+//        3      | 24mm Aerotech 24/40         | 24 | 89 | 24mm-AT2440
+//        4      | 24mm Estes E9 / E12         | 24 | 95 | 24mm-EstesE
+//        5      | 18mm Klima (plugged)        | 18 | 69 | 18mm-Klima
+//        6      | 24mm TSP E20-P (plugged)    | 24 | 94 | 24mm-TSP-E20P
 //
 //   For a non-preset motor (or another rocket with different MMT
 //   depth), set Motor_Class = -1 and override Motor_OD / Motor_L
 //   manually in the "MANUAL OVERRIDE" block below.
+//
+// NOTE ON "-P" PLUGGED MOTORS (Klima, TSP E20-P, Estes -P variants):
+//   These motors do NOT have an ejection charge. They burn out,
+//   coast, and simply stop. You MUST provide ejection some other
+//   way (altimeter/flight computer firing a pyro or servo).
+//   The Vent_D hole through the thrust cap is harmless with
+//   plugged motors (no gas flows through it) - leave it open for
+//   pressure equalization.
 //
 // MOTOR RETENTION (aft) - NOT integrated. Use either:
 //   (a) Masking tape around the adapter aft end and motor aft
 //   (b) Traditional wire motor hook taped to adapter outside
 //   (c) Rocket's existing 29mm aft retainer: the retainer catches
 //       the adapter's 28.7mm OD aft rim; the motor is retained
-//       inside the adapter by friction and continuous thrust/
-//       ejection pressure pushing it against the thrust cap.
+//       inside the adapter by friction and continuous thrust
+//       pushing it against the thrust cap.
+//       Note: with -P motors there is no ejection back-pressure,
+//       so after burnout the motor is held only by friction -
+//       a tape wrap or motor hook is strongly recommended.
 //
 // EJECTION:
-//   Default Vent_D = 6mm allows motor-ejection gases through the
-//   thrust cap into the rocket body.  For altimeter/electronic
-//   ejection only, use "-P" plugged motor variants or seal the
-//   vent hole with tape after motor install.
+//   Default Vent_D = 6mm - for motor-ejection motors, gases pass
+//   through into the rocket body.  For plugged motors the vent
+//   just equalizes air pressure during flight (harmless).
 //
 // ***********************************
 
@@ -89,14 +102,15 @@ MMT_Depth = 113;       // depth from aft end to forward thrust ring
 // See preset table in header comment.
 // Use -1 to override manually (see MANUAL OVERRIDE block below).
 
-Motor_Class = 1;       // <- EDIT THIS
+Motor_Class = 5;       // <- EDIT THIS   (5 = 18mm Klima, 6 = 24mm TSP E20-P)
 
 // ============================================
-// PRESET TABLE  (don't edit - add new entries here if needed)
+// PRESET TABLE  (append new entries at the end)
 // ============================================
-Preset_OD    = [ 18,            18,            24,             24,             24            ];
-Preset_L     = [ 45,            70,            70,             89,             95            ];
-Preset_Name  = ["18mm-short",  "18mm-std",    "24mm-EstesD",  "24mm-AT2440",  "24mm-EstesE" ];
+//                   class:  0         1         2           3           4           5           6
+Preset_OD    = [          18,        18,        24,          24,         24,         18,         24             ];
+Preset_L     = [          45,        70,        70,          89,         95,         69,         94             ];
+Preset_Name  = ["18mm-short", "18mm-std", "24mm-EstesD", "24mm-AT2440", "24mm-EstesE", "18mm-Klima", "24mm-TSP-E20P" ];
 
 // ============================================
 // MANUAL OVERRIDE  (only used when Motor_Class = -1)
@@ -165,7 +179,7 @@ Throat_Wall_T = Use_Throat ? (Adapter_OD - Throat_ID) / 2 : Motor_Wall_T;
 // ============================================
 // REPORT / SANITY CHECKS
 // ============================================
-echo(str("=== MotorAdapter29 v0.3 ==="));
+echo(str("=== MotorAdapter29 v0.4 ==="));
 echo(str("  Motor class:    ", Motor_Class,
         " (", Motor_Label, ")"));
 echo(str("  Target motor:   ", Motor_OD, "mm OD, ",
@@ -266,8 +280,8 @@ if (Render_Part == 2) AssemblyPreview(motor_len = Motor_L);
 // FILE NAMING CONVENTION WHEN EXPORTING:
 //   Rename the exported STL/3MF to include the motor class so you
 //   don't mix them up at the bench:
-//     MotorAdapter29_18mm-std.stl
-//     MotorAdapter29_24mm-EstesE.stl
+//     MotorAdapter29_18mm-Klima.stl
+//     MotorAdapter29_24mm-TSP-E20P.stl
 //   etc.
 //
 // PRINT SETTINGS (Bambu P1S, PC or PETG):
@@ -299,8 +313,15 @@ if (Render_Part == 2) AssemblyPreview(motor_len = Motor_L);
 //      This cap takes the full motor thrust - MUST be sound.
 //   4. Confirm vent hole is open.
 //   5. For a new adapter/new material: start with the smallest
-//      motor class (A8, not D12). Ground-test ejection if using
-//      motor ejection.
+//      motor class first.
+//
+// PLUGGED-MOTOR FLIGHT CHECKLIST (Klima, TSP -P, etc.):
+//   - Altimeter / flight computer is armed and functional before
+//     motor ignition.
+//   - Ejection system (pyro, servo, etc.) tested on the ground
+//     with the adapter in place.
+//   - Aft motor retention (tape/hook) present - plugged motors
+//     have no ejection pressure to hold them forward after burnout.
 //
 // SAFETY:
 //   - Never remove the thrust cap. Without it, thrust has no
