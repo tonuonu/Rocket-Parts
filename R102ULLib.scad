@@ -29,7 +29,7 @@ echo(R102ULLibRev());
 // R102UL_PusherRing(OD=Coupler_OD, ID=Coupler_ID, OA_Len=50, Engagemnet_Len=7, Wall_t=4);
 //
 // R102UL_MotorTubeTopper(); // Glues to top of motor tube, spring holder and rope holes.
-// R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID); // One servo w/ shock cord attachment.
+// R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, CouplerLenXtra=0, nBolts=3, Xtra_r=0.0); // One servo w/ shock cord attachment.
 // R102UL_BallRetainerBottom(Body_OD=Body_OD, Body_ID=Body_ID); // w/ 3 bolt holes for PetalHub.
 //
 // ***********************************
@@ -200,10 +200,10 @@ module R102UL_MotorTubeTopper(MotorTube_OD=MotorTube_OD, MotorTube_ID=MotorTube_
 
 // R102UL_MotorTubeTopper(MotorTube_OD=MotorTube_OD, MotorTube_ID=MotorTube_ID, HasPassThru=true, nRopes=6);
 
-module R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3, Xtra_r=0.0){
+module R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, CouplerLenXtra=CouplerLenXtra, nBolts=3, Xtra_r=0.0){
 	Tube_d=12.7;
 	
-	Tube_a=-15;
+	Tube_a=-20;
 	TubeSlot_w=35;
 	TubeOffset_X=0;
 	Engagement_Len=20;
@@ -265,6 +265,7 @@ module R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3, Xtra_r
 } // R102UL_BallRetainerTop
 
 // rotate([180,0,0]) R102UL_BallRetainerTop();
+// R102UL_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, CouplerLenXtra=-20, nBolts=6, Xtra_r=0.0);
 
 module R102UL_BallRetainerBottom(Body_OD=Body_OD, Body_ID=Body_ID, Xtra_r=0.0){
 	Engagement_Len=20;

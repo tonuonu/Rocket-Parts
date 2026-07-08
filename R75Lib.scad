@@ -38,6 +38,8 @@ function R75Lib_Rev()="R75Lib Rev 0.9.7";
 // R75_EBayBR(OD=BT75Coupler_OD, CenterBolt_d=0.312*25.4, CenterBolt_p=25.4/18);
 // R75_EBayMC(OD=BT75Coupler_OD, CenterBolt_d=0.250*25.4, CenterBolt_p=25.4/20, HasRS_Mount=false, BaseOnly=true, UseMCClip=false);
 //
+function R75_STB_Engagement()=Engagement_Len;
+//
 // ***********************************
 include<TubesLib.scad>
 use<SpringThingBooster.scad> echo(SpringThingBoosterRev());
@@ -295,7 +297,7 @@ module R75_MotorTubeTopperTR(OD=ULineH75Body_ID, ID=ULine38Body_OD, MT_ID=ULine3
 
 // R75_MotorTubeTopperTR();
 
-module R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3){
+module R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3, HasLargeInnerBearing=false){
 	Tube_d=12.7;
 	Tube_Z=19.5;
 	Tube_a=-70;
@@ -312,7 +314,7 @@ module R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3){
 			STB_BallRetainerTop(Body_ID=Body_ID, Outer_OD=Body_OD, Engagement_d=Body_ID, nLockBalls=nLockBalls,
 				HasIntegratedCouplerTube=true, IntegratedCouplerSkirtLen=Tube_d+Wall_t+0.2, 
 				nBolts=nBolts, Bolt_a=200, IntegratedCouplerLenXtra=-10, HasSecondServo=false, UsesBigServo=false, 
-				Engagement_Len=Engagement_Len, HasLargeInnerBearing=false, Xtra_r=0.0);
+				Engagement_Len=Engagement_Len, HasLargeInnerBearing=HasLargeInnerBearing, Xtra_r=0.2);
 			
 			//translate([0,0,Tube_Z]) 
 			//	Tube(OD=Body_ID, ID=Body_ID-IDXtra-Wall_t*2, Len=Tube_d/2+Wall_t, myfn=$preview? 90:360);
@@ -350,9 +352,9 @@ module R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3){
 } // R75_BallRetainerTop
 
 //  R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID);
-// R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=4);
+// R75_BallRetainerTop(Body_OD=Body_OD, Body_ID=Body_ID, nBolts=3, HasLargeInnerBearing=true);
 
-module R75_BallRetainerTopTest(Body_OD=Body_OD, Body_ID=Body_ID){
+module R75_BallRetainerTopTest(Body_OD=Body_OD, Body_ID=Body_ID, HasLargeInnerBearing=false){
   // test of thick walled e-bay
 
 	Tube_d=12.7;
@@ -371,10 +373,11 @@ module R75_BallRetainerTopTest(Body_OD=Body_OD, Body_ID=Body_ID){
 	
 	difference(){
 		union(){
-			STB_BallRetainerTop(Body_ID=Body_ID, Body_OD=Body_ID, nLockBalls=nLockBalls,
+			STB_BallRetainerTop(Body_ID=Body_ID, nLockBalls=nLockBalls,
 								HasIntegratedCouplerTube=true, IntegratedCouplerLenXtra=CouplerLenXtra,
 								Outer_OD=Body_OD,
-								HasSecondServo=false, UsesBigServo=false, Engagement_Len=Engagement_Len);
+								HasSecondServo=false, UsesBigServo=false, 
+								Engagement_Len=Engagement_Len, HasLargeInnerBearing=HasLargeInnerBearing, Xtra_r=0.2);
 			
 			translate([0,0,Tube_Z]) 
 				Tube(OD=EBay_ID-IDXtra, ID=EBay_ID-IDXtra-Wall_t*2, Len=Tube_d/2+Wall_t, myfn=$preview? 90:360);
@@ -410,7 +413,7 @@ module R75_BallRetainerTopTest(Body_OD=Body_OD, Body_ID=Body_ID){
 
 //  R75_BallRetainerTopTest(Body_OD=Body_OD, Body_ID=Body_ID);
 
-module R75_BallRetainerBottom(Body_ID=Body_ID, HasPD_Ring=false){
+module R75_BallRetainerBottom(Body_ID=Body_ID, HasPD_Ring=false, HasLargeInnerBearing=false){
 	// PD_Ring is required to attach the petal hub because 3 balls isn't good enough and 5 won't line up.
 	
 	Bolt_a=20;// offset between PD_PetalHub and R65_BallRetainerBottom
@@ -421,7 +424,7 @@ module R75_BallRetainerBottom(Body_ID=Body_ID, HasPD_Ring=false){
 	difference(){
 		union(){
 			STB_BallRetainerBottom(Body_ID=Body_ID, Body_OD=Body_ID, 
-					nLockBalls=nLockBalls, HasSpringGroove=false, Engagement_Len=Engagement_Len, HasLargeInnerBearing=false);
+					nLockBalls=nLockBalls, HasSpringGroove=false, Engagement_Len=Engagement_Len, HasLargeInnerBearing=HasLargeInnerBearing, Lighten=false, Xtra_r=0.2);
 					
 		
 			if (HasPD_Ring){
@@ -440,7 +443,7 @@ module R75_BallRetainerBottom(Body_ID=Body_ID, HasPD_Ring=false){
 	} // difference
 	
 	// Shock cord hole
-	if (HasPD_Ring)
+	if (HasPD_Ring && !HasLargeInnerBearing)
 		difference(){
 			translate([0,0,-Engagement_Len+1]) 
 			hull() STB_ShockCordHolePattern(Body_ID=Body_ID, Body_OD=Body_ID) 

@@ -34,7 +34,7 @@ echo(BatteryHolderLibRev());
 // ***********************************
 //  ***** for STL output *****
 //
-//  Batt_Door(Tube_OD=PML98Body_OD, Door_X=BattDoorX(), InnerTube_OD=PML54Body_OD, HasSwitch=false, DoubleBatt=false, BlankDoor=false);
+//  Batt_Door(Tube_OD=PML98Body_OD, Door_X=BattDoorX(), InnerTube_OD=PML54Body_OD, HasSwitch=false, TallDoor=false, DoubleBatt=false, BlankDoor=false);
 //  Batt_DoorMagSW(Tube_OD=PML98Body_OD, Door_X=Batt_Door_X, HasRS_PCB=false, HasSwitch=false, BlankDoor=false);
 //  Batt_Door6xAAA(Tube_OD=BT137Body_OD, InnerTube_OD=BT54Body_OD, HasSwitch=true);
 //  SingleBatteryPocket(ShowBattery=true);
@@ -49,7 +49,7 @@ echo(BatteryHolderLibRev());
 // RocketServoHolderRevC(IsDouble=true);
 //
 // BlueRavenMount();
-// FW_MagSw_Mount(HasMountingEars=false);
+// FW_MagSw_Mount(HasMountingEars=false, Reversed=false);
 //
 // ***********************************
 //  ***** Routines *****
@@ -601,7 +601,7 @@ module RocketServo2BoltPattern(){
 // rotate([90,0,0]) RocketServo2BoltPattern();
 
 module RocketServo2Door(Tube_OD=ULineH75Body_OD, Door_X=Batt_Door_X, 
-						HasMagSwitch=false, HasBatt=false, BlankDoor=false){
+						HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3){
 	ShowBattery=true;
 	Door_Y=HasMagSwitch? Batt_Door_Y+CK_RotSw_d:Batt_Door_Y;
 	//Door_X=Batt_Door_X;
@@ -623,7 +623,7 @@ module RocketServo2Door(Tube_OD=ULineH75Body_OD, Door_X=Batt_Door_X,
 	
 	difference(){
 		union(){
-			Door(Door_X=Door_X, Door_Y=Door_Y, Door_t=Door_t, Tube_OD=Tube_OD, HasSixBolts=false);
+			Door(Door_X=Door_X, Door_Y=Door_Y, Door_t=Door_t, Tube_OD=Tube_OD, HasSixBolts=false, EndFlat_t=EndFlat_t);
 			
 			if (!BlankDoor)
 			intersection(){
@@ -667,10 +667,10 @@ module RocketServo2Door(Tube_OD=ULineH75Body_OD, Door_X=Batt_Door_X,
 
 //rotate([-90,0,0]) RocketServo2Door(Tube_OD=ULineH75Body_OD, Door_X=Batt_Door_X, HasMagSwitch=true, HasBatt=false, BlankDoor=false);
 			
-module Batt_Door(Tube_OD=PML98Body_OD, Door_X=Batt_Door_X, InnerTube_OD=PML38Body_OD, HasSwitch=false, DoubleBatt=false, BlankDoor=false){
+module Batt_Door(Tube_OD=PML98Body_OD, Door_X=Batt_Door_X, InnerTube_OD=PML38Body_OD, HasSwitch=false, TallDoor=false, DoubleBatt=false, BlankDoor=false){
 
 	ShowBattery=true;
-	Door_Y=HasSwitch? Batt_Door_Y+CK_RotSw_d:Batt_Door_Y;
+	Door_Y=(HasSwitch||TallDoor)? Batt_Door_Y+CK_RotSw_d:Batt_Door_Y;
 	//Door_X=Batt_Door_X;
 	Door_t=Batt_DoorThickness-0.7;
 	DoorEdge_a=asin((Door_X/2)/(Tube_OD/2));
@@ -722,6 +722,12 @@ module Batt_Door(Tube_OD=PML98Body_OD, Door_X=Batt_Door_X, InnerTube_OD=PML38Bod
 			} // intersection
 		} // union
 		
+		// cut-out, added 6/12/26
+		translate([0, -Tube_OD/2+Door_t+Batt_Y+BattInset_Z+5, Door_Y/2-Batt_h-5]) hull(){
+			rotate([90,0,0]) cylinder(d=15, h=10);
+			translate([0,0,Batt_h-25]) rotate([90,0,0]) cylinder(d=15, h=10);
+		} // hull
+			
 		// Switch
 		if (HasSwitch && !BlankDoor)
 			translate([0, -Tube_OD/2+CK_RotSw_AO_h/2+Overlap, Switch_Y]) rotate([90,0,0]){
