@@ -510,23 +510,33 @@ Ring_Wall  = 4;
 module NC_GuideRing(OD=Ring1_OD){
     // Annulus + 3 spokes + central eyelet. A solid disc would add ~39g
     // at joint 1 and block the cone interior.
-    union(){
-        difference(){
-            cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
-            translate([0,0,-Overlap])
-                cylinder(d=OD-Ring_Wall*2, h=Ring_T+Overlap*2,
-                         $fn=$preview? 90:360);
-        } // difference
+    intersection(){
+        union(){
+            difference(){
+                cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
+                translate([0,0,-Overlap])
+                    cylinder(d=OD-Ring_Wall*2, h=Ring_T+Overlap*2,
+                             $fn=$preview? 90:360);
+            } // difference
 
-        difference(){
-            cylinder(d=Ring_Eye_d+Ring_Wall*2, h=Ring_T, $fn=$preview? 90:180);
-            translate([0,0,-Overlap])
-                cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
-        } // difference
+            difference(){
+                cylinder(d=Ring_Eye_d+Ring_Wall*2, h=Ring_T, $fn=$preview? 90:180);
+                translate([0,0,-Overlap])
+                    cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
+            } // difference
 
-        for (j=[0:2]) rotate([0,0,120*j])
-            translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
-    } // union
+            for (j=[0:2]) rotate([0,0,120*j])
+                translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
+        } // union
+
+        // Clamp to OD. Each spoke cube is Ring_Wall wide and centred on
+        // y=0, so its far CORNERS reach sqrt((OD/2)^2 + (Ring_Wall/2)^2),
+        // which is larger than OD/2. Without this clamp the ring measures
+        // 82.10 / 52.15 instead of 82.0 / 52.0 and joint 2's clearance
+        // drops to 0.26mm, under the 0.3mm floor.
+        translate([0,0,-1])
+            cylinder(d=OD, h=Ring_T+2, $fn=$preview? 90:360);
+    } // intersection
 } // NC_GuideRing
 ```
 
