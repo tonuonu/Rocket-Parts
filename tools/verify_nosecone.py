@@ -17,7 +17,8 @@ def render(part, out):
         [OPENSCAD, "-o", out, "-D", "Render_Part=%d" % part, SCAD],
         capture_output=True, text=True, env=env)
     err = r.stdout + r.stderr
-    if "ERROR" in err.upper() or not os.path.exists(out) or os.path.getsize(out) < 200:
+    if (r.returncode != 0 or "ERROR:" in err.upper()
+            or not os.path.exists(out) or os.path.getsize(out) < 200):
         raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
 
 
