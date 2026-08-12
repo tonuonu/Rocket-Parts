@@ -75,14 +75,16 @@ Three equal 183.33 mm slices of the exposed cone:
 
 | # | Part | Height | Base dia | PETG mass |
 |---|---|---|---|---|
-| 1 | Shoulder + bulkhead + anchor | 115 mm | 98.6 | ~123 g |
+| 1 | Shoulder + bulkhead + anchor | 115 mm | 98.6 | ~136 g |
 | 2 | Bottom slice | 190.3 mm | 101.5 | ~163 g |
 | 3 | Middle slice | 190.3 mm | 92.9 | ~131 g |
 | 4 | Top slice, filled tip | 183.3 mm | 63.7 | ~62 g |
 | 5 | Guide ring, lower | 6 mm | 82.0 | ~10 g |
 | 6 | Guide ring, upper | 6 mm | 52.0 | ~6 g |
 
-Total ~495 g in PETG. Tallest piece 190.3 mm against the 250 mm limit.
+Total ~508 g in PETG (the stepped shoulder with its 4 mm bulkhead is heavier than
+the plain `NoseconeBase` first costed). Tallest piece 190.3 mm against the 250 mm
+limit. Masses are estimates; the verification harness reports measured values.
 
 Mass is significant — half a kilo at the nose. It shifts CG forward, which helps
 stability, but if it proves too heavy, `Wall_T = 1.8` brings the set to ~390 g
@@ -197,8 +199,12 @@ consumer, and the old 300 mm two-piece configuration is being replaced, not kept
    - each joint overlap 7.0 ± 0.1 mm
    - no piece taller than 250 mm
    - shoulder body 98.6 mm, spigot 96.7 mm
-   - **each guide ring seats with 0.3–0.6 mm radial clearance in its flange bore**
-   - **stepped shoulder spigot enters the bottom slice bore with 0.4 mm clearance**
+   - **each guide ring seats with 0.3–0.6 mm diametral clearance in its flange bore**
+     (82.0 in 82.47 = 0.47; 52.0 in 52.41 = 0.41)
+   - **stepped shoulder spigot enters the bottom slice bore with 0.4 mm diametral
+     clearance** (96.7 in 97.1)
+
+   All clearances in this spec are **diametral**, not radial.
 
    `Status: NoError` is necessary but not sufficient — a part that does not fit
    renders perfectly cleanly. The guide-ring sizing error in the first draft of this
