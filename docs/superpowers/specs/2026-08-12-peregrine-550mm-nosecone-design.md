@@ -34,7 +34,13 @@ NC_Length  = 574.55   // ogive parameter, NOT the finished height
 Base_L     = 15       // full-OD skirt at the bottom
 Tip_R      = 8        // tip sphere radius
 Wall_T     = 2.2
+nRivets    = 0        // was 3
 ```
+
+`nRivets` drops to 0. The old skirt rivets existed to pin a purchased coupler into
+the bore; the shoulder is now glued via its spigot, so the holes would only weaken
+a 2.2 mm wall. The module skips them for `nRivets = 0` regardless of `Base_L`
+(`NoseCone.scad:836`).
 
 Fineness ratio 5.42:1, against the current file's 3:1.
 
@@ -73,10 +79,10 @@ Three equal 183.33 mm slices of the exposed cone:
 | 2 | Bottom slice | 190.3 mm | 101.5 | ~163 g |
 | 3 | Middle slice | 190.3 mm | 92.9 | ~131 g |
 | 4 | Top slice, filled tip | 183.3 mm | 63.7 | ~62 g |
-| 5 | Guide ring, lower | 6 mm | 88.0 | ~7 g |
-| 6 | Guide ring, upper | 6 mm | 58.9 | ~3 g |
+| 5 | Guide ring, lower | 6 mm | 82.0 | ~10 g |
+| 6 | Guide ring, upper | 6 mm | 52.0 | ~6 g |
 
-Total ~489 g in PETG. Tallest piece 190.3 mm against the 250 mm limit.
+Total ~495 g in PETG. Tallest piece 190.3 mm against the 250 mm limit.
 
 Mass is significant — half a kilo at the nose. It shifts CG forward, which helps
 stability, but if it proves too heavy, `Wall_T = 1.8` brings the set to ~390 g
@@ -145,9 +151,23 @@ carry the cone's own inertia.
 
 **Guide rings** at both slice joints: printed rings captured at the gluing flange,
 with a central pass-through hole, keeping the strap centred and preventing it from
-chafing the shell. Each ring's OD is the shell inner diameter at that joint, less
-clearance — `Cut_d - 2 × Wall_T`, giving 88.0 mm at joint 1 (shell ID 88.45) and
-58.9 mm at joint 2 (shell ID 59.26). Pass-through hole 12 mm. These matter only if the parachute packs inside the cone volume;
+chafing the shell.
+
+Ring OD is **not** the shell inner diameter. The gluing flange occupies the joint
+plane, and because the ogive tapers, the flange's clear bore narrows over its 7 mm
+height. Measured from rendered STLs:
+
+| Joint | Bore at joint plane | Bore at flange top | Ring OD |
+|---|---|---|---|
+| 1 (Z 183.33) | 88.02 | **82.47** | 82.0 |
+| 2 (Z 366.67) | 59.18 | **52.41** | 52.0 |
+
+The flange top is the binding constraint. A ring sized to the joint-plane bore would
+not pass its own flange. Each ring is glued into the flange bore, which is the
+thickest and strongest part of the joint.
+
+Construction: 4 mm annulus wall, three spokes to a central 12 mm eyelet. A solid
+disc at this diameter would add ~39 g at joint 1 alone and block the cone interior. These matter only if the parachute packs inside the cone volume;
 if it packs below the nosecone, they can be omitted without affecting anything else.
 
 ## Render selection
@@ -177,6 +197,15 @@ consumer, and the old 300 mm two-piece configuration is being replaced, not kept
    - each joint overlap 7.0 ± 0.1 mm
    - no piece taller than 250 mm
    - shoulder body 98.6 mm, spigot 96.7 mm
+   - **each guide ring seats with 0.3–0.6 mm radial clearance in its flange bore**
+   - **stepped shoulder spigot enters the bottom slice bore with 0.4 mm clearance**
+
+   `Status: NoError` is necessary but not sufficient — a part that does not fit
+   renders perfectly cleanly. The guide-ring sizing error in the first draft of this
+   spec would have reached the printer under a NoError-only gate. Every mating
+   dimension above must be *measured* from the STL, not inferred from parameters.
+   The stepped shoulder and the rings have not yet been test-rendered; the slice
+   geometry has.
 3. Preview mode applies a quarter cutaway (`$preview` guards). Export with F6 or
    `-o file.stl`, never F5.
 
