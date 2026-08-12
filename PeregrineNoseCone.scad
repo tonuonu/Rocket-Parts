@@ -43,7 +43,9 @@ Cut1_Z = 183.33;  // clip plane for the middle slice
 // Body enters the tube (99.0 ID), spigot enters the shell (97.1 ID).
 // Both clearances are 0.4mm diametral.
 Shoulder_L         = 100;    // length inside the body tube
-Shoulder_OD        = 98.6;
+// Derived from the body tube ID so a re-measured tube (line 20) can never
+// silently produce an interference fit here: 0.4mm diametral clearance.
+Shoulder_OD        = Peregrine_Body_ID - 0.4;
 Shoulder_Spigot_L  = 15;     // length inside the nosecone skirt
 Shoulder_Spigot_OD = 96.7;
 Shoulder_Bulk_T    = 4;      // bulkhead thickness, carries the anchor
@@ -196,20 +198,51 @@ module TestRing(){
 // PRINT NOTES
 // ============================================
 //
-// Parts (all 3D printed, superglued together):
-//   0  Test ring          15mm    -- print first, verify fit
-//   1  Shoulder          115mm
-//   2  Bottom slice      190mm
-//   3  Middle slice      190mm
-//   4  Top slice         183mm
-//   5  Guide ring lower    6mm
-//   6  Guide ring upper    6mm
+// Parts (all 3D printed):
+//   0  Test ring          15mm    -- disposable fit check. Print FIRST,
+//                                     verify both fits, then set aside --
+//                                     it is NOT glued into the assembly.
+//   1  Shoulder          115mm    -- superglued into the assembly
+//   2  Bottom slice      190mm    -- superglued into the assembly
+//   3  Middle slice      190mm    -- superglued into the assembly
+//   4  Top slice         183mm    -- superglued into the assembly
+//   5  Guide ring lower    6mm    -- superglued into the assembly (optional)
+//   6  Guide ring upper    6mm    -- superglued into the assembly (optional)
 //
-// Assembly, bottom to top:
-//   shoulder spigot -> bottom slice bore, glue
-//   bottom slice flange -> middle slice, glue (drop ring 5 in first)
-//   middle slice flange -> top slice, glue (drop ring 6 in first)
-//   thread the parachute strap through the bulkhead slots and both rings
+// Parts 3 and 4 EXPORT starting at z=183.33 and z=366.67 (not z=0) --
+// drop them to the build plate in the slicer before printing.
+//
+// Guide rings 5 and 6 keep the parachute strap off the shell wall while
+// it is packed up INSIDE the cone. If the parachute instead packs below
+// the nosecone, in the body tube, the rings serve no purpose -- skip
+// parts 5 and 6 and glue joints 1 and 2 directly.
+//
+// Each flange bore is NARROWEST right at its own rim and WIDENS going
+// down into the open cone below it. A ring set in loose will not catch
+// there -- it slides straight down past the flange and keeps going until
+// it reaches the shoulder bulkhead, far below. Every ring must be GLUED
+// into its flange bore and HELD in place until the glue sets; it will
+// not stay there by itself.
+//
+// Assembly, bottom to top. Thread the strap and seat each ring BEFORE
+// closing the joint above it, never after -- once a joint is glued shut,
+// its far side is a sealed cavity and nothing can be threaded into it:
+//   1. Thread the parachute strap through the shoulder's bulkhead slots.
+//   2. Glue the shoulder spigot into the bottom slice bore. Hold until set.
+//   3. Feed the strap up through ring 5's eyelet, seat the ring in the
+//      bottom slice's joint-1 flange bore, glue, and hold until set.
+//   4. Glue the middle slice onto the bottom slice's flange, closing
+//      joint 1. Ring 5 and the strap are now sealed inside, already
+//      threaded correctly.
+//   5. Feed the strap up through ring 6's eyelet, seat the ring in the
+//      middle slice's joint-2 flange bore, glue, and hold until set.
+//   6. Glue the top slice onto the middle slice's flange, closing joint 2.
+// (If skipping the rings per above, just glue each joint directly and
+// thread the strap through the bulkhead slots only.)
+//
+// Use gel CA or a slow epoxy, not thin/wicking CA. The laps are large
+// (1935mm^2 at joint 1) with only a ~0.2mm radial gap, and thin CA kicks
+// on contact -- it gives you one shot at alignment on a 190mm-long part.
 //
 // Print settings: 3 perimeters, 15% infill, PETG or ASA.
 // Total ~508g in PETG.

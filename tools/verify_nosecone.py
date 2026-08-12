@@ -4,7 +4,7 @@
 A part that does not fit still renders cleanly, so every mating dimension
 is measured from the STL rather than inferred from parameters.
 """
-import math, os, subprocess, sys, tempfile
+import math, os, re, subprocess, sys, tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
@@ -12,6 +12,8 @@ SCAD = os.path.join(REPO, "PeregrineNoseCone.scad")
 
 
 def render(part, out):
+    """Render `part` to `out`. Returns the OpenSCAD-reported genus (int),
+    or None if the render statistics did not contain a Genus line."""
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out, "-D", "Render_Part=%d" % part, SCAD],
@@ -22,6 +24,8 @@ def render(part, out):
             or "Ignoring unknown module" in err
             or not os.path.exists(out) or os.path.getsize(out) < 200):
         raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
+    g = re.search(r"Genus:\s*(-?\d+)", err)
+    return int(g.group(1)) if g else None
 
 
 def _tris(stl):
@@ -69,6 +73,21 @@ def volume(stl):
 NAMES = {0: "test ring", 1: "shoulder", 2: "bottom slice",
          3: "middle slice", 4: "top slice", 5: "ring lower", 6: "ring upper"}
 
+# Expected genus per part (topological invariant, immune to the
+# "bit-identical bounding box, wrong interior" failure mode: a solid
+# is genus 0, each through-hole/handle adds 1). Ring genus 4 = 3 spoke
+# gaps + 1 eyelet; a webbed eyelet collapses two of those gaps into
+# the eyelet cavity and reads 6 instead.
+GENUS = {0: 1, 1: 2, 2: 1, 3: 1, 4: 0, 5: 4, 6: 4}
+
+# Z bands (in each part's own exported frame) used to measure real mating
+# surfaces instead of trusting the design constants they are supposed to
+# match. Chosen to sit within a single wall/flange span so bore() sees a
+# clean, near-constant diameter rather than a taper.
+FLANGE_TOP_BAND = {2: (189.0, 190.4), 3: (372.0, 373.7)}  # ring seats here
+SHOULDER_SPIGOT_BAND = (105.0, 115.0)   # part 1: spigot OD
+BOTTOM_SLICE_BASE_BAND = (0.0, 5.0)     # part 2: coupler bore at the base
+
 
 def checks(m):
     """Return list of (label, actual, expected, tolerance)."""
@@ -94,6 +113,36 @@ def checks(m):
         c += [("ring upper dia", a(6, "dmax"), 52.0, 0.2)]
     for p in m:
         c += [("part %d fits 250mm Z" % p, m[p]["height"], min(m[p]["height"], 250.0), 0.01)]
+
+    # --- interior checks: bounding box / OD alone cannot see these ---
+
+    # 1. Genus per part. Catches an interior defect (e.g. a webbed
+    # eyelet) that leaves every zmin/zmax/height/dmax check untouched.
+    for p in m:
+        if "genus" in m[p] and p in GENUS:
+            c += [("part %d genus" % p, m[p]["genus"], GENUS[p], 0)]
+
+    # 2. Ring-in-flange clearance, MEASURED bore vs MEASURED ring OD
+    # (never against the hardcoded 82.0/52.0 design constants, which is
+    # exactly what let an interference fit pass the old gate).
+    if 2 in m and 5 in m:
+        zlo, zhi = FLANGE_TOP_BAND[2]
+        flange_bore, _ = bore(a(2, "stl"), zlo, zhi)
+        c += [("ring5-in-flange clearance", flange_bore - a(5, "dmax"), 0.45, 0.15)]
+    if 3 in m and 6 in m:
+        zlo, zhi = FLANGE_TOP_BAND[3]
+        flange_bore, _ = bore(a(3, "stl"), zlo, zhi)
+        c += [("ring6-in-flange clearance", flange_bore - a(6, "dmax"), 0.45, 0.15)]
+
+    # 3. Shoulder spigot: its own OD, and its measured clearance in the
+    # bottom slice's actual coupler bore (not the Peregrine_Coupler_OD
+    # constant it is only supposed to match).
+    if 1 in m:
+        _, spigot_od = bore(a(1, "stl"), *SHOULDER_SPIGOT_BAND)
+        c += [("shoulder spigot dia", spigot_od, 96.7, 0.1)]
+        if 2 in m:
+            bottom_bore, _ = bore(a(2, "stl"), *BOTTOM_SLICE_BASE_BAND)
+            c += [("spigot-in-bottom-bore clearance", bottom_bore - spigot_od, 0.4, 0.1)]
     return c
 
 
@@ -103,12 +152,15 @@ def main(argv):
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
-            render(p, out)
+            genus = render(p, out)
         except RuntimeError as e:
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
             return 1
         m[p] = measure(out)
         m[p]["vol"] = volume(out)
+        m[p]["stl"] = out
+        if genus is not None:
+            m[p]["genus"] = genus
         print("  part %d %-14s h=%7.2f  dia=%7.2f  z=%7.2f..%7.2f  %5.0f g PETG"
               % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
                  m[p]["zmin"], m[p]["zmax"], m[p]["vol"] * 1.27))
