@@ -511,6 +511,7 @@ module NC_GuideRing(OD=Ring1_OD){
     // Annulus + 3 spokes + central eyelet. A solid disc would add ~39g
     // at joint 1 and block the cone interior.
     intersection(){
+      difference(){
         union(){
             difference(){
                 cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
@@ -529,13 +530,21 @@ module NC_GuideRing(OD=Ring1_OD){
                 translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
         } // union
 
+        // The spoke cubes start at x=0, the ring's AXIS, so unioning them
+        // after the eyelet's own difference() fills the strap bore with a
+        // solid hub. The bore must be cut LAST or the eyelet is webbed shut
+        // -- and no outer-diameter check can see that.
+        translate([0,0,-Overlap])
+            cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
+      } // difference
+
         // Clamp to OD. Each spoke cube is Ring_Wall wide and centred on
         // y=0, so its far CORNERS reach sqrt((OD/2)^2 + (Ring_Wall/2)^2),
         // which is larger than OD/2. Without this clamp the ring measures
         // 82.10 / 52.15 instead of 82.0 / 52.0 and joint 2's clearance
         // drops to 0.26mm, under the 0.3mm floor.
-        translate([0,0,-1])
-            cylinder(d=OD, h=Ring_T+2, $fn=$preview? 90:360);
+        translate([0,0,-Overlap])
+            cylinder(d=OD, h=Ring_T+Overlap*2, $fn=$preview? 90:360);
     } // intersection
 } // NC_GuideRing
 ```
