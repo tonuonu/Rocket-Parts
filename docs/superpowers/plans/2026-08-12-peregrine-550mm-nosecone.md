@@ -113,10 +113,18 @@ SCAD = os.path.join(REPO, "PeregrineNoseCone.scad")
 def render(part, out):
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
-        [OPENSCAD, "-o", out, "-D", "Render_Part=%d" % part, SCAD],
+        [OPENSCAD, "--export-format", "asciistl", "-o", out,
+         "-D", "Render_Part=%d" % part, SCAD],
         capture_output=True, text=True, env=env)
     err = r.stdout + r.stderr
-    if "ERROR" in err.upper() or not os.path.exists(out) or os.path.getsize(out) < 200:
+    # Do NOT test `"ERROR" in err.upper()` -- that matches the ERROR inside
+    # NOERROR, and OpenSCAD's success line is "Status: NoError".
+    # A missing include or undefined module only WARNS and exits 0, so the
+    # geometry silently vanishes; both must be treated as failures.
+    if (r.returncode != 0 or "ERROR:" in err.upper()
+            or "Can't find include file" in err
+            or "Ignoring unknown module" in err
+            or not os.path.exists(out) or os.path.getsize(out) < 200):
         raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
 
 
