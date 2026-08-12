@@ -453,9 +453,12 @@ sys.path.insert(0, "tools")
 from verify_nosecone import render, bore
 out = os.path.join(tempfile.mkdtemp(), "s.stl")
 render(1, out)
-print("body   Z 50-60  dia %.2f .. %.2f  (expect outer 98.60)" % bore(out, 50, 60))
-print("spigot Z 105-114 dia %.2f .. %.2f  (expect outer 96.70)" % bore(out, 105, 114))
-print("spigot clearance in 97.1 bore: %.2f mm diametral" % (97.1 - bore(out,105,114)[1]))
+# NOTE: bands must CONTAIN mesh vertices. A plain cylinder() has vertices only
+# at its ends -- this part's are at Z = 0, 4, 100, 100.05, 115 -- so a band like
+# 50..60 samples empty space and bore() raises "no geometry in Z band".
+print("body   Z 0-60    dia %.2f .. %.2f  (expect outer 98.60)" % bore(out, 0, 60))
+print("spigot Z 105-115 dia %.2f .. %.2f  (expect outer 96.70)" % bore(out, 105, 115))
+print("spigot clearance in 97.1 bore: %.2f mm diametral" % (97.1 - bore(out,105,115)[1]))
 PY
 ```
 
