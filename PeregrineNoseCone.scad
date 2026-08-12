@@ -38,6 +38,17 @@ Cut2_d = 63.66;   // -> Z = 366.67
 Cut1_Z = 183.33;  // clip plane for the middle slice
 
 // ============================================
+// SHOULDER — stepped, printed, all-in-one
+// ============================================
+// Body enters the tube (99.0 ID), spigot enters the shell (97.1 ID).
+// Both clearances are 0.4mm diametral.
+Shoulder_L         = 100;    // length inside the body tube
+Shoulder_OD        = 98.6;
+Shoulder_Spigot_L  = 15;     // length inside the nosecone skirt
+Shoulder_Spigot_OD = 96.7;
+Shoulder_Bulk_T    = 4;      // bulkhead thickness, carries the anchor
+
+// ============================================
 // RENDER SELECTION — change this value!
 // ============================================
 // 0 = Test ring (print first!)
@@ -80,9 +91,42 @@ module NC_Slice_Top(){
         Cut_d=Cut2_d, LowerPortion=false, FillTip=true);
 } // NC_Slice_Top
 
+module NC_Shoulder(){
+    // Printed replacement for a bought coupler. The bulkhead is the
+    // parachute anchor: shock passes straight into the body tube, so no
+    // glue joint is ever loaded in tension.
+    difference(){
+        union(){
+            cylinder(d=Shoulder_OD, h=Shoulder_L, $fn=$preview? 90:360);
+
+            translate([0,0,Shoulder_L])
+                cylinder(d=Shoulder_Spigot_OD, h=Shoulder_Spigot_L,
+                         $fn=$preview? 90:360);
+        } // union
+
+        // Hollow the body, leaving the bulkhead at the bottom
+        translate([0,0,Shoulder_Bulk_T])
+            cylinder(d=Shoulder_OD-NC_Wall_T*2,
+                     h=Shoulder_L-Shoulder_Bulk_T+Overlap,
+                     $fn=$preview? 90:360);
+
+        // Hollow the spigot separately so its wall stays NC_Wall_T
+        translate([0,0,Shoulder_L])
+            cylinder(d=Shoulder_Spigot_OD-NC_Wall_T*2,
+                     h=Shoulder_Spigot_L+Overlap, $fn=$preview? 90:360);
+
+        // Strap slots — printed anchor, no metal hardware
+        translate([0, Shoulder_OD/2-NC_Wall_T-4, -Overlap])
+            RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
+        translate([0, -Shoulder_OD/2+NC_Wall_T+4, -Overlap])
+            RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
+    } // difference
+} // NC_Shoulder
+
 // ============================================
 // RENDERING LOGIC — don't edit below
 // ============================================
+if (Render_Part == 1) NC_Shoulder();
 if (Render_Part == 2) NC_Slice_Bottom();
 if (Render_Part == 3) NC_Slice_Middle();
 if (Render_Part == 4) NC_Slice_Top();
