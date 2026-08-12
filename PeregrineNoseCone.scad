@@ -173,6 +173,7 @@ module NC_GuideRing(OD=Ring1_OD){
 // ============================================
 // RENDERING LOGIC — don't edit below
 // ============================================
+if (Render_Part == 0) TestRing();
 if (Render_Part == 1) NC_Shoulder();
 if (Render_Part == 2) NC_Slice_Bottom();
 if (Render_Part == 3) NC_Slice_Middle();
@@ -180,28 +181,40 @@ if (Render_Part == 4) NC_Slice_Top();
 if (Render_Part == 5) NC_GuideRing(OD=Ring1_OD);
 if (Render_Part == 6) NC_GuideRing(OD=Ring2_OD);
 
-module TestRing() {
-    // Test piece to verify tube dimensions
-    // OD should match body tube OD (flush fit, no step)
-    // ID is the shoulder that sits inside the body tube
-    difference() {
+module TestRing(){
+    // Print this FIRST. Verifies both fits before committing to 190mm parts.
+    // OD must sit flush on the body tube (no step).
+    // Bore must accept the shoulder spigot (96.7) with a light push fit.
+    difference(){
         cylinder(d=Peregrine_Body_OD, h=15, $fn=90);
-        translate([0,0,-0.1]) cylinder(d=Peregrine_Coupler_OD, h=15.2, $fn=90);
-    }
-    // TEST: Place on top of body tube - should be flush (same OD)
-    // TEST: The ID hole should accept the coupler tube (or fit inside body tube)
-}
+        translate([0,0,-Overlap])
+            cylinder(d=Peregrine_Coupler_OD, h=15+Overlap*2, $fn=90);
+    } // difference
+} // TestRing
 
 // ============================================
 // PRINT NOTES
 // ============================================
 //
-// 1. Set Render_Part = 0, print test ring, verify fit
-// 2. Adjust Peregrine_Body_OD and Peregrine_Coupler_OD if needed
-// 3. Set Render_Part = 2, export STL, print top
-// 4. Set Render_Part = 3, export STL, print bottom
-// 5. Glue halves with CA or epoxy
+// Parts (all 3D printed, superglued together):
+//   0  Test ring          15mm    -- print first, verify fit
+//   1  Shoulder          115mm
+//   2  Bottom slice      190mm
+//   3  Middle slice      190mm
+//   4  Top slice         183mm
+//   5  Guide ring lower    6mm
+//   6  Guide ring upper    6mm
 //
-// Print settings: 3 perimeters, 15% infill, PETG/ASA
+// Assembly, bottom to top:
+//   shoulder spigot -> bottom slice bore, glue
+//   bottom slice flange -> middle slice, glue (drop ring 5 in first)
+//   middle slice flange -> top slice, glue (drop ring 6 in first)
+//   thread the parachute strap through the bulkhead slots and both rings
+//
+// Print settings: 3 perimeters, 15% infill, PETG or ASA.
+// Total ~508g in PETG.
+//
+// ALWAYS export with F6 (full render). F5 preview applies a quarter
+// cutaway and will silently export a broken part.
 //
 // ***********************************
