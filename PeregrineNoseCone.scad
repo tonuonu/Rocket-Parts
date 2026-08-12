@@ -138,28 +138,35 @@ module NC_GuideRing(OD=Ring1_OD){
     // Annulus + 3 spokes + central eyelet. A solid disc would add ~39g
     // at joint 1 and block the cone interior.
     intersection(){
-        union(){
-            difference(){
-                cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
-                translate([0,0,-Overlap])
-                    cylinder(d=OD-Ring_Wall*2, h=Ring_T+Overlap*2,
-                             $fn=$preview? 90:360);
-            } // difference
+        difference(){
+            union(){
+                difference(){
+                    cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
+                    translate([0,0,-Overlap])
+                        cylinder(d=OD-Ring_Wall*2, h=Ring_T+Overlap*2,
+                                 $fn=$preview? 90:360);
+                } // difference
 
-            difference(){
-                cylinder(d=Ring_Eye_d+Ring_Wall*2, h=Ring_T, $fn=$preview? 90:180);
-                translate([0,0,-Overlap])
-                    cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
-            } // difference
+                difference(){
+                    cylinder(d=Ring_Eye_d+Ring_Wall*2, h=Ring_T, $fn=$preview? 90:180);
+                    translate([0,0,-Overlap])
+                        cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
+                } // difference
 
-            for (j=[0:2]) rotate([0,0,120*j])
-                translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
-        } // union
+                for (j=[0:2]) rotate([0,0,120*j])
+                    translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
+            } // union
+
+            // Spokes cross the axis, so the eyelet bore must be cut AFTER
+            // they are unioned or the strap hole is webbed shut.
+            translate([0,0,-Overlap])
+                cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
+        } // difference
 
         // Clamp to OD: the spoke cube corners otherwise reach
         // sqrt((OD/2)^2+(Ring_Wall/2)^2), eating the flange clearance.
-        translate([0,0,-1])
-            cylinder(d=OD, h=Ring_T+2, $fn=$preview? 90:360);
+        translate([0,0,-Overlap])
+            cylinder(d=OD, h=Ring_T+Overlap*2, $fn=$preview? 90:360);
     } // intersection
 } // NC_GuideRing
 
