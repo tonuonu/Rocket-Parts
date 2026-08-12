@@ -49,6 +49,17 @@ Shoulder_Spigot_OD = 96.7;
 Shoulder_Bulk_T    = 4;      // bulkhead thickness, carries the anchor
 
 // ============================================
+// GUIDE RINGS — keep the strap off the shell
+// ============================================
+// OD is the measured flange bore less 0.4-0.5mm diametral clearance.
+// Flange bores: 82.47 at joint 1, 52.41 at joint 2.
+Ring_T     = 6;
+Ring1_OD   = 82.0;
+Ring2_OD   = 52.0;
+Ring_Eye_d = 12;   // strap pass-through
+Ring_Wall  = 4;
+
+// ============================================
 // RENDER SELECTION — change this value!
 // ============================================
 // 0 = Test ring (print first!)
@@ -123,6 +134,35 @@ module NC_Shoulder(){
     } // difference
 } // NC_Shoulder
 
+module NC_GuideRing(OD=Ring1_OD){
+    // Annulus + 3 spokes + central eyelet. A solid disc would add ~39g
+    // at joint 1 and block the cone interior.
+    intersection(){
+        union(){
+            difference(){
+                cylinder(d=OD, h=Ring_T, $fn=$preview? 90:360);
+                translate([0,0,-Overlap])
+                    cylinder(d=OD-Ring_Wall*2, h=Ring_T+Overlap*2,
+                             $fn=$preview? 90:360);
+            } // difference
+
+            difference(){
+                cylinder(d=Ring_Eye_d+Ring_Wall*2, h=Ring_T, $fn=$preview? 90:180);
+                translate([0,0,-Overlap])
+                    cylinder(d=Ring_Eye_d, h=Ring_T+Overlap*2, $fn=$preview? 90:180);
+            } // difference
+
+            for (j=[0:2]) rotate([0,0,120*j])
+                translate([0,-Ring_Wall/2,0]) cube([OD/2, Ring_Wall, Ring_T]);
+        } // union
+
+        // Clamp to OD: the spoke cube corners otherwise reach
+        // sqrt((OD/2)^2+(Ring_Wall/2)^2), eating the flange clearance.
+        translate([0,0,-1])
+            cylinder(d=OD, h=Ring_T+2, $fn=$preview? 90:360);
+    } // intersection
+} // NC_GuideRing
+
 // ============================================
 // RENDERING LOGIC — don't edit below
 // ============================================
@@ -130,6 +170,8 @@ if (Render_Part == 1) NC_Shoulder();
 if (Render_Part == 2) NC_Slice_Bottom();
 if (Render_Part == 3) NC_Slice_Middle();
 if (Render_Part == 4) NC_Slice_Top();
+if (Render_Part == 5) NC_GuideRing(OD=Ring1_OD);
+if (Render_Part == 6) NC_GuideRing(OD=Ring2_OD);
 
 module TestRing() {
     // Test piece to verify tube dimensions
