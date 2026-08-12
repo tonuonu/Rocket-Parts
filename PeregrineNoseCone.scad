@@ -14,74 +14,78 @@
 include<NoseCone.scad>
 
 // ============================================
-// ADJUST THESE PARAMETERS TO FIT YOUR TUBE
+// BODY TUBE — measure yours and adjust
 // ============================================
-
-// Body tube dimensions - MEASURE YOUR TUBE!
-Peregrine_Body_OD = 101.5;  // Outside diameter of body tube
-Peregrine_Body_ID = 99.0;   // Inside diameter of body tube
-
-// Coupler dimensions - measure or estimate as Body_ID - 2.5
-Peregrine_Coupler_OD = 97.5;  // What slides inside body tube
+Peregrine_Body_OD    = 101.5;   // outside diameter of body tube
+Peregrine_Body_ID    = 99.0;    // inside diameter of body tube
+Peregrine_Coupler_OD = 97.1;    // shell ID = Body_OD - 2*Wall_T
 
 // ============================================
-// NOSE CONE PARAMETERS
+// NOSE CONE — 550mm exposed, 5.42:1 ogive
 // ============================================
+// Exposed height = NC_Base_L + NC_Length - X0 + NC_Tip_R.
+// The +NC_Tip_R term matters: Tip_Z in BluntOgiveNoseCone is the tip
+// SPHERE CENTRE, not the apex. NC_Length=574.55 gives exactly 550.
+NC_Length  = 574.55;
+NC_Base_L  = 15;
+NC_Tip_R   = 8;
+NC_Wall_T  = 2.2;
+NC_nRivets = 0;   // shoulder is glued via its spigot, not pinned
 
-NC_Length = 300;        // Total nose cone length (3:1 ratio)
-NC_Base_L = 15;         // Skirt length (for rivets)
-NC_Tip_R = 8;           // Tip radius (blunted tip)
-NC_Wall_T = 2.2;        // Wall thickness
-NC_nRivets = 3;         // Number of rivet holes
+// Slice planes. Cut_d is a DIAMETER; the module derives Z from it.
+Cut1_d = 92.85;   // -> Z = 183.33
+Cut2_d = 63.66;   // -> Z = 366.67
+Cut1_Z = 183.33;  // clip plane for the middle slice
 
 // ============================================
-// TWO-PIECE PRINTING OPTIONS
-// ============================================
-
-// Set to 0 for single piece, or body OD minus ~20mm for split
-NC_Cut_d = Peregrine_Body_OD - 20;  // ~80mm split diameter
-
-// ============================================
-// RENDER SELECTION - Change this value!
+// RENDER SELECTION — change this value!
 // ============================================
 // 0 = Test ring (print first!)
-// 1 = Single piece nose cone
-// 2 = Two piece - TOP (tip section)
-// 3 = Two piece - BOTTOM (base/skirt section)
-
+// 1 = Shoulder + bulkhead + parachute anchor
+// 2 = Bottom slice
+// 3 = Middle slice
+// 4 = Top slice (filled tip)
+// 5 = Guide ring, lower
+// 6 = Guide ring, upper
 Render_Part = 0;
 
 // ============================================
-// RENDERING LOGIC - Don't edit below
+// PARTS
 // ============================================
+module NC_Slice_Bottom(){
+    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD,
+        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets,
+        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T,
+        Cut_d=Cut1_d, LowerPortion=true);
+} // NC_Slice_Bottom
 
-if (Render_Part == 0) {
-    // Test ring - print first to verify fit
-    TestRing();
-}
+module NC_Slice_Middle(){
+    // Everything below cut 2 (with its gluing flange), clipped above cut 1.
+    // The clean lower cut slides over the bottom slice's flange.
+    intersection(){
+        BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD,
+            L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets,
+            Tip_R=NC_Tip_R, Wall_T=NC_Wall_T,
+            Cut_d=Cut2_d, LowerPortion=true);
 
-if (Render_Part == 1) {
-    // Single piece (if length <= 250mm)
-    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, Cut_d=0);
-}
+        translate([0,0,Cut1_Z])
+            cylinder(d=Peregrine_Body_OD+2, h=NC_Length, $fn=$preview? 90:360);
+    } // intersection
+} // NC_Slice_Middle
 
-if (Render_Part == 2) {
-    // Two piece - TOP (tip)
-    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
-        Cut_d=NC_Cut_d, LowerPortion=false, FillTip=true);
-}
+module NC_Slice_Top(){
+    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD,
+        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets,
+        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T,
+        Cut_d=Cut2_d, LowerPortion=false, FillTip=true);
+} // NC_Slice_Top
 
-if (Render_Part == 3) {
-    // Two piece - BOTTOM (base/skirt)
-    BluntOgiveNoseCone(ID=Peregrine_Coupler_OD, OD=Peregrine_Body_OD, 
-        L=NC_Length, Base_L=NC_Base_L, nRivets=NC_nRivets, 
-        Tip_R=NC_Tip_R, Wall_T=NC_Wall_T, 
-        Cut_d=NC_Cut_d, LowerPortion=true);
-}
+// ============================================
+// RENDERING LOGIC — don't edit below
+// ============================================
+if (Render_Part == 2) NC_Slice_Bottom();
+if (Render_Part == 3) NC_Slice_Middle();
+if (Render_Part == 4) NC_Slice_Top();
 
 module TestRing() {
     // Test piece to verify tube dimensions
