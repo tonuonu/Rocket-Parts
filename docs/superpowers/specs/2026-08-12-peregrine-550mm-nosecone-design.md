@@ -40,7 +40,7 @@ nRivets    = 0        // was 3
 `nRivets` drops to 0. The old skirt rivets existed to pin a purchased coupler into
 the bore; the shoulder is now glued via its spigot, so the holes would only weaken
 a 2.2 mm wall. The module skips them for `nRivets = 0` regardless of `Base_L`
-(`NoseCone.scad:836`).
+(`NoseCone.scad:837`).
 
 Fineness ratio 5.42:1, against the current file's 3:1.
 
