@@ -1,16 +1,21 @@
 import math
 
-RHO_PETG = 1.27e-3   # g/mm3
+RHO_PETG = 1.27   # g/cm3, R60-PrintSettings.md sec 3
+RHO_PC   = 1.20   # g/cm3, R60-PrintSettings.md sec 3 (fin can/retainer/spacer)
+INFILL_EFF = 0.78  # effective print density, matching STL Files/Rocket60/
+                    # README.md's own "~78%... plausible but not verified"
+                    # assumption (the figure the spec's 887g liftoff implies)
 D   = 60.0           # airframe OD, fixed by nosecone base
 WALL= 1.6            # airframe wall
 
-def tube_g(L, od=D, wall=WALL, rho=RHO_PETG):
-    return math.pi*((od/2)**2-(od/2-wall)**2)*L*rho
-
 # ---------------- layout (station = mm from nose tip) ----------------
+# FIXED (defect 2a): L_EBAY/L_CHUTE were still 130/130 (TOTAL 582mm), the
+# pre-redesign figures -- R60Lib.scad has had 160/180 (TOTAL 662mm) since
+# the e-bay upright-servo redesign and the spring-mechanism chute
+# lengthening. This model was of a rocket that no longer exists.
 L_NOSE = 94.0
-L_EBAY = 130.0
-L_CHUTE= 130.0
+L_EBAY = 160.0
+L_CHUTE= 180.0
 L_FINCAN=228.0
 TOTAL  = L_NOSE+L_EBAY+L_CHUTE+L_FINCAN
 
@@ -18,10 +23,47 @@ S_EBAY = L_NOSE
 S_CHUTE= S_EBAY+L_EBAY
 S_FIN  = S_CHUTE+L_CHUTE
 
+# Measured mesh volumes, cm^3, from STL Files/Rocket60/README.md -- NOT
+# estimates (defect 2a: this file used to carry round-number guesses for
+# every printed part, and 58g for a bayonet ring that was abandoned and
+# deleted from the design two tasks ago). Material per part from
+# R60-PrintSettings.md sec 3.
+NOSECONE_VOL = 29.4                 # NoseCone.stl
+STL_VOL = {1: 16.2, 2: 45.7, 3: 53.5, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
+           8: 55.1, 9: 114.0, 10: 13.8, 11: 13.4, 12: 17.6, 13: 3.3}
+MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
+
+def petg(vol_cm3, infill=INFILL_EFF):
+    return vol_cm3 * RHO_PETG * infill
+
+def pc(vol_cm3, infill=INFILL_EFF):
+    return vol_cm3 * RHO_PC * infill
+
 # ---------------- fins ----------------
-Cr, Ct, span, sweep = 90.0, 35.0, 55.0, 45.0
+Cr, Ct, span, sweep = 90.0, 35.0, 55.0, 45.0   # AS-BUILT, R60Lib.scad
 FIN_T, NFIN = 4.0, 3
 S_finLE = TOTAL - Cr - 8.0
+
+# FIXED (defect 2b): Barrowman needs the EXPOSED fin panel, not the full
+# fin. R60_FinCan() cuts the fin slot from R60_MMT_OD/2=16mm outward, so
+# the epoxied root bottoms out at r=16mm and only r=(D/2)..(16+span) is
+# actually exposed to the airflow -- the buried 14mm (D/2 - 16) between
+# the MMT and the body OD contributes zero normal force. Feeding Barrowman
+# the full buried root chord (90mm) overstated CN_fins by ~65% (5.78 vs.
+# the corrected ~3.5) and pulled CP aft of where it actually sits.
+# Everything below is derived from the fin's OWN planform (R60_Fin()'s
+# polygon: root (0,0)-(Cr,0), tip (sweep,span)-(sweep+Ct,span)), not a
+# second independently-guessed set of numbers.
+MMT_r = 16.0                 # R60_MMT_OD/2
+buried = D/2 - MMT_r         # 14mm of the fin's own span sits inside the can
+span_exp = span - buried
+def _LE(y): return sweep * y / span            # leading-edge X at span station y
+def _TE(y): return Cr + (sweep + Ct - Cr) * y / span
+Cr_exp = _TE(buried) - _LE(buried)   # chord AT the body surface, ~76mm
+Ct_exp = Ct
+sweep_exp = _LE(span) - _LE(buried)
+S_finLE_exp = S_finLE + _LE(buried)   # exposed root LE is AFT of the buried
+                                        # root LE by the sweep at y=buried
 
 # ---------------- motors ----------------
 MOTORS = {
@@ -34,26 +76,45 @@ MOTORS = {
 
 def build(motor):
     mlen, mtot, mprop, Ns, avgN, burn = MOTORS[motor]
-    mmt_od, mmt_id, mmt_len = 32.0, 29.0, 223.0
-    fin_area = (Cr+Ct)/2*span
+    fin_area = (Cr+Ct)/2*span   # full fin (mass is real regardless of exposure)
+    # Motor spacer scales with the actual R60_MotorSpacer() length for
+    # this motor (MMT_L - motor length); TSP E20-P is excluded from the
+    # design (spec sec 1.1) and would use MotorAdapter29, not this
+    # spacer, but the scaled figure is kept for a like-for-like row.
+    spacer_len = max(0.0, MMT_L - mlen)
+    spacer_g = pc(STL_VOL[12] / 104.0 * spacer_len) if spacer_len > 1 else 0.0
     items = [
     # (name, mass g, station mm)
-     ('nosecone shell',        37.0, 0.45*L_NOSE),
-     ('camera assembly',       60.0, 0.50*L_NOSE),
-     ('neck + bolts',          22.0, L_NOSE+12),
-     ('e-bay tube',            tube_g(L_EBAY),           S_EBAY+L_EBAY/2),
-     ('CATS Vega + sled',      25.0+35.0,                S_EBAY+L_EBAY/2),
+     ('nosecone shell',        petg(NOSECONE_VOL),       0.45*L_NOSE),
+     ('camera assembly',       60.0,                     0.50*L_NOSE),
+     ('neck + bolts',          petg(STL_VOL[1]) + 3.0,   L_NOSE+12),
+     ('e-bay tube',            petg(STL_VOL[2]),         S_EBAY+L_EBAY/2),
+     ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_EBAY+L_EBAY/2),
      ('battery + wiring',      45.0,                     S_EBAY+L_EBAY/2),
-     ('e-bay bulkheads',       24.0,                     S_EBAY+L_EBAY/2),
-     ('chute bay tube',        tube_g(L_CHUTE),          S_CHUTE+L_CHUTE/2),
+     ('e-bay fwd bulkhead',    petg(STL_VOL[4]),         S_EBAY+6),
+     # 2x MG90S at ~13.4g each (datasheet), mounted upright in the aft
+     # bulkhead per its module comment.
+     ('e-bay aft bulkhead + 2 servos', petg(STL_VOL[5])+27.0, S_EBAY+L_EBAY-13),
+     ('access door + switch',  petg(STL_VOL[7]) + 8.0,   S_EBAY+L_EBAY-40),
+     ('chute bay tube',        petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
      ('parachute+cord+hw',     70.0,                     S_CHUTE+L_CHUTE*0.45),
-     ('bayonet + 2 servos',    58.0,                     S_CHUTE+8),
-     ('fin can tube',          tube_g(L_FINCAN),         S_FIN+L_FINCAN/2),
-     ('MMT',   math.pi*((mmt_od/2)**2-(mmt_id/2)**2)*mmt_len*RHO_PETG, S_FIN+L_FINCAN/2),
-     ('centering rings x3',    3*math.pi*((D/2-WALL)**2-(mmt_od/2)**2)*3.0*RHO_PETG, S_FIN+L_FINCAN/2),
-     ('fins x3 (60% infill)',  NFIN*fin_area*FIN_T*RHO_PETG*0.62, S_finLE+0.45*Cr),
-     ('retainer + rail buttons',26.0, TOTAL-30),
-     ('MOTOR '+motor,          mtot, TOTAL-mlen/2),
+     # Spring/ball-lock carrier (part 8) and the CS4323 spring it holds --
+     # missing entirely before this fix. No spring rate/mass figure exists
+     # anywhere in the repo (R60Lib.scad's own R60_Pin_d comment); 25g is
+     # a stated, UNVERIFIED estimate for a ~44mm OD / 200mm free-length
+     # compression spring, not a measurement -- bench-weigh the real part.
+     ('spring carrier',        petg(STL_VOL[8]),         S_CHUTE+8),
+     ('CS4323 spring (est., unverified)', 25.0,          S_CHUTE+40),
+     # Tether latch (part 13) -- also missing entirely before this fix.
+     ('tether latch + pin',    petg(STL_VOL[13]) + 1.0,  S_EBAY+L_EBAY-5),
+     ('shear pins x2',         0.5,                      S_CHUTE),
+     ('fin can (PC)',          pc(STL_VOL[9]),           S_FIN+L_FINCAN/2),
+     ('fins x3 (62% infill)',  NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62,
+                                                          S_finLE+0.45*Cr),
+     ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL-30),
+     ('rail buttons x2',       4.0,                      TOTAL-60),
+     ('motor spacer (PC)',     spacer_g,                 TOTAL-mlen-spacer_len/2),
+     ('MOTOR '+motor,          mtot,                     TOTAL-mlen/2),
     ]
     m  = sum(i[1] for i in items)
     cg = sum(i[1]*i[2] for i in items)/m
@@ -64,28 +125,31 @@ def build(motor):
 def barrowman():
     Xn = 0.466*L_NOSE; CNn = 2.0
     R = D/2
-    Lf = math.sqrt(span**2 + (sweep + Ct/2 - Cr/2)**2)
-    CNf = (4*NFIN*(span/D)**2)/(1+math.sqrt(1+(2*Lf/(Cr+Ct))**2))
-    CNf *= (1 + R/(span+R))
-    Xf = S_finLE + sweep*(Cr+2*Ct)/(3*(Cr+Ct)) + ((Cr+Ct) - Cr*Ct/(Cr+Ct))/6
+    Lf = math.sqrt(span_exp**2 + (sweep_exp + Ct_exp/2 - Cr_exp/2)**2)
+    CNf = (4*NFIN*(span_exp/D)**2)/(1+math.sqrt(1+(2*Lf/(Cr_exp+Ct_exp))**2))
+    CNf *= (1 + R/(span_exp+R))
+    Xf = S_finLE_exp + sweep_exp*(Cr_exp+2*Ct_exp)/(3*(Cr_exp+Ct_exp)) + ((Cr_exp+Ct_exp) - Cr_exp*Ct_exp/(Cr_exp+Ct_exp))/6
     CN = CNn+CNf
     return (CNn*Xn + CNf*Xf)/CN, CN, CNf
 
 CP, CN, CNf = barrowman()
 print(f"Airframe: OD {D} mm, wall {WALL} mm, total length {TOTAL:.0f} mm  (L/D {TOTAL/D:.1f})")
-print(f"Fins: {NFIN}x  Cr {Cr} Ct {Ct} span {span} sweep {sweep} t {FIN_T} mm   CN_fins {CNf:.2f}")
+print(f"Fins (buried root {Cr}/{span} -> exposed {Cr_exp:.1f}/{span_exp:.1f}, "
+      f"sweep {sweep_exp:.1f})  CN_fins {CNf:.2f}  (was 5.78 against the full, un-exposed fin)")
 print(f"CP = {CP:.1f} mm from tip  (total CN {CN:.2f})\n")
 
 print(f"{'motor':<12}{'liftoff g':>10}{'CG mm':>8}{'margin':>8}{'burnout g':>11}{'CG_bo':>8}{'marg_bo':>9}")
 for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen = build(mo)
-    print(f"{mo:<12}{m:>10.0f}{cg:>8.1f}{(CP-cg)/D:>8.2f}{mb:>11.0f}{cgb:>8.1f}{(CP-cgb)/D:>9.2f}")
+    margin = (CP-cg)/D
+    flag = "  <-- BELOW 1.0 cal" if margin < 1.0 else ""
+    print(f"{mo:<12}{m:>10.0f}{cg:>8.1f}{margin:>8.2f}{mb:>11.0f}{cgb:>8.1f}{(CP-cgb)/D:>9.2f}{flag}")
 print()
 items,m,cg,*_ = build('G80T-14A')
 print("Mass breakdown (G80T config):")
 for n,mm,st in sorted(items,key=lambda i:-i[1]):
-    print(f"   {n:<26}{mm:>7.1f} g  @ {st:>6.1f} mm")
-print(f"   {'TOTAL':<26}{m:>7.1f} g")
+    print(f"   {n:<32}{mm:>7.1f} g  @ {st:>6.1f} mm")
+print(f"   {'TOTAL':<32}{m:>7.1f} g")
 
 # ---------------- flight sim ----------------
 def curve_scaled(shape, Ns, tb):

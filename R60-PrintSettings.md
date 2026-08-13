@@ -10,17 +10,27 @@
 
 ## Status — read this before printing anything
 
-**This rocket is not finished.** Per `STL Files/Rocket60/README.md`:
+**Updated after a code-review fix pass.** All 14 printable parts (test ring
+through tether latch) plus the fixed `NoseCone.stl` now exist as meshes and
+are covered below, including the separation mechanism and the tether latch
+this section used to say had "no STL":
 
-- The recovery mechanism (spring/shear-pin separation joint, tether latch) is
-  mid-redesign. The cam-ramped bayonet originally planned for this joint was
-  abandoned — it does not generate torque from axial load (spec §4.2) — and
-  its replacement (`SpringThingBooster` + `CableReleaseBBMini` + a fresh
-  shear-pin joint) has no STL yet. **You cannot assemble a complete,
-  flightworthy rocket today.**
-- `09_FinCan.stl` and `11_MotorRetainer.stl` have no fastening feature yet
-  (no screw holes) despite the retainer's "screws to the fin can" design
-  intent in `Rocket60.scad` — for now that joint is sand-fit/bonded.
+- The primary separation path (spec §4.2) is `08_SpringCarrier.stl`: servo 1
+  releases a ball-lock, freeing a CS4323 spring that shears 2 nylon pins
+  bridging `03_ChuteBayTube.stl` and `05_EBayAftBulkhead.stl`'s aft skirt —
+  the cam-ramped bayonet originally planned for this joint was abandoned (it
+  does not generate torque from axial load) and is not in this design.
+  **This carrier is deliberately incomplete on its own**: the rotating lock
+  ring and the sliding plunger/spring cap that physically release and react
+  the spring are, by mechanical necessity, separate parts (a rotating part
+  and a printed housing cannot be one piece) and are **not modeled or given
+  their own part numbers by this design**. Do not consider the recovery
+  system flight-ready until those two companion pieces exist and are built.
+- `13_TetherLatch.stl` — releases the main at 150 m, mounts to
+  `05_EBayAftBulkhead.stl`'s aft face — now exists.
+- `09_FinCan.stl` and `11_MotorRetainer.stl` fasten together with 3× M3 into
+  ruthex heat-set inserts (`Rocket60.scad`'s "screws to the fin can" intent
+  is now built, not sand-fit).
 - Everything else listed in `STL Files/Rocket60/README.md` — test ring,
   neck, e-bay tube, chute bay tube, both e-bay bulkheads, Vega sled, access
   door, fin can, fins, motor retainer, motor spacer, plus the fixed
@@ -28,7 +38,9 @@
 
 **Motors:** AeroTech G80T-14A (owned, 29 mm). Airframe is sized for a 29 mm
 H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with no
-reprint (spec §1.1, §5).
+reprint (spec §1.1, §5). **The corrected stability analysis (§9) puts both
+H motors' static margin below 1.0 cal at liftoff — do not fly either until
+that is resolved.**
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -170,10 +182,12 @@ this document, not a design-spec number — and the reasoning is given.
 | 5 | E-bay aft bulkhead | PETG | 4 (§8) | **≥50% gyroid, or solid, in the servo-pocket floor / cord-anchor region [practice default, deliberately conservative]** | 0.2 mm (§8) | Flat, servo/cord-pocket face **up** — the pockets open on one face only; printing that face up avoids bridging the pocket floors | Recommended — this part must not warp out of flat |
 | 6 | Vega sled | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, standoffs up | No |
 | 7 | Access door | PETG | 4 (§8) | N/A — 1.6 mm wall, matches tube wall | 0.2 mm (§8) | Vertical, curved face as modeled | No |
+| 8 | Spring/ball-lock carrier | PETG | 4 (§8) | 25–30% gyroid **[practice default]**; the diaphragm floor and ball-pocket bosses print fully solid from walls regardless | 0.2 mm (§8) | Vertical, as a tube, aft face down (the face that glues flush to `05_EBayAftBulkhead.stl`'s skirt) — matches modeled Z | **Yes, plus supports under the diaphragm** — a Ø44.8 mm internal floor bridging open space on both sides; enable tree/normal supports touching build plate only, so they don't fuse into the spring bore |
 | 9 | Fin can (incl. 3 integrated centering rings + MMT) | **PC** | 4 (outer 1.6 mm wall and 1.5 mm MMT wall both print fully solid at 4 loops of a 0.4 mm nozzle — see note) | 70% gyroid **[from `L2-PrintSettings.md` PC fin-can precedent]** — governs only the three ~12 mm-wide integrated ring bands, not the thin tube/MMT walls | 0.12 mm **[from L2 precedent]** | Vertical, aft (retainer) end down | **Yes, 5 mm** — PC warps; large footprint helps (per `L2-PrintSettings.md`) |
 | 10 | Fin (×3) | PETG | — (solid from flat print, no wall-loop concept) | **62% (§8, literal)** — pattern not specified by spec; gyroid assumed **[practice default: pattern only]** | 0.2 mm (§8) | Flat, oriented so layer lines run spanwise (§8, literal) | No |
 | 11 | Motor retainer | **PC** | 4+ **[from `MotorAdapter29.scad` PC print-settings precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Flat, 6 mm disc — print flat, either face down (unlike the adapter's own tall geometry, this part has no long axis to stand on) | Recommended (same precedent) |
-| 12 | Motor spacer | **PC** | 4+ **[same `MotorAdapter29` precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Vertical, as a tube (99 mm for the G80T) | Recommended (same precedent) |
+| 12 | Motor spacer | **PC** | 4+ **[same `MotorAdapter29` precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Vertical, as a tube (104 mm for the G80T; re-export for `Motor_Class=1`/`2` for the H182R/H135W — 25/12 mm) | Recommended (same precedent) |
+| 13 | Tether latch | PETG | 4 (§8) | 40–50% **[practice default]** — small part, carries a cyclic tumbling load per §8 item 3, not just a static pull | 0.2 mm (§8) | Flat, base down, posts up — the horizontal Ø3.2 mm pin bore through each post is small enough to bridge cleanly without support at this layer height | No — small footprint and flat base |
 
 **Why the fin can gets 4 wall loops, not L2's 6.** `L2-PrintSettings.md`'s
 PC fin can used 6 loops because its design wall is 2.4 mm. Rocket 60's
@@ -244,9 +258,14 @@ Build order for what exists today:
    above) before anything else.
 2. Mount the CATS Vega on `06_VegaSled.stl` on M3 standoffs — antenna side
    faces **radially outward**, nothing between it and the airframe wall
-   (spec §7.1).
+   (spec §7.1). Slide the sled lengthwise into `02_EBayTube.stl`'s
+   retention rails (either end of the tube) before installing the
+   bulkheads, then cinch it down with 2 zip ties through the tube's
+   zip-tie slots.
 3. Install both MG90S servos in `05_EBayAftBulkhead.stl`'s upright
-   pockets, shafts along the rocket axis (spec §3.2 P4).
+   pockets, shafts along the rocket axis (spec §3.2 P4). Screw
+   `13_TetherLatch.stl` to the bulkhead's aft face (2× M3 into ruthex
+   inserts) so servo 2's horn can reach it.
 4. Anchor the shock cord to the aft bulkhead. Do this before closing the
    e-bay — it is not accessible afterward.
 5. Assemble the e-bay: `04_EBayFwdBulkhead.stl` forward, Vega sled and
@@ -257,15 +276,25 @@ Build order for what exists today:
    heat-set inserts (5.0 mm grip, 5.0 mm thread engagement — does not
    bottom out, spec §2.1), then to the nosecone base and e-bay tube.
 7. Fit `07_AccessDoor.stl` with the external arming switch — reachable
-   with the rocket vertical on the rail (spec §7.1).
-8. Epoxy the 3 fins into `09_FinCan.stl`'s slots; sand-fit/bond
-   `11_MotorRetainer.stl` to the fin can aft end (no screw feature exists
-   yet — see Status). Install `12_MotorSpacer.stl` for the G80T.
-9. **Stop here for now.** `03_ChuteBayTube.stl` and the joint between it
-   and the fin can cannot be completed: the separation mechanism (spring +
-   shear pins) and the tether latch have no design or STL yet. Do not glue
-   this joint shut — it needs to remain serviceable once that mechanism
-   exists.
+   with the rocket vertical on the rail (spec §7.1). The door is a cover
+   that overlaps the tube's opening on every side; 4× M2.5 into the
+   tube's own bosses, not a flush plug.
+8. Glue `08_SpringCarrier.stl`'s forward rim to `05_EBayAftBulkhead.stl`'s
+   aft skirt (same OD, flush joint) — this closes the e-bay's pressure
+   boundary and gives the (separately-sourced) ball-lock plunger/lock ring
+   somewhere to seat. **The carrier alone does not make a working release
+   — see Status.**
+9. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
+   `11_MotorRetainer.stl` to the fin can aft end (3× M3 into ruthex
+   inserts). Install `12_MotorSpacer.stl` for the G80T (re-export for
+   `Motor_Class=1`/`2` for the H182R/H135W).
+10. Slide `03_ChuteBayTube.stl` forward over `05_EBayAftBulkhead.stl`'s
+    aft skirt until the two shear-pin holes line up, and drive in the 2
+    nylon 2-56 pins — this is the joint the ejection-charge backup shears
+    (spec §4.2). Do not glue it; it must stay serviceable. Tie the tether
+    off through the tube's forward-rim lug (part of the same tube) to
+    `13_TetherLatch.stl`'s pin. Bond the chute bay tube to the fin can's
+    forward end.
 
 ---
 
@@ -347,12 +376,21 @@ Copied from spec §11, with one adaptation flagged below.
 
 ## 9. Known gaps — do not treat this as a finished rocket
 
-- **Separation mechanism** (spring + shear pins, replacing the abandoned
-  bayonet) — no design, no STL.
-- **Tether latch** — releases the main at 150 m — no design, no STL.
-- **Fastening feature between fin can and retainer** — sand-fit/bonded for
-  now; the "screws to the fin can" intent in `Rocket60.scad`'s comments is
-  not yet implemented in geometry.
+- **Ball-lock plunger and rotating lock ring** — `08_SpringCarrier.stl`'s
+  fixed housing (mounting rim, diaphragm, ball pockets, spring bore) exists,
+  but the two moving companion parts that actually catch and release the
+  spring do not, and are not given part numbers by this design (a rotating
+  part and a printed housing cannot be one piece — see `R60_SpringCarrier()`'s
+  module comment). **The primary separation path is not flight-complete
+  without them.**
+- **Spring force** — no spring rate or vendor figure for the CS4323 exists
+  anywhere in this repo. Spec §4.2 item A11 calls this the single largest
+  open risk in the recovery system; bench-test before flight (§8 item 2).
 - **Rail button axial placement** — not specified in any source.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
-  `tools/rocket60_model.py`, not built by any printable part.
+  `tools/rocket60_model.py`, not built by any printable part. **The
+  corrected Barrowman analysis (exposed fin geometry, not the buried root)
+  puts the H182R-14A and H135W-14A static margins below 1.0 cal at liftoff
+  (0.86 and 0.87 respectively) — see the model's own output. This is a
+  design decision (accept the lower margin, or grow the fins) that has not
+  been made; do not fly either H motor until it has.**
