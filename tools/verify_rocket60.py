@@ -53,6 +53,10 @@ GENUS[10] = 0
 #   not fattened or thinned by a stray cut). The two other centering rings
 #   (mid, forward) are outside the slot's Z-span and add no extra handles.
 GENUS[9] = 4
+#   part 11: retainer ring = 1
+#   part 12: spacer tube = 1
+GENUS[11] = 1
+GENUS[12] = 1
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -83,6 +87,12 @@ FINCAN_BAND = (-0.01, 0.5)
 # centering ring (z=6..9) and the mid ring (z=114), so nothing else
 # contaminates the loop. See FINCAN_SLOT_WIDTH below.
 FINCAN_SLOT_TOP_Z = 98.0
+# Part 11 is a plain 6mm disc (no cuts between z=0 and z=6), so it has
+# vertices only at those two faces. The brief's band, (0.5, 3.5), lands
+# mid-span with no edge loop there and made bore() raise "no geometry in Z
+# band" -- confirmed by running the brief's code verbatim before changing
+# it. Moved to the base face, same convention as every other *_BAND above.
+RETAINER_BAND = (-0.01, 0.5)
 
 
 def fincan_slot_width(stl):
@@ -182,6 +192,13 @@ def checks(m):
         slot_w = fincan_slot_width(a(9, "stl"))
         c += [("fin slot width fits fin thickness",
                slot_w - a(10, "height"), 0.2, 0.1)]
+
+    if 12 in m:
+        # Default Motor_Class=0 is the G80T: 223mm MMT - 124mm motor = 99mm.
+        c += [("G80T spacer length", a(12, "height"), 99.0, 0.1)]
+    if 11 in m:
+        _, ret_od = bore(a(11, "stl"), *RETAINER_BAND)
+        c += [("retainer OD", ret_od, 60.0, 0.1)]
 
     # Build volume, every part.
     for p in m:

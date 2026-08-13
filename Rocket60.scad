@@ -34,6 +34,9 @@ include<R60Lib.scad>
 // 12 = Motor spacer
 Render_Part = 0;
 
+// 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
+Motor_Class = 0;
+
 // ============================================
 // PARTS
 // ============================================
@@ -277,6 +280,28 @@ module R60_Fin(){
                  [R60_Fin_Sweep, R60_Fin_Span]]);
 } // R60_Fin
 
+// Aft retainer. Screws to the fin can and traps the motor's aft rim.
+module R60_MotorRetainer(){
+    T = 6;
+    difference(){
+        cylinder(d=R60_Body_OD, h=T);
+        translate([0,0,-Overlap])
+            cylinder(d=R60_MMT_ID-2.5, h=T+Overlap*2);
+    }
+} // R60_MotorRetainer
+
+// Forward spacer so a motor shorter than the 223mm MMT still sits flush at
+// the aft end. Open bore: ejection gas and the forward closure pass through.
+module R60_MotorSpacer(){
+    L = R60_MMT_L - R60_Motor_L[Motor_Class];
+    if (L > 1)
+        difference(){
+            cylinder(d=R60_MMT_ID-0.3, h=L);
+            translate([0,0,-Overlap])
+                cylinder(d=R60_MMT_ID-0.3-2*2.0, h=L+Overlap*2);
+        }
+} // R60_MotorSpacer
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -290,3 +315,5 @@ if (Render_Part==6) R60_VegaSled();
 if (Render_Part==7) R60_Door();
 if (Render_Part==9)  R60_FinCan();
 if (Render_Part==10) R60_Fin();
+if (Render_Part==11) R60_MotorRetainer();
+if (Render_Part==12) R60_MotorSpacer();
