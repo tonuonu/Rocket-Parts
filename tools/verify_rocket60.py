@@ -22,7 +22,15 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 #   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
 #   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
 #   parts 2,3: plain tube = 1
-GENUS = {0: 4, 1: 4, 2: 1, 3: 1}
+#   part 4: disc + harness bore (1) = 1
+#   part 5: disc + drive bore (1) + anchor eye (1) = 2. Confirmed by rendered
+#   cross-sections (Z=3, within the pocket depth, and Z=9, above it): the
+#   drive bore is a clean isolated Ø12 hole from z=6..12, but from z=0..6 it
+#   opens directly into both servo pockets (no separating wall) - still one
+#   through-passage, so still +1, not +2. The eye is a clean through-hole,
+#   confirmed exiting the curved wall on both sides. Pockets confirmed
+#   blind (open only on the z=0 base face) - add no handles.
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 2}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -41,6 +49,7 @@ TESTRING_SPIGOT_BAND = (5.5, 10.01)  # part 0: coupler OD against a tube bore
 NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
 NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
 TUBE_BAND = (-0.01, 0.5)   # parts 2,3: base face carries both OD and bore
+BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
 
 
 def checks(m):
@@ -80,6 +89,16 @@ def checks(m):
                 _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
                 c += [("part %d bore clears neck skirt" % p,
                        tube_id - skirt_od, 0.4, 0.15)]
+
+    for p, want_h in ((4, 6.0), (5, 12.0)):
+        if p in m:
+            _, bulk_od = bore(a(p, "stl"), *BULK_BAND)
+            c += [("part %d height" % p, a(p, "height"), want_h, 0.1)]
+            # Must drop into a tube bore, measured against the real tube.
+            if 2 in m:
+                tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+                c += [("part %d fits e-bay bore" % p,
+                       tube_id - bulk_od, 0.4, 0.15)]
 
     # Build volume, every part.
     for p in m:

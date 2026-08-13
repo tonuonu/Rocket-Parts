@@ -108,6 +108,38 @@ module R60_Neck(){
 module R60_EBayTube(){ R60_Tube(R60_EBay_L); }
 module R60_ChuteTube(){ R60_Tube(R60_Chute_L); }
 
+// Forward bulkhead: closes the top of the e-bay, passes the camera harness.
+module R60_EBayFwdBulkhead(){
+    T = 6;
+    difference(){
+        cylinder(d=R60_Coupler_OD, h=T);
+        translate([0,0,-Overlap]) cylinder(d=22, h=T+Overlap*2);
+    }
+} // R60_EBayFwdBulkhead
+
+// Aft bulkhead. THE structural part of the recovery system: the shock cord
+// anchors here so deployment snatch never reaches the camera bolts.
+// Also mounts both MG90S servos and passes the bayonet drive shaft.
+module R60_EBayAftBulkhead(){
+    T        = 12;
+    Servo_L  = 23.0 + IDXtra;    // MG90S body
+    Servo_W  = 12.2 + IDXtra;
+    Eye_d    = 8;
+    Drive_d  = 12;
+    difference(){
+        cylinder(d=R60_Coupler_OD, h=T);
+        // Central bore for the bayonet ring's drive shaft.
+        translate([0,0,-Overlap]) cylinder(d=Drive_d, h=T+Overlap*2);
+        // Two servo pockets, 180deg apart, clear of the drive bore.
+        for (a=[0,180])
+            rotate([0,0,a]) translate([17,0,-Overlap])
+                cube([Servo_L, Servo_W, T+Overlap*2], center=true);
+        // Shock cord anchor eye, offset so it does not foul the drive bore.
+        translate([0,20,T/2]) rotate([0,90,0])
+            cylinder(d=Eye_d, h=R60_Coupler_OD, center=true);
+    }
+} // R60_EBayAftBulkhead
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -115,3 +147,5 @@ if (Render_Part==0) R60_TestRing();
 if (Render_Part==1) R60_Neck();
 if (Render_Part==2) R60_EBayTube();
 if (Render_Part==3) R60_ChuteTube();
+if (Render_Part==4) R60_EBayFwdBulkhead();
+if (Render_Part==5) R60_EBayAftBulkhead();
