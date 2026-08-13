@@ -6,20 +6,28 @@
 // Units: mm
 // ***********************************
 //
-// Camera variant of PeregrineNoseCone.scad. Same 574.55 ogive, but blunted
-// with a large tip radius so the nose is a smooth spherical cap the camera
-// can see out of, instead of a slender point.
+// Camera variant of PeregrineNoseCone.scad. Same 574.55 ogive as the
+// plain nosecone, but truncated at OD 60.00 instead of running to a tip.
 //
-// WHY Tip_R IS 26 AND NOT 8
-// The camera reaches its full 50.2mm width only 54mm behind its lens, so any
-// cone enclosing it must be at least 54.6mm across at that station. On this
-// ogive that occurs at Z=406, which pins the lens to Z<=460. Blunting with
-// Tip_R=26 puts the apex at 441.4 and gives the camera 4.7mm diametral
-// clearance. A slender Tip_R=8 nose (apex 550) cannot contain the camera at
-// any height -- it misses by 19mm.
+// The camera does not live in this part. It lives in a separate,
+// already-finished CAD nosecone (STL Files/Rocket60/NoseCone.stl -- a
+// straight FreeCAD conversion of the user's own design: correct ogive,
+// sunken screw heads, lens bore, all of it) that bolts onto the cut end
+// via CN_Adapter(). An earlier version of this file reinvented that
+// camera housing here instead -- blunting the tip to a 26mm spherical
+// cap, drilling a lens hole, and adding loose printed spacers to fill
+// the gap between the shell and the camera's flat mounting faces. That
+// is gone; the tip radius is back to the plain nosecone's 8mm, and
+// nothing above the cut is ever printed.
 //
-// The lens looks out through a hole at the apex. The camera bolts to four
-// M3 heat-set inserts already fitted in its own top and bottom faces.
+// Grafting two different cones onto one shell leaves a visible slope
+// discontinuity at the joint. Measured from the meshes, not assumed:
+// this ogive's local half-angle at Cut3 is ~6.5 degrees, while the CAD
+// cone is a curved profile too, not a straight cone -- its half-angle is
+// only ~0.4 degrees right at its base plane, rising to ~3 degrees by
+// 25mm up. So the kink right at the joint is roughly 6 degrees. That is
+// inherent to grafting two different cones together, not a defect -- see
+// the adapter section below.
 //
 // ***********************************
 
@@ -29,46 +37,117 @@ include<NoseCone.scad>
 // BODY TUBE -- measure yours and adjust
 // ============================================
 Peregrine_Body_OD    = 101.5;   // outside diameter of body tube
-Peregrine_Body_ID    = 99.0;    // inside diameter of body tube
-Peregrine_Coupler_OD = 97.1;    // shell ID = Body_OD - 2*Wall_T
+// MEASURED 2026-08-13 with a printed stepped fit gauge, not assumed. A
+// 99.10 band enters by hand but will not slide under its own weight; 98.85
+// slides freely. That brackets the real ID at ~99.1.
+Peregrine_Body_ID    = 99.1;    // inside diameter of body tube
+// Derived, not hardcoded. This previously read 97.1 with a comment claiming
+// it was Body_OD - 2*Wall_T; the two happened to agree, so a change to
+// either input would have silently broken the shell fit with nothing to
+// signal it. Declared below NC_Wall_T because it depends on it.
 
 // ============================================
-// NOSE CONE -- 441mm, blunted for the camera
+// NOSE CONE -- 574.55 ogive, truncated at OD 60 for the CAD nosecone
 // ============================================
 NC_Length  = 574.55;   // same ogive as the non-camera version
 NC_Base_L  = 15;
-NC_Tip_R   = 26;       // large: the nose is a 52mm spherical cap
+// Slender again, matching PeregrineNoseCone.scad -- large Tip_R was only
+// ever needed to fit the camera behind the apex, and the camera no
+// longer lives here. This does not change the retained geometry below:
+// Cut_Z (and so every slice plane) depends only on R, L, Base_L and
+// Cut_d in BluntOgiveNoseCone -- never on Tip_R -- and the tip blending
+// itself only reaches down to Z=418.6 even at the old Tip_R=26, versus
+// Z=543.3 at this Tip_R=8. Both are far above Cut3_Z below, so parts 2
+// and 3 (and the shell up to the new cut) are unaffected. Verified by
+// rendering parts 2 and 3 before and after this change and diffing the
+// meshes -- see REPORT-graft.md.
+NC_Tip_R   = 8;
 NC_Wall_T  = 2.2;
+Peregrine_Coupler_OD = Peregrine_Body_OD - NC_Wall_T*2;   // shell ID, 97.1
 NC_nRivets = 0;        // shoulder is glued via its spigot, not pinned
 
 // Slice planes. Cut_d is a DIAMETER; the module derives Z from it.
 Cut1_d = 96.17;   // -> Z = 147.14
 Cut2_d = 77.66;   // -> Z = 294.29
 Cut1_Z = 147.14;  // clip plane for the middle slice
-Apex_Z = 441.43;  // top of the finished cone
+
+// Third cut: where the generated ogive hands off to the CAD nosecone,
+// at the station where this ogive's OD is 60.00 (the CAD cone's own base
+// OD is 59.99 -- effectively the same diameter). Derived the same way
+// BluntOgiveNoseCone derives its own Cut_Z internally, not read off a
+// mesh: a fine bisection of the actual exported mesh
+// (STL Files/PeregrineCamNose/SliceTop.stl, the pre-graft render) finds
+// OD=60.00 at Z=383.13, 0.10mm from this formula's 383.23 -- ordinary
+// $fn tessellation chording on a curved surface, not a disagreement worth
+// chasing. (A coarse 1mm-grid reading of the same mesh -- 60.10 at
+// Z=383.0, 59.91 at Z=384.0 -- undersamples the curve and lands on
+// Z~383.5; the bisection against the mesh's actual facets is the more
+// trustworthy empirical number, and it agrees with this formula to
+// 0.10mm.)
+Cut3_d = 60;
+Cut3_Z = NC_Base_L + Ogive_Cut_Z(Ogive_L=NC_Length, R=Peregrine_Body_OD/2, End_R=Cut3_d/2);   // -> 383.23
 
 // ============================================
-// CAMERA
+// ADAPTER -- joins the truncated shell to the CAD nosecone
 // ============================================
-// Lens is 14.0mm on an M12 thread. It looks out through the apex.
-Lens_D      = 14.4;    // 14.0 + 0.4 clearance
-// The camera carries four ruthex M3x5.7 inserts in its own top and bottom
-// faces, 30mm apart, centred, at radius 25 from the lens axis. Screws pass
-// radially inward through the shell into those inserts.
-Cam_Mount_R = 25.0;    // camera mounting faces, from the lens axis
-Cam_Mount_B = [58.5, 88.5];   // mm behind the lens face
-M3_Clear    = 3.4;
-M3_Head     = 6.4;     // countersunk head diameter
-Spacer_Front_T = 2.83;   // shell inner surface -> camera face, front station
-Spacer_Rear_T  = 6.08;   // ditto, rear station
+// The CAD nosecone's interior is filled by the camera assembly, flush
+// with its base plane, so nothing plugs into its bore -- it attaches
+// only by three M3 screws into heat-set inserts in the camera's own
+// bottom face. Bolt circle and hole spec measured from that mesh, not
+// assumed.
+CAD_Bolt_R   = 18.98;                  // bolt circle radius, Ø37.96
+CAD_Bolt_A   = [52.2, -52.2, 180.0];   // NOT 120 deg apart -- keys the camera's clocking, preserve exactly
+M3_Clear     = 3.4;                    // clearance hole dia, no counterbore
+M3_Screw_L   = 10;                     // M3x10...
+Insert_Depth = 5.7;                    // ...into ruthex RX-M3x5.7 heat-set inserts
+
+// This joint carries the whole CAD nosecone + camera in flight, so it is
+// always epoxied -- independent of Glue_Gap below, which is the user's
+// per-flight choice for the separate, removable shoulder joint.
+Adapter_Epoxy_Gap = 0.4;
+
+Cut3_Bore_ID      = Cut3_d - NC_Wall_T*2;                // shell bore at Cut3, 55.6
+Adapter_Flange_OD = Cut3_d;                              // flush with the shell and the CAD base (59.99)
+Adapter_Spigot_OD   = Cut3_Bore_ID - Adapter_Epoxy_Gap;  // -> 55.2
+Adapter_Spigot_Wall = NC_Wall_T;                         // same wall as the shell
+Adapter_Spigot_ID   = Adapter_Spigot_OD - Adapter_Spigot_Wall*2;   // -> 50.8, hollow for the harness
+Adapter_Spigot_L    = 15;   // same glue engagement length as the shoulder-to-shell spigot joint below (Shoulder_Spigot_L)
+
+// Flange thickness: an M3x10 screw crossing the flange must still reach
+// enough of the insert's 5.7mm depth to hold, without its tip bottoming
+// out in the insert before the head seats. 4.5mm leaves 5.5mm of
+// engagement with 0.2mm to spare.
+Adapter_Flange_T = M3_Screw_L - Insert_Depth + 0.2;   // -> 4.5
+
+// The flange's OWN bore is narrower than the spigot's hollow above --
+// this leaves a solid shelf inside the flange, between the two bore
+// radii, for the 3 screw holes to pass through solid material. The screw
+// heads seat on that shelf's underside, with the wider spigot hollow
+// open beneath them for a screwdriver and for the camera harness to
+// route through. Sized to clear the bolt circle by a wall as thick as
+// the shell's own (NC_Wall_T) around each screw hole.
+Adapter_Bore_D = 2*(CAD_Bolt_R - M3_Clear/2 - NC_Wall_T);   // -> 30.16, well inside Adapter_Spigot_ID (50.8)
 
 // ============================================
 // SHOULDER -- stepped, printed, all-in-one
 // ============================================
+// Adhesive gap for GLUED joints. Thin CA wicks into a 0.1-0.2mm gap and
+// needs the tight fit to grip; epoxy is gap-filling and wants the room.
+// Set this to match what you actually use.
+//   0.2 = superglue / thin CA
+//   0.4 = epoxy
+Glue_Gap = 0.2;
+
 Shoulder_L         = 100;
-Shoulder_OD        = Peregrine_Body_ID - 0.4;   // 0.4mm diametral clearance
+// NOT glued - the shoulder is removed every flight to pack the chute, so
+// this stays a slip fit. 0.4mm is also right because the joint is 100mm
+// long: a 7mm gauge ring slides happily at 0.25mm, but over 100mm any
+// ovality or bow in the tube accumulates and a tighter fit binds partway
+// home, which is worse than loose.
+Shoulder_OD        = Peregrine_Body_ID - 0.4;   // slip fit -> 98.7
 Shoulder_Spigot_L  = 15;
-Shoulder_Spigot_OD = 96.7;
+// GLUED into the bottom slice bore, so it takes Glue_Gap, not 0.4.
+Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.9 with CA
 Shoulder_Bulk_T    = 4;
 
 // ============================================
@@ -78,9 +157,8 @@ Shoulder_Bulk_T    = 4;
 // 1 = Shoulder + bulkhead + parachute anchor
 // 2 = Bottom slice
 // 3 = Middle slice
-// 4 = Top slice (carries the lens hole and camera mounts)
-// 5 = Spacer x2, front stations
-// 6 = Spacer x2, rear stations
+// 4 = Top slice (truncated at OD 60 -- no camera features)
+// 5 = Adapter (flange + spigot, joins the shell to the CAD nosecone)
 Render_Part = 0;
 
 // ============================================
@@ -104,36 +182,42 @@ module CN_Slice_Middle(){
     } // intersection
 } // CN_Slice_Middle
 
-module CN_MountHoles(){
-    // Radial M3 clearance holes with a countersink from outside. An M3
-    // countersunk head is 6.0 x 1.65mm, which fits the 2.2mm wall flush,
-    // so no boss is needed and nothing protrudes into the airflow.
-    for (b=Cam_Mount_B) for (s=[1,-1])
-        translate([0, s*60, Apex_Z-b]) rotate([90,0,0]){
-            cylinder(d=M3_Clear, h=120, center=true, $fn=$preview? 18:36);
-            translate([0,0,50-Overlap])
-                cylinder(d1=M3_Clear, d2=M3_Head, h=1.8, $fn=$preview? 18:36);
-            translate([0,0,51.8]) cylinder(d=M3_Head, h=20, $fn=$preview? 18:36);
-        }
-} // CN_MountHoles
-
 module CN_Slice_Top(){
-    difference(){
+    // Plain frustum shell, cut 2 to cut 3 (OD 60) -- no lens hole, no
+    // camera mounts. The camera now lives entirely in the CAD nosecone
+    // that glues onto this shell's open top via CN_Adapter().
+    intersection(){
         CN_Cone(Cut_d=Cut2_d, Lower=false);
-        translate([0,0,Apex_Z-60]) cylinder(d=Lens_D, h=120, $fn=$preview? 60:120);
-        CN_MountHoles();
-    } // difference
+        cylinder(d=Peregrine_Body_OD+2, h=Cut3_Z, $fn=$preview? 90:360);
+    } // intersection
 } // CN_Slice_Top
 
-module CN_Spacer(T=3){
-    // Fills the gap between the shell inner surface and the camera face so
-    // the screw clamps solid instead of bending the shell inward.
+module CN_Adapter(){
+    // Flange butts the CAD nosecone's base and carries its 3 mounting
+    // screws; the spigot below is epoxied into the shell's Cut3 bore.
     difference(){
-        cylinder(d=8, h=T, $fn=$preview? 30:60);
-        translate([0,0,-Overlap]) cylinder(d=M3_Clear, h=T+Overlap*2,
-                                           $fn=$preview? 18:36);
+        union(){
+            cylinder(d=Adapter_Flange_OD, h=Adapter_Flange_T, $fn=$preview? 90:360);
+            translate([0,0,-Adapter_Spigot_L])
+                cylinder(d=Adapter_Spigot_OD, h=Adapter_Spigot_L+Overlap, $fn=$preview? 90:360);
+        } // union
+
+        // flange's own bore -- through the flange only
+        translate([0,0,-Overlap])
+            cylinder(d=Adapter_Bore_D, h=Adapter_Flange_T+Overlap*2, $fn=$preview? 60:180);
+
+        // spigot's hollow -- through the spigot only, wider than the bore
+        // above, so the screw heads have a shelf to seat on (see comment
+        // on Adapter_Bore_D)
+        translate([0,0,-Adapter_Spigot_L-Overlap])
+            cylinder(d=Adapter_Spigot_ID, h=Adapter_Spigot_L+Overlap, $fn=$preview? 60:180);
+
+        // screw clearance holes, through the flange only
+        for (a=CAD_Bolt_A)
+            translate([CAD_Bolt_R*cos(a), CAD_Bolt_R*sin(a), -Overlap])
+                cylinder(d=M3_Clear, h=Adapter_Flange_T+Overlap*2, $fn=$preview? 18:36);
     } // difference
-} // CN_Spacer
+} // CN_Adapter
 
 module CN_Shoulder(){
     difference(){
@@ -174,8 +258,7 @@ if (Render_Part == 1) CN_Shoulder();
 if (Render_Part == 2) CN_Slice_Bottom();
 if (Render_Part == 3) CN_Slice_Middle();
 if (Render_Part == 4) CN_Slice_Top();
-if (Render_Part == 5) CN_Spacer(T=Spacer_Front_T);
-if (Render_Part == 6) CN_Spacer(T=Spacer_Rear_T);
+if (Render_Part == 5) CN_Adapter();
 
 // ============================================
 // PRINT NOTES
@@ -186,31 +269,36 @@ if (Render_Part == 6) CN_Spacer(T=Spacer_Rear_T);
 //   1  Shoulder        115mm
 //   2  Bottom slice    147mm
 //   3  Middle slice    147mm
-//   4  Top slice       147mm   -- lens hole and camera mounts
-//   5  Spacer x2        2.83mm -- front mount station
-//   6  Spacer x2        6.08mm -- rear mount station
+//   4  Top slice        89mm   -- truncated at OD 60, no camera features
+//   5  Adapter          20mm   -- flange + spigot, joins shell to the CAD nosecone
 //
 // Assembly, bottom to top:
 //   1. Print part 0. Check it sits flush on the tube and accepts the spigot.
 //   2. Glue the shoulder spigot into the bottom slice bore.
 //   3. Glue the bottom slice flange into the middle slice, hold until set.
 //   4. Glue the middle slice flange into the top slice, hold until set.
-//   5. Slide the camera in through the open base, lens up to the apex hole,
-//      and fasten with four M3 countersunk screws into its own inserts,
-//      with a spacer on each screw between shell and camera face.
+//   5. Bolt the CAD nosecone (camera already installed in it) onto the
+//      adapter's flange with three M3x10 screws into its own inserts.
+//   6. Epoxy the adapter's spigot into the top slice's open bore (Cut3)
+//      and hold until set. This joint is permanent, unlike the shoulder.
 //
-// The camera goes in AFTER the cone is assembled and comes out the same way,
-// so it stays serviceable as long as the shoulder is not glued permanently.
-//
-// Parts 3 and 4 export at Z=147.14 and 294.29 rather than 0 -- drop to plate
-// in the slicer.
+// Parts 3 and 4 export at Z=147.14 and 294.29 rather than 0 -- drop to
+// plate in the slicer.
 //
 // Use gel CA or epoxy, not thin CA: the laps are large and thin CA gives a
-// one-shot alignment on a 147mm part.
+// one-shot alignment on a 147mm part. The adapter-to-shell joint (step 6)
+// is always epoxy, regardless of what Glue_Gap is set to.
 //
 // Print settings: 3 perimeters, 15% infill, PETG or ASA.
 //
 // ALWAYS export with F6. F5 preview applies a quarter cutaway and will
 // silently export a broken part.
+//
+// The joint between this shell and the CAD nosecone has a visible slope
+// discontinuity -- this ogive converges at ~6.5 deg half-angle at Cut3,
+// the CAD cone at ~0.4 deg right at its base (it is a curved profile
+// too, not a straight cone). That ~6 deg kink is inherent to grafting two
+// different cones together and is not fixable without redesigning one of
+// the two cones; it does not affect fit or strength.
 //
 // ***********************************
