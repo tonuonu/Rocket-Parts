@@ -110,13 +110,13 @@ station 0 ┌────────────┐
           │   NECK     │          3× M3 axial into camera carrier, Ø37.96 BC
           │   E-BAY    │ 160 mm   CATS Vega, battery, 2× servo, access door
      254  ╞════════════╡ ◄─────────  SEPARATION JOINT (cam-ramped servo bayonet)
-          │ CHUTE BAY  │ 130 mm   24 in main + shock cord
-     384  ├────────────┤
+          │ CHUTE BAY  │ 180 mm   spring mechanism 80 + 24 in main 100
+     434  ├────────────┤
           │  FIN CAN   │ 228 mm   Ø29 mm MMT (223 mm), 3 fins, retainer
-     612  └────────────┘
+     662  └────────────┘
 ```
 
-Total length **612 mm**, OD **60.0 mm**, **L/D 10.2**.
+Total length **662 mm**, OD **60.0 mm**, **L/D 11.0**.
 
 The e-bay is 160 mm, not the 130 mm first specified. Two upright MG90S servos plus the
 100 mm Vega need 129 mm of interior and 130 mm of tube only yields 112 mm once the
@@ -145,7 +145,7 @@ H182R is 203 mm and the G80T only 124 mm.
 | P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive. **Servos stand upright with shafts along the rocket axis**, following `PeregrineEjection.scad`: servo 1 on the centreline rotates the bayonet ring through its centre, servo 2 sits beside it and drives the tether latch through a slot. A radial layout is geometrically impossible — from the drive bore (r=6) to the disc edge (r=28.2) is 22.2 mm and an MG90S body is 22.8 mm long. |
 | P5 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. |
 | P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel, plus an **external arming switch** operable with the rocket vertical on the rail |
-| P7 | Spring separation + shear pins | adapt `SpringThing2.scad` / `CableRelease*.scad` | Replaces the abandoned bayonet (§4.2). 2× nylon shear pins, servo-released spring. |
+| P7 | Spring separation + shear pins | adapt `SpringThingBooster.scad` + `CableReleaseBBMini.scad` | Replaces the abandoned bayonet (§4.2). Ball-lock retains the `CS4323` spring; 2× nylon shear pins bridge the airframe joint. |
 | P8 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm |
 | P9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (223 mm), 3 fin slots, 3 centering rings |
 | P10 | Fins ×3 | new | Cr 90 / Ct 35 / span 55 / sweep 45 / t 4.0 |
@@ -164,8 +164,8 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
 | 0 | — | Launch | 1010 rail, 1.5 m, exit 19.7 m/s |
-| 11.0 s | 656 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
-| — | 656→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
+| 10.8 s | 615 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
+| — | 615→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
 
@@ -227,9 +227,34 @@ and nothing structural depends on the servo. A dead servo still separates on the
 dud charge still separates on the servo. That is the property the cam was supposed to deliver
 and could not.
 
-> **Open:** integration into a Ø60 airframe is under investigation — the repo's smallest
-> consumer of these libraries is 65 mm. If they do not parameterise down, a purpose-built
-> spring mechanism is the fallback. Tracked as A10.
+**Integration, resolved by investigation:**
+
+The repo's libraries implement a **ball-lock**, not shear pins — a compressed spring held
+captive by balls in a groove, freed when a servo rotates a lock disk. No shear-pin joint
+exists anywhere in the repo; that part is designed fresh (radial holes through both walls,
+pins sized to the target load — mechanically simple).
+
+| | |
+|---|---|
+| Spring | `CS4323` — OD 44.30, ID 40.50, free 200 mm, coil-bound 22 mm. Shared across `SpringThing2`/`SpringThingBooster`/`SpringThingInside`. |
+| Ball-lock | `SpringThingBooster` — genuinely parametric on `Body_ID`, documented origin 54 mm, **live instantiation at 65 mm** in `Rocket65.scad`. 56.8 mm sits between the two. |
+| Release catch | `CableReleaseBBMini` — authored for 65 mm, **deployed live** in `Rocket6551.scad`. ~6–7 mm radial margin at our size. |
+| Axial cost | **80 mm**, from `SpringThing2.scad`'s header ("80mm of 54mm Body tube is required to fit the spring from end to lock balls"). This is why the chute bay is 180 mm. |
+
+**Critical placement constraint.** The two shear pins must bridge the **actual separable
+airframe joint**, through both tube walls at the section split — not merely retain the spring
+internally. If they only guard the spring, the ejection charge has to fight the ball-lock
+detent rather than the pins, and the independence property is lost. That is the whole reason
+this mechanism was chosen, so the placement is not negotiable.
+
+**Not usable at this size:** `CableReleaseBB` (53 mm lock ring, ~1–2 mm clearance),
+`CablePuller` (52 mm hardcoded door needs ~120° of arc on a 60 mm tube), `SpringThing2`
+(staging mechanism, needs a separate external release).
+
+> **A11 — spring force is undocumented.** No spring rate, Newton figure, or vendor appears in
+> any of the nine files. It must come from the physical spring's catalog entry or a bench
+> measurement, and it must exceed the pins' combined shear load with margin. **This is the
+> single largest open risk in the recovery system.**
 
 ### 4.3 What the backup costs when it fires
 
@@ -262,9 +287,9 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 816 g | 9.7 | 19.7 m/s | 139 m/s | **0.41** | 656 m | 11.0 s |
-| **H182R-14A** (29 mm DMS) | 895 g | 20.7 | 28.8 m/s | 218 m/s | **0.64** | 997 m | 12.4 s |
-| H135W-14A (29 mm DMS) | 900 g | 13.1 | 17.8 m/s | 202 m/s | **0.59** | 1049 m | 13.1 s |
+| **G80T-14A** (owned) | 887 g | 8.9 | **15.2 m/s** | 129 m/s | **0.38** | 615 m | 10.8 s |
+| **H182R-14A** (29 mm DMS) | 966 g | 19.2 | 22.3 m/s | 204 m/s | **0.60** | 970 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 971 g | 12.0 | 16.4 m/s | 190 m/s | **0.55** | 1010 m | 13.2 s |
 
 Motor data, all from thrustcurve.org:
 
@@ -274,7 +299,7 @@ Motor data, all from thrustcurve.org:
 | H182R | 218.0 Ns | 182.0 N | 1.2 s | 207 g | 115 g | 29 × 203 mm | 6–14 adjustable |
 | H135W | 225.8 Ns | 115.9 N | 2.0 s | 212 g | 82 g | 29 × 216 mm | 6–14 adjustable |
 
-**Mach 0.64 is the realistic ceiling for this airframe**, and only on an H. Ø60 mm and
+**Mach 0.60 is the realistic ceiling for this airframe**, and only on an H. Ø60 mm and
 ~800 g are both forced — by the nosecone base and by the payload — and together they cap
 what any 29 mm motor can do. If a higher Mach number ever becomes the priority it needs a
 different, smaller-diameter rocket, not a change to this one.
@@ -303,7 +328,7 @@ either H drops in later with no new printed parts.
 | E-bay bulkheads | 24.0 g | 159 mm |
 | Neck + bolts | 22.0 g | 106 mm |
 | Centering rings ×3 | 19.8 g | 468 mm |
-| **Total** | **816.1 g** | CG 326.5 mm |
+| **Total** | **886.7 g** | CG 350.7 mm |
 
 ---
 
@@ -312,16 +337,22 @@ either H drops in later with no new printed parts.
 Barrowman, 3 fins, Cr 90 / Ct 35 / span 55 / sweep 45 mm.
 
 - CN(nose) = 2.00 at 43.8 mm; CN(fins) = 5.78 at 482.8 mm
-- **CP = 419.7 mm** from the nose tip
+- **CP = 456.9 mm** from the nose tip
 
 | Motor | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|
-| G80T-14A | 326.5 mm | **1.55 cal** | 307.8 mm | 1.87 cal |
-| H182R-14A | 337.1 mm | **1.38 cal** | 311.5 mm | 1.80 cal |
-| H135W-14A | 336.5 mm | **1.39 cal** | 319.7 mm | 1.67 cal |
+| G80T-14A | 350.7 mm | **1.77 cal** | 331.7 mm | 2.09 cal |
+| H182R-14A | 362.7 mm | **1.57 cal** | 335.9 mm | 2.02 cal |
+| H135W-14A | 362.3 mm | **1.58 cal** | 344.6 mm | 1.87 cal |
 
 All configurations sit in the 1.0–2.0 cal band, and margin *increases* through the burn.
-The H182R — the most aft-loaded case — is the sizing case at 1.38 cal.
+The H182R — the most aft-loaded case — is the sizing case at 1.57 cal.
+
+**⚠️ Rail exit is now the binding constraint on the G80T, not stability.** At 887 g the rocket
+leaves a 1.5 m rail at **15.2 m/s**, right on the ~15 m/s minimum. Mass has grown 805 → 887 g
+across three design corrections and every one of them was necessary. **Use a 2 m rail for
+G80T flights**, or accept a weathercocking risk in any breeze. The H motors are unaffected
+(22.3 and 16.4 m/s).
 
 **Fin flutter:** AR 0.88, λ 0.389, t/c 0.064, G ≈ 0.5 GPa for printed PETG →
 **Vf ≈ 850 m/s**, 3.9× the H182R's 218 m/s. The deliberately low aspect ratio is what buys
@@ -448,4 +479,4 @@ and rail exit would be unstable.
 8. Confirm `enable_telemetry` is `true` and the ground station shows GNSS fix **before**
    the rocket leaves your hands. The firmware default is `false`.
 9. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
-   Compare logged apogee to the 656 m prediction and correct Cd₀ before flying the H.
+   Compare logged apogee to the 615 m prediction and correct Cd₀ before flying the H.
