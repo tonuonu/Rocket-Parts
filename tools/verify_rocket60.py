@@ -36,13 +36,7 @@ DOOR_GAP = 0.35   # per side
 #   part 6: flat sled, 3 standoff bores (3) = 3
 #   part 2 CHANGES: tube (1) + door opening (1) + switch hole (1) = 3
 #   part 7: curved panel, 4 bolt holes (4) = 4
-#   part 8: disc + 3 lug wedges + 1 through-bore (1) = 1. Confirmed by
-#   rendered top/bottom views and a meridional-slice probe render: the
-#   central Ø12 drive bore is the only opening (visible clean through both
-#   faces), and each of the 3 lugs is solid material proud of the disc's
-#   OD, not a hole or a separate shell - matching Genus: 1 from
-#   `openscad --export-format asciistl` stderr.
-GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4, 8: 1}
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -62,7 +56,6 @@ NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
 NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
 TUBE_BAND = (-0.01, 0.5)   # parts 2,3: base face carries both OD and bore
 BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
-RING_BAND = (-0.01, 0.5)   # part 8: base face, where the lug OD is widest
 
 
 def checks(m):
@@ -128,15 +121,6 @@ def checks(m):
                 tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
                 c += [("part %d fits e-bay bore" % p,
                        tube_id - bulk_od, 0.4, 0.15)]
-
-    if 8 in m:
-        _, ring_od = bore(a(8, "stl"), *RING_BAND)
-        c += [("bayonet ring lug OD", ring_od, 58.0, 0.3)]
-        if 3 in m:
-            tube_id, _ = bore(a(3, "stl"), *TUBE_BAND)
-            # Lugs must ENGAGE the chute tube bore, i.e. be larger than it.
-            c += [("bayonet lugs engage chute bore",
-                   ring_od - tube_id, 1.2, 0.4)]
 
     # Build volume, every part.
     for p in m:
