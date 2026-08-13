@@ -1,7 +1,8 @@
 # Rocket 60 — printable meshes
 
-**This rocket is not finished. Do not print past step 1 yet.** Four parts do
-not exist, and the recovery mechanism is mid-redesign — see "Not yet built".
+**This rocket is not finished. Do not print past step 1 yet.** The recovery
+mechanism (separation + tether latch) is mid-redesign and still doesn't
+exist — see "Not yet built".
 
 Generated from `Rocket60.scad`, OpenSCAD 2026.07.09, full render, binary STL.
 Verify with `python3 tools/verify_rocket60.py` — every part is measured from
@@ -34,8 +35,17 @@ printing.** That is the whole reason this part exists.
 | `05_EBayAftBulkhead.stl` | 5 | 12.00 | 56.40 | Shock cord anchor, 2 servo pockets, drive bore. |
 | `06_VegaSled.stl` | 6 | 8.00 | 44×112 | 60×27 M3 pattern. Antenna side faces radially OUT. |
 | `07_AccessDoor.stl` | 7 | 84.30 | 60.00 | 4× M2.5. |
+| `09_FinCan.stl` | 9 | 228.00 | 60.00 | Ø29.3 MMT, 3× fin slots. 228 mm sized for the 216 mm H135W, not the 124 mm G80T — the G80T flies on `12_MotorSpacer`. |
+| `10_Fin.stl` | 10 | 4.00 | 90×55 | Flat print, 3 needed. Root 90 mm; aspect ratio 0.88 is deliberate — it's what puts flutter velocity at ~850 m/s. Do not thin or extend it. |
+| `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | Traps the motor's aft rim. |
+| `12_MotorSpacer.stl` | 12 | 99.00 | 29.00 | Motor_Class=0 (G80T) length. Re-render with Motor_Class=1 (H182R) or 2 (H135W) for the longer motors — those need no spacer at all once close to 223mm. |
 
-`06_VegaSled` is a flat plate, not a tube — 44 × 112 mm, not a 120 mm diameter.
+`06_VegaSled` and `10_Fin` are flat plates, not tubes — dimensions are
+width×length, not a diameter. `10_Fin`'s slot in `09_FinCan` is a line-to-line
+fit along its 90 mm length (no printed clearance there, only across its 4 mm
+thickness); neither `09_FinCan` nor `11_MotorRetainer` has a fastening
+feature yet (no screw holes) despite the retainer's "screws to the fin can"
+design intent — sand-fit/bond for now.
 
 ## Not yet built
 
@@ -44,8 +54,6 @@ printing.** That is the whole reason this part exists.
   torque from axial load). Being rebuilt around `SpringThingBooster` +
   `CableReleaseBBMini` and a fresh shear-pin joint.
 - **Tether latch** — releases the main at 150 m.
-- **Fin can and fins** — 228 mm, Ø29 MMT sized for a 216 mm H DMS.
-- **Motor retainer and spacers.**
 - **Print settings** — material, walls, infill, orientation per part.
 
 ## Material, when you do print
@@ -56,4 +64,4 @@ the neck to the chute bay** — the CATS manual states a carbon-fibre section
 blocks all RF, and both the telemetry and GNSS antennas live inside the
 airframe.
 
-Tallest part 180 mm, inside the 250 mm envelope.
+Tallest part 228 mm (`09_FinCan`), inside the 250 mm envelope.
