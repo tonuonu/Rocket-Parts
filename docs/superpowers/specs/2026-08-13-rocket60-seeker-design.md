@@ -312,8 +312,7 @@ Rocket 60 uses:
 | `EV_APOGEE` | `ACT_SERVO_ONE` → unlock position | Rotate the bayonet ring, separate |
 | `EV_MAIN_DEPLOYMENT` | `ACT_SERVO_TWO` → release position | Release the tether, main deploys |
 
-The stock default config drives the **pyro** channels on these two events; it must be
-overwritten or the servos will never move.
+Both events are bound to the PWM servo channels in the configurator as part of normal setup.
 
 ### 7.3 Settings
 
