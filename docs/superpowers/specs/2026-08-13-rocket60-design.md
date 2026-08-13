@@ -145,7 +145,7 @@ H182R is 203 mm and the G80T only 124 mm.
 | P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive. **Servos stand upright with shafts along the rocket axis**, following `PeregrineEjection.scad`: servo 1 on the centreline rotates the bayonet ring through its centre, servo 2 sits beside it and drives the tether latch through a slot. A radial layout is geometrically impossible — from the drive bore (r=6) to the disc edge (r=28.2) is 22.2 mm and an MG90S body is 22.8 mm long. |
 | P5 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. |
 | P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel, plus an **external arming switch** operable with the rocket vertical on the rail |
-| P7 | Bayonet ring + lugs | adapt `PeregrineEjection.scad` | 101.5 mm → 60 mm; 3 lugs, 20° cam ramp |
+| P7 | Spring separation + shear pins | adapt `SpringThing2.scad` / `CableRelease*.scad` | Replaces the abandoned bayonet (§4.2). 2× nylon shear pins, servo-released spring. |
 | P8 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm |
 | P9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (223 mm), 3 fin slots, 3 centering rings |
 | P10 | Fins ×3 | new | Cr 90 / Ct 35 / span 55 / sweep 45 / t 4.0 |
@@ -164,7 +164,7 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
 | 0 | — | Launch | 1010 rail, 1.5 m, exit 19.7 m/s |
-| 11.0 s | 656 m | Apogee separation | Vega servo 1 rotates the bayonet ring; spring pushes sections apart. **Backup:** G80T ejection charge, delay set to ~11 s, cams the same ring open. |
+| 11.0 s | 656 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
 | — | 656→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
@@ -197,27 +197,47 @@ spring at the joint gives the initial positive push at apogee.
 CATS Vega transmits GNSS position at 10 Hz on 2.4 GHz FHSS (flight-tested to 10 km), so
 recovery is "walk to the last fix", not a search.
 
-### 4.2 Cam-ramped bayonet
+### 4.2 Shear pins and spring — SUPERSEDES the cam-ramped bayonet
 
-Three lugs with **20° ramped faces** on a servo-rotated ring.
+**The cam-ramped bayonet was abandoned during implementation. It could not work.**
 
-- Flight axial load on the joint (coast deceleration of the ~297 g forward section at ~3 g): **≈ 12 N**
-- Cam release threshold: **≈ 100 N** → 8× margin against inadvertent release
-- Motor ejection over the Ø56.8 mm bore at 0.6 bar: 0.6 bar × 25.34 cm² = **≈ 152 N** → 1.5× over
-  the release threshold, so the charge reliably cams the ring open
+Two independent reasons, found in that order:
 
-Both margins matter and they pull in opposite directions: raising the threshold protects
-against premature release but eats the ejection backup's authority. 100 N is the chosen
-compromise and **must be measured on the bench, not assumed** (§10.2).
+1. **The geometry does not cam.** `rotate_extrude` produces a surface of revolution. Its
+   contact normal has no θ-component, so axial force generates zero torque about the axis —
+   confirmed on the rendered mesh, where the ramp's z is constant at every θ across the
+   lug's span. The "backup path" did not exist mechanically.
+2. **A true helical ramp would be worse.** For the ejection charge to back-drive the ring,
+   the servo's gearbox must be what reacts the flight load. A powered-off servo then has
+   near-zero holding torque and the airframe opens in flight. **A servo must never be the
+   structural element holding an airframe together.**
 
-This makes the servo and the motor charge two genuinely independent paths to the same event,
-which a square-cut positive lock cannot provide.
+**Replacement mechanism**, which is standard high-power practice and reuses libraries
+already in this repo (`SpringThing2.scad`, `SpringEndsLib.scad`, `CableRelease*.scad`,
+consumed by `R65Lib` through `R203Lib`):
+
+| | |
+|---|---|
+| **Joint retention** | 2× nylon shear pins, ~130 N total, radially through the chute bay tube into the e-bay aft bulkhead rim, 180° apart |
+| **Primary path** | Servo 1 releases a compressed spring that drives the sections apart with >130 N, shearing the pins |
+| **Backup path** | The motor's ejection charge pressurises the chute bay and breaks the same pins, independently of all electronics |
+
+The two paths are genuinely independent because **neither depends on the other's actuator**,
+and nothing structural depends on the servo. A dead servo still separates on the charge; a
+dud charge still separates on the servo. That is the property the cam was supposed to deliver
+and could not.
+
+> **Open:** integration into a Ø60 airframe is under investigation — the repo's smallest
+> consumer of these libraries is 65 mm. If they do not parameterise down, a purpose-built
+> spring mechanism is the fallback. Tracked as A10.
 
 ### 4.3 What the backup costs when it fires
 
-The cam ramp converts the ejection charge's axial force into ring rotation. Servo 1's output
-shaft is what holds that ring, so the charge **back-drives the servo through its gearbox**.
-An MG90S gearset will very likely strip.
+*This section described the abandoned cam design and is retained only because its second
+point still applies.* With shear pins there is no back-driving path: the charge breaks pins,
+it does not act on the servo at all. **The servo-replacement requirement below no longer
+applies**; what remains true is that the bulkhead sees an impulsive load when the backup
+fires.
 
 That is acceptable — arguably correct — for a path that only ever activates when the primary
 has already failed: a stripped servo on a recovered rocket beats an intact servo in a lawn
@@ -408,6 +428,7 @@ and rail exit would be unstable.
 | A6 | Cd₀ = 0.52 | ±0.07 changes apogee ±80 m, Mach ±0.02 | Compare against Vega's logged altitude on flight 1 |
 | A7 | Printed-PETG shear modulus 0.5 GPa for flutter | Vf scales as √G; 4× margin absorbs a lot | — |
 | A8 | The aft bulkhead's 3 mm floor under each servo pocket was sized against steady servo torque (MG90S stall ≈ 0.2 N·m over ~175 mm²), **not** against the impulsive reaction when the ejection-charge backup cams the ring open (§4.3) | Bulkhead failure during a backup deployment — i.e. exactly when the primary has already failed | Bench-test the cam release (§11.2) with the bulkhead in the loop and inspect the floor afterwards |
+| A10 | The repo's spring/cable-release libraries parameterise down to a Ø60 airframe | A purpose-built spring mechanism is needed instead, adding design work | Under investigation now |
 | A9 | Servo-pocket dividing wall is 1.2 mm (3 perimeters at a 0.4 mm nozzle) | Below ~0.8 mm the slicer drops to thin-wall mode and the two pockets can fuse | Confirm on the sliced preview before printing |
 
 ## 11. Verification before first flight
