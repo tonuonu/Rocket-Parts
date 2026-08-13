@@ -66,7 +66,39 @@ module R60_TestRing(){
     }
 } // R60_TestRing
 
+// The camera assembly fills the nosecone bore and sits flush with its base
+// plane, so the neck cannot have a spigot - it is a butt joint. The three
+// M3x10 SHCS pull it up into the camera's heat-set inserts; those screws
+// and the flange face are the whole joint.
+//
+// Load path: the shock cord anchors on the E-BAY AFT BULKHEAD, never here.
+// These three screws only ever carry the nose section's own inertia.
+module R60_Neck(){
+    Flange_T = 5;      // gives ~5mm thread engagement in a 5.7mm insert
+    Skirt_L  = 19;
+    Bore_d   = 28;     // camera harness passes through
+    difference(){
+        union(){
+            cylinder(d=R60_Body_OD, h=Flange_T);
+            translate([0,0,Flange_T-Overlap])
+                cylinder(d=R60_Coupler_OD, h=Skirt_L+Overlap);
+        }
+        translate([0,0,-Overlap])
+            cylinder(d=Bore_d, h=Flange_T+Skirt_L+Overlap*2);
+        // Thin the skirt so it is a tube, not a slug.
+        translate([0,0,Flange_T])
+            cylinder(d=R60_Coupler_OD-2*R60_Wall_T, h=Skirt_L+Overlap);
+        R60_CameraBoltPattern(){
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Bolt_d, h=Flange_T+Overlap*2);
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Cbore_d, h=R60_Cam_Cbore_h+Overlap);
+        }
+    }
+} // R60_Neck
+
 // ============================================
 // DISPATCH
 // ============================================
 if (Render_Part==0) R60_TestRing();
+if (Render_Part==1) R60_Neck();

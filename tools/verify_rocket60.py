@@ -20,7 +20,8 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 # "bit-identical bounding box, wrong interior" failure mode: a solid is
 # genus 0, each through-hole/handle adds 1).
 #   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
-GENUS = {0: 4}
+#   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
+GENUS = {0: 4, 1: 4}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -36,6 +37,8 @@ MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 # likewise reach the spigot top (Z=115) and the base (Z=0) respectively.
 TESTRING_FLANGE_BAND = (-0.01, 3.5)  # part 0: OD against the nosecone base
 TESTRING_SPIGOT_BAND = (5.5, 10.01)  # part 0: coupler OD against a tube bore
+NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
+NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
 
 
 def checks(m):
@@ -50,6 +53,19 @@ def checks(m):
               ("test ring coupler OD", spigot_od, 56.40, 0.15),
               ("test ring height", a(0, "height"), 10.0, 0.1),
               ("test ring zmin", a(0, "zmin"), 0.0, 0.05)]
+
+    if 1 in m:
+        _, flange_od = bore(a(1, "stl"), *NECK_FLANGE_BAND)
+        _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+        c += [("neck flange OD vs nosecone base", flange_od, 59.98, 0.15),
+              ("neck height", a(1, "height"), 24.0, 0.1),
+              ("neck zmin", a(1, "zmin"), 0.0, 0.05)]
+        # Skirt must actually enter a body tube: measured skirt OD against
+        # the measured test-ring coupler OD, never against R60_Coupler_OD.
+        if 0 in m:
+            _, ring_spigot = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
+            c += [("neck skirt matches test ring spigot",
+                   skirt_od, ring_spigot, 0.10)]
 
     # Build volume, every part.
     for p in m:
