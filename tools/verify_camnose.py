@@ -9,8 +9,8 @@ the lens face it gives the camera's maximum radius from the lens axis.
 """
 import math, os, subprocess, sys, tempfile
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+from scad_verify import REPO, render, measure, bore, volume
+
 SCAD = os.path.join(REPO, "PeregrineCamNose.scad")
 
 APEX = 441.43           # lens sits here
@@ -41,68 +41,6 @@ CAM_ENVELOPE = [
 ]
 
 GENUS = {0: 1, 1: 2, 5: 1, 6: 1}   # slices carry holes; checked separately
-
-
-def render(part, out):
-    env = dict(os.environ, OPENSCADPATH=REPO)
-    r = subprocess.run(
-        [OPENSCAD, "--export-format", "asciistl", "-o", out,
-         "-D", "Render_Part=%d" % part, SCAD],
-        capture_output=True, text=True, env=env, timeout=900)
-    err = r.stdout + r.stderr
-    if (r.returncode != 0 or "ERROR:" in err.upper()
-            or "Can't find include file" in err
-            or "Ignoring unknown module" in err
-            or not os.path.exists(out) or os.path.getsize(out) < 200):
-        raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
-    g = None
-    for line in err.splitlines():
-        if "Genus:" in line:
-            try:
-                g = int(line.split("Genus:")[1].split()[0])
-            except (ValueError, IndexError):
-                pass
-    return g
-
-
-def _tris(stl):
-    vs = []
-    with open(stl) as fh:
-        for line in fh:
-            s = line.lstrip()
-            if s.startswith("vertex"):
-                vs.append(tuple(map(float, s.split()[1:4])))
-                if len(vs) == 3:
-                    yield vs
-                    vs = []
-
-
-def measure(stl):
-    zmin, zmax, dmax = 1e9, -1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            zmin = min(zmin, z); zmax = max(zmax, z)
-            dmax = max(dmax, 2 * math.hypot(x, y))
-    return {"zmin": zmin, "zmax": zmax, "height": zmax - zmin, "dmax": dmax}
-
-
-def bore(stl, zlo, zhi):
-    lo, hi = 1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            if zlo <= z <= zhi:
-                d = 2 * math.hypot(x, y)
-                lo = min(lo, d); hi = max(hi, d)
-    if lo > hi:
-        raise RuntimeError("no geometry in Z band %.2f-%.2f of %s" % (zlo, zhi, stl))
-    return lo, hi
-
-
-def volume(stl):
-    v = 0.0
-    for (x1,y1,z1),(x2,y2,z2),(x3,y3,z3) in _tris(stl):
-        v += (x1*(y2*z3-y3*z2) - x2*(y1*z3-y3*z1) + x3*(y1*z2-y2*z1)) / 6.0
-    return abs(v) / 1000.0
 
 
 NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
@@ -137,7 +75,7 @@ def main(argv):
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
-            genus[p] = render(p, out)
+            genus[p] = render(SCAD, p, out)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
             return 1
