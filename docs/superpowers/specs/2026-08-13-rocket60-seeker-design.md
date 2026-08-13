@@ -57,11 +57,12 @@ All figures below are restated as *height above the base plane*.
 | Shell volume | 29 441 mm³ (≈ 37 g in PETG) |
 | Nose fineness ratio | 1.57 (blunt — factored into Cd₀) |
 
-Both screw stations are consumed by the **Seeker camera assembly** (`~/Desktop/camera.STEP`,
-37.60 × 94.00 × 54.04 mm, 25 842 mm³ of solids), which fills the nosecone and sits flush
-with the base plane. The neck therefore cannot use the bore or the radial screws.
+Both screw stations are consumed by the **camera assembly** (`~/Camera.STEP` — authoritative;
+`~/Desktop/camera.STEP` is an older export named `Seeker.STEP` with byte-different but
+**geometrically identical** content: same 37.60 × 94.00 × 54.04 mm envelope, same 25 842 mm³,
+same bolt pattern). It fills the nosecone and sits flush with the base plane. The neck therefore cannot use the bore or the radial screws.
 
-### 2.1 Neck ↔ camera bolt interface (derived from `camera.STEP`)
+### 2.1 Neck ↔ camera bolt interface (derived from `~/Camera.STEP`)
 
 Three Ø3.3 mm holes open on the camera assembly's bottom face, each with a Ø7.0 concentric
 feature 5 mm deep, all lying on one bolt circle:
@@ -123,8 +124,8 @@ H182R is 203 mm and the G80T only 124 mm.
 | P2 | E-bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm, door cutout 36 × 85 mm |
 | P3 | E-bay fwd bulkhead | new | Neck interface + harness pass-through |
 | P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive |
-| P5 | Vega sled | new | CATS Vega L-pattern: A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) |
-| P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel |
+| P5 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. |
+| P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel, plus an **external arming switch** operable with the rocket vertical on the rail |
 | P7 | Bayonet ring + lugs | adapt `PeregrineEjection.scad` | 101.5 mm → 60 mm; 3 lugs, 20° cam ramp |
 | P8 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm |
 | P9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (223 mm), 3 fin slots, 3 centering rings |
@@ -273,16 +274,86 @@ this margin; do not make the fins thinner or longer-span without recomputing.
 
 ---
 
-## 7. Materials and print
+## 7. CATS Vega integration and configuration
+
+Sourced from `~/cats-embedded/CATS User Manual.pdf` (v2.0.0) and the firmware itself
+(`~/cats-embedded/flight_computer/src`), which is the authority where the two differ.
+
+### 7.1 Constraints the manual imposes on the airframe
+
+| Constraint | Source | Consequence for this design |
+|---|---|---|
+| **Power up only once the rocket is vertical on the pad.** Calibration runs once, as soon as no motion is detected after boot. | manual §4.3.3 warning | The arming switch **must be operable with the rocket already on the rail** — this is why the e-bay has an external switch, not just a door. Disarming afterwards is only possible by powering off. |
+| Do not mount in a carbon-fibre section — it blocks all RF | manual §4.3.3 | **PETG only** from neck to chute bay. Already in §8. |
+| Patch antenna needs a view of the sky | manual §4.3.3 | Sled orients the board with the patch antenna facing **radially outward**, with no battery, wiring loom or metal between it and the airframe wall. |
+| Battery port is **7–25 V** (2S–6S) | manual §4.3.4, Table 7 | **A 1S LiPo will not run the Vega.** Use 2S. Budgeted 45 g covers a 2S ~850 mAh pack. |
+| Switch carries full battery current | manual §4.3.4 | Switch and wiring rated accordingly. |
+| Mounting holes 60 mm × 27 mm, M3, spacers recommended | manual §4.3.3 | Matches the L-pattern already recorded: A (−13.5, −25), B (−13.5, +35), C (+13.5, +35). Sled uses M3 standoffs so nothing touches the board. |
+| Servo channels: regulated 5 V, **3 A**, endpoints configurable | manual §4.3.4 | Two MG90S servos run directly off the Vega. No separate BEC. |
+| Pyro channels: 1 A continuous default (PTC), 5 A with the solder jumper closed | manual §4.3.4 | Both pyro channels stay **unused and free** — available later as a third recovery path. |
+
+> Board envelope: the manual states 100 × 33 × **15** mm, catsystems.io states 21 mm.
+> The sled is cut for **100 × 33 × 21 mm** so either is accommodated.
+
+### 7.2 Event → action mapping
+
+The firmware exposes exactly these events and actions:
+
+- Events: `EV_CALIBRATE`, `EV_READY`, `EV_LIFTOFF`, `EV_MAX_V`, `EV_APOGEE`,
+  `EV_MAIN_DEPLOYMENT`, `EV_TOUCHDOWN`, `EV_CUSTOM_1`, `EV_CUSTOM_2`
+- Actions: `ACT_NO_OP`, `ACT_OS_DELAY`, `ACT_HIGH_CURRENT_ONE/TWO` (pyro),
+  `ACT_LOW_LEVEL_ONE`, `ACT_SERVO_ONE/TWO`, `ACT_SET_RECORDER_STATE`
+- Up to 8 (action, argument) pairs per event; servo argument is a **0–1000 position**, not degrees
+
+Rocket 60 uses:
+
+| Event | Action | Purpose |
+|---|---|---|
+| `EV_APOGEE` | `ACT_SERVO_ONE` → unlock position | Rotate the bayonet ring, separate |
+| `EV_MAIN_DEPLOYMENT` | `ACT_SERVO_TWO` → release position | Release the tether, main deploys |
+
+The stock default config drives the **pyro** channels on these two events; it must be
+overwritten or the servos will never move.
+
+### 7.3 Settings
+
+| Setting | Value | Why |
+|---|---|---|
+| `main_altitude` | **150** | m AGL, main release. Firmware range 10–65535, default 200 |
+| `liftoff_acc_threshold` | **40** | m/s². Manual wants ~20 below expected max; the G80T gives ~124 m/s² peak, the H182R ~207 |
+| `servo1_init_pos` / `servo2_init_pos` | set on the bench | 0–1000; the **locked** positions |
+| `enable_telemetry` | **true** | ⚠️ **firmware default is `false`.** Recovery depends on GNSS downlink — if this is left at default there is no tracking |
+| `tele_link_phrase` | matched on the ground station | manual §4.3.5 step 17 |
+| `enable_testing_mode` | **false** | manual §4.3.5 step 7 |
+| `battery_type` | `LI_ION` or LiPo to match the pack | affects voltage warnings |
+
+### 7.4 Timers — the third independent path
+
+The manual (§4.3.5 steps 13–15) offers timers as a backup to barometric detection. With
+three paths the design tolerates any single failure:
+
+| Path | Apogee separation | Main release |
+|---|---|---|
+| 1. Barometric | `EV_APOGEE` → servo 1 | `EV_MAIN_DEPLOYMENT` @ 150 m → servo 2 |
+| 2. Timer | Timer 1: liftoff → **12.5 s** (apogee 11.0 s + margin) | Timer 2: liftoff → **~50 s** |
+| 3. Mechanical | G80T ejection charge cams the bayonet open (§4.2) | — none — |
+
+Timer values are for the G80T. **They must be recomputed for an H** (apogee 12.4 s for the
+H182R, 13.1 s for the H135W) — see §9 A5.
+
+---
+
+## 8. Materials and print
 
 - **PETG throughout.** Not PLA (softens near the motor), and **no carbon-filled filament
-  anywhere from the neck to the chute bay** — the Vega's 2.4 GHz telemetry and GNSS antenna
-  are inside the airframe and CF is conductive.
+  anywhere from the neck to the chute bay** — the manual is explicit that a carbon-fibre
+  section "will block all RF signals", and both the 2.4 GHz telemetry and the GNSS patch
+  antenna are inside the airframe.
 - Airframe wall **1.6 mm**; 0.4 mm nozzle, 0.2 mm layers, 4 perimeters.
 - All tubes print vertically; the longest part (fin can, 228 mm) fits the Bambu P1S 256 mm Z with 28 mm to spare.
 - Fins print flat, 62 % infill, oriented so layer lines run spanwise.
 
-## 8. Launch
+## 9. Launch
 
 **1010 rail only.** Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 `RailGuide.scad`, whose verified 8020-1010 profile matches the user's 6.2 mm slot.
@@ -291,19 +362,19 @@ and rail exit would be unstable.
 
 ---
 
-## 9. Assumptions and open items
+## 10. Assumptions and open items
 
 | ID | Item | Impact if wrong | Resolve by |
 |---|---|---|---|
 | A1 | Camera bolt pattern is Ø37.96 BC / 52.2°, −52.2°, 180°, M3 | Neck won't bolt on | Measure the physical carrier before printing P1 |
 | A2 | Nosecone ↔ camera clocking | Camera faces the wrong way about the roll axis | Neck is axisymmetric; trial fit |
 | A3 | Camera assembly mass = 60 g ±20 g | CG shifts ≤4 mm; margin stays >1.2 cal | Weigh it |
-| A4 | Camera battery lives in the e-bay, harness through the neck | E-bay volume | Confirm camera power requirement |
-| A5 | G80T-14A delay is adjustable 14 s → ~11 s with the AeroTech DMS delay tool | Late deployment, ~3 s past apogee | Verify the tool's actual increments |
+| A4 | Camera battery lives in the e-bay, harness through the neck | E-bay volume | Confirm camera voltage/current. Note the **Vega needs its own 2S+ pack (7 V min)** — a shared 1S supply is not an option |
+| A5 | G80T-14A delay is adjustable 14 s → ~11 s with the AeroTech DMS delay tool | Late deployment, ~3 s past apogee | Verify the tool's actual increments. Vega **timer values must also be re-entered per motor** (§7.4) |
 | A6 | Cd₀ = 0.52 | ±0.07 changes apogee ±80 m, Mach ±0.02 | Compare against Vega's logged altitude on flight 1 |
 | A7 | Printed-PETG shear modulus 0.5 GPa for flutter | Vf scales as √G; 4× margin absorbs a lot | — |
 
-## 10. Verification before first flight
+## 11. Verification before first flight
 
 1. Trial-fit the neck to the physical camera carrier and to the nosecone — **before** printing anything downstream.
 2. **(§10.2)** Bench-test the bayonet on a pull rig: measure the actual cam release force.
@@ -315,5 +386,9 @@ and rail exit would be unstable.
 4. Bench-test the full Vega sequence on the ground: arm → apogee servo → tether servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
 6. Confirm rail exit on a 1.5 m rail before committing to a shorter one.
-7. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
+7. Confirm the arming switch can actually be reached and thrown with the rocket vertical
+   on the rail — the Vega calibrates once at boot and must not be powered up before then.
+8. Confirm `enable_telemetry` is `true` and the ground station shows GNSS fix **before**
+   the rocket leaves your hands. The firmware default is `false`.
+9. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
    Compare logged apogee to the 663 m prediction and correct Cd₀ before flying the H.
