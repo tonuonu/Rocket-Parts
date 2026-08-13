@@ -62,6 +62,9 @@ function gauge_d(i) = Gauge_Target_d
                     + Gauge_Step*i;
 function gauge_min_d() = gauge_d(0);
 function gauge_bore()  = gauge_min_d() - 2*Gauge_Wall;
+// str() on a computed float yields e.g. "98.90000000000001". Round to 2dp so
+// the engraved label reads as the diameter it actually is.
+function gauge_label(d) = str(round(d*100)/100);
 
 echo(str("Gauge diameters: ", [for(i=[0:Gauge_Count-1]) gauge_d(i)]));
 echo(str("Bore: ", gauge_bore()));
@@ -76,7 +79,7 @@ module GaugeLabel(d, z){
             rotate([0, 0, 0])
                 linear_extrude(height=1.2, center=false)
                     translate([0, 0, 0])
-                        text(str(d), size=Gauge_Text, halign="center",
+                        text(gauge_label(d), size=Gauge_Text, halign="center",
                              valign="center", $fn=32);
 }
 
@@ -89,7 +92,7 @@ module GaugeBand(i, z){
             translate([0, -d/2 + 0.6, z + Gauge_Band_H/2])
                 rotate([90, 0, 0])
                     linear_extrude(height=1.2)
-                        text(str(d), size=Gauge_Text, halign="center",
+                        text(gauge_label(d), size=Gauge_Text, halign="center",
                              valign="center");
     }
 }
