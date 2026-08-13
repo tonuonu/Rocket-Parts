@@ -1,6 +1,8 @@
 # Fine gauge — 98.85 to 99.10 in 0.05 mm steps
 
-`FitGauge_Peregrine_FINE.stl` — 6 bands, 42 mm tall.
+`FitGauge_Peregrine_FINE.stl` — 6 bands, 42 mm tall. Generated from
+`FitGauge.scad` with `-D Gauge_Mode=0 -D Gauge_Target_d=98.975
+-D Gauge_Step=0.05 -D Gauge_Count=6`.
 
 Follows up the coarse gauge, where 98.10/98.35/98.60/98.85 all entered
 cleanly and 99.10 went tight. The answer lies in that 0.25 mm gap, so this
@@ -35,7 +37,20 @@ have to assemble under field conditions.
 
 ## What it feeds
 
-`Peregrine_Body_ID` is currently assumed 99.0 and `Shoulder_OD` derives
-from it as 98.6. If the gauge says the working diameter is nearer 99.0,
-the shoulder is about 0.4 mm loose and both constants want correcting at
-the root, so every dependent part re-derives.
+`Shoulder_OD` (98.6) is `Peregrine_Body_ID` (99.0) minus a deliberate 0.4 mm
+diametral clearance, not the tube's own ID (see `PeregrineNoseCone.scad`).
+This gauge sweeps 98.85–99.10 — all of it *above* the 98.6 design target —
+so a reading anywhere in this range means clearance survives:
+
+- Near 99.10: the printer is close to dimensionally accurate for this tube;
+  the full 0.4 mm clearance (or more) is available.
+- Near 98.85: about 0.25 mm of the 0.4 mm clearance survives.
+
+**Neither end says to move `Shoulder_OD`.** A reading in this range is a
+good result and needs no correction — raising `Shoulder_OD` toward it would
+spend the margin the 0.4 mm was there to protect. The result that *would*
+need root-cause correction is a reading **below** 98.60 (not reachable by
+this gauge — that is what the coarse gauge's 98.10/98.35/98.60 bands are
+for): it would mean the designed shoulder does not fit this tube at all,
+and the fix is finding out why the tube/print combination differs from
+assumed, not copying the gauge number into `Shoulder_OD`.
