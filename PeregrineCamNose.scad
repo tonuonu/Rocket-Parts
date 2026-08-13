@@ -10,10 +10,12 @@
 // plain nosecone, but truncated at OD 60.00 instead of running to a tip.
 //
 // The camera does not live in this part. It lives in a separate,
-// already-finished CAD nosecone (STL Files/Rocket60/NoseCone.stl -- a
-// straight FreeCAD conversion of the user's own design: correct ogive,
-// sunken screw heads, lens bore, all of it) that bolts onto the cut end
-// via CN_Adapter(). An earlier version of this file reinvented that
+// already-finished CAD nosecone -- a straight FreeCAD conversion of the
+// user's own design: correct ogive, sunken screw heads, lens bore, all of
+// it -- that bolts onto the cut end via CN_Adapter(). That CAD nosecone's
+// own mesh lives on a different branch (feature/rocket60), not here; this
+// file only defines the interface it bolts to. An earlier version of this
+// file reinvented that
 // camera housing here instead -- blunting the tip to a 26mm spherical
 // cap, drilling a lens hole, and adding loose printed spacers to fill
 // the gap between the shell and the camera's flat mounting faces. That
@@ -60,16 +62,20 @@ NC_Base_L  = 15;
 // Z=543.3 at this Tip_R=8. Both are far above Cut3_Z below, so parts 2
 // and 3 (and the shell up to the new cut) are unaffected. Verified by
 // rendering parts 2 and 3 before and after this change and diffing the
-// meshes -- see REPORT-graft.md.
+// meshes: identical volume, z-span and profile.
 NC_Tip_R   = 8;
 NC_Wall_T  = 2.2;
 Peregrine_Coupler_OD = Peregrine_Body_OD - NC_Wall_T*2;   // shell ID, 97.1
 NC_nRivets = 0;        // shoulder is glued via its spigot, not pinned
 
 // Slice planes. Cut_d is a DIAMETER; the module derives Z from it.
-Cut1_d = 96.17;   // -> Z = 147.14
+Cut1_d = 96.17;   // -> Z = 147.15
 Cut2_d = 77.66;   // -> Z = 294.29
-Cut1_Z = 147.14;  // clip plane for the middle slice
+// Derived the same way Cut3_Z below is, not hardcoded next to it -- this
+// previously read a bare 147.14 literal, so changing Cut1_d would move the
+// bottom slice's own cut plane without moving this one, silently breaking
+// the middle slice's clip.
+Cut1_Z = NC_Base_L + Ogive_Cut_Z(Ogive_L=NC_Length, R=Peregrine_Body_OD/2, End_R=Cut1_d/2);   // -> 147.15
 
 // Third cut: where the generated ogive hands off to the CAD nosecone,
 // at the station where this ogive's OD is 60.00 (the CAD cone's own base
@@ -86,6 +92,27 @@ Cut1_Z = 147.14;  // clip plane for the middle slice
 // 0.10mm.)
 Cut3_d = 60;
 Cut3_Z = NC_Base_L + Ogive_Cut_Z(Ogive_L=NC_Length, R=Peregrine_Body_OD/2, End_R=Cut3_d/2);   // -> 383.23
+
+// Outer or bore diameter of THIS shell's ogive at any axial station Z (mm
+// from the nosecone base plane). Same tangent-ogive arc BluntOgiveShape
+// draws to build the outer surface -- a circle of radius p centered at
+// (R-p, 0) in the (radius, axial-from-Base_L) plane, the same p
+// Ogive_Cut_Z above uses -- solved for radius given Z instead of Z given
+// radius. Wall>0 gives the bore (inner) surface the way BluntOgiveNoseCone
+// itself builds it (see BluntOgiveShape's Thickness parameter in
+// NoseCone.scad): by shrinking the arc's radius by Wall, NOT by
+// subtracting 2*Wall from the outer diameter -- that shortcut is only
+// exact right at Base_L and increasingly wrong up the curve. Checked
+// against the committed mesh, not just algebra: this formula predicts bore
+// ID 55.61 / 56.25 / 57.80 / 58.90 at 0.17 / 3 / 10 / 15mm below the Cut3
+// rim; the mesh measures 55.59 / 56.21 / 57.74 / 58.83 -- agreement to
+// ordinary $fn chording, the same tolerance Cut3_Z's own derivation above
+// was checked against. Only valid below the tip's spherical blend (Z well
+// under Base_L+L-X0); Cut3 and the adapter's full engagement depth both
+// are.
+function Ogive_OD_At_Z(Z, Wall=0) =
+    let(R=Peregrine_Body_OD/2, p=NC_OGiveArcOffset(R, NC_Length), y=Z-NC_Base_L)
+    2*(R - p + sqrt((p-Wall)*(p-Wall) - y*y));
 
 // ============================================
 // ADAPTER -- joins the truncated shell to the CAD nosecone
@@ -106,18 +133,43 @@ Insert_Depth = 5.7;                    // ...into ruthex RX-M3x5.7 heat-set inse
 // per-flight choice for the separate, removable shoulder joint.
 Adapter_Epoxy_Gap = 0.4;
 
-Cut3_Bore_ID      = Cut3_d - NC_Wall_T*2;                // shell bore at Cut3, 55.6
+Cut3_Bore_ID      = Ogive_OD_At_Z(Cut3_Z, NC_Wall_T);    // shell bore AT the rim, ~55.57
 Adapter_Flange_OD = Cut3_d;                              // flush with the shell and the CAD base (59.99)
-Adapter_Spigot_OD   = Cut3_Bore_ID - Adapter_Epoxy_Gap;  // -> 55.2
 Adapter_Spigot_Wall = NC_Wall_T;                         // same wall as the shell
-Adapter_Spigot_ID   = Adapter_Spigot_OD - Adapter_Spigot_Wall*2;   // -> 50.8, hollow for the harness
-Adapter_Spigot_L    = 15;   // same glue engagement length as the shoulder-to-shell spigot joint below (Shoulder_Spigot_L)
+Adapter_Spigot_L    = 15;   // engagement depth into the bore
+
+// The bore is a station on an ogive, not a cylinder (see Ogive_OD_At_Z
+// above): its ID grows from Cut3_Bore_ID at the rim to a measurably wider
+// ID one full engagement-length deeper. A spigot turned to a single,
+// constant OD sized for the rim leaves the rest of the 15mm engagement as
+// a widening, unglued void -- several mm diametral by the deep end,
+// confirmed against the rendered mesh. (An earlier version of this file
+// did exactly that, and justified the 15mm engagement length by analogy to
+// the shoulder-to-shell spigot below -- but that joint enters a genuinely
+// PARALLEL bore (NoseCone.scad:831), so the analogy does not carry over to
+// a joint that enters a tapered one.) Taper the spigot to track the bore
+// instead: d1 (bottom, the deepest point) and d2 (top, at the flange) are
+// each the bore ID at that depth minus Adapter_Epoxy_Gap, so the diametral
+// gap stays close to Adapter_Epoxy_Gap along the whole engagement instead
+// of only at one end.
+Adapter_Spigot_OD_Top = Cut3_Bore_ID - Adapter_Epoxy_Gap;                                      // -> 55.17, at the flange
+Adapter_Spigot_OD_Bot = Ogive_OD_At_Z(Cut3_Z-Adapter_Spigot_L, NC_Wall_T) - Adapter_Epoxy_Gap;  // -> 58.50, at full depth
+Adapter_Spigot_ID   = Adapter_Spigot_OD_Top - Adapter_Spigot_Wall*2;   // -> 50.77, hollow for the harness (straight bore -- no fit requirement inside, sized off the narrow end so the wall stays >= NC_Wall_T everywhere)
 
 // Flange thickness: an M3x10 screw crossing the flange must still reach
 // enough of the insert's 5.7mm depth to hold, without its tip bottoming
-// out in the insert before the head seats. 4.5mm leaves 5.5mm of
-// engagement with 0.2mm to spare.
-Adapter_Flange_T = M3_Screw_L - Insert_Depth + 0.2;   // -> 4.5
+// out in the insert before the head seats. margin = Flange_T - (Screw_L -
+// Insert_Depth): the screw's head bears on the flange's outer face, so its
+// shank crosses Flange_T of flange before it starts eating into the
+// insert at all -- a THICKER flange leaves LESS of the screw free to go
+// into the insert, and so MORE margin, not less (sign-checked against that
+// formula, not assumed). The previous 4.5mm was arithmetically fine by
+// this formula (0.2mm margin) but thin against FDM layer-height scatter;
+// a code-review recommendation to fix that by THINNING the flange to
+// 4.0mm had the direction backwards -- by this same formula that gives a
+// NEGATIVE margin, guaranteed bottoming, not a safer one. Thickened
+// instead: 6.0mm leaves 4.0mm of engagement with 1.7mm to spare.
+Adapter_Flange_T = 6.0;
 
 // The flange's OWN bore is narrower than the spigot's hollow above --
 // this leaves a solid shelf inside the flange, between the two bore
@@ -126,7 +178,7 @@ Adapter_Flange_T = M3_Screw_L - Insert_Depth + 0.2;   // -> 4.5
 // open beneath them for a screwdriver and for the camera harness to
 // route through. Sized to clear the bolt circle by a wall as thick as
 // the shell's own (NC_Wall_T) around each screw hole.
-Adapter_Bore_D = 2*(CAD_Bolt_R - M3_Clear/2 - NC_Wall_T);   // -> 30.16, well inside Adapter_Spigot_ID (50.8)
+Adapter_Bore_D = 2*(CAD_Bolt_R - M3_Clear/2 - NC_Wall_T);   // -> 30.16, well inside Adapter_Spigot_ID (50.77)
 
 // ============================================
 // SHOULDER -- stepped, printed, all-in-one
@@ -134,9 +186,10 @@ Adapter_Bore_D = 2*(CAD_Bolt_R - M3_Clear/2 - NC_Wall_T);   // -> 30.16, well in
 // Adhesive gap for GLUED joints. Thin CA wicks into a 0.1-0.2mm gap and
 // needs the tight fit to grip; epoxy is gap-filling and wants the room.
 // Set this to match what you actually use.
-//   0.2 = superglue / thin CA
-//   0.4 = epoxy
-Glue_Gap = 0.2;
+//   0.2 = superglue / thin CA -- only for small parts; see the print notes
+//         below on why this file's own laps are too large for thin CA
+//   0.4 = gel CA or epoxy (default)
+Glue_Gap = 0.4;
 
 Shoulder_L         = 100;
 // NOT glued - the shoulder is removed every flight to pack the chute, so
@@ -146,8 +199,10 @@ Shoulder_L         = 100;
 // home, which is worse than loose.
 Shoulder_OD        = Peregrine_Body_ID - 0.4;   // slip fit -> 98.7
 Shoulder_Spigot_L  = 15;
-// GLUED into the bottom slice bore, so it takes Glue_Gap, not 0.4.
-Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.9 with CA
+// GLUED into the bottom slice bore, so it takes Glue_Gap, not 0.4 flat --
+// they happen to agree at the default (Glue_Gap=0.4), but Glue_Gap can
+// still be tightened to 0.2 for thin CA on a small part.
+Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
 
 // ============================================
@@ -195,11 +250,15 @@ module CN_Slice_Top(){
 module CN_Adapter(){
     // Flange butts the CAD nosecone's base and carries its 3 mounting
     // screws; the spigot below is epoxied into the shell's Cut3 bore.
+    // Spigot is tapered (d1 at the deep end, d2 at the flange) to track
+    // the bore's own taper -- see Ogive_OD_At_Z and the comment on
+    // Adapter_Spigot_OD_Top/_Bot above.
     difference(){
         union(){
             cylinder(d=Adapter_Flange_OD, h=Adapter_Flange_T, $fn=$preview? 90:360);
             translate([0,0,-Adapter_Spigot_L])
-                cylinder(d=Adapter_Spigot_OD, h=Adapter_Spigot_L+Overlap, $fn=$preview? 90:360);
+                cylinder(d1=Adapter_Spigot_OD_Bot, d2=Adapter_Spigot_OD_Top,
+                         h=Adapter_Spigot_L+Overlap, $fn=$preview? 90:360);
         } // union
 
         // flange's own bore -- through the flange only
@@ -242,7 +301,7 @@ module CN_Shoulder(){
 
 module TestRing(){
     // Print this FIRST. OD must sit flush on the body tube; the bore must
-    // accept the shoulder spigot (96.7) with a light push fit.
+    // accept the shoulder spigot (Shoulder_Spigot_OD) with a light push fit.
     difference(){
         cylinder(d=Peregrine_Body_OD, h=15, $fn=90);
         translate([0,0,-Overlap])
@@ -270,7 +329,7 @@ if (Render_Part == 5) CN_Adapter();
 //   2  Bottom slice    147mm
 //   3  Middle slice    147mm
 //   4  Top slice        89mm   -- truncated at OD 60, no camera features
-//   5  Adapter          20mm   -- flange + spigot, joins shell to the CAD nosecone
+//   5  Adapter          21mm   -- flange + spigot, joins shell to the CAD nosecone
 //
 // Assembly, bottom to top:
 //   1. Print part 0. Check it sits flush on the tube and accepts the spigot.
@@ -282,8 +341,16 @@ if (Render_Part == 5) CN_Adapter();
 //   6. Epoxy the adapter's spigot into the top slice's open bore (Cut3)
 //      and hold until set. This joint is permanent, unlike the shoulder.
 //
-// Parts 3 and 4 export at Z=147.14 and 294.29 rather than 0 -- drop to
+// Parts 3 and 4 export at Z=147.15 and 294.29 rather than 0 -- drop to
 // plate in the slicer.
+//
+// Part 5 (adapter): print flange-down -- rotate 180 deg about X or Y in the
+// slicer so the flange sits on the bed and the spigot points up. As
+// modeled/exported (flange up, spigot hanging below) the flange's
+// underside is a horizontal shelf bridging over the open spigot hollow,
+// carrying the 3 screw holes -- unsupported, it droops or needs support
+// material on the exact face the screw heads have to bear on. Rotated
+// 180 deg, every overhang in the part is self-supporting.
 //
 // Use gel CA or epoxy, not thin CA: the laps are large and thin CA gives a
 // one-shot alignment on a 147mm part. The adapter-to-shell joint (step 6)
