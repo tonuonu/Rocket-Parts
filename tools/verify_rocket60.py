@@ -91,7 +91,7 @@ def checks(m):
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
-    for p, want_len in ((2, 160.0), (3, 130.0)):
+    for p, want_len in ((2, 160.0), (3, 180.0)):
         if p in m:
             tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),

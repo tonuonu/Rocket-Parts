@@ -36,7 +36,7 @@ R60_Body_ID    = R60_Body_OD - 2*R60_Wall_T;   // 56.8
 R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
 
 R60_EBay_L   = 160;   // fits Vega 100 + upright MG90S 29 + slack
-R60_Chute_L  = 130;
+R60_Chute_L  = 180;   // spring mechanism 80 + 24in main 100
 R60_FinCan_L = 228;
 
 // ============================================
