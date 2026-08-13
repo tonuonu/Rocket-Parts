@@ -162,7 +162,7 @@ module R60_EBayAftBulkhead(){
     Horn_W  = 9;               // servo 2 horn slot
     Horn_L  = 24;
     S_Off   = 5.5;             // MG90S shaft offset from body centre
-    S2_Y    = 13.2;            // servo 2 beside servo 1: 6.1 + 1 + 6.1
+    S2_Y    = 13.6;            // 1.2mm pocket wall (3 perimeters @ 0.4mm nozzle)
     Cord_d  = 5;
     difference(){
         cylinder(d=R60_Coupler_OD, h=T);
