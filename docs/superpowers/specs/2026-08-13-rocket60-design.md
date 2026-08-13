@@ -79,10 +79,20 @@ camera's clocking. Holes A and B continue upward as Ø6.0 mm pillars 55.5 mm lon
 
 **Confirmed by the user: the three holes carry M3 heat-set inserts** (ruthex RX-M3×5.7,
 5.7 mm engagement). The Ø7.0 concentric feature is the boss around each insert. The neck
-therefore gets three plain **Ø3.4 mm clearance holes** on the same circle, counterbored from
-below for M3 socket-head cap screws, and **M3×10** screws pull the neck up into the camera.
-That gives ~5 mm of thread engagement with a 5 mm neck lug — check the screws bottom on
-thread, not on the insert, at trial fit.
+therefore gets three plain **Ø3.4 mm clearance holes** on the same circle — **no counterbore**
+— and **M3×10** screws pull the neck up into the camera.
+
+The counterbore was removed during implementation. It had been specified opening from the
+neck's *underside*, but the neck is modelled flange-first: its Ø56.4 skirt cannot enter the
+nosecone's Ø55.6 bore, only the Ø56.8 body tube, so the skirt points aft and the flange's
+other face is what presses against the camera. The counterbore therefore opened into the
+mating face — the one surface it must not be in. Removing it outright is better than flipping
+it: the neck's aft face is inside the airframe and mates with nothing (the e-bay tube's end
+lands at r=28.4–30, well clear of the r=18.98 bolt circle), so a proud screw head touches
+nothing, and the full 5 mm flange becomes grip.
+
+That gives **5.0 mm of grip** under the head and **5.0 mm of thread engagement** in the
+5.7 mm insert — it cannot bottom out.
 >
 > **ASSUMPTION A2** — `Nose Cone.STEP` and `camera.STEP` use different origins, so the
 > rotational clocking between the two is inferred, not proven. Mitigated by making the neck
@@ -124,7 +134,7 @@ H182R is 203 mm and the G80T only 124 mm.
 
 | # | Part | Print | Notes |
 |---|---|---|---|
-| P1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by 3× **Ø3.4 clearance holes** on Ø37.96 BC (M3×10 SHCS into the camera's heat-set inserts), counterbored from below; open-centre spider for the harness; skirt down into the e-bay tube. |
+| P1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by 3× **Ø3.4 clearance holes** on Ø37.96 BC, no counterbore (M3×10 SHCS into the camera's heat-set inserts, heads proud on the aft face where nothing bears); open-centre spider for the harness; skirt down into the e-bay tube. |
 | P2 | E-bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm, door cutout 36 × 85 mm |
 | P3 | E-bay fwd bulkhead | new | Neck interface + harness pass-through |
 | P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive |
