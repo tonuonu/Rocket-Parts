@@ -35,17 +35,18 @@ printing.** That is the whole reason this part exists.
 | `05_EBayAftBulkhead.stl` | 5 | 12.00 | 56.40 | Shock cord anchor, 2 servo pockets, drive bore. |
 | `06_VegaSled.stl` | 6 | 8.00 | 44×112 | 60×27 M3 pattern. Antenna side faces radially OUT. |
 | `07_AccessDoor.stl` | 7 | 84.30 | 60.00 | 4× M2.5. |
-| `09_FinCan.stl` | 9 | 228.00 | 60.00 | Ø29.3 MMT, 3× fin slots. 228 mm sized for the 216 mm H135W, not the 124 mm G80T — the G80T flies on `12_MotorSpacer`. |
+| `09_FinCan.stl` | 9 | 228.00 | 60.00 | Ø29.3 MMT, 3× fin slots, 3× M3 blind insert bosses (r=24, aft end) for the retainer. 228 mm sized for the 216 mm H135W, not the 124 mm G80T — the G80T flies on `12_MotorSpacer`. |
 | `10_Fin.stl` | 10 | 4.00 | 90×55 | Flat print, 3 needed. Root 90 mm; aspect ratio 0.88 is deliberate — it's what puts flutter velocity at ~850 m/s. Do not thin or extend it. |
-| `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | Traps the motor's aft rim. |
+| `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | Traps the motor's aft rim. 3× M3 clearance (Ø3.4, r=24) into `09_FinCan`'s bosses. |
 | `12_MotorSpacer.stl` | 12 | 99.00 | 29.00 | Motor_Class=0 (G80T) length. Re-render with Motor_Class=1 (H182R) or 2 (H135W) for the longer motors — those need no spacer at all once close to 223mm. |
 
 `06_VegaSled` and `10_Fin` are flat plates, not tubes — dimensions are
-width×length, not a diameter. `10_Fin`'s slot in `09_FinCan` is a line-to-line
-fit along its 90 mm length (no printed clearance there, only across its 4 mm
-thickness); neither `09_FinCan` nor `11_MotorRetainer` has a fastening
-feature yet (no screw holes) despite the retainer's "screws to the fin can"
-design intent — sand-fit/bond for now.
+width×length, not a diameter. `10_Fin`'s slot in `09_FinCan` gets 0.2 mm
+clearance at each end (90.4 mm slot for the 90 mm root) as well as across its
+4 mm thickness — a slip fit, since the fin is epoxied in, not bolted.
+`09_FinCan` and `11_MotorRetainer` fasten together with 3× M3 into ruthex
+RX-M3x5.7 heat-set inserts, on a bolt circle offset 60° from the fins so the
+bolts land between them.
 
 ## Not yet built
 
