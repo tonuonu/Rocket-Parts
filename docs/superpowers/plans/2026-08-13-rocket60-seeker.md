@@ -1,0 +1,1509 @@
+# Rocket 60 "Seeker" Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build a Ø60 mm 3D-printed camera rocket around the existing unmodifiable `Nose Cone.STEP`, flying the AeroTech G80T-14A now and a 29 mm H DMS later, with CATS Vega dual-deploy recovery.
+
+**Architecture:** One shared constants/modules library (`R60Lib.scad`) plus one part-dispatch file (`Rocket60.scad`) exposing every printable part through `Render_Part=N`, following the existing `PeregrineNoseCone.scad` pattern. Verification is `tools/verify_rocket60.py`, which renders each part to ASCII STL and measures the actual mesh — mating fits are always checked measured-against-measured, never against the design constant they are supposed to satisfy.
+
+**Tech Stack:** OpenSCAD 2026.07.09 (`/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD`), Python 3 (stdlib only), Bambu P1S.
+
+**Design spec:** `docs/superpowers/specs/2026-08-13-rocket60-seeker-design.md` — read it before starting. Every number below comes from it.
+
+## Global Constraints
+
+- **Airframe OD is 60.0 mm and is not negotiable.** It is set by the measured base of `Nose Cone.STEP` (59.98 mm). Any part that meets the nosecone must be flush with it.
+- **`Nose Cone.STEP` is never modified.** No new holes, no reprint. It is the user's part.
+- **Measured constants are measurements, not preferences.** `R60_NC_*` and `R60_Cam_*` in `R60Lib.scad` come from FreeCAD sections of the user's STEP files. Do not round, tidy, or "correct" them.
+- **Every part must fit a 250 mm Z build volume** (repo convention for the Bambu P1S, per `PeregrineNoseCone.scad`). The verify script enforces this for all parts.
+- **No carbon-filled filament** on any part from the neck to the chute bay — the CATS manual states a carbon-fibre section blocks all RF, and both the telemetry and GNSS antennas are inside the airframe.
+- **Material:** PETG for airframe and e-bay parts; **PC for the fin can, centering rings, retainer and motor spacers** (motor-adjacent, matching the user's existing `MotorAdapter29` and L2 practice — "Not PLA, softens at motor casing temp"). PC is ~5 % less dense than PETG, so the 805 g figure is a slight over-estimate.
+- **Fits are always derived, never hardcoded.** Write `R60_Coupler_OD = R60_Body_ID - 0.4;`, never `R60_Coupler_OD = 56.4;`. This is why the Peregrine shoulder derives from `Peregrine_Body_ID`.
+- **File header convention:** every `.scad` starts with the `// ****` block (Project / Filename / by / Created / Units), matching every other file in the repo.
+- **Commit after every task.** Feature branch `feature/rocket60-seeker`; never push to main; no attribution lines in commit messages.
+
+## File Structure
+
+| File | Responsibility |
+|---|---|
+| `R60Lib.scad` | All shared constants (airframe, measured nosecone/camera interfaces, Vega, motor) and reusable modules (tube, centering ring, bayonet lug profile). No printable part lives here. |
+| `Rocket60.scad` | `Render_Part` dispatch and the printable part modules. Includes `R60Lib.scad` and `RailGuide.scad`. |
+| `tools/verify_rocket60.py` | Renders every part, measures the mesh, asserts dimensions/fits/genus/build-volume. Grows one `checks()` block per task. |
+| `R60-PrintSettings.md` | Per-part material, walls, infill, orientation, and the assembly order. Mirrors `L2-PrintSettings.md`. |
+
+**Render_Part map** (fixed now so later tasks can reference parts they do not build):
+
+| N | Part | Task |
+|---|---|---|
+| 0 | Test ring — **print first**, gauges 3 fits at once | 1 |
+| 1 | Neck | 2 |
+| 2 | E-bay tube | 3 |
+| 3 | Chute bay tube | 3 |
+| 4 | E-bay forward bulkhead | 4 |
+| 5 | E-bay aft bulkhead | 4 |
+| 6 | Vega sled | 5 |
+| 7 | Access door | 6 |
+| 8 | Bayonet ring | 7 |
+| 9 | Fin can | 9 |
+| 10 | Fin | 9 |
+| 11 | Motor retainer | 10 |
+| 12 | Motor spacer | 10 |
+| 13 | Tether latch | 8 |
+
+---
+
+### Task 1: Foundations — library, verify harness, test ring
+
+The test ring is the single most valuable print in this project: it gauges the nosecone
+base fit, the camera bolt circle and the tube coupler fit on one 10 mm part, before any
+filament is spent on a 228 mm fin can.
+
+**Files:**
+- Create: `R60Lib.scad`
+- Create: `Rocket60.scad`
+- Create: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: all `R60_*` constants listed below; `R60_Tube(len, od, wall)`; `Render_Part` dispatch in `Rocket60.scad`; `render(part, out)`, `measure(stl)`, `bore(stl, zlo, zhi)`, `checks(m)`, `main(argv)` in the verify script.
+
+- [ ] **Step 1: Write the failing verification harness**
+
+Create `tools/verify_rocket60.py`. This is modelled directly on `tools/verify_nosecone.py` —
+read that file first; the `render`/`_tris`/`measure`/`bore`/`volume` helpers are copied from it
+verbatim so the two scripts stay consistent.
+
+```python
+#!/usr/bin/env python3
+"""Render and measure Rocket 60 "Seeker" parts.
+
+A part that does not fit still renders cleanly, so every mating dimension is
+measured from the STL rather than inferred from the parameter that was
+supposed to produce it.
+"""
+import math, os, re, subprocess, sys, tempfile
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+SCAD = os.path.join(REPO, "Rocket60.scad")
+
+NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
+         4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
+         7: "access door", 8: "bayonet ring", 9: "fin can", 10: "fin",
+         11: "motor retainer", 12: "motor spacer"}
+
+# Expected genus per part (topological invariant, immune to the
+# "bit-identical bounding box, wrong interior" failure mode: a solid is
+# genus 0, each through-hole/handle adds 1).
+#   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
+GENUS = {0: 4}
+
+MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
+
+
+def render(part, out):
+    """Render `part` to `out`. Returns the OpenSCAD-reported genus (int), or
+    None if the render statistics did not contain a Genus line."""
+    env = dict(os.environ, OPENSCADPATH=REPO)
+    r = subprocess.run(
+        [OPENSCAD, "--export-format", "asciistl", "-o", out,
+         "-D", "Render_Part=%d" % part, SCAD],
+        capture_output=True, text=True, env=env)
+    err = r.stdout + r.stderr
+    if (r.returncode != 0 or "ERROR:" in err.upper()
+            or "Can't find include file" in err
+            or "Ignoring unknown module" in err
+            or not os.path.exists(out) or os.path.getsize(out) < 200):
+        raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
+    g = re.search(r"Genus:\s*(-?\d+)", err)
+    return int(g.group(1)) if g else None
+
+
+def _tris(stl):
+    """Yield (v0, v1, v2) vertex triples from an ASCII STL."""
+    vs = []
+    with open(stl) as fh:
+        for line in fh:
+            s = line.lstrip()
+            if s.startswith("vertex "):
+                vs.append(tuple(float(x) for x in s.split()[1:4]))
+                if len(vs) == 3:
+                    yield tuple(vs)
+                    vs = []
+
+
+def measure(stl, genus=None):
+    """Bounding box, height and max diameter about the Z axis."""
+    xs = ys = zs = None
+    dmax = 0.0
+    for tri in _tris(stl):
+        for (x, y, z) in tri:
+            xs = (x, x) if xs is None else (min(xs[0], x), max(xs[1], x))
+            ys = (y, y) if ys is None else (min(ys[0], y), max(ys[1], y))
+            zs = (z, z) if zs is None else (min(zs[0], z), max(zs[1], z))
+            dmax = max(dmax, 2.0 * math.hypot(x, y))
+    return {"stl": stl, "genus": genus, "dmax": dmax,
+            "xmin": xs[0], "xmax": xs[1], "ymin": ys[0], "ymax": ys[1],
+            "zmin": zs[0], "zmax": zs[1], "height": zs[1] - zs[0]}
+
+
+def bore(stl, zlo, zhi):
+    """Return (min_dia, max_dia) of material within the Z band [zlo, zhi].
+
+    min_dia is the smallest radius seen doubled, i.e. the bore; max_dia the
+    largest, i.e. the OD. Vertices outside the band are ignored."""
+    rmin, rmax = None, 0.0
+    for tri in _tris(stl):
+        for (x, y, z) in tri:
+            if zlo <= z <= zhi:
+                r = math.hypot(x, y)
+                rmin = r if rmin is None else min(rmin, r)
+                rmax = max(rmax, r)
+    if rmin is None:
+        raise RuntimeError("no geometry in Z band %.2f..%.2f of %s" % (zlo, zhi, stl))
+    return 2.0 * rmin, 2.0 * rmax
+
+
+def volume(stl):
+    """Signed mesh volume in cm^3 (divergence theorem over the triangles)."""
+    v = 0.0
+    for (a, b, c) in _tris(stl):
+        v += (a[0] * (b[1] * c[2] - b[2] * c[1])
+              - a[1] * (b[0] * c[2] - b[2] * c[0])
+              + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6.0
+    return abs(v) / 1000.0
+
+
+# --- Z bands used to measure real mating surfaces -------------------------
+# Chosen to sit inside a single constant-diameter span so bore() sees a clean
+# cylinder rather than a taper or a counterbore.
+TESTRING_FLANGE_BAND = (0.5, 3.5)    # part 0: OD against the nosecone base
+TESTRING_SPIGOT_BAND = (5.5, 9.5)    # part 0: coupler OD against a tube bore
+
+
+def checks(m):
+    """Return list of (label, actual, expected, tolerance)."""
+    c = []
+    a = lambda p, k: m[p][k]
+
+    if 0 in m:
+        _, flange_od = bore(a(0, "stl"), *TESTRING_FLANGE_BAND)
+        _, spigot_od = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
+        c += [("test ring flange OD vs nosecone base", flange_od, 59.98, 0.15),
+              ("test ring coupler OD", spigot_od, 56.40, 0.15),
+              ("test ring height", a(0, "height"), 10.0, 0.1),
+              ("test ring zmin", a(0, "zmin"), 0.0, 0.05)]
+
+    # Build volume, every part.
+    for p in m:
+        c += [("part %d fits %.0fmm Z" % (p, MAX_Z),
+               m[p]["height"], min(m[p]["height"], MAX_Z), 0.01)]
+
+    # Topology, every part with a recorded expectation.
+    for p in m:
+        if m[p].get("genus") is not None and p in GENUS:
+            c += [("part %d genus" % p, m[p]["genus"], GENUS[p], 0)]
+
+    return c
+
+
+def main(argv):
+    parts = [int(x) for x in argv[1:]] or sorted(NAMES)
+    m = {}
+    tmp = tempfile.mkdtemp(prefix="r60-")
+    for p in parts:
+        out = os.path.join(tmp, "part%d.stl" % p)
+        g = render(p, out)
+        m[p] = measure(out, g)
+        print("rendered %-2d %-20s  %.2f x %.2f x %.2f mm  %.1f cm3"
+              % (p, NAMES.get(p, "?"), m[p]["xmax"] - m[p]["xmin"],
+                 m[p]["ymax"] - m[p]["ymin"], m[p]["height"], volume(out)))
+    bad = 0
+    print()
+    for (label, actual, expected, tol) in checks(m):
+        ok = abs(actual - expected) <= tol
+        bad += 0 if ok else 1
+        print("%-4s %-42s %10.3f  want %.3f +/- %.3f"
+              % ("OK" if ok else "FAIL", label, actual, expected, tol))
+    print("\n%d check(s) failed" % bad)
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 0
+```
+
+Expected: `RuntimeError: render of part 0 failed` — `Rocket60.scad` does not exist yet.
+
+- [ ] **Step 3: Write `R60Lib.scad`**
+
+```openscad
+// ***********************************
+// Project: 3D Printed Rocket
+// Filename: R60Lib.scad
+// for Rocket 60 "Seeker" (60mm body, camera nosecone)
+// by Tõnu Samuel
+// Created: 2026-08-13
+// Units: mm
+// ***********************************
+//  ***** Notes *****
+//
+// Shared constants and modules for the 60mm camera rocket. No printable
+// part lives here - see Rocket60.scad.
+//
+// The airframe OD is NOT a design choice. It is the measured base
+// diameter of the user's "Nose Cone.STEP", which cannot be modified.
+//
+//  ***** History *****
+//
+function R60Lib_Rev()="R60Lib 0.1.0";
+echo(R60Lib_Rev());
+// 0.1.0  2026-08-13  First code.
+
+Overlap = 0.05;
+IDXtra  = 0.2;
+$fn = $preview ? 36 : 180;
+
+// ============================================
+// AIRFRAME
+// ============================================
+R60_Body_OD    = 60.0;
+R60_Wall_T     = 1.6;
+R60_Body_ID    = R60_Body_OD - 2*R60_Wall_T;   // 56.8
+// 0.4mm diametral clearance, same convention as PeregrineNoseCone.scad.
+// Derived, so a wall-thickness change can never silently produce an
+// interference fit here.
+R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
+
+R60_EBay_L   = 130;
+R60_Chute_L  = 130;
+R60_FinCan_L = 228;
+
+// ============================================
+// NOSECONE INTERFACE - MEASURED, DO NOT ROUND
+// ============================================
+// Taken from "Nose Cone.STEP" with FreeCAD planar sections. The STEP is
+// authored in a parent-assembly frame with the base plane at Y=501.95;
+// these are restated as height above that plane.
+R60_NC_Base_OD  = 59.98;   // outer diameter at the base plane
+R60_NC_Base_ID  = 54.25;   // base annulus bore
+R60_NC_Bore_Low = 53.25;   // bore 0.5..1.5mm above the base
+R60_NC_Bore_Gen = 55.60;   // bore higher up
+
+// ============================================
+// CAMERA INTERFACE - MEASURED, DO NOT ROUND
+// ============================================
+// From ~/Camera.STEP. Three M3 heat-set inserts (ruthex RX-M3x5.7) on one
+// circle. The angles are deliberately NOT 120deg apart - the asymmetry
+// keys the camera's clocking, so preserve them exactly.
+R60_Cam_BC_R    = 18.98;                  // bolt circle RADIUS
+R60_Cam_Ang     = [52.2, -52.2, 180.0];
+R60_Cam_Bolt_d  = 3.4;                    // M3 clearance
+R60_Cam_Cbore_d = 6.2;                    // M3 socket head clearance
+R60_Cam_Cbore_h = 3.2;
+
+// ============================================
+// CATS VEGA  (manual v2.0.0 sec 4.3.3)
+// ============================================
+// Manual says 15mm total height, catsystems.io says 21mm. Cut for 21.
+R60_Vega_L = 100;
+R60_Vega_W = 33;
+R60_Vega_H = 21;
+// L-shaped M3 pattern, 60mm apart along the length, 27mm across the width.
+// X = across width, Y = along length.
+R60_Vega_Holes = [[-13.5, -25], [-13.5, +35], [+13.5, +35]];
+R60_Vega_Standoff_h = 4;   // manual recommends spacers under the board
+
+// ============================================
+// MOTOR
+// ============================================
+R60_MMT_ID  = 29.0 + 0.3;   // 29mm motor, slip fit
+R60_MMT_OD  = R60_MMT_ID + 3.0;
+R60_MMT_L   = 223;          // takes the 216mm H135W, the longest 29mm H DMS
+R60_Motor_L = [124, 203, 216];  // G80T-14A, H182R-14A, H135W-14A
+
+// ============================================
+// FINS
+// ============================================
+R60_Fin_Root  = 90;
+R60_Fin_Tip   = 35;
+R60_Fin_Span  = 55;
+R60_Fin_Sweep = 45;
+R60_Fin_T     = 4.0;
+R60_nFins     = 3;
+
+// ============================================
+// BAYONET
+// ============================================
+R60_nLugs      = 3;
+R60_Lug_W      = 10;
+R60_Lug_H      = 4;
+R60_Lug_Ramp   = 20;   // degrees; sets the cam release force, ~100N target
+
+// ============================================
+// SHARED MODULES
+// ============================================
+
+// A plain airframe tube. Length along +Z, base at Z=0.
+module R60_Tube(len, od=R60_Body_OD, wall=R60_Wall_T){
+    difference(){
+        cylinder(d=od, h=len);
+        translate([0,0,-Overlap]) cylinder(d=od-2*wall, h=len+Overlap*2);
+    }
+} // R60_Tube
+
+// Bolt pattern for the camera's three heat-set inserts. Children are
+// placed at each hole, on the XY plane, oriented +Z.
+module R60_CameraBoltPattern(){
+    for (a=R60_Cam_Ang)
+        rotate([0,0,a]) translate([R60_Cam_BC_R,0,0]) children();
+} // R60_CameraBoltPattern
+```
+
+- [ ] **Step 4: Write `Rocket60.scad` with the test ring**
+
+```openscad
+// ***********************************
+// Project: 3D Printed Rocket
+// Filename: Rocket60.scad
+// for Rocket 60 "Seeker" (60mm body, camera nosecone)
+// by Tõnu Samuel
+// Created: 2026-08-13
+// Units: mm
+// ***********************************
+//  ***** Notes *****
+//
+// Designed for Bambu P1S (256x256x256mm build volume, 250mm usable Z).
+// Every printable part is selected with Render_Part below.
+//
+// Spec: docs/superpowers/specs/2026-08-13-rocket60-seeker-design.md
+//
+// ***********************************
+
+include<R60Lib.scad>
+
+// ============================================
+// RENDER SELECTION - change this value!
+// ============================================
+//  0 = Test ring (PRINT THIS FIRST)
+//  1 = Neck
+//  2 = E-bay tube
+//  3 = Chute bay tube
+//  4 = E-bay forward bulkhead
+//  5 = E-bay aft bulkhead
+//  6 = Vega sled
+//  7 = Access door
+//  8 = Bayonet ring
+//  9 = Fin can
+// 10 = Fin
+// 11 = Motor retainer
+// 12 = Motor spacer
+Render_Part = 0;
+
+// ============================================
+// PARTS
+// ============================================
+
+// Print this FIRST. It gauges three fits on one 10mm part:
+//   1. flange OD flush against the nosecone base (no step, either way)
+//   2. the 3x M3 bolt circle and its clocking against the camera inserts
+//   3. the coupler spigot inside a printed body tube
+// If any of the three is wrong, nothing downstream is worth printing.
+module R60_TestRing(){
+    H_flange = 4;
+    H_spigot = 6;
+    difference(){
+        union(){
+            cylinder(d=R60_Body_OD, h=H_flange);
+            translate([0,0,H_flange-Overlap])
+                cylinder(d=R60_Coupler_OD, h=H_spigot+Overlap);
+        }
+        // Open centre: the camera harness passes through here in the real
+        // neck, so the gauge shares the same clear bore.
+        translate([0,0,-Overlap])
+            cylinder(d=28, h=H_flange+H_spigot+Overlap*2);
+        R60_CameraBoltPattern(){
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Bolt_d, h=H_flange+H_spigot+Overlap*2);
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Cbore_d, h=R60_Cam_Cbore_h+Overlap);
+        }
+    }
+} // R60_TestRing
+
+// ============================================
+// DISPATCH
+// ============================================
+if (Render_Part==0) R60_TestRing();
+```
+
+- [ ] **Step 5: Run the verification and confirm it passes**
+
+```bash
+python3 tools/verify_rocket60.py 0
+```
+
+Expected: `0 check(s) failed`, with the flange OD reading 59.98 ±0.15, the coupler OD
+56.40 ±0.15, height 10.0, and genus 4.
+
+If genus reads something other than 4, do not just edit `GENUS` to match. Open the part in
+OpenSCAD, confirm the three bolt holes actually pass all the way through and the centre bore
+is open, and only then record the observed value with a comment explaining the topology.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add R60Lib.scad Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add R60 library, part dispatch and test ring
+
+Test ring gauges the nosecone base OD, the camera bolt circle and the
+tube coupler fit on one 10mm print, before committing filament to
+larger parts. Verification measures the mesh rather than trusting the
+parameters that produced it."
+```
+
+---
+
+### Task 2: Neck
+
+Bolts up into the camera's three M3 heat-set inserts and carries the airframe below the
+nosecone. **Butt joint — no spigot into the nosecone bore**, because the camera assembly
+fills that bore and sits flush with the base plane.
+
+**Files:**
+- Modify: `Rocket60.scad` (add `R60_Neck()`, extend dispatch)
+- Modify: `tools/verify_rocket60.py` (`GENUS`, `checks`)
+
+**Interfaces:**
+- Consumes: `R60_Body_OD`, `R60_Coupler_OD`, `R60_Cam_*`, `R60_CameraBoltPattern()` from Task 1.
+- Produces: `R60_Neck()`; neck skirt OD equals `R60_Coupler_OD`, so Task 3's e-bay tube bore must accept it.
+
+- [ ] **Step 1: Write the failing checks**
+
+In `tools/verify_rocket60.py`, add the band constants next to the existing ones:
+
+```python
+NECK_FLANGE_BAND = (0.5, 4.5)     # part 1: OD against the nosecone base
+NECK_SKIRT_BAND  = (12.0, 22.0)   # part 1: skirt OD into the e-bay tube
+```
+
+Add to `GENUS`:
+
+```python
+#   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
+GENUS = {0: 4, 1: 4}
+```
+
+Add to `checks()`, immediately after the `if 0 in m:` block:
+
+```python
+    if 1 in m:
+        _, flange_od = bore(a(1, "stl"), *NECK_FLANGE_BAND)
+        _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+        c += [("neck flange OD vs nosecone base", flange_od, 59.98, 0.15),
+              ("neck height", a(1, "height"), 24.0, 0.1),
+              ("neck zmin", a(1, "zmin"), 0.0, 0.05)]
+        # Skirt must actually enter a body tube: measured skirt OD against
+        # the measured test-ring coupler OD, never against R60_Coupler_OD.
+        if 0 in m:
+            _, ring_spigot = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
+            c += [("neck skirt matches test ring spigot",
+                   skirt_od, ring_spigot, 0.10)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 0 1
+```
+
+Expected: `RuntimeError: render of part 1 failed` — nothing renders for `Render_Part=1`, so
+OpenSCAD writes an empty/undersized STL.
+
+- [ ] **Step 3: Implement the neck**
+
+Add to `Rocket60.scad` before the dispatch block:
+
+```openscad
+// The camera assembly fills the nosecone bore and sits flush with its base
+// plane, so the neck cannot have a spigot - it is a butt joint. The three
+// M3x10 SHCS pull it up into the camera's heat-set inserts; those screws
+// and the flange face are the whole joint.
+//
+// Load path: the shock cord anchors on the E-BAY AFT BULKHEAD, never here.
+// These three screws only ever carry the nose section's own inertia.
+module R60_Neck(){
+    Flange_T = 5;      // gives ~5mm thread engagement in a 5.7mm insert
+    Skirt_L  = 19;
+    Bore_d   = 28;     // camera harness passes through
+    difference(){
+        union(){
+            cylinder(d=R60_Body_OD, h=Flange_T);
+            translate([0,0,Flange_T-Overlap])
+                cylinder(d=R60_Coupler_OD, h=Skirt_L+Overlap);
+        }
+        translate([0,0,-Overlap])
+            cylinder(d=Bore_d, h=Flange_T+Skirt_L+Overlap*2);
+        // Thin the skirt so it is a tube, not a slug.
+        translate([0,0,Flange_T])
+            cylinder(d=R60_Coupler_OD-2*R60_Wall_T, h=Skirt_L+Overlap);
+        R60_CameraBoltPattern(){
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Bolt_d, h=Flange_T+Overlap*2);
+            translate([0,0,-Overlap])
+                cylinder(d=R60_Cam_Cbore_d, h=R60_Cam_Cbore_h+Overlap);
+        }
+    }
+} // R60_Neck
+```
+
+Extend the dispatch:
+
+```openscad
+if (Render_Part==0) R60_TestRing();
+if (Render_Part==1) R60_Neck();
+```
+
+- [ ] **Step 4: Run the verification and confirm it passes**
+
+```bash
+python3 tools/verify_rocket60.py 0 1
+```
+
+Expected: `0 check(s) failed`. The `neck skirt matches test ring spigot` check compares two
+measured meshes — that is the one that would catch an interference fit.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add neck
+
+Butt joint against the nosecone base with no spigot - the camera fills
+the bore and sits flush. Three M3x10 into the camera's heat-set inserts.
+Skirt OD verified against the measured test ring, not the constant."
+```
+
+---
+
+### Task 3: Airframe tubes
+
+Two plain tubes off one parameterised module. The e-bay tube gets the door cutout in Task 6;
+it is left solid here so the door and its frame are verified together.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_Tube()`, `R60_EBay_L`, `R60_Chute_L` from Task 1.
+- Produces: parts 2 and 3; their bore is `R60_Body_ID`, which every bulkhead and the bayonet ring must fit.
+
+- [ ] **Step 1: Write the failing checks**
+
+Add to `tools/verify_rocket60.py`:
+
+```python
+TUBE_BAND = (20.0, 100.0)   # parts 2,3: mid-span, away from either end
+```
+
+`GENUS` gains two entries — a plain tube is topologically a torus:
+
+```python
+#   parts 2,3: plain tube = 1
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1}
+```
+
+In `checks()`:
+
+```python
+    for p, want_len in ((2, 130.0), (3, 130.0)):
+        if p in m:
+            tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
+            c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
+                  ("part %d OD" % p, tube_od, 60.0, 0.1),
+                  ("part %d bore" % p, tube_id, 56.8, 0.1)]
+            # A tube that will not accept the neck skirt is useless.
+            if 1 in m:
+                _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+                c += [("part %d bore clears neck skirt" % p,
+                       tube_id - skirt_od, 0.4, 0.15)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 2
+```
+
+Expected: `RuntimeError: render of part 2 failed`.
+
+- [ ] **Step 3: Implement the tubes**
+
+Add to `Rocket60.scad`:
+
+```openscad
+// Plain airframe tubes. The e-bay door cutout is added in the door task so
+// the opening and its frame are verified against each other.
+module R60_EBayTube(){ R60_Tube(R60_EBay_L); }
+module R60_ChuteTube(){ R60_Tube(R60_Chute_L); }
+```
+
+Dispatch:
+
+```openscad
+if (Render_Part==2) R60_EBayTube();
+if (Render_Part==3) R60_ChuteTube();
+```
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 1 2 3
+```
+
+Expected: `0 check(s) failed`, both tubes 130.0 mm, OD 60.0, bore 56.8, and 0.4 mm diametral
+clearance over the measured neck skirt.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add e-bay and chute bay tubes
+
+Both bores verified to clear the measured neck skirt with 0.4mm
+diametral clearance."
+```
+
+---
+
+### Task 4: E-bay bulkheads
+
+The aft bulkhead is the most safety-critical printed part in the rocket: it carries the
+shock-cord anchor, both servos and the bayonet drive. Everything the recovery system pulls on
+reacts here.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_Body_ID`, `R60_Coupler_OD` from Task 1; tube bore from Task 3.
+- Produces: `R60_EBayFwdBulkhead()`, `R60_EBayAftBulkhead()`; the aft bulkhead exposes a Ø8 mm anchor eye and a central Ø12 mm bayonet drive bore that Task 7's ring shaft passes through.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+BULK_BAND = (1.0, 5.0)   # parts 4,5: the disc itself, below any boss
+```
+
+```python
+#   part 4: disc + harness bore (1) = 1
+#   part 5: disc + anchor eye (1) + drive bore (1) + 2 servo cutouts (2) = 4
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4}
+```
+
+```python
+    for p, want_h in ((4, 6.0), (5, 12.0)):
+        if p in m:
+            _, bulk_od = bore(a(p, "stl"), *BULK_BAND)
+            c += [("part %d height" % p, a(p, "height"), want_h, 0.1)]
+            # Must drop into a tube bore, measured against the real tube.
+            if 2 in m:
+                tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+                c += [("part %d fits e-bay bore" % p,
+                       tube_id - bulk_od, 0.4, 0.15)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 4
+```
+
+Expected: `RuntimeError: render of part 4 failed`.
+
+- [ ] **Step 3: Implement both bulkheads**
+
+```openscad
+// Forward bulkhead: closes the top of the e-bay, passes the camera harness.
+module R60_EBayFwdBulkhead(){
+    T = 6;
+    difference(){
+        cylinder(d=R60_Coupler_OD, h=T);
+        translate([0,0,-Overlap]) cylinder(d=22, h=T+Overlap*2);
+    }
+} // R60_EBayFwdBulkhead
+
+// Aft bulkhead. THE structural part of the recovery system: the shock cord
+// anchors here so deployment snatch never reaches the camera bolts.
+// Also mounts both MG90S servos and passes the bayonet drive shaft.
+module R60_EBayAftBulkhead(){
+    T        = 12;
+    Servo_L  = 23.0 + IDXtra;    // MG90S body
+    Servo_W  = 12.2 + IDXtra;
+    Eye_d    = 8;
+    Drive_d  = 12;
+    difference(){
+        cylinder(d=R60_Coupler_OD, h=T);
+        // Central bore for the bayonet ring's drive shaft.
+        translate([0,0,-Overlap]) cylinder(d=Drive_d, h=T+Overlap*2);
+        // Two servo pockets, 180deg apart, clear of the drive bore.
+        for (a=[0,180])
+            rotate([0,0,a]) translate([17,0,-Overlap])
+                cube([Servo_L, Servo_W, T+Overlap*2], center=true);
+        // Shock cord anchor eye, offset so it does not foul the drive bore.
+        translate([0,20,T/2]) rotate([0,90,0])
+            cylinder(d=Eye_d, h=R60_Coupler_OD, center=true);
+    }
+} // R60_EBayAftBulkhead
+```
+
+Dispatch:
+
+```openscad
+if (Render_Part==4) R60_EBayFwdBulkhead();
+if (Render_Part==5) R60_EBayAftBulkhead();
+```
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 2 4 5
+```
+
+Expected: `0 check(s) failed`. If part 5's genus is not 4, open it and confirm the anchor eye
+is a clean through-hole and both servo pockets break through — a pocket that stops short
+reads as genus 3 and is a real defect, not a test artefact.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add e-bay bulkheads
+
+Aft bulkhead carries the shock cord anchor, both servo pockets and the
+bayonet drive bore. Anchoring here keeps deployment snatch load out of
+the camera's three M3 inserts."
+```
+
+---
+
+### Task 5: Vega sled
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_Vega_*` from Task 1.
+- Produces: `R60_VegaSled()`.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+#   part 6: flat sled, 3 standoff bores (3) = 3
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4, 6: 3}
+```
+
+```python
+    if 6 in m:
+        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 112.0, 0.2),
+              ("sled width", a(6, "xmax") - a(6, "xmin"), 44.0, 0.2)]
+        # The board must physically fit the tube bore lying on the sled.
+        if 2 in m:
+            tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+            stack = a(6, "height") + 21.0    # sled + Vega envelope
+            c += [("sled + Vega clears e-bay bore", tube_id - stack, 26.8, 1.0)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 6
+```
+
+Expected: `RuntimeError: render of part 6 failed`.
+
+- [ ] **Step 3: Implement the sled**
+
+```openscad
+// CATS Vega sled. Manual sec 4.3.3: mounting holes are 60 x 27mm apart,
+// M3, and spacers are recommended so nothing touches the board.
+//
+// Orientation matters: the GNSS patch antenna must face RADIALLY OUTWARD
+// with no battery, loom or metal between it and the airframe wall. Mark
+// the antenna side on the print.
+module R60_VegaSled(){
+    T = 4;
+    L = R60_Vega_L + 12;
+    W = R60_Vega_W + 11;
+    difference(){
+        union(){
+            translate([-W/2, -L/2, 0]) cube([W, L, T]);
+            for (h=R60_Vega_Holes)
+                translate([h[0], h[1], T-Overlap])
+                    cylinder(d=7, h=R60_Vega_Standoff_h+Overlap);
+        }
+        for (h=R60_Vega_Holes)
+            translate([h[0], h[1], -Overlap])
+                cylinder(d=2.9, h=T+R60_Vega_Standoff_h+Overlap*2);
+    }
+} // R60_VegaSled
+```
+
+Dispatch: `if (Render_Part==6) R60_VegaSled();`
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 2 6
+```
+
+Expected: `0 check(s) failed`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add CATS Vega sled
+
+60x27mm M3 pattern per manual sec 4.3.3, with standoffs so nothing
+touches the board. Antenna side must face radially outward."
+```
+
+---
+
+### Task 6: Access door and e-bay cutout
+
+The Vega calibrates once at boot and must only be powered up with the rocket already vertical
+on the rail, so the **external arming switch** is part of this task, not an afterthought.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_EBayTube()` from Task 3.
+- Produces: `R60_Door()`, and `R60_EBayTube()` now carries the opening plus the switch hole.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+DOOR_W, DOOR_L = 36.0, 85.0
+```
+
+Part 2's genus changes — the door opening and the switch hole each add a handle:
+
+```python
+#   part 2: tube (1) + door opening (1) + switch hole (1) = 3
+#   part 7: curved panel, 4 bolt holes (4) = 4
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
+```
+
+```python
+    if 7 in m:
+        c += [("door arc length", a(7, "ymax") - a(7, "ymin"), DOOR_L, 0.3)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 2 7
+```
+
+Expected: part 2 fails the genus check (still 1, opening not cut) and part 7 fails to render.
+
+- [ ] **Step 3: Implement the opening and the door**
+
+Replace `R60_EBayTube()`:
+
+```openscad
+// E-bay tube with the access opening and the arming switch hole.
+//
+// The switch is NOT optional and NOT interchangeable with the door: the
+// CATS manual requires the board be powered up only once the rocket is
+// vertical on the pad, and disarming afterwards is only possible by
+// powering off. So it must be reachable on the rail.
+module R60_EBayTube(){
+    Sw_d = 12;   // panel-mount toggle
+    difference(){
+        R60_Tube(R60_EBay_L);
+        translate([0,0,(R60_EBay_L-85)/2])
+            rotate([0,0,0]) translate([-18,0,0])
+                cube([36, R60_Body_OD, 85]);
+        translate([0,0,R60_EBay_L-18]) rotate([90,0,0])
+            cylinder(d=Sw_d, h=R60_Body_OD, center=true);
+    }
+} // R60_EBayTube
+
+// Curved door panel, 4x M2.5. Sits in the opening cut above.
+module R60_Door(){
+    Gap = 0.35;   // per side
+    difference(){
+        intersection(){
+            difference(){
+                cylinder(d=R60_Body_OD, h=85-2*Gap);
+                translate([0,0,-Overlap])
+                    cylinder(d=R60_Body_OD-2*R60_Wall_T, h=85+Overlap*2);
+            }
+            translate([-(36-2*Gap)/2, 0, 0])
+                cube([36-2*Gap, R60_Body_OD, 85-2*Gap]);
+        }
+        for (x=[-12,12], z=[8, 85-2*Gap-8])
+            translate([x, R60_Body_OD/2, z]) rotate([90,0,0])
+                cylinder(d=2.7, h=R60_Body_OD, center=true);
+    }
+} // R60_Door
+```
+
+Dispatch: `if (Render_Part==7) R60_Door();`
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 2 7
+```
+
+Expected: `0 check(s) failed`, part 2 genus now 3.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add e-bay access door and arming switch hole
+
+Switch is mandatory, not a convenience: the Vega calibrates once at boot
+and must only be powered up with the rocket vertical on the rail."
+```
+
+---
+
+### Task 7: Bayonet ring
+
+Servo-rotated positive lock with **20° ramped lug faces** so that motor ejection can cam it
+open as an independent backup. Target release ≈ 100 N: 8× over the ~12 N flight load, and
+comfortably under the ~152 N the G80T's charge makes over the Ø56.8 mm bore.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_nLugs`, `R60_Lug_*`, `R60_Coupler_OD` from Task 1; drive bore from Task 4.
+- Produces: `R60_BayonetRing()`.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+#   part 8: ring (1) + drive bore (1) = 2
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4, 8: 2}
+```
+
+```python
+RING_BAND = (1.0, 5.0)
+```
+
+```python
+    if 8 in m:
+        _, ring_od = bore(a(8, "stl"), *RING_BAND)
+        c += [("bayonet ring lug OD", ring_od, 58.0, 0.3)]
+        if 3 in m:
+            tube_id, _ = bore(a(3, "stl"), *TUBE_BAND)
+            # Lugs must ENGAGE the chute tube bore, i.e. be larger than it.
+            c += [("bayonet lugs engage chute bore",
+                   ring_od - tube_id, 1.2, 0.4)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 3 8
+```
+
+Expected: `RuntimeError: render of part 8 failed`.
+
+- [ ] **Step 3: Implement the ring**
+
+```openscad
+// Bayonet ring. Servo 1 rotates it to unlock at apogee.
+//
+// The lug faces are ramped R60_Lug_Ramp degrees so the ring cams ITSELF
+// open above roughly 100N axial. That is what makes the motor ejection
+// charge a real backup rather than a decoration: a square-cut lug is a
+// positive lock and no amount of ejection pressure will open it.
+//
+// The 100N figure is a design target and MUST be measured on a pull rig
+// before flight - accept 80-130N, adjust R60_Lug_Ramp until it lands
+// in band. See spec sec 11 step 2.
+module R60_BayonetRing(){
+    T       = 6;
+    Lug_OD  = R60_Body_ID + 1.2;   // engages the chute tube bore
+    Drive_d = 12;
+    difference(){
+        union(){
+            cylinder(d=R60_Coupler_OD, h=T);
+            for (i=[0:R60_nLugs-1])
+                rotate([0,0,i*360/R60_nLugs])
+                    rotate_extrude(angle=R60_Lug_W*360/(PI*Lug_OD))
+                        polygon([[R60_Coupler_OD/2-Overlap, 0],
+                                 [Lug_OD/2, 0],
+                                 [Lug_OD/2, R60_Lug_H],
+                                 [R60_Coupler_OD/2-Overlap,
+                                  R60_Lug_H + (Lug_OD-R60_Coupler_OD)/2
+                                              * tan(R60_Lug_Ramp)]]);
+        }
+        translate([0,0,-Overlap]) cylinder(d=Drive_d, h=T+Overlap*2);
+    }
+} // R60_BayonetRing
+```
+
+Dispatch: `if (Render_Part==8) R60_BayonetRing();`
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 3 8
+```
+
+Expected: `0 check(s) failed`. The `bayonet lugs engage chute bore` check is the important
+one — lugs smaller than the bore would let the joint pull straight apart.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add cam-ramped bayonet ring
+
+20 degree lug ramp so motor ejection can cam the joint open as an
+independent backup to the servo. Release force is a design target and
+must be measured on a pull rig before flight."
+```
+
+---
+
+### Task 8: Tether latch
+
+Spec §4.1's tether is what makes "dual deploy, no drogue" work: it holds the two sections
+~50 mm apart through the whole tumble so the chute cannot come out early, then servo 2
+releases it at 150 m. It is a **separate line from the shock cord**, which stays permanently
+anchored at both ends.
+
+This latch carries the aft section's flopping load for ~25 s of tumbling, not a single static
+pull. That is why its bench test is cyclic, not a one-shot proof load.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `IDXtra` from Task 1; mounts to `R60_EBayAftBulkhead()` from Task 4.
+- Produces: `R60_TetherLatch()` as part 13; two M3 mounting holes 22 mm apart matching the aft bulkhead face.
+
+- [ ] **Step 1: Write the failing checks**
+
+Add part 13 to `NAMES`:
+
+```python
+NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
+         4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
+         7: "access door", 8: "bayonet ring", 9: "fin can", 10: "fin",
+         11: "motor retainer", 12: "motor spacer", 13: "tether latch"}
+```
+
+Add to `checks()`:
+
+```python
+    if 13 in m:
+        c += [("latch base length", a(13, "xmax") - a(13, "xmin"), 26.0, 0.2),
+              ("latch height", a(13, "height"), 16.0, 0.2),
+              ("latch zmin", a(13, "zmin"), 0.0, 0.05)]
+```
+
+Do **not** add part 13 to `GENUS` yet — a pin bore running through two posts that are
+themselves separated by a loop slot is not a topology you can predict by inspection. Step 4
+records the observed value after visually confirming the part is correct.
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 13
+```
+
+Expected: `RuntimeError: render of part 13 failed`.
+
+- [ ] **Step 3: Implement the latch**
+
+```openscad
+// Tether latch. Servo 2 withdraws the 3mm pin at 150m, freeing the 50mm
+// tether loop so the sections separate fully and the main is drawn out.
+//
+// This is NOT the shock cord. The shock cord runs from this bulkhead to
+// the fin can's forward centering ring and is never released; the tether
+// is a short line whose only job is the apogee restraint. Confusing the
+// two leaves the aft section attached to nothing after main release.
+module R60_TetherLatch(){
+    Base_L = 26; Base_W = 16; Base_T = 4;
+    Pin_d  = 3.0 + IDXtra;
+    Post_H = 12;
+    difference(){
+        union(){
+            translate([-Base_L/2,-Base_W/2,0]) cube([Base_L,Base_W,Base_T]);
+            for (x=[-9, 9])
+                translate([x,0,Base_T-Overlap]) cylinder(d=8, h=Post_H+Overlap);
+        }
+        // Pin bore through both posts. The pin IS the load path - it is a
+        // 3mm steel dowel, not printed.
+        translate([0,0,Base_T+Post_H-4]) rotate([0,90,0])
+            cylinder(d=Pin_d, h=Base_L+2, center=true);
+        // Slot the tether loop sits in, under the pin.
+        translate([0,0,Base_T+Post_H-4])
+            cube([10, Base_W+2, 9], center=true);
+        // Mounting holes into the e-bay aft bulkhead, 22mm apart.
+        for (x=[-11, 11])
+            translate([x,0,-Overlap]) cylinder(d=2.9, h=Base_T+Overlap*2);
+    }
+} // R60_TetherLatch
+```
+
+Dispatch: `if (Render_Part==13) R60_TetherLatch();`
+
+- [ ] **Step 4: Run, inspect, then record the genus**
+
+```bash
+python3 tools/verify_rocket60.py 13
+```
+
+Expected: the three dimensional checks pass. The run prints the observed genus in the
+`rendered 13 ...` line context — open the part in OpenSCAD and confirm that (a) the pin bore
+passes cleanly through both posts, (b) the loop slot breaks all the way through, and (c) both
+mounting holes are open. Only once all three are visually confirmed, add the observed value to
+`GENUS` with a comment stating the topology you verified, e.g.:
+
+```python
+#   part 13: pin bore through both posts + loop slot + 2 mount holes.
+#   Observed <N> after visual confirmation that all four break through.
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add tether latch
+
+Holds the two sections 50mm apart through the tumble so the chute cannot
+come out early; servo 2 releases it at 150m. Separate from the shock
+cord, which stays anchored at both ends throughout."
+```
+
+---
+
+### Task 9: Fin can and fins
+
+228 mm so the longest 29 mm H DMS (H135W, 216 mm) fits. This is the largest print in the
+project and the one where a bad slot fit wastes the most filament — hence the measured
+tab-vs-slot check.
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_MMT_*`, `R60_Fin_*`, `R60_nFins` from Task 1.
+- Produces: `R60_FinCan()`, `R60_Fin()`; the fin root tab thickness must match the fin can slot width.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+FINCAN_MMT_BAND = (100.0, 140.0)    # part 9: mid-span, inside the MMT
+```
+
+```python
+#   part 9: outer tube (1) + MMT bore (1) + 3 fin slots (3) = 5
+#   part 10: flat plate, no holes = 0
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4, 8: 2, 9: 5, 10: 0}
+```
+
+```python
+    if 9 in m:
+        mmt_id, can_od = bore(a(9, "stl"), *FINCAN_MMT_BAND)
+        c += [("fin can length", a(9, "height"), 228.0, 0.2),
+              ("fin can OD", can_od, 60.0, 0.1),
+              ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15),
+              ("fin can fits 250mm Z", a(9, "height"), min(a(9, "height"), 250.0), 0.01)]
+    if 10 in m:
+        c += [("fin root chord", a(10, "xmax") - a(10, "xmin"), 90.0, 0.2),
+              ("fin thickness", a(10, "zmax") - a(10, "zmin"), 4.0, 0.1)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 9 10
+```
+
+Expected: `RuntimeError: render of part 9 failed`.
+
+- [ ] **Step 3: Implement the fin can and fin**
+
+```openscad
+// Fin can. 228mm because the longest 29mm H DMS (H135W) is 216mm - NOT
+// because the G80T needs it. The G80T is 124mm and flies on a spacer.
+// This is what makes the rocket H-ready without a reprint.
+module R60_FinCan(){
+    Ring_T   = 3;
+    Slot_L   = R60_Fin_Root;
+    Slot_Z   = 8;
+    difference(){
+        union(){
+            R60_Tube(R60_FinCan_L);
+            // MMT
+            difference(){
+                cylinder(d=R60_MMT_OD, h=R60_FinCan_L);
+                translate([0,0,-Overlap])
+                    cylinder(d=R60_MMT_ID, h=R60_FinCan_L+Overlap*2);
+            }
+            // Centering rings: aft, mid, forward.
+            for (z=[6, R60_FinCan_L/2, R60_FinCan_L-Ring_T-6])
+                translate([0,0,z]) difference(){
+                    cylinder(d=R60_Body_ID, h=Ring_T);
+                    translate([0,0,-Overlap])
+                        cylinder(d=R60_MMT_OD-Overlap, h=Ring_T+Overlap*2);
+                }
+        }
+        // Fin slots, through the outer wall only.
+        for (i=[0:R60_nFins-1])
+            rotate([0,0,i*360/R60_nFins])
+                translate([R60_MMT_OD/2, -R60_Fin_T/2-IDXtra/2, Slot_Z])
+                    cube([R60_Body_OD, R60_Fin_T+IDXtra, Slot_L]);
+    }
+} // R60_FinCan
+
+// Fin, printed flat. Low aspect ratio (0.88) is deliberate - it is what
+// puts flutter velocity at ~850 m/s, 3.8x the H182R's 221 m/s. Do NOT
+// thin it or extend the span without recomputing flutter.
+module R60_Fin(){
+    linear_extrude(height=R60_Fin_T)
+        polygon([[0,0],
+                 [R60_Fin_Root, 0],
+                 [R60_Fin_Sweep+R60_Fin_Tip, R60_Fin_Span],
+                 [R60_Fin_Sweep, R60_Fin_Span]]);
+} // R60_Fin
+```
+
+Dispatch:
+
+```openscad
+if (Render_Part==9)  R60_FinCan();
+if (Render_Part==10) R60_Fin();
+```
+
+- [ ] **Step 4: Run and confirm**
+
+```bash
+python3 tools/verify_rocket60.py 9 10
+```
+
+Expected: `0 check(s) failed`. Confirm `MMT bore takes 29mm motor` reads 29.3 — a bore that
+measures 29.0 is an interference fit on the motor casing and must be fixed before printing.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add fin can and fin
+
+228mm fin can with a 223mm MMT so the 216mm H135W fits; the G80T flies
+on a spacer. Fin aspect ratio kept low deliberately for flutter margin."
+```
+
+---
+
+### Task 10: Motor retainer, spacers and rail buttons
+
+**Files:**
+- Modify: `Rocket60.scad`
+- Modify: `tools/verify_rocket60.py`
+
+**Interfaces:**
+- Consumes: `R60_MMT_*`, `R60_Motor_L` from Task 1; `RailGuide.scad`.
+- Produces: `R60_MotorRetainer()`, `R60_MotorSpacer(motor)`.
+
+- [ ] **Step 1: Write the failing checks**
+
+```python
+#   part 11: retainer ring = 1
+#   part 12: spacer tube = 1
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4, 8: 2, 9: 5,
+         10: 0, 11: 1, 12: 1}
+```
+
+```python
+    if 12 in m:
+        # Default Motor_Class=0 is the G80T: 223mm MMT - 124mm motor = 99mm.
+        c += [("G80T spacer length", a(12, "height"), 99.0, 0.1)]
+    if 11 in m:
+        _, ret_od = bore(a(11, "stl"), (0.5, 3.5)[0], (0.5, 3.5)[1])
+        c += [("retainer OD", ret_od, 60.0, 0.1)]
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+```bash
+python3 tools/verify_rocket60.py 11 12
+```
+
+Expected: `RuntimeError: render of part 11 failed`.
+
+- [ ] **Step 3: Implement**
+
+Add near the top of `Rocket60.scad`, under the `Render_Part` block:
+
+```openscad
+// 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
+Motor_Class = 0;
+```
+
+```openscad
+// Aft retainer. Screws to the fin can and traps the motor's aft rim.
+module R60_MotorRetainer(){
+    T = 6;
+    difference(){
+        cylinder(d=R60_Body_OD, h=T);
+        translate([0,0,-Overlap])
+            cylinder(d=R60_MMT_ID-2.5, h=T+Overlap*2);
+    }
+} // R60_MotorRetainer
+
+// Forward spacer so a motor shorter than the 223mm MMT still sits flush at
+// the aft end. Open bore: ejection gas and the forward closure pass through.
+module R60_MotorSpacer(){
+    L = R60_MMT_L - R60_Motor_L[Motor_Class];
+    if (L > 1)
+        difference(){
+            cylinder(d=R60_MMT_ID-0.3, h=L);
+            translate([0,0,-Overlap])
+                cylinder(d=R60_MMT_ID-0.3-2*2.0, h=L+Overlap*2);
+        }
+} // R60_MotorSpacer
+```
+
+Dispatch:
+
+```openscad
+if (Render_Part==11) R60_MotorRetainer();
+if (Render_Part==12) R60_MotorSpacer();
+```
+
+Rail buttons are not printed here — they come straight from the repo library. Record in
+`R60-PrintSettings.md` (Task 11) that the user renders them from `RailGuide.scad` with
+`RailButton(OD=11, Flange_h=2, Slot_w=2.8)`, which is the verified 8020-1010 profile matching
+the 6.2 mm rail slot.
+
+- [ ] **Step 4: Run the full suite**
+
+```bash
+python3 tools/verify_rocket60.py
+```
+
+Expected: every part renders and `0 check(s) failed`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add Rocket60.scad tools/verify_rocket60.py
+git commit -m "Add motor retainer and spacers
+
+Spacer length derives from Motor_Class so the G80T, H182R and H135W all
+sit flush at the aft end of the same 223mm MMT."
+```
+
+---
+
+### Task 11: Print settings and assembly documentation
+
+**Files:**
+- Create: `R60-PrintSettings.md`
+
+**Interfaces:**
+- Consumes: every part from Tasks 1–9.
+- Produces: nothing code-level.
+
+- [ ] **Step 1: Write `R60-PrintSettings.md`**
+
+Mirror the structure of `L2-PrintSettings.md`. It must contain, per part: material, wall
+count, infill, layer height, orientation, and whether a brim is needed. Plus:
+
+- **Print order**, starting with part 0 (test ring) and an explicit gate: *do not print
+  anything else until the test ring bolts to the camera and sits flush on the nosecone base.*
+- **Assembly order**, with the load-path rule stated: shock cord anchors on the e-bay aft
+  bulkhead, never forward of it.
+- **Material split**: PETG for airframe/e-bay, PC for fin can, centering rings, retainer and
+  spacers. No carbon-filled filament anywhere from the neck to the chute bay.
+- **Rail buttons**: rendered from `RailGuide.scad`, `RailButton(OD=11, Flange_h=2, Slot_w=2.8)`.
+- **Vega configuration block**, copied from spec §7.3 — in particular `enable_telemetry = true`
+  (firmware default is `false`), `main_altitude = 150`, `liftoff_acc_threshold = 40`, testing
+  mode off, and the per-motor timer values from spec §7.4.
+- **Pre-flight checks**, copied from spec §11, including the bayonet pull-rig measurement and
+  the "arm only when vertical on the rail" step.
+
+- [ ] **Step 2: Verify every part still renders**
+
+```bash
+python3 tools/verify_rocket60.py
+```
+
+Expected: `0 check(s) failed`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add R60-PrintSettings.md
+git commit -m "Add Rocket 60 print settings and assembly order
+
+Test ring is an explicit gate before any other part is printed."
+```
+
+---
+
+## Self-Review
+
+**Spec coverage:**
+
+| Spec section | Task |
+|---|---|
+| §2 nosecone interface (measured constants) | 1 (`R60_NC_*`) |
+| §2.1 camera bolt interface | 1 (`R60_Cam_*`), 2 (neck) |
+| §3.2 P1 neck | 2 |
+| §3.2 P2/P8 tubes | 3 |
+| §3.2 P3/P4 bulkheads | 4 |
+| §3.2 P5 Vega sled | 5 |
+| §3.2 P6 access door | 6 |
+| §3.2 P7 bayonet | 7 |
+| §3.2 P9/P10 fin can + fins | 9 |
+| §3.2 P11/P13 retainer + spacers | 10 |
+| §3.2 P12 rail buttons | 10 (from `RailGuide.scad`), documented in 11 |
+| §3.1 load path (cord on aft bulkhead) | 4, documented in 11 |
+| §4 recovery sequence | 7 (bayonet), 8 (tether latch), 11 (config + procedure) |
+| §7 Vega integration | 5 (sled), 6 (switch), 11 (settings) |
+| §8 materials | Global Constraints, 11 |
+| §9 rail buttons / 1010 | 10, 11 |
+| §11 verification before flight | 11 |
+
+| §4.1 tether latch | 8 |
+
+**Known gaps, deliberate:**
+- Spec §5/§6 (performance, stability) are analysis, reproduced by `tools/rocket60_model.py`,
+  not built by any task.
+
+**Type consistency:** module names are `R60_*` throughout; `R60_Tube(len, od, wall)` and
+`R60_CameraBoltPattern()` are defined in Task 1 and used unchanged in Tasks 2, 3, 6, 8. Verify
+script helpers `render/measure/bore/volume/checks/main` keep the signatures introduced in
+Task 1. Band constants (`TESTRING_*`, `NECK_*`, `TUBE_BAND`, `BULK_BAND`, `RING_BAND`,
+`FINCAN_MMT_BAND`) are each defined once and referenced by later tasks.
