@@ -235,6 +235,37 @@ module R60_Door(){
     }
 } // R60_Door
 
+// Bayonet ring. Servo 1 rotates it to unlock at apogee.
+//
+// The lug faces are ramped R60_Lug_Ramp degrees so the ring cams ITSELF
+// open above roughly 100N axial. That is what makes the motor ejection
+// charge a real backup rather than a decoration: a square-cut lug is a
+// positive lock and no amount of ejection pressure will open it.
+//
+// The 100N figure is a design target and MUST be measured on a pull rig
+// before flight - accept 80-130N, adjust R60_Lug_Ramp until it lands
+// in band. See spec sec 11 step 2.
+module R60_BayonetRing(){
+    T       = 6;
+    Lug_OD  = R60_Body_ID + 1.2;   // engages the chute tube bore
+    Drive_d = 12;
+    difference(){
+        union(){
+            cylinder(d=R60_Coupler_OD, h=T);
+            for (i=[0:R60_nLugs-1])
+                rotate([0,0,i*360/R60_nLugs])
+                    rotate_extrude(angle=R60_Lug_W*360/(PI*Lug_OD))
+                        polygon([[R60_Coupler_OD/2-Overlap, 0],
+                                 [Lug_OD/2, 0],
+                                 [Lug_OD/2, R60_Lug_H],
+                                 [R60_Coupler_OD/2-Overlap,
+                                  R60_Lug_H + (Lug_OD-R60_Coupler_OD)/2
+                                              * tan(R60_Lug_Ramp)]]);
+        }
+        translate([0,0,-Overlap]) cylinder(d=Drive_d, h=T+Overlap*2);
+    }
+} // R60_BayonetRing
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -246,3 +277,4 @@ if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
 if (Render_Part==6) R60_VegaSled();
 if (Render_Part==7) R60_Door();
+if (Render_Part==8) R60_BayonetRing();
