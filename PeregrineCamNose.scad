@@ -29,8 +29,14 @@ include<NoseCone.scad>
 // BODY TUBE -- measure yours and adjust
 // ============================================
 Peregrine_Body_OD    = 101.5;   // outside diameter of body tube
-Peregrine_Body_ID    = 99.0;    // inside diameter of body tube
-Peregrine_Coupler_OD = 97.1;    // shell ID = Body_OD - 2*Wall_T
+// MEASURED 2026-08-13 with a printed stepped fit gauge, not assumed. A
+// 99.10 band enters by hand but will not slide under its own weight; 98.85
+// slides freely. That brackets the real ID at ~99.1.
+Peregrine_Body_ID    = 99.1;    // inside diameter of body tube
+// Derived, not hardcoded. This previously read 97.1 with a comment claiming
+// it was Body_OD - 2*Wall_T; the two happened to agree, so a change to
+// either input would have silently broken the shell fit with nothing to
+// signal it. Declared below NC_Wall_T because it depends on it.
 
 // ============================================
 // NOSE CONE -- 441mm, blunted for the camera
@@ -39,6 +45,7 @@ NC_Length  = 574.55;   // same ogive as the non-camera version
 NC_Base_L  = 15;
 NC_Tip_R   = 26;       // large: the nose is a 52mm spherical cap
 NC_Wall_T  = 2.2;
+Peregrine_Coupler_OD = Peregrine_Body_OD - NC_Wall_T*2;   // shell ID, 97.1
 NC_nRivets = 0;        // shoulder is glued via its spigot, not pinned
 
 // Slice planes. Cut_d is a DIAMETER; the module derives Z from it.
@@ -65,10 +72,23 @@ Spacer_Rear_T  = 6.08;   // ditto, rear station
 // ============================================
 // SHOULDER -- stepped, printed, all-in-one
 // ============================================
+// Adhesive gap for GLUED joints. Thin CA wicks into a 0.1-0.2mm gap and
+// needs the tight fit to grip; epoxy is gap-filling and wants the room.
+// Set this to match what you actually use.
+//   0.2 = superglue / thin CA
+//   0.4 = epoxy
+Glue_Gap = 0.2;
+
 Shoulder_L         = 100;
-Shoulder_OD        = Peregrine_Body_ID - 0.4;   // 0.4mm diametral clearance
+// NOT glued - the shoulder is removed every flight to pack the chute, so
+// this stays a slip fit. 0.4mm is also right because the joint is 100mm
+// long: a 7mm gauge ring slides happily at 0.25mm, but over 100mm any
+// ovality or bow in the tube accumulates and a tighter fit binds partway
+// home, which is worse than loose.
+Shoulder_OD        = Peregrine_Body_ID - 0.4;   // slip fit -> 98.7
 Shoulder_Spigot_L  = 15;
-Shoulder_Spigot_OD = 96.7;
+// GLUED into the bottom slice bore, so it takes Glue_Gap, not 0.4.
+Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.9 with CA
 Shoulder_Bulk_T    = 4;
 
 // ============================================

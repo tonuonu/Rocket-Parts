@@ -162,7 +162,7 @@ def main(argv):
         checks += [("joint 2 overlap", m[3]["zmax"] - m[4]["zmin"], 7.0, 0.2)]
     if 1 in m:
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
-                   ("shoulder body dia", m[1]["dmax"], 98.6, 0.2)]
+                   ("shoulder body dia", m[1]["dmax"], 98.7, 0.2)]
     for p in (5, 6):
         if p in m:
             want = 2.83 if p == 5 else 6.08
