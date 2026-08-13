@@ -13,7 +13,7 @@ SCAD = os.path.join(REPO, "Rocket60.scad")
 
 NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
          4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
-         7: "access door", 9: "fin can", 10: "fin",
+         7: "access door", 8: "spring carrier", 9: "fin can", 10: "fin",
          11: "motor retainer", 12: "motor spacer"}
 
 DOOR_W, DOOR_L = 36.0, 85.0
@@ -24,7 +24,8 @@ DOOR_GAP = 0.35   # per side
 # genus 0, each through-hole/handle adds 1).
 #   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
 #   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
-#   parts 2,3: plain tube = 1
+#   parts 2,3: plain tube = 1 (part 3's original value -- superseded below,
+#   after the shear pin holes were added)
 #   part 4: disc + harness bore (1) = 1
 #   part 5 (upright-servo redesign): disc + 4 through-passages = 4. Confirmed
 #   by rendered top/bottom faces and the OpenSCAD Genus statistic: servo 1's
@@ -62,6 +63,51 @@ GENUS[9] = 4
 GENUS[11] = 4
 #   part 12: spacer tube = 1 (unchanged, not touched by this round)
 GENUS[12] = 1
+#   part 3: chute bay tube, RE-DERIVED after adding the 2 shear pin holes
+#   (was 1, a plain tube). Rendered first (OpenSCAD stderr: `Genus: 3`),
+#   then visually confirmed on a thin Z-band section slice at the pin
+#   holes' Z (diag, not part of the deliverable): the wall segment at each
+#   +-X hole location is split into two disconnected pieces by a clean
+#   gap spanning the FULL wall thickness (both the bore-side and OD-side
+#   faces are cut), confirming each is a genuine through-hole, not a
+#   surface scratch or blind mark. 1 (tube) + 2 (through pin holes) = 3.
+GENUS[3] = 3
+#   part 5: e-bay aft bulkhead, RE-CONFIRMED after adding the aft skirt +
+#   2 shear pin holes (stayed 4, same as the prior upright-servo design --
+#   NOT carried forward blindly, re-rendered and re-checked because the
+#   geometry changed even though the number didn't). Rendered (OpenSCAD
+#   stderr: `Genus: 4`), then visually confirmed on a sliced side-profile
+#   diagnostic: the 2 new pin holes are blind (do not reach the shaft
+#   bore, the horn slot, or each other), so they add zero handles, same
+#   as part 9's blind boss inserts. This render also CAUGHT a real defect
+#   before this value was recorded: the first skirt draft left servo 2's
+#   horn slot dead-ending under the new solid skirt material (observed
+#   genus 3, not 4, on that draft) -- fixed by extending the horn slot cut
+#   through the skirt to the new aft face, same treatment as the shaft
+#   bore already had; re-rendering then gave 4 back. Servo 1's pocket+
+#   shaft (1) + servo 2's pocket+horn, now reaching the aft face (1) + 2
+#   cord holes, also extended through the skirt (2) = 4.
+GENUS[5] = 4
+#   part 8: spring carrier. First rendered without the forward counterbore
+#   or shock-cord channels (Genus: 1, matching a single spring-bore
+#   passage with blind ball pockets, same reasoning as below). Adding the
+#   counterbore + 2 cord channels (Task 7 fix, see module comment) changed
+#   this to Genus: 3, RE-DERIVED rather than assumed: a horizontal slice
+#   through the diaphragm (z~21.5, diag, not part of the deliverable)
+#   shows 3 SEPARATE round breaches through it -- the Ø8 driveshaft hole
+#   and the 2 Ø5 cord holes -- each independently connecting "forward of
+#   diaphragm" to "aft of diaphragm", so each is its own handle: 1 (main
+#   bore/driveshaft passage) + 2 (the 2 cord passages, each breaching the
+#   diaphragm separately from the driveshaft hole) = 3. A second slice
+#   through the bore/ball-pocket region confirms the 3 ball pockets stay
+#   enclosed/blind (do not breach the OD) and clear of the 2 cord grooves
+#   -- this render also CAUGHT a rotation-math defect first: a first
+#   draft placed a ball pocket azimuth 90deg off from its intended
+#   position (forgot the pocket's own pre-rotation offset), landing it
+#   inside the cord-groove sector (observed as a merged shape on the same
+#   slice, still genus 3 -- the defect was in ball placement, not count);
+#   fixed by correcting the rotate angle, re-rendered, re-confirmed clear.
+GENUS[8] = 3
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -107,6 +153,49 @@ FINCAN_SLOT_HALF_W = 2.1
 # band" -- confirmed by running the brief's code verbatim before changing
 # it. Moved to the base face, same convention as every other *_BAND above.
 RETAINER_BAND = (-0.01, 0.5)
+
+# Part 8 (spring carrier): base face is a plain tube rim, OD=Coupler_OD.
+# From the brief verbatim -- originally also carried the 44.8mm spring-bore
+# reading, but a Task 7 fix added a CB_D=51mm forward counterbore (tether
+# latch clearance, part 13/Task 8) ahead of it, so the base band now reads
+# CB_D there instead; the 44.8mm reading moved to CARRIER_STEP_BAND below,
+# at the step where the counterbore narrows to the actual spring bore.
+SHEARPIN_BAND = (-0.01, 0.5)
+CARRIER_STEP_BAND = (16.5, 17.5)   # straddles the CB_D->Bore step at z=17
+
+# Shear-pin joint geometry (R60Lib.scad's R60_Pin_d/R60_Pin_Z_FromJoint,
+# restated here as literals per this file's existing convention of checking
+# against measured mesh geometry, not the constant that produced it -- see
+# rule 4). Two pins land at the SAME Z offset from the joint on both sides
+# (chute tube's forward rim, and the aft bulkhead's skirt, offset by the
+# skirt's own T=12mm start), so a single physical pin lines up through both
+# once assembled -- see R60_EBayAftBulkhead()'s module comment.
+PIN_D            = 2.2    # nylon 2-56 clearance
+PIN_Z_FROM_JOINT = 8.0
+SKIRT_T          = 12.0   # part 5's original disc height, before the skirt
+PIN_Z_CHUTE       = PIN_Z_FROM_JOINT
+PIN_Z_SKIRT       = SKIRT_T + PIN_Z_FROM_JOINT
+PIN_R_CHUTE       = 30.0   # R60_Body_OD/2 -- chute tube's outer wall
+PIN_R_SKIRT       = 28.2   # R60_Coupler_OD/2 -- skirt's outer surface
+
+
+def pin_hole_diameter(stl, x_side, z_center, r_expected, half_window=3.0):
+    """Diameter of a small radial shear-pin hole, read from the STL's own
+    edge-loop vertices where the hole cuts the surface near
+    x = x_side * r_expected, z = z_center. x_side isolates one hole from
+    its mirror at -x_side (the two pins are 180deg apart, at +-X); the z
+    window isolates it from unrelated geometry. Pin_d is tiny relative to
+    the tube's own radius of curvature, so the hole's local Z-extent is a
+    direct read of its diameter -- same "measure the real edge loop, don't
+    infer from the constant that cut it" approach as fincan_slot_*()."""
+    zs = [z for tri in _tris(stl) for (x, y, z) in tri
+          if x_side * x > 0 and abs(abs(x) - r_expected) < half_window
+          and abs(z - z_center) < half_window]
+    if not zs:
+        raise RuntimeError(
+            "no geometry near pin hole x=%+.0f*r, z=%.1f of %s"
+            % (x_side, z_center, stl))
+    return max(zs) - min(zs)
 
 
 def fincan_slot_width(stl):
@@ -194,7 +283,10 @@ def checks(m):
               ("door chord width", a(7, "xmax") - a(7, "xmin"),
                DOOR_W - 2 * DOOR_GAP, 0.15)]
 
-    for p, want_h in ((4, 6.0), (5, 12.0)):
+    # Part 5's height grew from a plain 12mm disc to 12 + a 15mm aft skirt
+    # (SKIRT_T + 15 = 27) that carries the shear pins into the real joint --
+    # see R60_EBayAftBulkhead()'s module comment.
+    for p, want_h in ((4, 6.0), (5, 27.0)):
         if p in m:
             _, bulk_od = bore(a(p, "stl"), *BULK_BAND)
             c += [("part %d height" % p, a(p, "height"), want_h, 0.1)]
@@ -203,6 +295,31 @@ def checks(m):
                 tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
                 c += [("part %d fits e-bay bore" % p,
                        tube_id - bulk_od, 0.4, 0.15)]
+
+    # Shear pins bridge the ACTUAL separable joint: chute tube (part 3) and
+    # the aft bulkhead's skirt (part 5), not the spring carrier (part 8).
+    # Both holes are read straight off the rendered mesh at the Z each part
+    # was cut at, so a hole that silently didn't break through, or landed
+    # off-target, fails here rather than in the report.
+    if 3 in m:
+        for x_side in (1, -1):
+            d = pin_hole_diameter(a(3, "stl"), x_side, PIN_Z_CHUTE, PIN_R_CHUTE)
+            c += [("chute tube shear pin dia (x=%+d side)" % x_side,
+                   d, PIN_D, 0.3)]
+    if 5 in m:
+        for x_side in (1, -1):
+            d = pin_hole_diameter(a(5, "stl"), x_side, PIN_Z_SKIRT, PIN_R_SKIRT)
+            c += [("aft bulkhead skirt shear pin dia (x=%+d side)" % x_side,
+                   d, PIN_D, 0.3)]
+
+    if 8 in m:
+        _, carrier_od = bore(a(8, "stl"), *SHEARPIN_BAND)
+        carrier_bore, _ = bore(a(8, "stl"), *CARRIER_STEP_BAND)
+        c += [("spring carrier OD", carrier_od, 56.40, 0.15),
+              ("spring carrier bore takes CS4323", carrier_bore, 44.80, 0.30)]
+        if 3 in m:
+            tube_id, _ = bore(a(3, "stl"), *TUBE_BAND)
+            c += [("carrier clears chute bore", tube_id - carrier_od, 0.4, 0.15)]
 
     if 9 in m:
         mmt_id, can_od = bore(a(9, "stl"), *FINCAN_BAND)

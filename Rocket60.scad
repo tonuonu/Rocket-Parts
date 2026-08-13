@@ -28,6 +28,7 @@ include<R60Lib.scad>
 //  5 = E-bay aft bulkhead
 //  6 = Vega sled
 //  7 = Access door
+//  8 = Spring/ball-lock carrier
 //  9 = Fin can
 // 10 = Fin
 // 11 = Motor retainer
@@ -132,7 +133,56 @@ module R60_EBayTube(){
     }
 } // R60_EBayTube
 
-module R60_ChuteTube(){ R60_Tube(R60_Chute_L); }
+// Chute bay tube. Two shear pins bridge the REAL separable airframe joint
+// here, at its forward rim, landing in the e-bay aft bulkhead's skirt
+// (R60_EBayAftBulkhead) -- NOT in the spring carrier (part 8) -- so the
+// ejection-charge backup shears them directly, independent of the
+// ball-lock's state. See spec 4.2 and R60_EBayAftBulkhead()'s module
+// comment for the placement rationale; R60_Pin_Z_FromJoint is shared with
+// that module so one physical pin lines up through both parts.
+//
+// Spring reaction ring, added beyond the brief's literal file list
+// (which named this file only for the pin holes) because without it the
+// spring has nothing on the chute-bay side to push against -- it would
+// release inside the carrier and go nowhere, which is exactly the kind of
+// "measures right, does nothing" failure spec 4.2 rejected the bayonet
+// for. 3 light tabs, not a solid disc, so the packed chute and shock cord
+// still have a clear path aft. Positioned flush with where the carrier
+// (part 8, bolted to the skirt) ends, so the spring transmits its full
+// force the instant it releases with no unpowered runway -- see
+// R60_SpringCarrier()'s module comment for the part 8 <-> tab handoff and
+// why the plunger/lock-disk that would actually contact these tabs is a
+// companion piece not modeled as its own part in this task.
+module R60_ChuteTube(){
+    Pin_Z      = R60_Pin_Z_FromJoint;
+    Stop_Z     = R60_Pin_Skirt_L + 65;   // skirt(15) + carrier(65) = the
+                                          // "80mm end to lock balls" figure
+                                          // the investigation sourced from
+                                          // SpringThing2.scad for this
+                                          // spring/mechanism class
+    Stop_T     = 3;
+    Stop_ID    = 46;    // clears the carrier's own 44.8mm spring bore
+    nStopTabs  = 3;
+    Tab_W      = 8;     // chord width, small vs. the radius -- a flat cube
+                         // is an adequate approximation of the arc here
+    difference(){
+        union(){
+            R60_Tube(R60_Chute_L);
+            // Spring reaction tabs, inward from the tube wall.
+            for (i=[0:nStopTabs-1])
+                rotate([0,0,i*360/nStopTabs])
+                    translate([-Tab_W/2, Stop_ID/2, Stop_Z])
+                        cube([Tab_W, R60_Body_ID/2-Stop_ID/2, Stop_T]);
+        }
+        // Shear pin holes, +-X (matching R60_EBayAftBulkhead()'s skirt
+        // pins), straight through the tube wall -- same idiom as the
+        // door-opening/switch-hole cuts elsewhere in this file.
+        for (s=[1,-1])
+            translate([s*R60_Body_OD/2, 0, Pin_Z])
+                rotate([0,90,0])
+                    cylinder(d=R60_Pin_d, h=R60_Wall_T*3, center=true);
+    }
+} // R60_ChuteTube
 
 // Forward bulkhead: closes the top of the e-bay, passes the camera harness.
 module R60_EBayFwdBulkhead(){
@@ -148,50 +198,104 @@ module R60_EBayFwdBulkhead(){
 // screws. Also carries both servos and passes their output aft.
 //
 // Servos stand UPRIGHT, shafts along the rocket axis, per
-// PeregrineEjection.scad. Servo 1 is on the centreline and rotates the
-// bayonet ring through its centre; servo 2 sits beside it and drives the
-// tether latch through a slot. A radial layout is impossible: drive bore
-// r=6 to disc edge r=28.2 is 22.2mm, an MG90S body is 22.8mm long.
+// PeregrineEjection.scad. Servo 1 is on the centreline; its shaft now
+// drives the spring carrier's (part 8) ball-lock release, not a bayonet
+// ring -- see R60_SpringCarrier()'s module comment (spec 4.2 superseded
+// the cam bayonet: rotate_extrude cannot cam, and a servo must never be
+// the structural element holding the airframe together). Servo 2 sits
+// beside it and drives the tether latch (part 13) through a slot. A radial
+// layout is impossible: drive bore r=6 to disc edge r=28.2 is 22.2mm, an
+// MG90S body is 22.8mm long.
 //
 // The MG90S output shaft is 5.5mm off the body centre, so servo 1's body
 // is offset by that much to put its SHAFT on the axis, not its body.
+//
+// AFT SKIRT -- the shear-pin joint. The original 12mm disc glues inside
+// the e-bay tube and carries nothing that reaches the chute bay. This
+// task adds a solid skirt (T..T+R60_Pin_Skirt_L) that projects aft, past
+// the e-bay tube's cut end, into the chute bay tube's forward bore
+// (56.4mm OD, same 0.4mm-clearance convention as every internal part in
+// this repo). Two shear pins land radially in this skirt's solid
+// material, R60_Pin_Z_FromJoint past its start -- the SAME offset
+// R60_ChuteTube() uses, measured from its own forward rim, so one
+// physical pin bridges BOTH parts once the chute tube is slid over the
+// skirt. This is the whole point of the redesign (spec 4.2): the pins tie
+// the chute tube directly to this bulkhead, so the ejection-charge backup
+// shears them regardless of whether the ball-lock (part 8, glued to this
+// skirt's aft face, entirely downstream of the pins) has released. Pins
+// placed only in the spring carrier would leave the charge fighting the
+// ball-lock detent instead -- exactly the failure mode spec 4.2 warns
+// against.
+//
+// The servo 1 shaft bore, the servo 2 horn slot, and the shock cord holes
+// all now run the full T + Skirt_L depth (previously just T) so they stay
+// open passages all the way to the new aft face: the shaft bore reaches
+// part 8's ball-lock; the horn slot reaches the tether latch (part 13,
+// Task 8), which mounts on this bulkhead's aft face -- if the horn slot
+// stopped at the original T=12 disc face, the new skirt would seal it
+// into a blind pocket and servo 2 would drive nothing (found by render:
+// genus dropped 4->3 after the skirt was added but before this fix,
+// confirmed on a sliced side-profile diagnostic that the slot dead-ended
+// under solid skirt material); the cord holes so the shock cord still
+// threads through into the chute bay.
 module R60_EBayAftBulkhead(){
-    T       = 12;
-    P_L     = 23.0 + IDXtra;   // MG90S body footprint
-    P_W     = 12.2 + IDXtra;
-    P_D     = 9;               // pocket depth; leaves 3mm of aft material
-    Shaft_d = 12;              // servo 1 output -> bayonet ring
-    Horn_W  = 9;               // servo 2 horn slot
-    Horn_L  = 24;
-    S_Off   = 5.5;             // MG90S shaft offset from body centre
-    S2_Y    = 13.6;            // 1.2mm pocket wall (3 perimeters @ 0.4mm nozzle)
-    Cord_d  = 5;
+    T         = 12;
+    Skirt_L   = R60_Pin_Skirt_L;
+    Total_H   = T + Skirt_L;
+    P_L       = 23.0 + IDXtra;   // MG90S body footprint
+    P_W       = 12.2 + IDXtra;
+    P_D       = 9;               // pocket depth; leaves 3mm of aft material
+    Shaft_d   = 12;              // servo 1 output -> spring carrier ball-lock
+    Horn_W    = 9;               // servo 2 horn slot
+    Horn_L    = 24;
+    S_Off     = 5.5;             // MG90S shaft offset from body centre
+    S2_Y      = 13.6;            // 1.2mm pocket wall (3 perimeters @ 0.4mm nozzle)
+    Cord_d    = 5;
+    Pin_Z     = T + R60_Pin_Z_FromJoint;
+    Pin_Depth = 10;               // blind hole -- purchase into the skirt,
+                                   // not a full diametral pass-through
+    // Midpoint radius for a center=true cylinder so the SAME expression
+    // works mirrored at +-X: spans [R60_Coupler_OD/2-Pin_Depth,
+    // R60_Coupler_OD/2+Overlap], i.e. from Pin_Depth inside the skirt to
+    // just past its outer surface (clean boolean cut), on either side.
+    Pin_R_Mid = R60_Coupler_OD/2 - Pin_Depth/2 + Overlap/2;
     difference(){
-        cylinder(d=R60_Coupler_OD, h=T);
+        union(){
+            cylinder(d=R60_Coupler_OD, h=T);
+            translate([0,0,T-Overlap])
+                cylinder(d=R60_Coupler_OD, h=Skirt_L+Overlap);
+        }
 
         // servo 1 pocket, opens forward
         translate([-S_Off - P_L/2, -P_W/2, -Overlap])
             cube([P_L, P_W, P_D + Overlap]);
-        // servo 1 shaft bore, through the remaining 3mm, on the axis
+        // servo 1 shaft bore -> the ball-lock drive, all the way to the
+        // new aft face (through the original disc AND the skirt)
         translate([0, 0, P_D - Overlap])
-            cylinder(d=Shaft_d, h=T - P_D + Overlap*2);
+            cylinder(d=Shaft_d, h=Total_H - P_D + Overlap*2);
 
         // servo 2 pocket, offset in +Y
         translate([-S_Off - P_L/2, S2_Y - P_W/2, -Overlap])
             cube([P_L, P_W, P_D + Overlap]);
-        // servo 2 horn slot through the remaining material
+        // servo 2 horn slot -> the tether latch (part 13), all the way to
+        // the new aft face (see module comment -- this must match the
+        // shaft bore's treatment or it seals shut under the skirt)
         translate([-Horn_L/2, S2_Y - Horn_W/2, P_D - Overlap])
-            cube([Horn_L, Horn_W, T - P_D + Overlap*2]);
+            cube([Horn_L, Horn_W, Total_H - P_D + Overlap*2]);
 
         // Shock cord anchor: two axial holes on the -Y side, clear of both
-        // servos. The cord threads through both like a belt loop and passes
-        // from the e-bay through to the chute bay. Axial rather than a
-        // transverse bore because a Ø8 transverse hole in a 12mm disc would
-        // leave 2mm of material each side on the ONE feature that carries
-        // every deployment load in the vehicle.
+        // servos, now extended the full Total_H so the cord still reaches
+        // the chute bay through the skirt.
         for (x=[-6, 6])
             translate([x, -22, -Overlap])
-                cylinder(d=Cord_d, h=T + Overlap*2);
+                cylinder(d=Cord_d, h=Total_H + Overlap*2);
+
+        // Shear pins, +-X (clear of the on-axis shaft bore and the -Y
+        // cord holes), blind into the skirt's solid material.
+        for (s=[1,-1])
+            translate([s*Pin_R_Mid, 0, Pin_Z])
+                rotate([0,90,0])
+                    cylinder(d=R60_Pin_d, h=Pin_Depth+Overlap, center=true);
     }
 } // R60_EBayAftBulkhead
 
@@ -236,6 +340,164 @@ module R60_Door(){
                 cylinder(d=2.7, h=R60_Body_OD, center=true);
     }
 } // R60_Door
+
+// Spring/ball-lock carrier. Primary separation path (spec 4.2): servo 1
+// releases a ball-lock, freeing a CS4323 spring (OD 44.30/ID 40.50, free
+// 200/coil-bound 22mm) that drives the sections apart hard enough to
+// shear the two pins in R60_ChuteTube()/R60_EBayAftBulkhead()'s skirt.
+// THE independence property (spec 4.2's whole reason for replacing the
+// cam bayonet) lives in those pins bridging the real joint, not in
+// anything below -- see those two modules' comments. This carrier only
+// needs to hold and release a spring; it is not in the pins' load path.
+//
+// LIBRARY REUSE, and why this is hand-built rather than `use<>`-included:
+// The repo's real ball-lock family (SpringThingBooster.scad's
+// STB_BallRetainerTop/Bottom) is parametric on Body_ID, but its own
+// sizing functions don't fit here -- STB_BallPerimeter_d(56.8) computes
+// 60.2mm with STB_LockBall_d(56.8)=9.5mm balls, both LARGER than this
+// carrier's 56.4mm OD. That isn't a rounding gap: STB's balls grip a
+// groove on the OUTSIDE of a mating tube-end (the joint IS the ball-lock),
+// which needs a wall this size doesn't have and isn't this design's
+// architecture anyway (see below). Its full printable module also pulls
+// in TubesLib/SG90ServoLib/LD-20MGServoLib/BatteryHolderLib/
+// CommonStuffSAEmm via `use<>`/`include<>` -- none of which Rocket60.scad
+// otherwise references -- for hardware (MR84 bearings, magnets, dowel
+// pins) sized for a bigger mechanism. CableReleaseBBMini.scad's release
+// catch is proven at this scale (~6-7mm radial margin per the
+// investigation) but is ~14 SEPARATE printed parts for one working
+// catch (lock ring, top retainer, 2 bearing retainers, magnet bracket,
+// trigger post, spring end...), not the one part this task allocates.
+//
+// So: this carrier reuses the CS4323 spring's dimensions (R60Lib.scad,
+// sourced from SpringEndsLib.scad) and adapts the CableRelease family's
+// SMALLER topology -- a central plunger held by a few small balls in a
+// fixed hub, released by a rotating lock ring -- at a hand-picked size
+// that fits this bore (Ball_d/Ball_BCd below), instead of STB's grip-the-
+// mating-tube pattern. This is "built the equivalent", not the real
+// family, and it is deliberately incomplete: the ROTATING LOCK RING and
+// the SLIDING PLUNGER/spring cap are, by mechanical necessity, NOT part
+// of this monolithic print (a rotating part and a printed housing cannot
+// be one piece) and are NOT modeled as their own parts in this task. What
+// is modeled is the fixed housing: the mounting rim, the pressure
+// diaphragm, the ball pockets, and the spring bore. A working release
+// still needs those two companion pieces (plus the balls, hardware) built
+// and given their own part numbers before this is flight-complete -- see
+// the task report.
+//
+// PRESSURE SEAL. Part 5's servo shaft bore and horn slot are open
+// passages from its aft face into the e-bay. Uncapped, the backup
+// ejection charge would leak through them into the e-bay instead of
+// building pressure against the shear-pin joint. This carrier's forward
+// diaphragm closes both (down to a small Drive_d clearance for the
+// unmodeled lock ring's driveshaft), so the pressurized volume is bounded
+// by real structure on the way to the pins, not by two open holes.
+//
+// FORWARD COUNTERBORE -- added so this carrier and the tether latch
+// (part 13, Task 8, which mounts on this same aft face per its brief)
+// don't physically compete for it: a caught-before-release defect, see
+// the task report. Widens the mating rim to CB_D=51mm for CB_Depth=17mm
+// (latch height 16mm + 1mm clearance) before stepping down to the
+// 44.8mm spring bore, so the latch's posts recess into this carrier
+// instead of colliding with its own forward wall. This is why the
+// diaphragm/ball-pocket stack below is offset by CB_Depth, not at z=0 --
+// the "plain tube rim" that glues to R60_EBayAftBulkhead()'s skirt is
+// still there, it is just CB_D wide instead of Bore wide for the first
+// CB_Depth of its length. Costs cocked-spring room (~35mm remaining,
+// down from ~55mm) -- record under spec A11 with the rest of the
+// undocumented spring-force risk; trimming a spring's usable length is
+// normal, but only the physical spring settles whether it still clears
+// the pins' target load in that space.
+//
+// SHOCK CORD PASSAGE. Part 5's two Ø5 axial cord holes reach ITS aft
+// face (Task 7 fix), but this carrier sat directly in their path with no
+// through-feature of its own -- a second defect caught by the same
+// review before it shipped. Cord_x/Cord_y below match part 5's cord hole
+// centres exactly (+-6, -22) so the two channels are collinear once
+// glued together. Because that radius (22.8mm) straddles the bore's own
+// edge (22.4mm), the cut is a GROOVE open to the bore, not a fully
+// enclosed hole -- confirmed on render, see the task report. It is a
+// small, permanent gap in an otherwise sealed pressure boundary (~10mm^2
+// each); acceptable at vent-hole scale but worth stating plainly rather
+// than silently absorbing into "the seal is closed" -- the ejection
+// charge sizing already needs ground testing regardless (A11).
+//
+// z=0 (this module's base) is a plain tube rim -- OD=Coupler_OD,
+// bore=CB_D -- so it glues flush against R60_EBayAftBulkhead()'s skirt
+// aft face (same OD, same convention as every internal part in this
+// repo). The diaphragm sits well inboard of that rim, not at it.
+module R60_SpringCarrier(){
+    OD      = R60_Coupler_OD;      // 56.4 -- 0.4mm clearance in the chute
+                                    // tube's 56.8mm bore, same convention
+                                    // as every internal part in this repo
+    Bore    = R60_Spring_OD + 0.5;  // 44.80 -- clears the CS4323's 44.30mm OD
+    L       = 65;                   // + the skirt's 15mm = 80mm, the
+                                     // "SpringThing2" figure sourced above
+    CB_D      = 51;                 // tether latch (part 13) clearance --
+    CB_Depth  = 17;                 // latch height 16mm + 1mm margin
+    Dia_Z   = CB_Depth + 3;         // diaphragm recessed from the step
+    Dia_T   = 3;
+    Drive_d = 8;                    // clearance for the (unmodeled) lock
+                                     // ring's driveshaft from servo 1
+    Ball_d   = 4.0;                 // sized to fit THIS wall: (OD-Bore)/2
+                                     // = 5.8mm, so STB's 9.5mm ball (see
+                                     // module comment) cannot be used here
+    Ball_BCd_In  = Bore - Ball_d + 1.0;   // pocket's inner (locked) extent
+    Ball_BCd_Out = OD - Ball_d - 1.0;     // pocket's outer (retracted) extent
+    Ball_Z   = Dia_Z + Dia_T + 6;
+    nBalls   = 3;
+    Cord_d   = 5;                   // matches R60_EBayAftBulkhead()'s Cord_d
+    Cord_x   = 6;                   // matches its cord hole centres exactly
+    Cord_y   = -22;                 // (+-6, -22), so the passages line up
+
+    difference(){
+        union(){
+            difference(){
+                cylinder(d=OD, h=L);
+                translate([0,0,-Overlap]) cylinder(d=CB_D, h=CB_Depth+Overlap);
+                translate([0,0,CB_Depth-Overlap])
+                    cylinder(d=Bore, h=L-CB_Depth+Overlap*2);
+            }
+            // Diaphragm floor -- the pressure seal, and the spring's
+            // forward seat.
+            translate([0,0,Dia_Z]) cylinder(d=Bore, h=Dia_T);
+        }
+        // Driveshaft clearance (also passes through the already-open
+        // counterbore and transition stub ahead of the diaphragm --
+        // no-op there, real cut is through the diaphragm itself).
+        translate([0,0,-Overlap])
+            cylinder(d=Drive_d, h=Dia_Z+Dia_T+Overlap*2);
+        // Shock cord channels -- full length, so the cord threaded
+        // through R60_EBayAftBulkhead()'s cord holes continues straight
+        // through this carrier into the chute bay. Grooves, not enclosed
+        // holes, since Cord_x/y's radius (22.8mm) is just past the bore's
+        // own edge (22.4mm) -- see module comment.
+        for (s=[1,-1])
+            translate([s*Cord_x, Cord_y, -Overlap])
+                cylinder(d=Cord_d, h=L+Overlap*2);
+        // Ball pockets: radial slots through the wall so a ball can travel
+        // from fully engaged (inner) to retracted (outer), same hull-of-
+        // two-spheres pattern as SpringThingBooster.scad's
+        // STB_BallRetainerBottom, resized to this carrier's wall. Each
+        // pocket's LOCAL position (translate([0,r,z]) below) already sits
+        // at azimuth 90deg before this rotate, so landing them at final
+        // azimuths 60/180/300deg (clear of the cord channels at
+        // ~255-285deg) needs rotate angles of that MINUS 90 -- a first
+        // draft used the target azimuths directly as the rotate angle,
+        // which actually placed one pocket at 270deg, dead in the cord
+        // sector (caught on render: genus 3 instead of the expected 1,
+        // and a merged shape visible on a horizontal section slice).
+        for (i=[0:nBalls-1]) rotate([0,0,-30+i*360/nBalls])
+            hull(){
+                // Local $fn: a UV-sphere's facet count grows with $fn^2, so
+                // 6 spheres at the file-wide $fn=180 balloon this part's
+                // mesh to 10s of MB for no visible benefit on a 4mm ball
+                // pocket -- SpringThingBooster.scad's own $fn=90 exists for
+                // the same reason. 32 is still smooth at this size.
+                translate([0, Ball_BCd_In/2, Ball_Z]) sphere(d=Ball_d+IDXtra*2, $fn=32);
+                translate([0, Ball_BCd_Out/2, Ball_Z]) sphere(d=Ball_d+IDXtra*2, $fn=32);
+            }
+    }
+} // R60_SpringCarrier
 
 // Fin can. 228mm because the longest 29mm H DMS (H135W) is 216mm - NOT
 // because the G80T needs it. The G80T is 124mm and flies on a spacer.
@@ -343,6 +605,7 @@ if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
 if (Render_Part==6) R60_VegaSled();
 if (Render_Part==7) R60_Door();
+if (Render_Part==8) R60_SpringCarrier();
 if (Render_Part==9)  R60_FinCan();
 if (Render_Part==10) R60_Fin();
 if (Render_Part==11) R60_MotorRetainer();

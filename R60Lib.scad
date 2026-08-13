@@ -81,6 +81,35 @@ R60_MMT_L   = 223;          // takes the 216mm H135W, the longest 29mm H DMS
 R60_Motor_L = [124, 203, 216];  // G80T-14A, H182R-14A, H135W-14A
 
 // ============================================
+// SPRING SEPARATION JOINT (spec 4.2 -- supersedes the cam-ramped bayonet)
+// ============================================
+// CS4323 compression spring dimensions, as documented in the repo's
+// SpringThingBooster.scad/SpringEndsLib.scad family (ST_DSpring_OD/ID,
+// ST_DSpring_CBL/FL) and restated here since Rocket60.scad does not
+// `use<>` those files -- see R60_SpringCarrier()'s module comment for why.
+R60_Spring_OD  = 44.30;
+R60_Spring_ID  = 40.50;
+R60_Spring_FL  = 200;    // free length
+R60_Spring_CBL = 22;     // coil-bound length
+
+// Shear pins bridge the REAL separable airframe joint -- chute bay tube
+// (part 3) into the e-bay aft bulkhead's skirt (part 5) -- not the spring
+// carrier. See R60_EBayAftBulkhead()'s module comment for why that
+// placement is what keeps the two separation paths independent.
+//
+// Target: 2x nylon 2-56, ~130N combined shear (spec 4.2). NO spring force
+// figure exists anywhere in this repo (grep of all nine spring/release
+// files found none) -- this pin size is a stated target, not a verified
+// one. The spring must be bench-measured to confirm it beats this load
+// before flight (spec A11 -- the largest open risk in the recovery
+// system). Do not treat PIN_D as validated by anything in this file.
+R60_Pin_d            = 2.2;   // nylon 2-56 clearance
+R60_Pin_Skirt_L      = 15;    // e-bay aft bulkhead's aft skirt engagement
+R60_Pin_Z_FromJoint  = 8;     // both R60_ChuteTube() and R60_EBayAftBulkhead()
+                               // cut their pin hole this far from the joint,
+                               // so one physical pin lines up through both
+
+// ============================================
 // FINS
 // ============================================
 R60_Fin_Root  = 90;
