@@ -169,6 +169,29 @@ module R60_EBayAftBulkhead(){
     }
 } // R60_EBayAftBulkhead
 
+// CATS Vega sled. Manual sec 4.3.3: mounting holes are 60 x 27mm apart,
+// M3, and spacers are recommended so nothing touches the board.
+//
+// Orientation matters: the GNSS patch antenna must face RADIALLY OUTWARD
+// with no battery, loom or metal between it and the airframe wall. Mark
+// the antenna side on the print.
+module R60_VegaSled(){
+    T = 4;
+    L = R60_Vega_L + 12;
+    W = R60_Vega_W + 11;
+    difference(){
+        union(){
+            translate([-W/2, -L/2, 0]) cube([W, L, T]);
+            for (h=R60_Vega_Holes)
+                translate([h[0], h[1], T-Overlap])
+                    cylinder(d=7, h=R60_Vega_Standoff_h+Overlap);
+        }
+        for (h=R60_Vega_Holes)
+            translate([h[0], h[1], -Overlap])
+                cylinder(d=2.9, h=T+R60_Vega_Standoff_h+Overlap*2);
+    }
+} // R60_VegaSled
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -178,3 +201,4 @@ if (Render_Part==2) R60_EBayTube();
 if (Render_Part==3) R60_ChuteTube();
 if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
+if (Render_Part==6) R60_VegaSled();

@@ -30,7 +30,8 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 #   way into a second passage; the two Ø5 cord holes are clean, isolated
 #   through-holes each. 4 distinct openings visible on both faces, matching
 #   Genus: 4 from `openscad --export-format asciistl` stderr.
-GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4}
+#   part 6: flat sled, 3 standoff bores (3) = 3
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4, 6: 3}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -89,6 +90,15 @@ def checks(m):
                 _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
                 c += [("part %d bore clears neck skirt" % p,
                        tube_id - skirt_od, 0.4, 0.15)]
+
+    if 6 in m:
+        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 112.0, 0.2),
+              ("sled width", a(6, "xmax") - a(6, "xmin"), 44.0, 0.2)]
+        # The board must physically fit the tube bore lying on the sled.
+        if 2 in m:
+            tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+            stack = a(6, "height") + 21.0    # sled + Vega envelope
+            c += [("sled + Vega clears e-bay bore", tube_id - stack, 27.8, 1.0)]
 
     for p, want_h in ((4, 6.0), (5, 12.0)):
         if p in m:
