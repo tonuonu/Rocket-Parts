@@ -16,6 +16,9 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
          7: "access door", 8: "bayonet ring", 9: "fin can", 10: "fin",
          11: "motor retainer", 12: "motor spacer"}
 
+DOOR_W, DOOR_L = 36.0, 85.0
+DOOR_GAP = 0.35   # per side
+
 # Expected genus per part (topological invariant, immune to the
 # "bit-identical bounding box, wrong interior" failure mode: a solid is
 # genus 0, each through-hole/handle adds 1).
@@ -31,7 +34,9 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 #   through-holes each. 4 distinct openings visible on both faces, matching
 #   Genus: 4 from `openscad --export-format asciistl` stderr.
 #   part 6: flat sled, 3 standoff bores (3) = 3
-GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4, 6: 3}
+#   part 2 CHANGES: tube (1) + door opening (1) + switch hole (1) = 3
+#   part 7: curved panel, 4 bolt holes (4) = 4
+GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -99,6 +104,13 @@ def checks(m):
             tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
             stack = a(6, "height") + 21.0    # sled + Vega envelope
             c += [("sled + Vega clears e-bay bore", tube_id - stack, 27.8, 1.0)]
+
+    if 7 in m:
+        # The door's 85mm dimension runs along Z. Its Y extent is only the
+        # chord depth of the curved panel (~8mm), so measure height, not ymax-ymin.
+        c += [("door height", a(7, "height"), DOOR_L - 2 * DOOR_GAP, 0.15),
+              ("door chord width", a(7, "xmax") - a(7, "xmin"),
+               DOOR_W - 2 * DOOR_GAP, 0.15)]
 
     for p, want_h in ((4, 6.0), (5, 12.0)):
         if p in m:

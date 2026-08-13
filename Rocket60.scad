@@ -103,9 +103,33 @@ module R60_Neck(){
     }
 } // R60_Neck
 
-// Plain airframe tubes. The e-bay door cutout is added in the door task so
-// the opening and its frame are verified against each other.
-module R60_EBayTube(){ R60_Tube(R60_EBay_L); }
+// E-bay tube with the access opening and the arming switch hole.
+//
+// The switch is NOT optional and NOT interchangeable with the door: the
+// CATS manual requires the board be powered up only once the rocket is
+// vertical on the pad, and disarming afterwards is only possible by
+// powering off. So it must be reachable on the rail.
+module R60_EBayTube(){
+    Sw_d = 12;   // panel-mount toggle
+    difference(){
+        R60_Tube(R60_EBay_L);
+        translate([0,0,(R60_EBay_L-85)/2])
+            rotate([0,0,0]) translate([-18,0,0])
+                cube([36, R60_Body_OD, 85]);
+        // Panel-mount arming switch, +Y, above the door aperture.
+        //
+        // Same side as the door on purpose: the retaining nut is tightened from
+        // inside, and the door is the only hand access into the bore. A switch on
+        // the opposite wall could not be fitted without cutting a second opening.
+        //
+        // Cuts ONE wall. A full-diameter cylinder on the axis would punch through
+        // both and leave an open hole in the far side of the airframe.
+        translate([0, R60_Body_OD/2, R60_EBay_L - 18])
+            rotate([90, 0, 0])
+                cylinder(d=Sw_d, h=R60_Wall_T*3, center=true);
+    }
+} // R60_EBayTube
+
 module R60_ChuteTube(){ R60_Tube(R60_Chute_L); }
 
 // Forward bulkhead: closes the top of the e-bay, passes the camera harness.
@@ -192,6 +216,25 @@ module R60_VegaSled(){
     }
 } // R60_VegaSled
 
+// Curved door panel, 4x M2.5. Sits in the opening cut above.
+module R60_Door(){
+    Gap = 0.35;   // per side
+    difference(){
+        intersection(){
+            difference(){
+                cylinder(d=R60_Body_OD, h=85-2*Gap);
+                translate([0,0,-Overlap])
+                    cylinder(d=R60_Body_OD-2*R60_Wall_T, h=85+Overlap*2);
+            }
+            translate([-(36-2*Gap)/2, 0, 0])
+                cube([36-2*Gap, R60_Body_OD, 85-2*Gap]);
+        }
+        for (x=[-12,12], z=[8, 85-2*Gap-8])
+            translate([x, R60_Body_OD/2, z]) rotate([90,0,0])
+                cylinder(d=2.7, h=R60_Body_OD, center=true);
+    }
+} // R60_Door
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -202,3 +245,4 @@ if (Render_Part==3) R60_ChuteTube();
 if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
 if (Render_Part==6) R60_VegaSled();
+if (Render_Part==7) R60_Door();
