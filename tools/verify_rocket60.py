@@ -7,7 +7,7 @@ supposed to produce it.
 """
 import os, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume
+from scad_verify import REPO, render, measure, bore, volume, _tris
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
@@ -37,6 +37,22 @@ DOOR_GAP = 0.35   # per side
 #   part 2 CHANGES: tube (1) + door opening (1) + switch hole (1) = 3
 #   part 7: curved panel, 4 bolt holes (4) = 4
 GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
+#   part 10: flat plate, no holes = 0
+GENUS[10] = 0
+#   part 9: fin can. NOT predicted -- rendered first (OpenSCAD stderr:
+#   `Genus: 4`), then visually confirmed via top/bottom/isometric/half-
+#   section PNG renders (openscad --render --projection=ortho): the MMT
+#   bore is a genuine through-hole (top and bottom faces show the same
+#   annulus+hole), and each of the 3 fin slots is a real window clean
+#   through the outer wall (visible as an opening onto the tube's interior
+#   in the isometric view, and cut on both sides in the half-section). 1
+#   (MMT bore) + 3 (fin slots) = 4. The slot's inner face sits exactly at
+#   x=R60_MMT_OD/2, tangent to the MMT wall with zero overlap; confirmed
+#   this did not breach the MMT (render completed with CGAL Status:
+#   NoError, and "MMT bore takes 29mm motor" below reads exactly 29.300,
+#   not fattened or thinned by a stray cut). The two other centering rings
+#   (mid, forward) are outside the slot's Z-span and add no extra handles.
+GENUS[9] = 4
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -56,6 +72,30 @@ NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
 NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
 TUBE_BAND = (-0.01, 0.5)   # parts 2,3: base face carries both OD and bore
 BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
+# Part 9's base face carries BOTH the outer tube (60/56.8) and the MMT
+# (32/29.3), so one band yields both measurements: bore() returns
+# (min_dia, max_dia) = (MMT bore, fin can OD).
+FINCAN_BAND = (-0.01, 0.5)
+# Slot Z-extent inside R60_FinCan() is Slot_Z=8 .. Slot_Z+Slot_L=8+90=98 (not
+# exposed as R60Lib constants). The z=98 edge loop is where the slot cut
+# meets the outer wall; filtering x>0 isolates the i=0 slot (the other two
+# sit at 120/240deg, all x<0 there), and it's clear of both the aft
+# centering ring (z=6..9) and the mid ring (z=114), so nothing else
+# contaminates the loop. See FINCAN_SLOT_WIDTH below.
+FINCAN_SLOT_TOP_Z = 98.0
+
+
+def fincan_slot_width(stl):
+    """Measured width of the un-rotated (i=0) fin slot, read directly off
+    the z=FINCAN_SLOT_TOP_Z edge loop where the cut meets the outer wall.
+    x>0 isolates the i=0 slot from the other two (120/240deg, all x<0
+    there)."""
+    ys = [y for tri in _tris(stl) for (x, y, z) in tri
+          if abs(z - FINCAN_SLOT_TOP_Z) <= 0.1 and x > 0]
+    if not ys:
+        raise RuntimeError(
+            "no geometry at fin can slot edge loop z=%.1f" % FINCAN_SLOT_TOP_Z)
+    return 2 * max(abs(y) for y in ys)
 
 
 def checks(m):
@@ -121,6 +161,27 @@ def checks(m):
                 tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
                 c += [("part %d fits e-bay bore" % p,
                        tube_id - bulk_od, 0.4, 0.15)]
+
+    if 9 in m:
+        mmt_id, can_od = bore(a(9, "stl"), *FINCAN_BAND)
+        c += [("fin can length", a(9, "height"), 228.0, 0.2),
+              ("fin can OD", can_od, 60.0, 0.1),
+              ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15),
+              ("fin can fits 250mm Z", a(9, "height"), min(a(9, "height"), 250.0), 0.01)]
+    if 10 in m:
+        c += [("fin root chord", a(10, "xmax") - a(10, "xmin"), 90.0, 0.2),
+              ("fin thickness", a(10, "zmax") - a(10, "zmin"), 4.0, 0.1)]
+
+    if 9 in m and 10 in m:
+        # The brief promises "the measured tab-vs-slot check" but its own
+        # checks() snippet only compares fin dimensions to the constants
+        # that produced them (rule 4 violation). bore() cannot answer this
+        # -- it treats a Z-band as one (bore, OD) pair about the axis, not
+        # a Y-extent -- so read the slot's actual edge-loop vertices and
+        # compare the fin can's real slot to the fin's real thickness.
+        slot_w = fincan_slot_width(a(9, "stl"))
+        c += [("fin slot width fits fin thickness",
+               slot_w - a(10, "height"), 0.2, 0.1)]
 
     # Build volume, every part.
     for p in m:

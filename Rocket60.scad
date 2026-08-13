@@ -234,6 +234,49 @@ module R60_Door(){
     }
 } // R60_Door
 
+// Fin can. 228mm because the longest 29mm H DMS (H135W) is 216mm - NOT
+// because the G80T needs it. The G80T is 124mm and flies on a spacer.
+// This is what makes the rocket H-ready without a reprint.
+module R60_FinCan(){
+    Ring_T   = 3;
+    Slot_L   = R60_Fin_Root;
+    Slot_Z   = 8;
+    difference(){
+        union(){
+            R60_Tube(R60_FinCan_L);
+            // MMT
+            difference(){
+                cylinder(d=R60_MMT_OD, h=R60_FinCan_L);
+                translate([0,0,-Overlap])
+                    cylinder(d=R60_MMT_ID, h=R60_FinCan_L+Overlap*2);
+            }
+            // Centering rings: aft, mid, forward.
+            for (z=[6, R60_FinCan_L/2, R60_FinCan_L-Ring_T-6])
+                translate([0,0,z]) difference(){
+                    cylinder(d=R60_Body_ID, h=Ring_T);
+                    translate([0,0,-Overlap])
+                        cylinder(d=R60_MMT_OD-Overlap, h=Ring_T+Overlap*2);
+                }
+        }
+        // Fin slots, through the outer wall only.
+        for (i=[0:R60_nFins-1])
+            rotate([0,0,i*360/R60_nFins])
+                translate([R60_MMT_OD/2, -R60_Fin_T/2-IDXtra/2, Slot_Z])
+                    cube([R60_Body_OD, R60_Fin_T+IDXtra, Slot_L]);
+    }
+} // R60_FinCan
+
+// Fin, printed flat. Low aspect ratio (0.88) is deliberate - it is what
+// puts flutter velocity at ~850 m/s, 3.8x the H182R's 221 m/s. Do NOT
+// thin it or extend the span without recomputing flutter.
+module R60_Fin(){
+    linear_extrude(height=R60_Fin_T)
+        polygon([[0,0],
+                 [R60_Fin_Root, 0],
+                 [R60_Fin_Sweep+R60_Fin_Tip, R60_Fin_Span],
+                 [R60_Fin_Sweep, R60_Fin_Span]]);
+} // R60_Fin
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -245,3 +288,5 @@ if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
 if (Render_Part==6) R60_VegaSled();
 if (Render_Part==7) R60_Door();
+if (Render_Part==9)  R60_FinCan();
+if (Render_Part==10) R60_Fin();
