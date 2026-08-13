@@ -171,7 +171,35 @@ module R60_EBayTube(){
     // translate along local +X = radial" idiom as R60_FinCan()'s bosses)
     // rather than raw (x,y) coordinates -- a flat XY offset does not sit
     // on the tube's curved wall at all except straight down the Y axis.
-    Rail_HalfAng = asin((R60_Vega_RailGap/2) / (R60_Body_ID/2));
+    //
+    // Rail_HalfAng (defect 1b): the rail's own CAPTURING surface -- the
+    // face that actually meets the sled -- is not at the tube ID. Each
+    // rail cube starts at local X = R60_Body_ID/2-R60_Vega_RailH (see the
+    // translate() below) and only reaches R60_Body_ID/2 to fuse invisibly
+    // into the wall; the whole exposed, functional ridge sits
+    // R60_Vega_RailH inward of the ID, at Rail_Inner_R. The old formula
+    // used R60_Body_ID/2 for the asin(), sizing the angle for a chord that
+    // only equals R60_Vega_RailGap way out at the ID -- at the smaller
+    // radius the ridge actually occupies, that SAME angle subtends a
+    // shorter chord (chord = 2*r*sin(angle) shrinks with r), so the
+    // rendered capture gap came up short of the 44mm sled (measured on
+    // render: 35.65mm between the two rails' facing corners, ~2.3mm play
+    // instead of a captured fit -- confirmed on the rendered mesh, not
+    // inferred from the parameter). The rail is also R60_Vega_RailW wide,
+    // not an infinitely thin line, so each side eats R60_Vega_RailW/2 of
+    // whatever chord the centreline spans before the FACING surfaces (the
+    // ones the sled touches) are R60_Vega_RailGap apart. Solving
+    // 2*Rail_Inner_R*sin(H) - R60_Vega_RailW*cos(H) = R60_Vega_RailGap for
+    // H via the standard a*sinH - b*cosH = C*sin(H-phi) identity (C =
+    // hypot(a,b), phi = atan(b/a)) gives both corrections in one closed
+    // form -- verified against the rendered mesh (part 2's own rail
+    // corners vs. part 6's own measured sled width) in
+    // tools/verify_rocket60.py.
+    Rail_Inner_R = R60_Body_ID/2 - R60_Vega_RailH;
+    Rail_HalfAng = atan(R60_Vega_RailW / (2*Rail_Inner_R))
+                 + asin(R60_Vega_RailGap
+                        / sqrt((2*Rail_Inner_R)*(2*Rail_Inner_R)
+                               + R60_Vega_RailW*R60_Vega_RailW));
     Rail_Overlap_R = 1.2;   // fuses into the wall without breaking its OD
     // Stop 5mm short of each end -- both so the tube's own base/top faces
     // stay a plain, unobstructed circle for every other part's mating
@@ -540,6 +568,21 @@ module R60_Door(){
     Hole_X = R60_Door_Open_W/2 + R60_Door_Hole_Clear;
     Hole_Z = [R60_Door_Overlap - R60_Door_Hole_Clear,
               R60_Door_Overlap + R60_Door_Open_H + R60_Door_Hole_Clear];
+    // Hole azimuth on the R60_Body_OD/2 circle, y>=0 side -- SAME function
+    // as R60_EBayTube()'s Door_Boss_Az(x), which this must match exactly
+    // (both derived from the identical Hole_X). Needed because a screw
+    // hole through a CURVED shell has to be bored along the wall's own
+    // local radial direction, not a flat axis (defect 1a): the previous
+    // `translate([x,0,z]) rotate([90,0,0])` bored straight along global Y
+    // at a fixed X, which only agrees with the true radial line at
+    // r=R60_Body_OD/2 and diverges further out -- at this cover's own
+    // outer face (r=R60_Body_OD/2+T) the old hole centred on x=21 while
+    // the tube's boss/pilot axis at that azimuth needs x=22.4 there, about
+    // 1.3mm of solid cover material short of clearing an M2.5 shank
+    // (confirmed by measuring both on the rendered mesh). Fixed with the
+    // same "rotate for azimuth, then translate along local +X = radial"
+    // idiom R60_EBayTube() already uses correctly for its bosses.
+    function Hole_Az(x) = acos(x/(R60_Body_OD/2));
     difference(){
         intersection(){
             difference(){
@@ -550,15 +593,17 @@ module R60_Door(){
             translate([-Cover_W/2, 0, 0])
                 cube([Cover_W, R60_Body_OD, Cover_H]);
         }
-        // Long, generously-oversized cylinder through Y (same convention
-        // this file already uses for the switch/pin/cord holes above) --
-        // at Hole_X=21mm on a 30mm-radius shell the true curved surface
-        // sits well off a flat R60_Body_OD/2+T offset, so the cut has to
-        // reach across the shell's whole plausible Y-range rather than
-        // being sized to just the nominal thickness T.
+        // Radial cut through the cover shell only (R60_Body_OD/2-Overlap
+        // .. R60_Body_OD/2+T+Overlap), on the true local radial axis at
+        // this hole's azimuth -- see Hole_Az() comment above. Local $fn,
+        // same reasoning as R60_EBayTube()'s boss/pilot cuts (odd azimuth,
+        // not a multiple of 90deg, produced a numerically degenerate
+        // boolean at the file-wide $fn=180).
         for (x=[-Hole_X,Hole_X], z=Hole_Z)
-            translate([x, 0, z]) rotate([90,0,0])
-                cylinder(d=2.7, h=R60_Body_OD, center=true);
+            rotate([0,0,Hole_Az(x)])
+                translate([R60_Body_OD/2-Overlap, 0, z])
+                    rotate([0,90,0])
+                        cylinder(d=2.7, h=T+2*Overlap, $fn=32);
     }
 } // R60_Door
 
