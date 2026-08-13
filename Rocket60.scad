@@ -118,25 +118,54 @@ module R60_EBayFwdBulkhead(){
 } // R60_EBayFwdBulkhead
 
 // Aft bulkhead. THE structural part of the recovery system: the shock cord
-// anchors here so deployment snatch never reaches the camera bolts.
-// Also mounts both MG90S servos and passes the bayonet drive shaft.
+// anchors here so deployment snatch never reaches the camera's three M3
+// screws. Also carries both servos and passes their output aft.
+//
+// Servos stand UPRIGHT, shafts along the rocket axis, per
+// PeregrineEjection.scad. Servo 1 is on the centreline and rotates the
+// bayonet ring through its centre; servo 2 sits beside it and drives the
+// tether latch through a slot. A radial layout is impossible: drive bore
+// r=6 to disc edge r=28.2 is 22.2mm, an MG90S body is 22.8mm long.
+//
+// The MG90S output shaft is 5.5mm off the body centre, so servo 1's body
+// is offset by that much to put its SHAFT on the axis, not its body.
 module R60_EBayAftBulkhead(){
-    T        = 12;
-    Servo_L  = 23.0 + IDXtra;    // MG90S body
-    Servo_W  = 12.2 + IDXtra;
-    Eye_d    = 8;
-    Drive_d  = 12;
+    T       = 12;
+    P_L     = 23.0 + IDXtra;   // MG90S body footprint
+    P_W     = 12.2 + IDXtra;
+    P_D     = 9;               // pocket depth; leaves 3mm of aft material
+    Shaft_d = 12;              // servo 1 output -> bayonet ring
+    Horn_W  = 9;               // servo 2 horn slot
+    Horn_L  = 24;
+    S_Off   = 5.5;             // MG90S shaft offset from body centre
+    S2_Y    = 13.2;            // servo 2 beside servo 1: 6.1 + 1 + 6.1
+    Cord_d  = 5;
     difference(){
         cylinder(d=R60_Coupler_OD, h=T);
-        // Central bore for the bayonet ring's drive shaft.
-        translate([0,0,-Overlap]) cylinder(d=Drive_d, h=T+Overlap*2);
-        // Two servo pockets, 180deg apart, clear of the drive bore.
-        for (a=[0,180])
-            rotate([0,0,a]) translate([17,0,-Overlap])
-                cube([Servo_L, Servo_W, T+Overlap*2], center=true);
-        // Shock cord anchor eye, offset so it does not foul the drive bore.
-        translate([0,20,T/2]) rotate([0,90,0])
-            cylinder(d=Eye_d, h=R60_Coupler_OD, center=true);
+
+        // servo 1 pocket, opens forward
+        translate([-S_Off - P_L/2, -P_W/2, -Overlap])
+            cube([P_L, P_W, P_D + Overlap]);
+        // servo 1 shaft bore, through the remaining 3mm, on the axis
+        translate([0, 0, P_D - Overlap])
+            cylinder(d=Shaft_d, h=T - P_D + Overlap*2);
+
+        // servo 2 pocket, offset in +Y
+        translate([-S_Off - P_L/2, S2_Y - P_W/2, -Overlap])
+            cube([P_L, P_W, P_D + Overlap]);
+        // servo 2 horn slot through the remaining material
+        translate([-Horn_L/2, S2_Y - Horn_W/2, P_D - Overlap])
+            cube([Horn_L, Horn_W, T - P_D + Overlap*2]);
+
+        // Shock cord anchor: two axial holes on the -Y side, clear of both
+        // servos. The cord threads through both like a belt loop and passes
+        // from the e-bay through to the chute bay. Axial rather than a
+        // transverse bore because a Ø8 transverse hole in a 12mm disc would
+        // leave 2mm of material each side on the ONE feature that carries
+        // every deployment load in the vehicle.
+        for (x=[-6, 6])
+            translate([x, -22, -Overlap])
+                cylinder(d=Cord_d, h=T + Overlap*2);
     }
 } // R60_EBayAftBulkhead
 

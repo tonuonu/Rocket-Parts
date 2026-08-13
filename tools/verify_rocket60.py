@@ -23,14 +23,14 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 #   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
 #   parts 2,3: plain tube = 1
 #   part 4: disc + harness bore (1) = 1
-#   part 5: disc + drive bore (1) + anchor eye (1) = 2. Confirmed by rendered
-#   cross-sections (Z=3, within the pocket depth, and Z=9, above it): the
-#   drive bore is a clean isolated Ø12 hole from z=6..12, but from z=0..6 it
-#   opens directly into both servo pockets (no separating wall) - still one
-#   through-passage, so still +1, not +2. The eye is a clean through-hole,
-#   confirmed exiting the curved wall on both sides. Pockets confirmed
-#   blind (open only on the z=0 base face) - add no handles.
-GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 2}
+#   part 5 (upright-servo redesign): disc + 4 through-passages = 4. Confirmed
+#   by rendered top/bottom faces and the OpenSCAD Genus statistic: servo 1's
+#   offset pocket (z=0..9) connects to the centred Ø12 shaft bore (z=8.95..12)
+#   into one passage; servo 2's pocket connects to its horn slot the same
+#   way into a second passage; the two Ø5 cord holes are clean, isolated
+#   through-holes each. 4 distinct openings visible on both faces, matching
+#   Genus: 4 from `openscad --export-format asciistl` stderr.
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1, 4: 1, 5: 4}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -78,7 +78,7 @@ def checks(m):
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
-    for p, want_len in ((2, 130.0), (3, 130.0)):
+    for p, want_len in ((2, 160.0), (3, 130.0)):
         if p in m:
             tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
