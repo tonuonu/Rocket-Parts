@@ -213,6 +213,22 @@ compromise and **must be measured on the bench, not assumed** (§10.2).
 This makes the servo and the motor charge two genuinely independent paths to the same event,
 which a square-cut positive lock cannot provide.
 
+### 4.3 What the backup costs when it fires
+
+The cam ramp converts the ejection charge's axial force into ring rotation. Servo 1's output
+shaft is what holds that ring, so the charge **back-drives the servo through its gearbox**.
+An MG90S gearset will very likely strip.
+
+That is acceptable — arguably correct — for a path that only ever activates when the primary
+has already failed: a stripped servo on a recovered rocket beats an intact servo in a lawn
+dart. But it has two consequences that belong in the flight procedure:
+
+1. **After any flight where the backup activated, replace servo 1 before flying again.**
+   It may appear to work on the bench while its gear teeth are damaged.
+2. The bulkhead's 3 mm floor under the servo pocket sees this impulsive reaction, not just
+   steady servo torque. It was sized for the latter. **Not yet evaluated for the former** —
+   see §10 A8.
+
 > **Note:** with the H182R (also an ejection-charge DMS) the delay must be re-matched to the
 > new apogee time of 12.9 s. The E20-P is plugged and would have **no** backup — another
 > reason it is excluded.
@@ -391,6 +407,8 @@ and rail exit would be unstable.
 | A5 | G80T-14A delay is adjustable 14 s → ~11 s with the AeroTech DMS delay tool | Late deployment, ~3 s past apogee | Verify the tool's actual increments. Vega **timer values must also be re-entered per motor** (§7.4) |
 | A6 | Cd₀ = 0.52 | ±0.07 changes apogee ±80 m, Mach ±0.02 | Compare against Vega's logged altitude on flight 1 |
 | A7 | Printed-PETG shear modulus 0.5 GPa for flutter | Vf scales as √G; 4× margin absorbs a lot | — |
+| A8 | The aft bulkhead's 3 mm floor under each servo pocket was sized against steady servo torque (MG90S stall ≈ 0.2 N·m over ~175 mm²), **not** against the impulsive reaction when the ejection-charge backup cams the ring open (§4.3) | Bulkhead failure during a backup deployment — i.e. exactly when the primary has already failed | Bench-test the cam release (§11.2) with the bulkhead in the loop and inspect the floor afterwards |
+| A9 | Servo-pocket dividing wall is 1.2 mm (3 perimeters at a 0.4 mm nozzle) | Below ~0.8 mm the slicer drops to thin-wall mode and the two pockets can fuse | Confirm on the sliced preview before printing |
 
 ## 11. Verification before first flight
 
