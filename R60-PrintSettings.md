@@ -36,11 +36,10 @@ this section used to say had "no STL":
   door, fin can, fins, motor retainer, motor spacer, plus the fixed
   `NoseCone.stl` — exists as a mesh and is covered below.
 
-**Motors:** AeroTech G80T-14A (owned, 29 mm). Airframe is sized for a 29 mm
-H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with no
-reprint (spec §1.1, §5). **The corrected stability analysis (§9) puts both
-H motors' static margin below 1.0 cal at liftoff — do not fly either until
-that is resolved.**
+**Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins are
+sized to give it **1.62 cal** static margin at liftoff. Airframe is sized for
+a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
+no reprint (spec §1.1, §5); both give **1.4+ cal** on this fin size (§9).
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -144,11 +143,13 @@ hunt for. Printing the fin can in PC satisfies "PC for the centering
 rings" automatically.
 
 **Fins stay PETG.** Spec §6 computes the fin flutter margin explicitly
-from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 850 m/s, 3.9× the H182R's
-Vmax. Moving the fins to PC would change that shear modulus and orphan the
-documented margin without a recompute, and neither the STL README's
-materials note nor this task's brief lists fins among the PC parts (both
-say "fin can, centering rings, retainer and spacers" — never "fins"). The
+from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 959 m/s (63mm-span fin, exposed
+geometry — see §9's fin-sizing note), 1.52× the required 3× floor against
+the H182R's 210 m/s Vmax. Moving the fins to PC would change that shear
+modulus and orphan the documented margin without a recompute, and neither
+the STL README's materials note nor this task's brief lists fins among the
+PC parts (both say "fin can, centering rings, retainer and spacers" —
+never "fins"). The
 fin can they mount into is PC; the fins themselves are PETG.
 
 *Mass note:* PC (~1.20 g/cm³) is slightly lighter than the PETG
@@ -224,11 +225,13 @@ Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 usable at this mass**; at this length a 3 mm rod would whip badly and rail
 exit would be unstable (spec §9).
 
-**Use a 2 m rail for G80T flights.** At 887 g liftoff mass the rocket
-leaves a 1.5 m rail at **15.2 m/s** — right on the ~15 m/s minimum needed
-for the fins to stabilize the vehicle (spec §5, §6). The H182R and H135W
-are unaffected (22.3 and 16.4 m/s off 1.5 m). Confirm actual rail exit on
-a 1.5 m rail before committing to anything shorter (spec §11 item 6).
+At the as-built liftoff mass (867 g on the G80T, from
+`tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
+note) the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably clear of
+the ~15 m/s minimum needed for the fins to stabilize the vehicle (spec
+§5, §6) despite the fin-span growth. The H182R is unaffected (28.0 m/s off
+1.5 m). A 1.5 m rail is adequate for the G80T; confirm actual rail exit
+before committing to anything shorter (spec §11 item 6).
 
 Exact axial station for the two rail buttons is not given in the spec or
 the STL README — place them per normal practice (one near the loaded CG,
@@ -388,9 +391,26 @@ Copied from spec §11, with one adaptation flagged below.
   open risk in the recovery system; bench-test before flight (§8 item 2).
 - **Rail button axial placement** — not specified in any source.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
-  `tools/rocket60_model.py`, not built by any printable part. **The
-  corrected Barrowman analysis (exposed fin geometry, not the buried root)
-  puts the H182R-14A and H135W-14A static margins below 1.0 cal at liftoff
-  (0.86 and 0.87 respectively) — see the model's own output. This is a
-  design decision (accept the lower margin, or grow the fins) that has not
-  been made; do not fly either H motor until it has.**
+  `tools/rocket60_model.py`, not built by any printable part.
+
+**Fin sizing (resolved).** The original Barrowman analysis counted the
+fin's full 55mm span as exposed to the airflow, when 14mm of it
+(`R60_Body_OD/2 - R60_MMT_OD/2`) actually sits buried under the epoxied
+joint inside the fin can. Fed the correct exposed geometry, the as-shipped
+fin gave the G80T-14A — the motor actually owned, and the sizing case —
+only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
+unchanged: span is the most mass-efficient lever, since `CN` scales with
+`(exposed span/D)²`) to bring the G80T to **1.62 cal**. H182R-14A gives
+1.43 cal and H135W-14A gives 1.44 cal on the same fins — both comfortably
+above 1.0 cal, no ballast needed, though nose ballast is standard practice
+if either H's margin is ever wanted higher. Flutter velocity dropped from
+the fins growing (959 m/s vs. the original claim of ~850 m/s against the
+WRONG, buried-root geometry) but stays 1.52× the required 3× floor against
+the fastest motor (H182R-14A, 210 m/s Vmax → 631 m/s floor). Rail exit on
+the G80T on a 1.5 m rail is 18.9 m/s, still comfortably above the ~15 m/s
+minimum despite the added fin mass (+4.7g/fin, +14.0g total) and the mass
+corrections in §9's own history. See `tools/rocket60_model.py`'s own
+output for the full sweep and the rejected alternatives (growing root
+chord alone costs more mass for the same margin; trimming tip chord or
+thinning the fin were rejected because they cut into the flutter margin
+this low-aspect-ratio planform exists to buy).

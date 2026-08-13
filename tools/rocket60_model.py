@@ -40,7 +40,16 @@ def pc(vol_cm3, infill=INFILL_EFF):
     return vol_cm3 * RHO_PC * infill
 
 # ---------------- fins ----------------
-Cr, Ct, span, sweep = 90.0, 35.0, 55.0, 45.0   # AS-BUILT, R60Lib.scad
+# Span grown 55 -> 63mm (task report, coordinator decision, group 2
+# re-target). See R60Lib.scad's R60_Fin_Span comment for the full
+# reasoning -- summary: correctly fed the EXPOSED geometry (below), the
+# as-shipped 55mm span gave the G80T-14A (the motor actually owned, and
+# per the coordinator's explicit re-target the sizing case, not the
+# H182R) only 1.05 cal at liftoff. Span, not chord, is the lever: CN
+# scales with (exposed span/D)^2, so it buys far more margin per gram
+# added than growing Cr/Ct does -- see this file's own rejected
+# alternatives noted below the results.
+Cr, Ct, span, sweep = 90.0, 35.0, 63.0, 45.0   # AS-BUILT, R60Lib.scad
 FIN_T, NFIN = 4.0, 3
 S_finLE = TOTAL - Cr - 8.0
 
@@ -50,10 +59,11 @@ S_finLE = TOTAL - Cr - 8.0
 # actually exposed to the airflow -- the buried 14mm (D/2 - 16) between
 # the MMT and the body OD contributes zero normal force. Feeding Barrowman
 # the full buried root chord (90mm) overstated CN_fins by ~65% (5.78 vs.
-# the corrected ~3.5) and pulled CP aft of where it actually sits.
-# Everything below is derived from the fin's OWN planform (R60_Fin()'s
-# polygon: root (0,0)-(Cr,0), tip (sweep,span)-(sweep+Ct,span)), not a
-# second independently-guessed set of numbers.
+# the corrected ~3.5 at the original 55mm span) and pulled CP aft of where
+# it actually sits. Everything below is derived from the fin's OWN
+# planform (R60_Fin()'s polygon: root (0,0)-(Cr,0), tip
+# (sweep,span)-(sweep+Ct,span)), not a second independently-guessed set
+# of numbers.
 MMT_r = 16.0                 # R60_MMT_OD/2
 buried = D/2 - MMT_r         # 14mm of the fin's own span sits inside the can
 span_exp = span - buried
@@ -132,17 +142,47 @@ def barrowman():
     CN = CNn+CNf
     return (CNn*Xn + CNf*Xf)/CN, CN, CNf
 
-CP, CN, CNf = barrowman()
-print(f"Airframe: OD {D} mm, wall {WALL} mm, total length {TOTAL:.0f} mm  (L/D {TOTAL/D:.1f})")
-print(f"Fins (buried root {Cr}/{span} -> exposed {Cr_exp:.1f}/{span_exp:.1f}, "
-      f"sweep {sweep_exp:.1f})  CN_fins {CNf:.2f}  (was 5.78 against the full, un-exposed fin)")
-print(f"CP = {CP:.1f} mm from tip  (total CN {CN:.2f})\n")
+# ---------------- flutter (NAR/TIR-33 form) ----------------
+# Computed on the EXPOSED panel, not the buried planform: the buried root
+# is bonded solid to the MMT/centring rings and does not flex, so it is
+# the exposed panel's own aspect ratio/thickness ratio that sets the
+# cantilever flutter mode. a_s/G/Patm match the spec's own sec 6 figures
+# (G ~= 0.5 GPa for printed PETG, sea-level standard atmosphere).
+def flutter_Vf():
+    area_exp = (Cr_exp+Ct_exp)/2*span_exp
+    AR_exp = span_exp**2/area_exp
+    lam_exp = Ct_exp/Cr_exp
+    tc_exp = FIN_T/((Cr_exp+Ct_exp)/2)
+    a_s, G, Patm = 340.3, 0.5e9, 101325.0
+    denom = 1.337*AR_exp**3*Patm*(lam_exp+1)
+    num = 2*(AR_exp+2)*tc_exp**3
+    return a_s*math.sqrt(G*num/denom), AR_exp, lam_exp, tc_exp
 
+CP, CN, CNf = barrowman()
+Vf, AR_exp, lam_exp, tc_exp = flutter_Vf()
+print(f"Airframe: OD {D} mm, wall {WALL} mm, total length {TOTAL:.0f} mm  (L/D {TOTAL/D:.1f})")
+print(f"Fins: root {Cr:.0f}/tip {Ct:.0f}/span {span:.0f}/sweep {sweep:.0f}mm planform "
+      f"-> exposed root {Cr_exp:.1f}/tip {Ct_exp:.1f}/span {span_exp:.1f}/sweep {sweep_exp:.1f}mm "
+      f"(AR {AR_exp:.2f}, t/c {tc_exp:.3f})")
+print(f"CN_fins {CNf:.2f}  CP = {CP:.1f} mm from tip  (total CN {CN:.2f})")
+print(f"Flutter Vf = {Vf:.0f} m/s\n")
+
+# Target (coordinator, group 2 re-target): G80T-14A margin >= 1.5 cal at
+# liftoff is THE requirement -- it is the motor actually owned. H182R/
+# H135W margins are reported, not optimised for; between 1.0 and 1.5 cal
+# is acceptable there (nose ballast restores it at flight time, standard
+# practice, costs nothing today) -- below 1.0 cal is flagged as needing
+# ballast before flying that motor.
 print(f"{'motor':<12}{'liftoff g':>10}{'CG mm':>8}{'margin':>8}{'burnout g':>11}{'CG_bo':>8}{'marg_bo':>9}")
 for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen = build(mo)
     margin = (CP-cg)/D
-    flag = "  <-- BELOW 1.0 cal" if margin < 1.0 else ""
+    if mo == 'G80T-14A':
+        flag = "  <-- BELOW 1.5 cal TARGET" if margin < 1.5 else "  (meets 1.5 cal target)"
+    elif mo in ('H182R-14A', 'H135W-14A'):
+        flag = "  <-- below 1.0 cal, needs nose ballast" if margin < 1.0 else ""
+    else:
+        flag = ""
     print(f"{mo:<12}{m:>10.0f}{cg:>8.1f}{margin:>8.2f}{mb:>11.0f}{cgb:>8.1f}{(CP-cgb)/D:>9.2f}{flag}")
 print()
 items,m,cg,*_ = build('G80T-14A')
@@ -202,3 +242,19 @@ for mo in ('G80T-14A','H182R-14A','TSP E20-P'):
         F=thr(c,t); mm-=mdot*dt
         v+=((F-0.5*1.225*v*v*A*0.52)/mm-9.81)*dt; h+=v*dt; t+=dt
     print(f"   {mo:<12} {v:>5.1f} m/s   ({'OK' if v>15 else 'MARGINAL - want >15 m/s'})")
+
+# ---------------- flutter margin, all three motors ----------------
+# Group 2 re-target's 3rd requirement: flutter velocity >= 3x the FASTEST
+# flight speed across all three motors (not just the sizing motor).
+print()
+print("Flutter margin (target: Vf >= 3x fastest Vmax across all motors):")
+vmaxes = {}
+for mo in ('G80T-14A','H182R-14A','H135W-14A'):
+    items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen=build(mo)
+    vmax,Mmax,hap,tap,vrail=fly(m,mprop,Ns,burn)
+    vmaxes[mo] = vmax
+fastest_mo = max(vmaxes, key=vmaxes.get)
+fastest_v = vmaxes[fastest_mo]
+print(f"   Fastest: {fastest_mo} at {fastest_v:.0f} m/s -> 3x = {3*fastest_v:.0f} m/s")
+print(f"   Vf = {Vf:.0f} m/s  ({'OK' if Vf >= 3*fastest_v else 'FAIL'}, "
+      f"{Vf/(3*fastest_v):.2f}x the 3x-speed floor)")

@@ -498,6 +498,14 @@ module R60_VegaSled(){
     T = R60_Vega_Sled_T;
     L = R60_Vega_L + 12;
     W = R60_Vega_Sled_W;
+    // Mounting holes are M3 (R60Lib.scad: "L-shaped M3 pattern"). Was
+    // Ø2.9 -- tap-drill size, same defect class as the tether latch's
+    // original holes (task report): the M3 standoff screw would thread
+    // the sled instead of clamping it. Now Ø3.4, matching the M3
+    // clearance convention used everywhere else in this file
+    // (R60_Cam_Bolt_d, R60_MotorRetainer()'s Bolt_d, R60_TetherLatch()'s
+    // mounting holes).
+    Hole_d = 3.4;
     difference(){
         union(){
             translate([-W/2, -L/2, 0]) cube([W, L, T]);
@@ -507,7 +515,7 @@ module R60_VegaSled(){
         }
         for (h=R60_Vega_Holes)
             translate([h[0], h[1], -Overlap])
-                cylinder(d=2.9, h=T+R60_Vega_Standoff_h+Overlap*2);
+                cylinder(d=Hole_d, h=T+R60_Vega_Standoff_h+Overlap*2);
     }
 } // R60_VegaSled
 
@@ -801,9 +809,18 @@ module R60_FinCan(){
     }
 } // R60_FinCan
 
-// Fin, printed flat. Low aspect ratio (0.88) is deliberate - it is what
-// puts flutter velocity at ~850 m/s, 3.8x the H182R's 221 m/s. Do NOT
-// thin it or extend the span without recomputing flutter.
+// Fin, printed flat. Low aspect ratio (0.87, exposed) is deliberate - it
+// is what puts flutter velocity at ~959 m/s, 4.6x the H182R's Vmax
+// (~210 m/s) and 3.0x the H135W's -- both re-derived on the EXPOSED
+// panel (root at the body OD, not the buried root at the MMT), which is
+// the panel that actually flexes. Span grew 55->63mm (task report,
+// coordinator decision) to fix the G80T-14A's static margin, which was
+// only 1.05 cal when Barrowman was correctly fed the exposed geometry;
+// root/tip/sweep/thickness are unchanged because span is the most
+// mass-efficient lever (CN scales with (exposed span/D)^2). Do NOT thin
+// it or extend the span further without recomputing BOTH stability
+// (tools/rocket60_model.py) and flutter -- they move in opposite
+// directions as span grows.
 module R60_Fin(){
     linear_extrude(height=R60_Fin_T)
         polygon([[0,0],

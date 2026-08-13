@@ -198,9 +198,32 @@ R60_TetherLatch_HoleX = R60_Horn_L/2 + R60_TetherInsert_d/2 + R60_Tether_Wall_Mi
 // ============================================
 // FINS
 // ============================================
+// Span grown 55 -> 63mm (task report, coordinator decision, group 2
+// re-target): the buried root originally reported here was correct as a
+// PLANFORM number, but tools/rocket60_model.py's Barrowman analysis had
+// been counting all 55mm of it as EXPOSED span -- 14mm of it (D/2 -
+// R60_MMT_OD/2) actually sits inside the fin can, under the epoxied
+// joint, and contributes zero normal force. Fed the corrected EXPOSED
+// geometry, the G80T-14A -- the motor actually owned, the sizing case
+// per the coordinator's explicit re-target -- static margin was only
+// 1.05 cal at liftoff. Root/tip/sweep/thickness are UNCHANGED: span is
+// the most efficient lever per gram (CN scales with (exposed-span/D)^2,
+// so growing span buys far more CP shift per gram added than growing
+// chord -- see tools/rocket60_model.py's own sweep for the chord-only
+// and Ct-trim alternatives that were rejected for costing more mass at
+// the same margin). 63mm clears 1.5 cal on the G80T with margin to
+// spare (1.62 cal) while flutter velocity (a function of exposed AR,
+// which DROPS as span grows) stays comfortably above 3x the fastest
+// flight speed on any motor -- see the module comment on R60_Fin() for
+// the current AR/flutter figures. Slot geometry in R60_FinCan() needs no
+// width change: the slot already cuts clear through to the body OD
+// (r=30) regardless of span, so only Slot_L (root chord, unchanged) sets
+// its footprint -- span only changes how far the fin's OWN tip reaches
+// past the airframe, which the slot cut (through the outer wall only,
+// unbounded in the +Y direction of the cube) already accommodates.
 R60_Fin_Root  = 90;
 R60_Fin_Tip   = 35;
-R60_Fin_Span  = 55;
+R60_Fin_Span  = 63;
 R60_Fin_Sweep = 45;
 R60_Fin_T     = 4.0;
 R60_nFins     = 3;

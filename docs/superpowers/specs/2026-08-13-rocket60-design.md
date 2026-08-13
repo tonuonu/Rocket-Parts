@@ -310,6 +310,13 @@ either H drops in later with no new printed parts.
 
 ### 5.1 Mass budget (G80T configuration, PETG at 1.27 g/cm³)
 
+**Superseded by `tools/rocket60_model.py`**, which sources every printed
+part's mass from its measured mesh volume (`STL Files/Rocket60/README.md`)
+rather than the estimates below, and includes hardware this table
+predates (the spring/carrier, tether latch, upright servos, fin span
+grown to 63mm — see §6). Kept here for history; do not use it as the
+current mass source.
+
 | Item | Mass | Station |
 |---|---|---|
 | Motor G80T-14A | 128.0 g | 520 mm |
@@ -334,29 +341,65 @@ either H drops in later with no new printed parts.
 
 ## 6. Stability
 
-Barrowman, 3 fins, Cr 90 / Ct 35 / span 55 / sweep 45 mm.
+**⚠️ This section was corrected during a code-review fix pass (see the task
+report).** The original model below fed Barrowman the fin's full BURIED
+planform (Cr 90 / Ct 35 / span 55 / sweep 45 mm, all measured at the
+airframe's own centreline) as if all of it were exposed to the airflow.
+It is not: `R60_FinCan()`'s slot is cut from `R60_MMT_OD/2 = 16 mm`
+outward, so the epoxied root bottoms out at r=16mm and only
+r=(D/2=30)..(16+span) is actually exposed — 14 mm of the reported span
+sits buried under the joint and contributes zero normal force. That
+inflated CN(fins) by ~65% (5.78 vs. the corrected figure below at the
+original 55mm span) and put the G80T-14A — the motor actually owned, and
+the sizing case — at only 1.05 cal, not the 1.77 cal this section
+originally claimed.
 
-- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 5.78 at 482.8 mm
-- **CP = 456.9 mm** from the nose tip
+**Fix: fin span grown 55→63 mm** (root/tip/sweep/thickness unchanged —
+span is the most mass-efficient lever, since `CN` scales with `(exposed
+span/D)²`, and growing chord instead was rejected for costing more mass
+at the same margin — see `tools/rocket60_model.py`'s own sweep). This
+restores the G80T's margin to 1.5+ cal at a cost of +14 g total
+(+4.7 g/fin) rather than the far larger mass penalty chord growth or a
+second material would have cost.
 
-| Motor | CG loaded | Margin | CG burnout | Margin burnout |
-|---|---|---|---|---|
-| G80T-14A | 350.7 mm | **1.77 cal** | 331.7 mm | 2.09 cal |
-| H182R-14A | 362.7 mm | **1.57 cal** | 335.9 mm | 2.02 cal |
-| H135W-14A | 362.3 mm | **1.58 cal** | 344.6 mm | 1.87 cal |
+Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
+35 mm, measured at the body OD, r=30mm — see `tools/rocket60_model.py`'s
+`exposed_geom()`), 3 fins:
 
-All configurations sit in the 1.0–2.0 cal band, and margin *increases* through the burn.
-The H182R — the most aft-loaded case — is the sizing case at 1.57 cal.
+- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.71 at ~493 mm
+- **CP = 437.0 mm** from the nose tip
 
-**⚠️ Rail exit is now the binding constraint on the G80T, not stability.** At 887 g the rocket
-leaves a 1.5 m rail at **15.2 m/s**, right on the ~15 m/s minimum. Mass has grown 805 → 887 g
-across three design corrections and every one of them was necessary. **Use a 2 m rail for
-G80T flights**, or accept a weathercocking risk in any breeze. The H motors are unaffected
-(22.3 and 16.4 m/s).
+| Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
+|---|---|---|---|---|---|
+| G80T-14A | 867 g | 340.0 mm | **1.62 cal** | 319.6 mm | 1.96 cal |
+| H182R-14A | 934 g | 351.1 mm | **1.43 cal** | 321.7 mm | 1.92 cal |
+| H135W-14A | 937 g | 350.5 mm | **1.44 cal** | 331.0 mm | 1.77 cal |
 
-**Fin flutter:** AR 0.88, λ 0.389, t/c 0.064, G ≈ 0.5 GPa for printed PETG →
-**Vf ≈ 850 m/s**, 3.9× the H182R's 218 m/s. The deliberately low aspect ratio is what buys
-this margin; do not make the fins thinner or longer-span without recomputing.
+**The G80T-14A is the sizing case** (it is the motor actually owned; the H
+motors are a future purchase) at **1.62 cal**, clearing the 1.5 cal
+target with room to spare. H182R-14A and H135W-14A land at 1.43-1.44 cal
+— reported, not optimised for, per the coordinator's explicit
+instruction: this is comfortably above 1.0 cal and needs no ballast, though
+nose ballast is standard practice if either H's margin is ever wanted
+higher. Margin *increases* through the burn on every configuration.
+
+**Mass is the G80T's binding constraint, not stability.** Liftoff mass
+grew from the original 805g estimate through several necessary
+corrections (measured-mesh part masses, the missing spring/tether-latch
+hardware, and now +14g of fin) to **867 g**. At that mass the rocket
+leaves a 1.5 m rail at **18.9 m/s**, comfortably above the ~15 m/s
+minimum despite the added fin span. A 1.5 m rail is adequate for the
+G80T. The H182R is unaffected (28.0 m/s).
+
+**Fin flutter:** exposed-panel AR 0.87, λ 0.45, t/c 0.071, G ≈ 0.5 GPa for
+printed PETG → **Vf ≈ 959 m/s**, 4.6× the G80T's ~132 m/s Vmax and 4.6×
+the H135W's ~195 m/s, and 1.52× the required 3× floor against the
+fastest case (H182R-14A, ~210 m/s Vmax → 631 m/s floor). Vf dropped from
+the (incorrectly-computed, buried-root) original ~850 m/s claim, but the
+low aspect ratio this planform is built around still buys a comfortable
+margin at the new span. Do not make the fins thinner, or grow the span
+further, without recomputing both stability AND flutter — they move in
+opposite directions as span grows.
 
 ---
 
