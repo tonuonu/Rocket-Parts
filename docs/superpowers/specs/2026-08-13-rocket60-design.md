@@ -1,9 +1,9 @@
-# Rocket 60 "Seeker" — Design
+# Rocket 60 — Design
 
 **Date:** 2026-08-13
 **Status:** design approved, not yet implemented
 **Goal:** a recoverable high-subsonic camera rocket built around an existing,
-unmodifiable nosecone that carries the "Seeker" camera assembly and films forward.
+unmodifiable nosecone that carries the camera assembly and films forward.
 
 ---
 
@@ -11,7 +11,7 @@ unmodifiable nosecone that carries the "Seeker" camera assembly and films forwar
 
 | # | Requirement | Source |
 |---|---|---|
-| R1 | Carry the existing Seeker camera in `Nose Cone.STEP`, filming forward from the nose | user |
+| R1 | Carry the existing camera assembly in `Nose Cone.STEP`, filming forward from the nose | user |
 | R2 | `Nose Cone.STEP` geometry must not change; a neck may be added below it | user |
 | R3 | Fly on motors the user owns: AeroTech G80T-14A (29 mm) or TSP E20-P (24 mm) | user |
 | R4 | High subsonic speed | user |
@@ -24,7 +24,7 @@ unmodifiable nosecone that carries the "Seeker" camera assembly and films forwar
 
 **R3 (TSP E20-P) is not satisfiable and is dropped.** Simulated in this airframe the
 E20-P gives T/W 2.8 and **9.2 m/s off a 1.5 m rail** — well under the ~15 m/s needed for
-the fins to stabilise before rail exit. Apogee 99 m. No Ø60 mm airframe carrying Seeker +
+the fins to stabilise before rail exit. Apogee 99 m. No Ø60 mm airframe carrying the camera +
 Vega + recovery can be made light enough to fix this: the motor, camera, nosecone, Vega and
 battery alone are ~227 g before any structure exists. **The E20-P is excluded from this
 design.** The 29 mm MMT still accepts the existing `MotorAdapter29` if the user wants to
@@ -58,7 +58,8 @@ All figures below are restated as *height above the base plane*.
 | Nose fineness ratio | 1.57 (blunt — factored into Cd₀) |
 
 Both screw stations are consumed by the **camera assembly** (`~/Camera.STEP` — authoritative;
-`~/Desktop/camera.STEP` is an older export named `Seeker.STEP` with byte-different but
+`~/Desktop/camera.STEP` is an older export whose internal FILE_NAME string reads `Seeker.STEP`;
+byte-different but
 **geometrically identical** content: same 37.60 × 94.00 × 54.04 mm envelope, same 25 842 mm³,
 same bolt pattern). It fills the nosecone and sits flush with the base plane. The neck therefore cannot use the bore or the radial screws.
 
@@ -94,7 +95,7 @@ thread, not on the insert, at trial fit.
 
 ```
 station 0 ┌────────────┐
-          │  NOSECONE  │  94 mm   fixed part; Seeker camera inside, flush at base
+          │  NOSECONE  │  94 mm   fixed part; camera inside, flush at base
       94  ├────────────┤
           │   NECK     │          3× M3 axial into camera carrier, Ø37.96 BC
           │   E-BAY    │ 130 mm   CATS Vega, battery, 2× servo, access door
@@ -238,7 +239,7 @@ either H drops in later with no new printed parts.
 | Motor G80T-14A | 128.0 g | 520 mm |
 | Fin can tube | 85.1 g | 468 mm |
 | Parachute + cord + hardware | 70.0 g | 283 mm |
-| Camera assembly (Seeker) | 60.0 g | 47 mm |
+| Camera assembly | 60.0 g | 47 mm |
 | CATS Vega + sled | 60.0 g | 159 mm |
 | Bayonet + 2 servos | 58.0 g | 232 mm |
 | E-bay tube | 48.5 g | 159 mm |
