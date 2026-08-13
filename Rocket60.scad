@@ -33,6 +33,7 @@ include<R60Lib.scad>
 // 10 = Fin
 // 11 = Motor retainer
 // 12 = Motor spacer
+// 13 = Tether latch
 Render_Part = 0;
 
 // 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
@@ -153,6 +154,17 @@ module R60_EBayTube(){
 // R60_SpringCarrier()'s module comment for the part 8 <-> tab handoff and
 // why the plunger/lock-disk that would actually contact these tabs is a
 // companion piece not modeled as its own part in this task.
+//
+// Tether tie-off (Task 8, spec 4.1): the tether's FIXED end anchors HERE,
+// at the chute bay's forward rim -- this is NOT the shock cord, which
+// anchors on the e-bay aft bulkhead and the fin can's forward centring
+// ring and is never released; conflating the two leaves the aft section
+// attached to nothing after main release. A small internal lug, not a
+// hole through the outer wall, so the airframe's exterior stays clean.
+// Positioned at R60_Tether_Az (+Y), the SAME azimuth as
+// R60_EBayAftBulkhead()'s skirt channel and R60_SpringCarrier()'s
+// counterbore notch, so the ~50mm cord has a continuous, unpinched path
+// from this lug back to the latch (part 13) once assembled.
 module R60_ChuteTube(){
     Pin_Z      = R60_Pin_Z_FromJoint;
     Stop_Z     = R60_Pin_Skirt_L + 65;   // skirt(15) + carrier(65) = the
@@ -165,6 +177,7 @@ module R60_ChuteTube(){
     nStopTabs  = 3;
     Tab_W      = 8;     // chord width, small vs. the radius -- a flat cube
                          // is an adequate approximation of the arc here
+    Tie_W = 8; Tie_D = 4; Tie_H = 5; Tie_Z = 4;   // tether tie-off lug
     difference(){
         union(){
             R60_Tube(R60_Chute_L);
@@ -173,6 +186,10 @@ module R60_ChuteTube(){
                 rotate([0,0,i*360/nStopTabs])
                     translate([-Tab_W/2, Stop_ID/2, Stop_Z])
                         cube([Tab_W, R60_Body_ID/2-Stop_ID/2, Stop_T]);
+            // Tether tie-off lug, +Y, well clear of the +-X pin holes and
+            // the aft-most stop tabs.
+            translate([-Tie_W/2, R60_Body_ID/2-Tie_D, Tie_Z])
+                cube([Tie_W, Tie_D, Tie_H]);
         }
         // Shear pin holes, +-X (matching R60_EBayAftBulkhead()'s skirt
         // pins), straight through the tube wall -- same idiom as the
@@ -181,6 +198,11 @@ module R60_ChuteTube(){
             translate([s*R60_Body_OD/2, 0, Pin_Z])
                 rotate([0,90,0])
                     cylinder(d=R60_Pin_d, h=R60_Wall_T*3, center=true);
+        // Lashing hole through the tie-off lug, along X, for the tether
+        // cord to loop through.
+        translate([-Tie_W/2-Overlap, R60_Body_ID/2-Tie_D/2, Tie_Z+Tie_H/2])
+            rotate([0,90,0])
+                cylinder(d=3.0+IDXtra, h=Tie_W+Overlap*2);
     }
 } // R60_ChuteTube
 
@@ -296,6 +318,24 @@ module R60_EBayAftBulkhead(){
             translate([s*Pin_R_Mid, 0, Pin_Z])
                 rotate([0,90,0])
                     cylinder(d=R60_Pin_d, h=Pin_Depth+Overlap, center=true);
+
+        // Tether latch (part 13) mounting inserts -- ruthex RX-M3x5.7,
+        // same convention as R60_FinCan()/R60_MotorRetainer(). Offset to
+        // R60_Tether_Y (under servo 2's horn, clear of the shaft bore and
+        // shear pins) rather than centred, so servo 2 can actually drive
+        // the latch it mounts.
+        for (x=[-11, 11])
+            translate([x, R60_Tether_Y, Total_H-6.7])
+                cylinder(d=4.0, h=6.7+Overlap);
+
+        // Tether relief channel through the skirt's OD at R60_Tether_Az
+        // (+Y) so the cord isn't pinched in the ~0.2mm nominal clearance
+        // to the chute tube's ID as it runs from the latch (mounted here)
+        // forward to its tie-off on R60_ChuteTube()'s forward rim -- a
+        // matching notch continues this through R60_SpringCarrier()'s
+        // counterbore rim. See R60Lib.scad's R60_Tether_Y/Az comment.
+        translate([-4, R60_Coupler_OD/2-3, T-Overlap])
+            cube([8, 3+Overlap, Skirt_L+Overlap*2]);
     }
 } // R60_EBayAftBulkhead
 
@@ -424,7 +464,10 @@ module R60_Door(){
 // z=0 (this module's base) is a plain tube rim -- OD=Coupler_OD,
 // bore=CB_D -- so it glues flush against R60_EBayAftBulkhead()'s skirt
 // aft face (same OD, same convention as every internal part in this
-// repo). The diaphragm sits well inboard of that rim, not at it.
+// repo). The diaphragm sits well inboard of that rim, not at it. A
+// notch through that rim at R60_Tether_Az (+Y) continues the tether's
+// relief channel from the skirt into the counterbore -- see
+// R60_ChuteTube()'s module comment for the tether's fixed end.
 module R60_SpringCarrier(){
     OD      = R60_Coupler_OD;      // 56.4 -- 0.4mm clearance in the chute
                                     // tube's 56.8mm bore, same convention
@@ -474,6 +517,14 @@ module R60_SpringCarrier(){
         for (s=[1,-1])
             translate([s*Cord_x, Cord_y, -Overlap])
                 cylinder(d=Cord_d, h=L+Overlap*2);
+        // Tether relief notch through the forward rim (the OD-to-CB_D
+        // annulus, the only material at z=0 outside the already-open
+        // counterbore), at R60_Tether_Az (+Y) matching
+        // R60_EBayAftBulkhead()'s skirt channel exactly, so the cord
+        // continues straight from the skirt into this carrier's
+        // counterbore where the latch (part 13) sits.
+        translate([-4, CB_D/2-0.5, -Overlap])
+            cube([8, OD/2-CB_D/2+1, 5+Overlap]);
         // Ball pockets: radial slots through the wall so a ball can travel
         // from fully engaged (inner) to retracted (outer), same hull-of-
         // two-spheres pattern as SpringThingBooster.scad's
@@ -594,6 +645,60 @@ module R60_MotorSpacer(){
         }
 } // R60_MotorSpacer
 
+// Tether latch. Servo 2 withdraws the 3mm pin at 150m, freeing the 50mm
+// tether loop so the sections separate fully and the main is drawn out.
+//
+// This is NOT the shock cord. The shock cord runs from the e-bay aft
+// bulkhead to the fin can's forward centring ring and is never released
+// (spec 4.1); the tether is a short (~50mm) line whose only job is the
+// apogee restraint -- it holds the sections ~50mm apart through the
+// tumble so the packed chute cannot come out early. Confusing the two
+// leaves the aft section attached to nothing after main release.
+//
+// This latch carries the aft section's flopping load for ~25s of
+// tumbling, not a single static pull -- its bench test should be cyclic,
+// not a one-shot proof load.
+//
+// Mounts to R60_EBayAftBulkhead()'s aft face via 2x M3 into ruthex
+// inserts, 22mm apart, offset to R60_Tether_Y (under servo 2's horn, not
+// centred) -- centred would have sat under R60_SpringCarrier()'s Ø51
+// counterbore rim gap but directly over its central driveshaft/spring
+// bore, which the posts+pin need to clear. The posts (Post_H=12) and pin
+// recess into that counterbore (17mm deep), which is why the counterbore
+// exists at this size -- see that module's comment for the collision
+// this avoids. This module itself is unchanged from a plain flat-mount
+// design (own local frame, own zmin=0 base) -- the offset is applied by
+// WHERE R60_EBayAftBulkhead() cuts its mounting holes, not by moving
+// this module's own geometry.
+//
+// The tether's other (fixed) end anchors at R60_ChuteTube()'s forward-rim
+// tie-off lug; the ~50mm cord between the two runs through the relief
+// channel/notch in R60_EBayAftBulkhead()'s skirt and R60_SpringCarrier()'s
+// counterbore rim, all at the same R60_Tether_Az. See those modules'
+// comments.
+module R60_TetherLatch(){
+    Base_L = 26; Base_W = 16; Base_T = 4;
+    Pin_d  = 3.0 + IDXtra;
+    Post_H = 12;
+    difference(){
+        union(){
+            translate([-Base_L/2,-Base_W/2,0]) cube([Base_L,Base_W,Base_T]);
+            for (x=[-9, 9])
+                translate([x,0,Base_T-Overlap]) cylinder(d=8, h=Post_H+Overlap);
+        }
+        // Pin bore through both posts. The pin IS the load path - it is a
+        // 3mm steel dowel, not printed.
+        translate([0,0,Base_T+Post_H-4]) rotate([0,90,0])
+            cylinder(d=Pin_d, h=Base_L+2, center=true);
+        // Slot the tether loop sits in, under the pin.
+        translate([0,0,Base_T+Post_H-4])
+            cube([10, Base_W+2, 9], center=true);
+        // Mounting holes into the e-bay aft bulkhead, 22mm apart.
+        for (x=[-11, 11])
+            translate([x,0,-Overlap]) cylinder(d=2.9, h=Base_T+Overlap*2);
+    }
+} // R60_TetherLatch
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -610,3 +715,4 @@ if (Render_Part==9)  R60_FinCan();
 if (Render_Part==10) R60_Fin();
 if (Render_Part==11) R60_MotorRetainer();
 if (Render_Part==12) R60_MotorSpacer();
+if (Render_Part==13) R60_TetherLatch();

@@ -1,7 +1,10 @@
 # Rocket 60 — printable meshes
 
-**This rocket is not finished. Do not print past step 1 yet.** The tether
-latch (Task 8) still doesn't exist — see "Not yet built".
+**Every part in the design exists as a mesh now.** Read "Spring separation
+joint" and "Tether latch" below before assembling — both mechanisms have
+companion pieces (hardware or unmodeled parts) that are not, by themselves,
+sufficient for a flight-ready recovery system, and both depend on a spring
+force that has never been measured (spec A11).
 
 Generated from `Rocket60.scad`, OpenSCAD 2026.07.09, full render, binary STL.
 Verify with `python3 tools/verify_rocket60.py` — every part is measured from
@@ -29,16 +32,17 @@ printing.** That is the whole reason this part exists.
 | `NoseCone.stl` | — | 94.05 | 59.99 | **Your CAD**, converted not regenerated. Fixed part; the whole rocket is sized from its 59.99 base. |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | Butt joint, no spigot — the camera fills the bore. 3× M3×10 into its inserts. |
 | `02_EBayTube.stl` | 2 | 160.00 | 60.00 | Door aperture + arming switch hole, both on +Y. |
-| `03_ChuteBayTube.stl` | 3 | 180.00 | 60.00 | 2× Ø2.2 shear pin holes (±X, 8 mm from the forward rim) land in `05`'s skirt. 3 internal spring-reaction tabs at z=80. 80 mm spring mechanism + 100 mm main. |
+| `03_ChuteBayTube.stl` | 3 | 180.00 | 60.00 | 2× Ø2.2 shear pin holes (±X, 8 mm from the forward rim) land in `05`'s skirt. 3 internal spring-reaction tabs at z=80. Internal tether tie-off lug at +Y, z=4-9 (Ø3.2 lashing hole) — the tether's FIXED end, not the shock cord. 80 mm spring mechanism + 100 mm main. |
 | `04_EBayFwdBulkhead.stl` | 4 | 6.00 | 56.40 | Harness pass-through. |
-| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | Shock cord anchor, 2 servo pockets, drive bore, **+15 mm aft skirt** carrying the 2 shear pins into the real joint — see spec 4.2. |
+| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | Shock cord anchor, 2 servo pockets, drive bore, **+15 mm aft skirt** carrying the 2 shear pins into the real joint — see spec 4.2. Aft face carries 2× M3 ruthex mounts for `13_TetherLatch`, offset to y=13.6 under servo 2's horn; a relief channel at +Y routes the tether cord past the skirt's ~0.2 mm nominal clearance to `03`'s bore. |
 | `06_VegaSled.stl` | 6 | 8.00 | 44×112 | 60×27 M3 pattern. Antenna side faces radially OUT. |
 | `07_AccessDoor.stl` | 7 | 84.30 | 60.00 | 4× M2.5. |
-| `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | Ball-lock housing: Ø51 forward counterbore (clears the tether latch, `13`), diaphragm (pressure seal) with driveshaft + 2 shock-cord passages, Ø44.8 spring bore for the CS4323, 3× blind ball pockets. Glues to `05`'s skirt. Not flight-complete alone — the rotating lock ring and the spring-seat plunger are companion pieces not modeled as parts in this build; see the task report. |
+| `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | Ball-lock housing: Ø51 forward counterbore (clears `13_TetherLatch`'s posts), diaphragm (pressure seal) with driveshaft + 2 shock-cord passages, Ø44.8 spring bore for the CS4323, 3× blind ball pockets, +Y notch continuing `05`'s tether relief channel. Glues to `05`'s skirt. Not flight-complete alone — the rotating lock ring and the spring-seat plunger are companion pieces not modeled as parts in this build; see the task report. |
 | `09_FinCan.stl` | 9 | 228.00 | 60.00 | Ø29.3 MMT, 3× fin slots, 3× M3 blind insert bosses (r=24, aft end) for the retainer. 228 mm sized for the 216 mm H135W, not the 124 mm G80T — the G80T flies on `12_MotorSpacer`. |
 | `10_Fin.stl` | 10 | 4.00 | 90×55 | Flat print, 3 needed. Root 90 mm; aspect ratio 0.88 is deliberate — it's what puts flutter velocity at ~850 m/s. Do not thin or extend it. |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | Traps the motor's aft rim. 3× M3 clearance (Ø3.4, r=24) into `09_FinCan`'s bosses. |
 | `12_MotorSpacer.stl` | 12 | 99.00 | 29.00 | Motor_Class=0 (G80T) length. Re-render with Motor_Class=1 (H182R) or 2 (H135W) for the longer motors — those need no spacer at all once close to 223mm. |
+| `13_TetherLatch.stl` | 13 | 16.00 | 26×16 | 2 posts + Ø3.2 pin bore (a 3 mm steel dowel, not printed, is the actual load path) + loop slot. Bolts to `05`'s aft face, 2× M3, 22 mm apart. Servo 2 withdraws the pin at 150 m. |
 
 `06_VegaSled` and `10_Fin` are flat plates, not tubes — dimensions are
 width×length, not a diameter. `10_Fin`'s slot in `09_FinCan` gets 0.2 mm
@@ -50,7 +54,6 @@ bolts land between them.
 
 ## Not yet built
 
-- **Tether latch** — releases the main at 150 m.
 - **Print settings** — material, walls, infill, orientation per part.
 
 ## Spring separation joint (Task 7) — read before assembling
@@ -82,6 +85,32 @@ spring/release library files). The pins are sized for a ~130 N target
 (2× nylon 2-56) — this must be confirmed against a bench-measured spring
 force before flight (spec A11, the largest open risk in the recovery
 system).
+
+## Tether latch (Task 8) — read before assembling
+
+At 150 m, servo 2 withdraws `13_TetherLatch`'s pin, freeing a ~50 mm tether
+loop so the sections (held that far apart through the ~25 s tumble) separate
+fully and draw the main out.
+
+**This is a separate line from the shock cord, and the two must not be
+conflated.** The shock cord is permanently anchored — e-bay aft bulkhead
+(`05`) to the fin can's forward centring ring — and is *never* released; it
+is what keeps the aft section (chute bay + fin can + motor, ~440 g) hanging
+under the canopy after main release. The tether's only job is the apogee
+restraint (holding the sections ~50 mm apart so the packed chute can't come
+out early during the tumble) — if the tether were tied off in place of the
+shock cord, the aft section would be attached to nothing once servo 2 fires.
+
+The tether's two ends: `13_TetherLatch` captures the RELEASABLE end (bolted
+to `05`'s aft face); the FIXED end ties off at `03`'s forward-rim internal
+lug. The ~50 mm cord between them routes through matching relief
+features at the same azimuth (+Y) in `05`'s skirt and `08`'s counterbore rim.
+
+This latch carries the aft section's flopping load for the whole tumble, not
+a single static pull — bench-test it cyclically, not as a one-shot proof
+load. The latch's mounting footprint clears `08`'s Ø51 counterbore with
+under 0.3 mm of margin at its far corner — tight; check the printed fit
+before committing to final assembly.
 
 ## Material, when you do print
 

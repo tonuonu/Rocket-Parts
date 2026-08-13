@@ -109,6 +109,19 @@ R60_Pin_Z_FromJoint  = 8;     // both R60_ChuteTube() and R60_EBayAftBulkhead()
                                // cut their pin hole this far from the joint,
                                // so one physical pin lines up through both
 
+// Tether latch (part 13, Task 8) routing. Shared between R60_ChuteTube()
+// (the fixed tie-off at the chute bay's forward rim), R60_EBayAftBulkhead()
+// (the latch's own mount, offset under servo 2's horn so it can drive it,
+// plus a relief channel through the skirt) and R60_SpringCarrier() (a
+// matching notch through its counterbore rim), so the tether's ~50mm cord
+// path lines up across all three once assembled -- see each module's
+// comment. This is a SEPARATE line from the shock cord (which is
+// permanently anchored e-bay aft bulkhead <-> fin can forward centring
+// ring, spec 4.1) -- conflating the two leaves the aft section attached
+// to nothing after main release.
+R60_Tether_Y  = 13.6;   // = S2_Y, so servo 2's horn can reach the latch
+R60_Tether_Az = 90;     // +Y -- azimuth of the relief channel/tie-off
+
 // ============================================
 // FINS
 // ============================================
