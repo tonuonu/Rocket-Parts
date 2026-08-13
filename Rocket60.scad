@@ -44,6 +44,10 @@ Render_Part = 0;
 //   2. the 3x M3 bolt circle and its clocking against the camera inserts
 //   3. the coupler spigot inside a printed body tube
 // If any of the three is wrong, nothing downstream is worth printing.
+//
+// No counterbore: this face mates with nothing (it is inside the
+// airframe), so a plain clearance hole is the real joint and the gauge
+// must match it, or it stops testing what actually gets bolted.
 module R60_TestRing(){
     H_flange = 4;
     H_spigot = 6;
@@ -57,12 +61,9 @@ module R60_TestRing(){
         // neck, so the gauge shares the same clear bore.
         translate([0,0,-Overlap])
             cylinder(d=28, h=H_flange+H_spigot+Overlap*2);
-        R60_CameraBoltPattern(){
+        R60_CameraBoltPattern()
             translate([0,0,-Overlap])
                 cylinder(d=R60_Cam_Bolt_d, h=H_flange+H_spigot+Overlap*2);
-            translate([0,0,-Overlap])
-                cylinder(d=R60_Cam_Cbore_d, h=R60_Cam_Cbore_h+Overlap);
-        }
     }
 } // R60_TestRing
 
@@ -71,10 +72,18 @@ module R60_TestRing(){
 // M3x10 SHCS pull it up into the camera's heat-set inserts; those screws
 // and the flange face are the whole joint.
 //
+// No counterbore: the aft face (z=Flange_T) is inside the airframe and
+// mates with nothing - the e-bay tube's end lands at r=28.4..30, clear of
+// the r=18.98 bolt circle, so a screw head proud there touches nothing.
+// Plain Ø3.4 through-holes give the full 5.0mm flange as grip under the
+// head. M3x10 protrudes 10-5.0=5.0mm past the mating face, for 5.0mm of
+// engagement in the camera's 5.7mm ruthex RX-M3x5.7 insert - does not
+// bottom out.
+//
 // Load path: the shock cord anchors on the E-BAY AFT BULKHEAD, never here.
 // These three screws only ever carry the nose section's own inertia.
 module R60_Neck(){
-    Flange_T = 5;      // gives ~5mm thread engagement in a 5.7mm insert
+    Flange_T = 5;      // grip under the screw head - see note above
     Skirt_L  = 19;
     Bore_d   = 28;     // camera harness passes through
     difference(){
@@ -88,12 +97,9 @@ module R60_Neck(){
         // Thin the skirt so it is a tube, not a slug.
         translate([0,0,Flange_T])
             cylinder(d=R60_Coupler_OD-2*R60_Wall_T, h=Skirt_L+Overlap);
-        R60_CameraBoltPattern(){
+        R60_CameraBoltPattern()
             translate([0,0,-Overlap])
                 cylinder(d=R60_Cam_Bolt_d, h=Flange_T+Overlap*2);
-            translate([0,0,-Overlap])
-                cylinder(d=R60_Cam_Cbore_d, h=R60_Cam_Cbore_h+Overlap);
-        }
     }
 } // R60_Neck
 

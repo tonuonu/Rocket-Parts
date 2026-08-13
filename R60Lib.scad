@@ -59,8 +59,6 @@ R60_NC_Bore_Gen = 55.60;   // bore higher up
 R60_Cam_BC_R    = 18.98;                  // bolt circle RADIUS
 R60_Cam_Ang     = [52.2, -52.2, 180.0];
 R60_Cam_Bolt_d  = 3.4;                    // M3 clearance
-R60_Cam_Cbore_d = 6.2;                    // M3 socket head clearance
-R60_Cam_Cbore_h = 3.2;
 
 // ============================================
 // CATS VEGA  (manual v2.0.0 sec 4.3.3)
