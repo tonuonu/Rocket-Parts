@@ -30,9 +30,10 @@ battery alone are ~227 g before any structure exists. **The E20-P is excluded fr
 design.** The 29 mm MMT still accepts the existing `MotorAdapter29` if the user wants to
 static-test or fly it at their own discretion.
 
-**R4 (high subsonic) is met only on an H motor.** See §5. On the G80T-14A this rocket
-reaches Mach 0.42. The airframe is sized for a 29 mm H DMS from day one so that
-Mach 0.71 is available with a motor purchase and no redesign or reprint.
+**R4 (high subsonic) is only partly met.** See §5. On the G80T-14A this rocket reaches
+Mach 0.42. The airframe is sized for a 29 mm H DMS from day one so that **Mach 0.65** is
+available with a motor purchase and no redesign or reprint. Mach 0.8+ is not reachable at
+Ø60 mm with this payload on any 29 mm motor.
 
 ---
 
@@ -96,11 +97,14 @@ station 0 ┌────────────┐
      224  ╞════════════╡ ◄─────────  SEPARATION JOINT (cam-ramped servo bayonet)
           │ CHUTE BAY  │ 130 mm   24 in main + shock cord
      354  ├────────────┤
-          │  FIN CAN   │ 215 mm   Ø29 mm MMT (H-length), 3 fins, retainer
-     569  └────────────┘
+          │  FIN CAN   │ 228 mm   Ø29 mm MMT (223 mm), 3 fins, retainer
+     582  └────────────┘
 ```
 
-Total length **569 mm**, OD **60.0 mm**, **L/D 9.5**.
+Total length **582 mm**, OD **60.0 mm**, **L/D 9.7**.
+
+The fin can is 228 mm because the longest 29 mm H DMS (H135W, **216 mm**) has to fit — the
+H182R is 203 mm and the G80T only 124 mm.
 
 ### 3.1 Load path and electrical routing — two invariants
 
@@ -123,11 +127,11 @@ Total length **569 mm**, OD **60.0 mm**, **L/D 9.5**.
 | P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel |
 | P7 | Bayonet ring + lugs | adapt `PeregrineEjection.scad` | 101.5 mm → 60 mm; 3 lugs, 20° cam ramp |
 | P8 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm |
-| P9 | Fin can | adapt `FinCan2Lib.scad` | 215 mm, Ø29 MMT, 3 fin slots, 3 centering rings |
+| P9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (223 mm), 3 fin slots, 3 centering rings |
 | P10 | Fins ×3 | new | Cr 90 / Ct 35 / span 55 / sweep 45 / t 4.0 |
 | P11 | Motor retainer | adapt `MotorAdapter29.scad` patterns | 29 mm aft retainer |
 | P12 | Rail buttons ×2 | reuse `RailGuide.scad` | `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` — 1010 |
-| P13 | G80T spacer | new | 86 mm spacer (210 mm MMT − 124 mm motor) so the G80T sits flush at the aft end |
+| P13 | Motor spacers | new | 99 mm for the G80T, 20 mm for the H182R (223 mm MMT − motor length); none for the H135W |
 
 New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad` convention.
 
@@ -139,11 +143,27 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
-| 0 | — | Launch | 1010 rail, 1.5 m, exit 19.8 m/s |
-| 11.0 s | 667 m | Apogee separation | Vega servo 1 rotates the bayonet ring; spring pushes sections apart. **Backup:** G80T ejection charge, delay set to ~11 s, cams the same ring open. |
-| — | 667→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
+| 0 | — | Launch | 1010 rail, 1.5 m, exit 19.7 m/s |
+| 11.0 s | 663 m | Apogee separation | Vega servo 1 rotates the bayonet ring; spring pushes sections apart. **Backup:** G80T ejection charge, delay set to ~11 s, cams the same ring open. |
+| — | 663→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
+
+### 4.1 Two separate lines — do not conflate them
+
+| | **Shock cord** | **Tether** |
+|---|---|---|
+| Length | ~3 m (5× body length) | ~50 mm |
+| Attaches | e-bay aft bulkhead ↔ fin can forward centering ring | e-bay aft bulkhead ↔ chute bay forward rim |
+| Released? | **Never** — permanent | Yes, by servo 2 at 150 m |
+| Carries | both sections + chute, for the whole descent | the 50 mm apogee restraint only |
+
+The shock cord runs the full length of the joint and is **permanently anchored at both ends**:
+forward on the e-bay aft bulkhead, aft on the fin can's forward centering ring. The main's
+shroud lines attach to a loop at the cord's midpoint. The tether is a separate short line
+whose only job is to hold the sections 50 mm apart during the tumble phase; when servo 2
+releases it, the shock cord — still attached at both ends — is what keeps the aft section
+(chute bay + fin can + motor, ~440 g) hanging under the canopy.
 
 **Chute packing and extraction.** The 24 in main is packed in the chute bay (aft section,
 forward end), 56.8 mm ID × 130 mm = 329 cm³ of usable volume, in a Nomex protector. Its
@@ -157,7 +177,7 @@ spring at the joint gives the initial positive push at apogee.
 CATS Vega transmits GNSS position at 10 Hz on 2.4 GHz FHSS (flight-tested to 10 km), so
 recovery is "walk to the last fix", not a search.
 
-### 4.1 Cam-ramped bayonet
+### 4.2 Cam-ramped bayonet
 
 Three lugs with **20° ramped faces** on a servo-rotated ring.
 
@@ -186,23 +206,33 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 798 g | 9.9 | 19.8 m/s | 142 m/s | **0.42** | 667 m | 11.0 s |
-| **H182R-14A** (29 mm DMS) | 877 g | 21.2 | 28.7 m/s | 243 m/s | **0.71** | 1113 m | 12.9 s |
-| H135W-14A (29 mm DMS) | 870 g | 15.8 | 20.0 m/s | 221 m/s | 0.65 | 1067 m | 12.9 s |
+| **G80T-14A** (owned) | 805 g | 9.8 | 19.7 m/s | 141 m/s | **0.42** | 663 m | 11.0 s |
+| **H182R-14A** (29 mm DMS) | 884 g | 21.0 | 28.8 m/s | 221 m/s | **0.65** | 1001 m | 12.4 s |
+| H135W-14A (29 mm DMS) | 889 g | 13.3 | 17.8 m/s | 204 m/s | **0.60** | 1054 m | 13.1 s |
 
-Motor data from thrustcurve.org: G80T = 136.6 Ns / 77.6 N / 1.7 s / 128 g / 63 g prop /
-29 × 124 mm. 29 mm H DMS = 29 × 203 mm, ~207 g, 115 g prop.
+Motor data, all from thrustcurve.org:
 
-**The fin can (215 mm) and MMT (210 mm) are sized for the 203 mm H motor, not the G80T.**
-This is the whole point of the H-ready choice: the G80T flies now on a 79 mm spacer, and the
-H drops in later with no new parts.
+| Motor | Impulse | Avg thrust | Burn | Total | Propellant | Size | Delays |
+|---|---|---|---|---|---|---|---|
+| G80T | 136.6 Ns | 77.6 N | 1.7 s | 128 g | 63 g | 29 × 124 mm | 6–14 |
+| H182R | 218.0 Ns | 182.0 N | 1.2 s | 207 g | 115 g | 29 × 203 mm | 6–14 adjustable |
+| H135W | 225.8 Ns | 115.9 N | 2.0 s | 212 g | 82 g | 29 × 216 mm | 6–14 adjustable |
+
+**Mach 0.65 is the realistic ceiling for this airframe**, and only on an H. Ø60 mm and
+~800 g are both forced — by the nosecone base and by the payload — and together they cap
+what any 29 mm motor can do. If a higher Mach number ever becomes the priority it needs a
+different, smaller-diameter rocket, not a change to this one.
+
+**The fin can (228 mm) and MMT (223 mm) are sized for the longest H, not the G80T.**
+That is the whole point of the H-ready choice: the G80T flies now on a 99 mm spacer, and
+either H drops in later with no new printed parts.
 
 ### 5.1 Mass budget (G80T configuration, PETG at 1.27 g/cm³)
 
 | Item | Mass | Station |
 |---|---|---|
-| Motor G80T-14A | 128.0 g | 507 mm |
-| Fin can tube | 80.2 g | 462 mm |
+| Motor G80T-14A | 128.0 g | 520 mm |
+| Fin can tube | 85.1 g | 468 mm |
 | Parachute + cord + hardware | 70.0 g | 283 mm |
 | Camera assembly (Seeker) | 60.0 g | 47 mm |
 | CATS Vega + sled | 60.0 g | 159 mm |
@@ -210,14 +240,14 @@ H drops in later with no new parts.
 | E-bay tube | 48.5 g | 159 mm |
 | Chute bay tube | 48.5 g | 289 mm |
 | Battery + wiring | 45.0 g | 159 mm |
-| MMT | 38.3 g | 462 mm |
+| MMT | 40.6 g | 468 mm |
 | Nosecone shell | 37.0 g | 42 mm |
-| Fins ×3 (62 % infill) | 32.5 g | 512 mm |
-| Retainer + rail buttons | 26.0 g | 539 mm |
+| Fins ×3 (62 % infill) | 32.5 g | 525 mm |
+| Retainer + rail buttons | 26.0 g | 552 mm |
 | E-bay bulkheads | 24.0 g | 159 mm |
 | Neck + bolts | 22.0 g | 106 mm |
-| Centering rings ×3 | 19.8 g | 462 mm |
-| **Total** | **797.7 g** | CG 302.8 mm |
+| Centering rings ×3 | 19.8 g | 468 mm |
+| **Total** | **804.9 g** | CG 308.4 mm |
 
 ---
 
@@ -225,20 +255,20 @@ H drops in later with no new parts.
 
 Barrowman, 3 fins, Cr 90 / Ct 35 / span 55 / sweep 45 mm.
 
-- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 5.78 at 469.8 mm
-- **CP = 387.8 mm** from the nose tip
+- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 5.78 at 482.8 mm
+- **CP = 397.4 mm** from the nose tip
 
 | Motor | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|
-| G80T-14A | 302.8 mm | **1.42 cal** | 285.2 mm | 1.71 cal |
-| H182R-14A | 311.8 mm | **1.27 cal** | 288.3 mm | 1.66 cal |
-| H135W-14A | 310.6 mm | **1.29 cal** | 287.9 mm | 1.67 cal |
+| G80T-14A | 308.4 mm | **1.48 cal** | 290.4 mm | 1.78 cal |
+| H182R-14A | 318.0 mm | **1.32 cal** | 293.7 mm | 1.73 cal |
+| H135W-14A | 317.4 mm | **1.33 cal** | 301.5 mm | 1.60 cal |
 
 All configurations sit in the 1.0–2.0 cal band, and margin *increases* through the burn.
-The H — the heaviest and most aft-loaded case — is the sizing case at 1.27 cal.
+The H182R — the most aft-loaded case — is the sizing case at 1.32 cal.
 
 **Fin flutter:** AR 0.88, λ 0.389, t/c 0.064, G ≈ 0.5 GPa for printed PETG →
-**Vf ≈ 850 m/s**, 3.5× the H182R's 243 m/s. The deliberately low aspect ratio is what buys
+**Vf ≈ 850 m/s**, 3.8× the H182R's 221 m/s. The deliberately low aspect ratio is what buys
 this margin; do not make the fins thinner or longer-span without recomputing.
 
 ---
@@ -249,7 +279,7 @@ this margin; do not make the fins thinner or longer-span without recomputing.
   anywhere from the neck to the chute bay** — the Vega's 2.4 GHz telemetry and GNSS antenna
   are inside the airframe and CF is conductive.
 - Airframe wall **1.6 mm**; 0.4 mm nozzle, 0.2 mm layers, 4 perimeters.
-- All tubes print vertically; the longest part (fin can, 215 mm) fits the Bambu P1S 256 mm Z.
+- All tubes print vertically; the longest part (fin can, 228 mm) fits the Bambu P1S 256 mm Z with 28 mm to spare.
 - Fins print flat, 62 % infill, oriented so layer lines run spanwise.
 
 ## 8. Launch
@@ -279,8 +309,11 @@ and rail exit would be unstable.
 2. **(§10.2)** Bench-test the bayonet on a pull rig: measure the actual cam release force.
    Accept 80–130 N. Below 80 N it risks opening in flight; above 150 N the motor-eject backup
    loses authority. Adjust the ramp angle from 20° until it lands in band.
-3. Bench-test the full Vega sequence on the ground: arm → apogee servo → tether servo.
-4. Swing test or measured CG/CP check with the real, loaded rocket.
-5. Confirm rail exit on a 1.5 m rail before committing to a shorter one.
-6. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
-   Compare logged apogee to the 667 m prediction and correct Cd₀ before flying the H.
+3. Bench-test the **tether latch** separately: it carries the aft section's flopping load for
+   the whole ~25 s tumble, not just a static pull. Load it to 3× the aft section weight
+   (~13 N) with the latch closed, cycle it 20 times, confirm it neither creeps open nor jams.
+4. Bench-test the full Vega sequence on the ground: arm → apogee servo → tether servo.
+5. Swing test or measured CG/CP check with the real, loaded rocket.
+6. Confirm rail exit on a 1.5 m rail before committing to a shorter one.
+7. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
+   Compare logged apogee to the 663 m prediction and correct Cd₀ before flying the H.
