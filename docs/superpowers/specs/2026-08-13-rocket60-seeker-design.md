@@ -76,9 +76,12 @@ feature 5 mm deep, all lying on one bolt circle:
 **Bolt circle Ø37.96 mm**, deliberately *not* 120°-symmetric — the asymmetry keys the
 camera's clocking. Holes A and B continue upward as Ø6.0 mm pillars 55.5 mm long.
 
-> **ASSUMPTION A1** — this pattern is CAD-derived. The concentric Ø7.0/Ø3.3 pair could be
-> counterbores *or* bosses. **Confirm the thread type (heat-set insert / tapped / through-bolt)
-> and the head clearance before printing the neck.**
+**Confirmed by the user: the three holes carry M3 heat-set inserts** (ruthex RX-M3×5.7,
+5.7 mm engagement). The Ø7.0 concentric feature is the boss around each insert. The neck
+therefore gets three plain **Ø3.4 mm clearance holes** on the same circle, counterbored from
+below for M3 socket-head cap screws, and **M3×10** screws pull the neck up into the camera.
+That gives ~5 mm of thread engagement with a 5 mm neck lug — check the screws bottom on
+thread, not on the insert, at trial fit.
 >
 > **ASSUMPTION A2** — `Nose Cone.STEP` and `camera.STEP` use different origins, so the
 > rotational clocking between the two is inferred, not proven. Mitigated by making the neck
@@ -120,7 +123,7 @@ H182R is 203 mm and the G80T only 124 mm.
 
 | # | Part | Print | Notes |
 |---|---|---|---|
-| P1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by the 3× M3 on Ø37.96 BC; open-centre spider for the harness; skirt down into the e-bay tube. |
+| P1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by 3× **Ø3.4 clearance holes** on Ø37.96 BC (M3×10 SHCS into the camera's heat-set inserts), counterbored from below; open-centre spider for the harness; skirt down into the e-bay tube. |
 | P2 | E-bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm, door cutout 36 × 85 mm |
 | P3 | E-bay fwd bulkhead | new | Neck interface + harness pass-through |
 | P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive |
@@ -365,7 +368,7 @@ and rail exit would be unstable.
 
 | ID | Item | Impact if wrong | Resolve by |
 |---|---|---|---|
-| A1 | Camera bolt pattern is Ø37.96 BC / 52.2°, −52.2°, 180°, M3 | Neck won't bolt on | Measure the physical carrier before printing P1 |
+| ~~A1~~ | ~~Camera bolt pattern / thread type~~ | — | **Resolved:** M3 heat-set inserts (ruthex RX-M3×5.7). Neck uses Ø3.4 clearance + M3×10 SHCS. Pattern still worth a trial fit before printing downstream parts. |
 | A2 | Nosecone ↔ camera clocking | Camera faces the wrong way about the roll axis | Neck is axisymmetric; trial fit |
 | A3 | Camera assembly mass = 60 g ±20 g | CG shifts ≤4 mm; margin stays >1.2 cal | Weigh it |
 | A4 | Camera battery lives in the e-bay, harness through the neck | E-bay volume | Confirm camera voltage/current. Note the **Vega needs its own 2S+ pack (7 V min)** — a shared 1S supply is not an option |
