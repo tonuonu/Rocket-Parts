@@ -103,8 +103,15 @@ module R60_Neck(){
     }
 } // R60_Neck
 
+// Plain airframe tubes. The e-bay door cutout is added in the door task so
+// the opening and its frame are verified against each other.
+module R60_EBayTube(){ R60_Tube(R60_EBay_L); }
+module R60_ChuteTube(){ R60_Tube(R60_Chute_L); }
+
 // ============================================
 // DISPATCH
 // ============================================
 if (Render_Part==0) R60_TestRing();
 if (Render_Part==1) R60_Neck();
+if (Render_Part==2) R60_EBayTube();
+if (Render_Part==3) R60_ChuteTube();

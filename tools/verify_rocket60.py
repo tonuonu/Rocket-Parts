@@ -21,7 +21,8 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
 # genus 0, each through-hole/handle adds 1).
 #   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
 #   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
-GENUS = {0: 4, 1: 4}
+#   parts 2,3: plain tube = 1
+GENUS = {0: 4, 1: 4, 2: 1, 3: 1}
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -39,6 +40,7 @@ TESTRING_FLANGE_BAND = (-0.01, 3.5)  # part 0: OD against the nosecone base
 TESTRING_SPIGOT_BAND = (5.5, 10.01)  # part 0: coupler OD against a tube bore
 NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
 NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
+TUBE_BAND = (-0.01, 0.5)   # parts 2,3: base face carries both OD and bore
 
 
 def checks(m):
@@ -66,6 +68,18 @@ def checks(m):
             _, ring_spigot = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
+
+    for p, want_len in ((2, 130.0), (3, 130.0)):
+        if p in m:
+            tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
+            c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
+                  ("part %d OD" % p, tube_od, 60.0, 0.1),
+                  ("part %d bore" % p, tube_id, 56.8, 0.1)]
+            # A tube that will not accept the neck skirt is useless.
+            if 1 in m:
+                _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+                c += [("part %d bore clears neck skirt" % p,
+                       tube_id - skirt_od, 0.4, 0.15)]
 
     # Build volume, every part.
     for p in m:
