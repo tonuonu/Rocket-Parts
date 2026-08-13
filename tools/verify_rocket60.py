@@ -13,7 +13,7 @@ SCAD = os.path.join(REPO, "Rocket60.scad")
 
 NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
          4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
-         7: "access door", 8: "bayonet ring", 9: "fin can", 10: "fin",
+         7: "access door", 9: "fin can", 10: "fin",
          11: "motor retainer", 12: "motor spacer"}
 
 DOOR_W, DOOR_L = 36.0, 85.0

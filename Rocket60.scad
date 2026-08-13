@@ -28,7 +28,6 @@ include<R60Lib.scad>
 //  5 = E-bay aft bulkhead
 //  6 = Vega sled
 //  7 = Access door
-//  8 = Bayonet ring
 //  9 = Fin can
 // 10 = Fin
 // 11 = Motor retainer
