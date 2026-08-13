@@ -242,8 +242,21 @@ module R60_Door(){
 // This is what makes the rocket H-ready without a reprint.
 module R60_FinCan(){
     Ring_T   = 3;
-    Slot_L   = R60_Fin_Root;
-    Slot_Z   = 8;
+    // Width already got IDXtra; a line-to-line fit lengthwise over 90mm is
+    // not assemblable (layer bulge/elephant's foot/print scaling and the
+    // fin won't enter, or splits the wall going in). The fin is epoxied in,
+    // so a slip fit costs nothing - add IDXtra clearance at each end too.
+    Slot_L   = R60_Fin_Root + 2*IDXtra;
+    Slot_Z   = 8 - IDXtra;
+    // Retainer bolt circle: sits in the open annulus between the MMT
+    // (r=R60_MMT_OD/2=16) and the body ID (r=R60_Body_OD/2-R60_Wall_T=28.4),
+    // offset 60deg from the fins (0/120/240) so the 3 bolts land between
+    // the fins, not through them.
+    Boss_BC_R = 24;
+    Boss_d    = 8;      // >= 4.0 insert hole + 2x1.6 min wall (ruthex RX-M3x5.7)
+    Boss_h    = 9;       // reaches/merges into the aft centering ring (z=6..9)
+    Insert_d  = 4.0;     // ruthex RX-M3x5.7 hole per datasheet
+    Insert_h  = 6.7;     // datasheet: insert L(5.7) + 1mm
     difference(){
         union(){
             R60_Tube(R60_FinCan_L);
@@ -260,12 +273,22 @@ module R60_FinCan(){
                     translate([0,0,-Overlap])
                         cylinder(d=R60_MMT_OD-Overlap, h=Ring_T+Overlap*2);
                 }
+            // Retainer bolt bosses, aft end.
+            for (i=[0:R60_nFins-1])
+                rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
+                    translate([Boss_BC_R,0,0])
+                        cylinder(d=Boss_d, h=Boss_h);
         }
         // Fin slots, through the outer wall only.
         for (i=[0:R60_nFins-1])
             rotate([0,0,i*360/R60_nFins])
                 translate([R60_MMT_OD/2, -R60_Fin_T/2-IDXtra/2, Slot_Z])
                     cube([R60_Body_OD, R60_Fin_T+IDXtra, Slot_L]);
+        // Retainer bolt bosses' blind inserts, cut from the aft face.
+        for (i=[0:R60_nFins-1])
+            rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
+                translate([Boss_BC_R, 0, -Overlap])
+                    cylinder(d=Insert_d, h=Insert_h+Overlap);
     }
 } // R60_FinCan
 
@@ -283,10 +306,17 @@ module R60_Fin(){
 // Aft retainer. Screws to the fin can and traps the motor's aft rim.
 module R60_MotorRetainer(){
     T = 6;
+    // Same bolt circle and 60deg fin offset as R60_FinCan()'s bosses.
+    Bolt_BC_R = 24;
+    Bolt_d    = 3.4;   // M3 clearance
     difference(){
         cylinder(d=R60_Body_OD, h=T);
         translate([0,0,-Overlap])
             cylinder(d=R60_MMT_ID-2.5, h=T+Overlap*2);
+        for (i=[0:R60_nFins-1])
+            rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
+                translate([Bolt_BC_R, 0, -Overlap])
+                    cylinder(d=Bolt_d, h=T+Overlap*2);
     }
 } // R60_MotorRetainer
 

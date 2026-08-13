@@ -39,23 +39,28 @@ DOOR_GAP = 0.35   # per side
 GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
 #   part 10: flat plate, no holes = 0
 GENUS[10] = 0
-#   part 9: fin can. NOT predicted -- rendered first (OpenSCAD stderr:
-#   `Genus: 4`), then visually confirmed via top/bottom/isometric/half-
-#   section PNG renders (openscad --render --projection=ortho): the MMT
-#   bore is a genuine through-hole (top and bottom faces show the same
-#   annulus+hole), and each of the 3 fin slots is a real window clean
-#   through the outer wall (visible as an opening onto the tube's interior
-#   in the isometric view, and cut on both sides in the half-section). 1
-#   (MMT bore) + 3 (fin slots) = 4. The slot's inner face sits exactly at
-#   x=R60_MMT_OD/2, tangent to the MMT wall with zero overlap; confirmed
-#   this did not breach the MMT (render completed with CGAL Status:
-#   NoError, and "MMT bore takes 29mm motor" below reads exactly 29.300,
-#   not fattened or thinned by a stray cut). The two other centering rings
-#   (mid, forward) are outside the slot's Z-span and add no extra handles.
+#   part 9: fin can, RE-DERIVED after adding the retainer bolt bosses (was
+#   4 before the bosses too, but re-checked rather than carried forward, per
+#   instruction). Rendered first (OpenSCAD stderr: `Genus: 4`, unchanged),
+#   then visually re-confirmed via fresh top/bottom/isometric PNG renders:
+#   top face (forward end) shows only the plain MMT-bore ring, no boss
+#   holes visible there at all; bottom face (aft end) shows that same ring
+#   PLUS 3 small dots at the bolt circle -- present on one face, absent
+#   from the other, confirming the boss inserts are blind pockets, not
+#   through-holes, so they add zero handles. The MMT bore (open top-to-
+#   bottom, confirmed by the identical hole on both end faces) and the 3
+#   fin slots (confirmed as real through-windows previously) are unchanged
+#   by this edit. 1 (MMT bore) + 3 (fin slots) + 0 (3 blind boss inserts)
+#   = 4.
 GENUS[9] = 4
-#   part 11: retainer ring = 1
-#   part 12: spacer tube = 1
-GENUS[11] = 1
+#   part 11: retainer, RE-DERIVED after adding the 3 bolt clearance holes
+#   (was 1 before them). Rendered first (OpenSCAD stderr: `Genus: 4`), then
+#   visually confirmed via top/bottom/isometric PNG renders: unlike part
+#   9's blind bosses, all 3 bolt holes appear as see-through openings on
+#   BOTH the top and bottom face at matching positions -- genuine through-
+#   holes, not blind pockets. 1 (centre bore) + 3 (through bolt holes) = 4.
+GENUS[11] = 4
+#   part 12: spacer tube = 1 (unchanged, not touched by this round)
 GENUS[12] = 1
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
@@ -80,13 +85,22 @@ BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
 # (32/29.3), so one band yields both measurements: bore() returns
 # (min_dia, max_dia) = (MMT bore, fin can OD).
 FINCAN_BAND = (-0.01, 0.5)
-# Slot Z-extent inside R60_FinCan() is Slot_Z=8 .. Slot_Z+Slot_L=8+90=98 (not
-# exposed as R60Lib constants). The z=98 edge loop is where the slot cut
-# meets the outer wall; filtering x>0 isolates the i=0 slot (the other two
-# sit at 120/240deg, all x<0 there), and it's clear of both the aft
-# centering ring (z=6..9) and the mid ring (z=114), so nothing else
-# contaminates the loop. See FINCAN_SLOT_WIDTH below.
-FINCAN_SLOT_TOP_Z = 98.0
+# Slot Z-extent inside R60_FinCan() is Slot_Z=8-IDXtra .. Slot_Z+Slot_L=
+# 7.8..98.2 (not exposed as R60Lib constants; IDXtra=0.2 is the length
+# clearance added at each end, so the slot is 90.4mm for a 90mm root). The
+# z=98.2 edge loop is where the slot cut meets the outer wall; filtering
+# x>0 isolates the i=0 slot (the other two sit at 120/240deg, all x<0
+# there), and it's clear of both the aft centering ring (z=6..9) and the
+# mid ring (z=114), so nothing else contaminates the loop.
+# See fincan_slot_width()/fincan_slot_length() below.
+FINCAN_SLOT_TOP_Z = 98.2
+# Half-width of the slot's cut planes (R60_Fin_T/2 + IDXtra/2 = 2.0+0.1).
+# Used to isolate the slot's two long vertical edges (which run the full
+# 7.8..98.2 Z-span, as straight lines with vertices ONLY at their two
+# endpoints -- confirmed on a standalone probe before use here) from the
+# tube's own end-cap boundary circles at z=0/228, which pass through the
+# same (x,y) coordinates and would otherwise contaminate a length reading.
+FINCAN_SLOT_HALF_W = 2.1
 # Part 11 is a plain 6mm disc (no cuts between z=0 and z=6), so it has
 # vertices only at those two faces. The brief's band, (0.5, 3.5), lands
 # mid-span with no edge loop there and made bore() raise "no geometry in Z
@@ -106,6 +120,24 @@ def fincan_slot_width(stl):
         raise RuntimeError(
             "no geometry at fin can slot edge loop z=%.1f" % FINCAN_SLOT_TOP_Z)
     return 2 * max(abs(y) for y in ys)
+
+
+def fincan_slot_length(stl):
+    """Measured length (Z-span) of the un-rotated (i=0) fin slot. The
+    slot's two long vertical edges run the full Slot_Z..Slot_Z+Slot_L span
+    as straight lines -- confirmed on a standalone probe to carry vertices
+    ONLY at their two endpoints, nowhere mid-span (rule 3). Filtering to
+    |y|==FINCAN_SLOT_HALF_W isolates those two edges; x>0 isolates the i=0
+    slot; excluding z<=1 and z>=227 drops the tube's own end-cap boundary
+    circles, which pass through the same (x,y) at z=0/228 and would
+    otherwise be mistaken for the slot's edges (confirmed empirically --
+    the naive filter without this exclusion returns the full 228mm)."""
+    zs = [z for tri in _tris(stl) for (x, y, z) in tri
+          if abs(abs(y) - FINCAN_SLOT_HALF_W) <= 0.01 and x > 0
+          and 1 < z < 227]
+    if not zs:
+        raise RuntimeError("no geometry at fin can slot side edges")
+    return max(zs) - min(zs)
 
 
 def checks(m):
@@ -192,6 +224,15 @@ def checks(m):
         slot_w = fincan_slot_width(a(9, "stl"))
         c += [("fin slot width fits fin thickness",
                slot_w - a(10, "height"), 0.2, 0.1)]
+        # Length clearance added after a coordinator review: the original
+        # slot was line-to-line with the fin's 90mm root chord (0 printed
+        # clearance over 90mm -- not assemblable). Same mesh-against-mesh
+        # method as the width check: fin root chord read from part 10's own
+        # STL, slot length read from part 9's, no shared inputs.
+        slot_l = fincan_slot_length(a(9, "stl"))
+        fin_chord = a(10, "xmax") - a(10, "xmin")
+        c += [("fin slot length fits fin root chord",
+               slot_l - fin_chord, 0.4, 0.1)]
 
     if 12 in m:
         # Default Motor_Class=0 is the G80T: 223mm MMT - 124mm motor = 99mm.
