@@ -4,7 +4,7 @@
 A part that does not fit still renders cleanly, so every mating dimension
 is measured from the STL rather than inferred from parameters.
 """
-import os, sys, tempfile
+import os, subprocess, sys, tempfile
 
 from scad_verify import REPO, render, measure, bore, volume
 
@@ -94,7 +94,13 @@ def main(argv):
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
             genus = render(SCAD, p, out)
-        except RuntimeError as e:
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            # FIXED (defect 3c): consolidation gave render() a 900s
+            # subprocess timeout it never had before, but this handler
+            # only caught RuntimeError -- a slow render now raises
+            # subprocess.TimeoutExpired instead, and this module didn't
+            # even import subprocess to name it in an except clause. A
+            # slow render died on a raw traceback rather than this FAIL.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
             return 1
         m[p] = measure(out)

@@ -5,7 +5,7 @@ A part that does not fit still renders cleanly, so every mating dimension is
 measured from the STL rather than inferred from the parameter that was
 supposed to produce it.
 """
-import math, os, sys, tempfile
+import math, os, subprocess, sys, tempfile
 
 from scad_verify import REPO, render, measure, bore, volume, _tris
 
@@ -590,10 +590,19 @@ def checks(m):
         c += [("part %d fits %.0fmm Z" % (p, MAX_Z),
                m[p]["height"], min(m[p]["height"], MAX_Z), 0.01)]
 
-    # Topology, every part with a recorded expectation.
+    # Topology, every part with a recorded expectation. FIXED (defect 3a):
+    # a missing genus (render() found no "Genus:" line -- a version
+    # change, a quieter render) used to silently DROP the check via
+    # `if m[p].get("genus") is not None`, so a genus regression on that
+    # part produced no FAIL at all and the run still printed "0 check(s)
+    # failed". A missing genus is now itself a loud failure (actual=nan,
+    # which is never <= any tolerance) instead of a silently-skipped
+    # check.
     for p in m:
-        if m[p].get("genus") is not None and p in GENUS:
-            c += [("part %d genus" % p, m[p]["genus"], GENUS[p], 0)]
+        if p in GENUS:
+            g = m[p].get("genus")
+            c += [("part %d genus" % p,
+                   g if g is not None else float("nan"), GENUS[p], 0)]
 
     return c
 
@@ -604,7 +613,16 @@ def main(argv):
     tmp = tempfile.mkdtemp(prefix="r60-")
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
-        g = render(SCAD, p, out)
+        # FIXED (defect 3c): render() carries a 900s subprocess timeout
+        # (scad_verify.py) but this loop used to catch nothing at all, so
+        # either a failed render (RuntimeError) or a slow one
+        # (subprocess.TimeoutExpired) died on a raw traceback instead of a
+        # clear FAIL. Same fix as verify_nosecone.py.
+        try:
+            g = render(SCAD, p, out)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
+            return 1
         m[p] = measure(out, g)
         print("rendered %-2d %-20s  %.2f x %.2f x %.2f mm  %.1f cm3"
               % (p, NAMES.get(p, "?"), m[p]["xmax"] - m[p]["xmin"],
