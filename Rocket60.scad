@@ -128,6 +128,17 @@ module R60_EBayTube(){
     Sw_Margin = 3;   // clear of both the door top and the skirt start
     Sw_Z0 = Door_Z1 + Sw_Margin + Sw_d/2;
     Sw_Z1 = R60_EBay_L - R60_Neck_Skirt_L - Sw_Margin - Sw_d/2;
+    // Defect 2d: this window is only Sw_Z1-Sw_Z0 wide (0.5mm as currently
+    // dimensioned) -- (Sw_Z0+Sw_Z1)/2 below returns a number regardless of
+    // sign, so if a future change to R60_Door_Open_H/R60_Neck_Skirt_L/
+    // R60_EBay_L ever inverts it (Sw_Z1 < Sw_Z0), the render still
+    // succeeds and the switch silently lands back inside the neck skirt
+    // -- the exact defect the derivation above replaced. Assert instead
+    // of letting that pass silently.
+    assert(Sw_Z1 > Sw_Z0,
+        str("R60_EBayTube: arming switch Z window is empty/inverted (Sw_Z0=",
+            Sw_Z0, " Sw_Z1=", Sw_Z1,
+            ") -- door/skirt/e-bay length no longer leaves the switch clear of both"));
     Sw_Z  = (Sw_Z0 + Sw_Z1)/2;
     // Door boss positions -- R60_Door_Hole_Clear outside the aperture's
     // own edge on every side, matching R60_Door()'s own hole layout
@@ -143,8 +154,30 @@ module R60_EBayTube(){
     // thickens the wall INWARD, into what is normally open bore, giving
     // the pilot hole real material to sit in without disturbing the
     // exterior surface the cover mates to.
+    //
+    // Door_Boss_Reach_R (defect 2a): the boss's own OUTER CAP must stop
+    // short of the true OD, not reach it. A round boss's flat end cap
+    // bulges TANGENTIALLY by its own radius (Door_Boss_d/2) as well as
+    // axially -- even with the cap's AXIS ending exactly at
+    // R60_Body_OD/2, a point on the cap's rim is
+    // sqrt(r_axis^2+(Door_Boss_d/2)^2) from the tube's own Z axis, past
+    // R60_Body_OD/2 (measured on a render with the axis at
+    // R60_Body_OD/2+Overlap: dmax 60.40, not the tube's own 60.00 -- the
+    // door cover then rocks on the boss tips instead of seating flat,
+    // exactly the failure this module's own comment above claims to have
+    // avoided). The boss does not need to reach the OD at all: the wall
+    // from R60_Body_ID/2 to R60_Body_OD/2 is already solid everywhere
+    // except the door aperture cut itself, so the boss only has to
+    // thicken the wall INWARD of the ID and then fuse into that
+    // already-solid material -- same margin idiom as the Vega rails'
+    // Rail_Overlap_R below.
     Door_Boss_d = 6;
     Door_Boss_h = 5;
+    Door_Boss_Reach_R = R60_Body_ID/2 + 1.2;   // fuses into the
+                                                 // already-solid wall, well
+                                                 // short of the OD (30.20mm
+                                                 // even at the cap's own
+                                                 // tangential bulge)
     Door_Pilot_d = 2.0;  // self-tap pilot, M2.5 into PETG
     Door_Pilot_Depth = Door_Boss_h - 1.0;  // blind -- leaves 1mm backing
                                              // before the boss's own inward
@@ -238,7 +271,9 @@ module R60_EBayTube(){
                 rotate([0,0,Door_Boss_Az(x)])
                     translate([R60_Body_OD/2-Door_Boss_h, 0, z])
                         rotate([0,90,0])
-                            cylinder(d=Door_Boss_d, h=Door_Boss_h+Overlap, $fn=32);
+                            cylinder(d=Door_Boss_d,
+                                     h=Door_Boss_Reach_R-(R60_Body_OD/2-Door_Boss_h),
+                                     $fn=32);
         }
         translate([0,0,Door_Z0])
             translate([-R60_Door_Open_W/2,0,0])
@@ -753,11 +788,19 @@ module R60_SpringCarrier(){
         // Tether relief notch through the forward rim (the OD-to-CB_D
         // annulus, the only material at z=0 outside the already-open
         // counterbore), at R60_Tether_Az (+Y) matching
-        // R60_EBayAftBulkhead()'s skirt channel exactly, so the cord
-        // continues straight from the skirt into this carrier's
-        // counterbore where the latch (part 13) sits.
-        translate([-4, CB_D/2-0.5, -Overlap])
-            cube([8, OD/2-CB_D/2+1, 5+Overlap]);
+        // R60_EBayAftBulkhead()'s skirt channel -- defect 2c: this notch
+        // used to be a hardcoded 8mm wide while the skirt channel it must
+        // match DERIVES as R60_TetherLug_W + 2*R60_Tether_Clear = 9.2mm,
+        // necking the cord from 9.2 down to 8.0mm and stepping 1.2mm
+        // outward in radius at the glue joint despite the comment's claim
+        // they "match exactly". Same formula as
+        // R60_EBayAftBulkhead()'s Tether_Notch_W, not a hand-matched
+        // copy -- the whole point of the R60_TetherLug_* constants (see
+        // R60Lib.scad) is that this notch be derived, never a second,
+        // independently-typed number that can silently drift.
+        Notch_W = R60_TetherLug_W + 2*R60_Tether_Clear;
+        translate([-Notch_W/2, CB_D/2-0.5, -Overlap])
+            cube([Notch_W, OD/2-CB_D/2+1, 5+Overlap]);
         // Ball pockets: radial slots through the wall so a ball can travel
         // from fully engaged (inner) to retracted (outer), same hull-of-
         // two-spheres pattern as SpringThingBooster.scad's
@@ -935,12 +978,20 @@ module R60_MotorSpacer(){
 // counterbore rim, all at the same R60_Tether_Az. See those modules'
 // comments.
 module R60_TetherLatch(){
-    // Base_L grew from 26 to fit the new mounting hole spacing
-    // (R60_TetherLatch_HoleX*2 + a 2mm edge margin each side, same margin
-    // the original 26mm/+-11mm layout used) -- see R60Lib.scad's
-    // R60_TetherLatch_HoleX comment and R60_EBayAftBulkhead()'s insert
-    // holes, which this must keep matching.
-    Base_L = 2*(R60_TetherLatch_HoleX+2); Base_W = 16; Base_T = 4;
+    // Base_L (defect 2b): the old "2mm edge margin" was hole-CENTRE-to-
+    // edge, not wall thickness. With a Ø3.4 mounting hole (radius 1.7)
+    // centred at x=R60_TetherLatch_HoleX=16, the hole itself already
+    // reaches to x=17.7 -- on a 36mm base (edge at x=18) that left only
+    // 0.3mm of solid wall outboard of the hole, below one extrusion width
+    // (measured on the rendered mesh). Same defect class as
+    // R60_SpringCarrier()'s ball pockets (Ball_Wall_Min): derive Base_L
+    // from a STATED minimum wall beyond the hole's own EDGE, not a
+    // hand-picked centre-to-edge margin. Mount_Wall_Min matches
+    // R60_Wall_T, the airframe's own established solid-wall figure.
+    Mount_Hole_d  = 3.4;   // M3 clearance
+    Mount_Wall_Min = R60_Wall_T;   // 1.6mm -- solid wall beyond the hole edge
+    Base_L = 2*(R60_TetherLatch_HoleX + Mount_Hole_d/2 + Mount_Wall_Min);
+    Base_W = 16; Base_T = 4;
     Pin_d  = 3.0 + IDXtra;
     Post_H = 12;
     difference(){
@@ -964,7 +1015,7 @@ module R60_TetherLatch(){
         // is R60_TetherLatch_HoleX (R60Lib.scad), matching
         // R60_EBayAftBulkhead()'s insert holes exactly.
         for (x=[-R60_TetherLatch_HoleX, R60_TetherLatch_HoleX])
-            translate([x,0,-Overlap]) cylinder(d=3.4, h=Base_T+Overlap*2);
+            translate([x,0,-Overlap]) cylinder(d=Mount_Hole_d, h=Base_T+Overlap*2);
     }
 } // R60_TetherLatch
 
