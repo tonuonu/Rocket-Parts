@@ -517,7 +517,16 @@ def barrowman():
     CNf *= (1 + R/(span_exp+R))
     Xf = S_finLE_exp + sweep_exp*(Cr_exp+2*Ct_exp)/(3*(Cr_exp+Ct_exp)) + ((Cr_exp+Ct_exp) - Cr_exp*Ct_exp/(Cr_exp+Ct_exp))/6
     CN = CNn+CNf
-    return (CNn*Xn + CNf*Xf)/CN, CN, CNf
+    # Xf returned (8th review, item 2/coordinator follow-up): the design
+    # spec publishes "CN(fins) = ... at ~493mm" as this fin panel's own
+    # Barrowman application station, but nothing printed it for a doc-sync
+    # check to verify against -- so it silently drifted three(+) rounds of
+    # R60_EBay_L/span growth behind. Verified by cross-check: CP recomputed
+    # from (CNn*Xn + CNf*Xf)/CN using this Xf matches the model's own
+    # printed CP exactly (452.99 both ways) -- Xf=~493mm does NOT
+    # (recomputes CP=359.5, nowhere near the model's real 453.0), so the
+    # spec's figure, not this one, was the stale side.
+    return (CNn*Xn + CNf*Xf)/CN, CN, CNf, Xf
 
 # ---------------- flutter (NAR/TIR-33 form) ----------------
 # Computed on the EXPOSED panel, not the buried planform: the buried root
@@ -535,7 +544,7 @@ def flutter_Vf():
     num = 2*(AR_exp+2)*tc_exp**3
     return a_s*math.sqrt(G*num/denom), AR_exp, lam_exp, tc_exp
 
-CP, CN, CNf = barrowman()
+CP, CN, CNf, Xf = barrowman()
 Vf, AR_exp, lam_exp, tc_exp = flutter_Vf()
 print(f"Airframe: OD {D} mm, wall {WALL} mm, overall length {OVERALL_LEN:.0f} mm "
       f"(L/D {OVERALL_LEN/D:.1f}) -- {TOTAL:.0f} mm of tube/fin-can + "
@@ -543,7 +552,7 @@ print(f"Airframe: OD {D} mm, wall {WALL} mm, overall length {OVERALL_LEN:.0f} mm
 print(f"Fins: root {Cr:.0f}/tip {Ct:.0f}/span {span:.0f}/sweep {sweep:.0f}mm planform "
       f"-> exposed root {Cr_exp:.1f}/tip {Ct_exp:.1f}/span {span_exp:.1f}/sweep {sweep_exp:.1f}mm "
       f"(AR {AR_exp:.2f}, t/c {tc_exp:.3f})")
-print(f"CN_fins {CNf:.2f}  CP = {CP:.1f} mm from tip  (total CN {CN:.2f})")
+print(f"CN_fins {CNf:.2f} at {Xf:.1f}mm  CP = {CP:.1f} mm from tip  (total CN {CN:.2f})")
 print(f"Flutter Vf = {Vf:.0f} m/s\n")
 
 # Stability gate (coordinator ruling, 4th review, after the full station
@@ -724,6 +733,16 @@ fastest_v = vmaxes[fastest_mo]
 print(f"   Fastest: {fastest_mo} at {fastest_v:.0f} m/s -> 3x = {3*fastest_v:.0f} m/s")
 print(f"   Vf = {Vf:.0f} m/s  ({bad(Vf >= 3*fastest_v)}, "
       f"{Vf/(3*fastest_v):.2f}x the 3x-speed floor)")
+# Per-motor ratios (coordinator follow-up, same round as finding 2): the
+# design spec publishes Vf's own ratio against EACH motor's Vmax
+# individually ("4.6x the G80T's ... Vmax and 4.9x the H135W's ..."), not
+# just the fastest-case 3x-floor comparison above -- nothing printed those
+# for a doc-sync check to verify, so the spec's own figures (mislabelled:
+# its "4.6x" is actually H182R's ratio, not G80T's -- G80T's real ratio is
+# ~7.3x) went unchecked. Printed here, all three, so they can be.
+print(f"   Per-motor: G80T {Vf/vmaxes['G80T-14A']:.1f}x, "
+      f"H182R {Vf/vmaxes['H182R-14A']:.1f}x, "
+      f"H135W {Vf/vmaxes['H135W-14A']:.1f}x")
 
 if _bad:
     print(f"\n{_bad} check(s) failed")

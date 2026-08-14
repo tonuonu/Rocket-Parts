@@ -56,7 +56,7 @@ def run_model():
 
 def section(out, header, next_header):
     """Slice of `out` starting right after `header` and ending right
-    before `next_header` (or end of string) -- the model prints THREE
+    before `next_header` (or end of string) -- the model prints several
     tables that all start their rows with the same 4 motor names, so a
     plain motor-name regex applied to the whole output is ambiguous
     (matched the T/W table's own liftoff-mass column as if it were the
@@ -68,17 +68,38 @@ def section(out, header, next_header):
 
 
 def model_numbers(out):
-    """(liftoff_g, margin_cal, rail_exit_ms) per motor, read off the
-    model's own two summary tables -- not re-derived, just parsed, so this
-    script can never silently drift from whatever the model actually
-    prints the way the docs themselves did."""
+    """Per-motor figures read off the model's own summary tables/print
+    lines -- not re-derived, just parsed, so this script can never
+    silently drift from whatever the model actually prints the way the
+    docs themselves did.
+
+    Coordinator follow-up (8th review): this used to capture only
+    liftoff_g/margin_cal/rail_exit_ms -- every OTHER number hand-corrected
+    in the docs-sync commit (CG loaded/burnout, margin burnout, the fin's
+    Barrowman application station, the per-motor flutter ratios) was
+    still just as unguarded as the numbers finding 3b fixed, because
+    nothing parsed them. Extended to cover all of it, plus Vf/Xf/vmax
+    themselves as standalone entries (`flutter` key) since they are not
+    per-motor."""
     nums = {}
     margin_tbl = section(out, "marg_bo", "\n\n")
     for m in re.finditer(
-            r"^(G80T-14A|H182R-14A|H135W-14A)\s+(\d+)\s+[\d.]+\s+([\d.]+)\s+",
+            r"^(G80T-14A|H182R-14A|H135W-14A)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+"
+            r"(\d+)\s+([\d.]+)\s+([\d.]+)\s+",
             margin_tbl, re.M):
         nums[m.group(1)] = {"liftoff_g": int(m.group(2)),
-                             "margin_cal": float(m.group(3))}
+                             "cg_mm": float(m.group(3)),
+                             "margin_cal": float(m.group(4)),
+                             "burnout_g": int(m.group(5)),
+                             "cg_bo_mm": float(m.group(6)),
+                             "marg_bo_cal": float(m.group(7))}
+    # T/W table -- Vmax per motor, needed to check the flutter section's
+    # own "~131 m/s Vmax"-style figures below.
+    tw_tbl = section(out, "v@1m rail", "\n\n")
+    for m in re.finditer(
+            r"^(G80T-14A|H182R-14A|H135W-14A)\s+\d+\s+[\d.]+\s+[\d.]+\s+(\d+)\s+",
+            tw_tbl, re.M):
+        nums.setdefault(m.group(1), {})["vmax_ms"] = int(m.group(2))
     # (8th review, finding 3a) the model's rail-exit line has THREE shapes,
     # not one: a clean exit ("16.2 m/s   (OK)"), a genuine-but-slow exit
     # ("12.1 m/s   (FAIL - want >15 m/s)"), or a burnout that never left
@@ -106,6 +127,27 @@ def model_numbers(out):
         d = nums.setdefault(m.group(1), {})
         d["rail_exit_ms"] = float(m.group(2))
         d["rail_burnout"] = True
+
+    # Flutter/Barrowman figures (coordinator follow-up, 8th review): the
+    # spec's own "CN(fins) = ... at ~493mm" and "4.6x the G80T's ... Vmax"
+    # sentences were never checked against anything -- both turned out to
+    # be stale (Xf recomputes to ~626mm from the model's own exposed-panel
+    # geometry, self-consistently reproducing the model's own printed CP;
+    # the "4.6x" figure is actually H182R's ratio, not G80T's, whose real
+    # ratio is ~7.3x). Not per-motor (Xf/Vf are single, whole-airframe
+    # figures), so stored under their own top-level keys, not nums[motor].
+    fx = re.search(r"CN_fins [\d.]+ at ([\d.]+)mm", out)
+    if fx:
+        nums["Xf_mm"] = float(fx.group(1))
+    vf = re.search(r"Flutter Vf = (\d+) m/s", out)
+    if vf:
+        nums["Vf_ms"] = int(vf.group(1))
+    pm = re.search(
+        r"Per-motor: G80T ([\d.]+)x, H182R ([\d.]+)x, H135W ([\d.]+)x", out)
+    if pm:
+        nums["flutter_ratio"] = {"G80T-14A": float(pm.group(1)),
+                                  "H182R-14A": float(pm.group(2)),
+                                  "H135W-14A": float(pm.group(3))}
     return nums
 
 
@@ -124,26 +166,40 @@ def main():
     # recognises) surfaced 40 lines further down as a bare KeyError on
     # g80t["rail_exit_ms"], not this loud, actionable RuntimeError. Every
     # future parse gap in ANY of the three fields now fails the same way.
+    # Extended (coordinator follow-up) to also require the columns/
+    # flutter figures the checks below now depend on.
+    REQUIRED_PER_MOTOR = ("liftoff_g", "cg_mm", "margin_cal", "burnout_g",
+                           "cg_bo_mm", "marg_bo_cal", "rail_exit_ms",
+                           "vmax_ms")
     for mo in ("G80T-14A", "H182R-14A", "H135W-14A"):
-        if (mo not in nums or "liftoff_g" not in nums[mo]
-                or "margin_cal" not in nums[mo] or "rail_exit_ms" not in nums[mo]):
+        if mo not in nums or any(k not in nums[mo] for k in REQUIRED_PER_MOTOR):
             raise RuntimeError("could not parse %s out of rocket60_model.py's "
                                 "own output -- its print format changed; "
                                 "update model_numbers()'s own regex" % mo)
+    for k in ("Xf_mm", "Vf_ms", "flutter_ratio"):
+        if k not in nums:
+            raise RuntimeError("could not parse %s out of rocket60_model.py's "
+                                "own output -- its print format changed; "
+                                "update model_numbers()'s own regex" % k)
 
     g80t, h182r, h135w = nums["G80T-14A"], nums["H182R-14A"], nums["H135W-14A"]
     cal = lambda d: "%.2f cal" % d["margin_cal"]
+    cal_bo = lambda d: "%.2f cal" % d["marg_bo_cal"]
     grams = lambda d: "%d g" % d["liftoff_g"]
+    cg = lambda d: "%.1f mm" % d["cg_mm"]
+    cg_bo = lambda d: "%.1f mm" % d["cg_bo_mm"]
+    ratio_needle = lambda mo, label: "%.1f× the %s's ~%d m/s Vmax" % (
+        nums["flutter_ratio"][mo], label, nums[mo]["vmax_ms"])
 
     # The specific published figures this check exists to keep honest --
     # exact strings, so a doc that still says "871 g" or "1.45 cal" after
     # the model has moved on fails here instead of surviving to print.
-    # Per (doc, motor): which of {mass, margin, rail-exit} that doc
-    # actually publishes for that motor -- NOT every doc states every
-    # figure for every motor (R60-PrintSettings.md, for instance, never
-    # states the H182R's own liftoff mass, only its margin), so requiring
-    # a figure absent from a doc's own prose BY DESIGN would be a false
-    # failure, not a real one.
+    # Per (doc, motor): which of {mass, margin, rail-exit, CG, flutter}
+    # that doc actually publishes for that motor -- NOT every doc states
+    # every figure for every motor (R60-PrintSettings.md, for instance,
+    # never states the H182R's own liftoff mass, only its margin), so
+    # requiring a figure absent from a doc's own prose BY DESIGN would be
+    # a false failure, not a real one.
     CHECKS = {
         "R60-PrintSettings.md": [
             ("G80T-14A liftoff/margin/rail-exit",
@@ -157,19 +213,47 @@ def main():
             ("H182R-14A liftoff/margin", (grams(h182r), cal(h182r))),
             ("H135W-14A liftoff/margin", (grams(h135w), cal(h135w))),
         ],
-        # 8th review, finding 3b.
+        # 8th review, finding 3b; CG/burnout/flutter columns added per
+        # coordinator follow-up in the same review round -- this is now
+        # the one doc that publishes the FULL per-motor table plus the
+        # flutter section, so it is the one doc with the full check list.
         "docs/superpowers/specs/2026-08-13-rocket60-design.md": [
             ("G80T-14A liftoff/margin/rail-exit",
              (grams(g80t), cal(g80t), "%.1f m/s" % g80t["rail_exit_ms"])),
+            ("G80T-14A CG loaded/burnout", (cg(g80t), cg_bo(g80t))),
+            ("G80T-14A margin burnout", (cal_bo(g80t),)),
             ("H182R-14A margin", (cal(h182r),)),
+            ("H182R-14A CG loaded/burnout", (cg(h182r), cg_bo(h182r))),
+            ("H182R-14A margin burnout", (cal_bo(h182r),)),
             ("H135W-14A margin", (cal(h135w),)),
+            ("H135W-14A CG loaded/burnout", (cg(h135w), cg_bo(h135w))),
+            ("H135W-14A margin burnout", (cal_bo(h135w),)),
+            ("flutter: CN(fins) application point",
+             ("~%d mm" % round(nums["Xf_mm"]),)),
+            ("flutter: per-motor ratios",
+             (ratio_needle("G80T-14A", "G80T"),
+              ratio_needle("H182R-14A", "H182R"),
+              ratio_needle("H135W-14A", "H135W"))),
         ],
     }
 
     for path in DOCS:
-        if not os.path.exists(path):
-            continue
         rel = os.path.relpath(path, REPO)
+        if not os.path.exists(path):
+            # Coordinator follow-up (8th review): this used to `continue`
+            # -- a missing document silently dropped out of the report
+            # with the run still exiting 0, the SAME silent-skip shape as
+            # finding 3 (a check that should be able to fail instead
+            # produces no row at all). A doc that gets renamed or moved
+            # stops being checked while this gate keeps reporting success
+            # -- indistinguishable, to anything reading the exit code,
+            # from every figure in it still being in sync. Every path in
+            # DOCS is a repo file this gate is supposed to guarantee
+            # agreement for; one that cannot be found is that guarantee
+            # already broken, not a reason to skip checking it.
+            print("%s %s: file not found -- cannot verify it agrees "
+                  "with the model" % (bad(False), rel))
+            continue
         for label, needles in CHECKS.get(rel, []):
             missing = doc_has(path, *needles)
             ok = not missing

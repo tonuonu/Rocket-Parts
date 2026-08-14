@@ -418,7 +418,7 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 35.1 mm, measured at the body OD, r=30mm — see `tools/rocket60_model.py`'s
 `exposed_geom()`), 3 fins:
 
-- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.73 at ~493 mm
+- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.73 at ~626 mm
 - **CP = 453.0 mm** from the nose tip (shifted +11.9 mm from 440.5 last
   round: the fin can's own station moves with R60_EBay_L (165->177mm,
   critical 3) and the neck-flange length fix (should-fix 12), and only
@@ -522,9 +522,13 @@ threatens here, and the model's own liftoff figure carries real
 uncertainty until the assembled rocket is weighed.
 
 **Fin flutter:** exposed-panel AR 0.87, λ 0.45, t/c 0.071, G ≈ 0.5 GPa for
-printed PETG → **Vf ≈ 955 m/s**, 4.6× the G80T's ~131 m/s Vmax and 4.9×
-the H135W's ~195 m/s, and 1.52× the required 3× floor against the
-fastest case (H182R-14A, ~210 m/s Vmax → 629 m/s floor). Vf dropped from
+printed PETG → **Vf ≈ 955 m/s**:
+
+- 7.3× the G80T's ~131 m/s Vmax
+- 4.6× the H182R's ~209 m/s Vmax (the fastest case, 1.52× the required 3× floor → 627 m/s)
+- 4.9× the H135W's ~194 m/s Vmax
+
+Vf dropped from
 the (incorrectly-computed, buried-root) original ~850 m/s claim, but the
 low aspect ratio this planform is built around still buys a comfortable
 margin at the new span. Do not make the fins thinner, or grow the span
