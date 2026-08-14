@@ -40,9 +40,7 @@ DOOR_HOLE_CLEAR = 3.0
 #
 # part 0: open-centre ring (1) + 3 bolt holes (3) = 4
 # part 1: open-centre spider (1) + 3 bolt holes (3) = 4
-# part 4: disc + harness bore (1) = 1
-# part 6: flat sled, 3 standoff bores (3) = 3
-GENUS = {0: 4, 1: 4, 4: 1, 6: 3}
+GENUS = {0: 4, 1: 4}
 #   part 10 is DELIBERATELY not in GENUS: it renders as a convex PolySet
 #   (OpenSCAD reports "Convex: yes", no "Genus:" line at all -- flat
 #   2D-extruded stock, no holes), and that is true every time, not an
@@ -52,6 +50,22 @@ GENUS = {0: 4, 1: 4, 4: 1, 6: 3}
 #   it back with a loud-failure check would just be a permanent, never-
 #   fixable FAIL for a part that was never wrong. See main()/checks()'s
 #   genus loop for the defect 3a fix itself.
+
+#   part 4: forward bulkhead. Started at 1 (disc + harness bore). RE-
+#   DERIVED (6th review, finding 1): 2 ruthex insert holes added for the
+#   Vega sled's forward foot, both BLIND (bored from the boss's own new
+#   outer face partway into the disc, never breaking through the far
+#   side) -- a blind pocket adds no handle, so the count is unchanged;
+#   rendered, still `Genus: 1`, confirmed.
+GENUS[4] = 1
+
+#   part 6: Vega sled. Started at 3 (flat plate, 3 standoff bores).
+#   RE-DERIVED (6th review, finding 1): the rail/zip-tie retention scheme
+#   is retired (see R60Lib.scad's own "Sled retention" comment) --
+#   REPLACED by 2 mounting feet, 2 M3 through-holes each (4 total, all the
+#   way through the pad, unlike the bulkheads' own blind inserts), so
+#   +4 handles; rendered, `Genus: 7` (3+4), confirmed.
+GENUS[6] = 7
 
 #   part 2: e-bay tube. Started at 3 (tube(1) + door opening(1) + switch
 #   hole(1)). RE-DERIVED (defect 1d/1g fix) after 2 zip-tie slots were
@@ -76,8 +90,13 @@ GENUS = {0: 4, 1: 4, 4: 1, 6: 3}
 #   count to the expected +1-per-hole. RE-DERIVED again (5th review,
 #   finding 1): the arming switch hole moved off this tube entirely, onto
 #   the access door (R60_Door()'s own module comment) -- one fewer
-#   through-hole here, 7-1=6; rendered, `Genus: 6`.
-GENUS[2] = 6
+#   through-hole here, 7-1=6; rendered, `Genus: 6`. RE-DERIVED again (6th
+#   review, finding 1): the rail/zip-tie retention scheme is retired
+#   entirely (see R60Lib.scad's own "Sled retention" comment) -- the 2
+#   rails were ADDED material (no genus contribution either way) and the
+#   4 zip-tie slots were clean through-cuts (+1 each); removing all 4
+#   drops the count 6-4=2; rendered, confirmed `Genus: 2`.
+GENUS[2] = 2
 
 #   part 3: chute bay tube. Started at 1 (plain tube), then 3 after the 2
 #   shear pin holes were added (rendered `Genus: 3`, confirmed on a thin
@@ -289,6 +308,25 @@ TETHER_NOTCH_XZ = (-5.5, 5.5, 11.5, 27.5)      # part 5, notch's full skirt-leng
 TETHER_NOTCH_YLO = 19.0   # excludes the shaft bore (max y=6) and servo 2's
                            # horn slot (max y=18.1), both of which also
                            # fall inside the X/Z window above
+# TETHER_NOTCH_YHI (6th review, finding 2): the notch cuts ALL THE WAY
+# THROUGH the skirt's own curved OD (R60_Coupler_OD/2=28.2, R60Lib.scad's
+# Tether_Notch_MinR..R60_Coupler_OD/2+Overlap span) rather than stopping
+# blind inside it -- so an UNBOUNDED-above Y window (the old ylo-only
+# filter) picks up the OD's own dense $fn=180 tessellation vertices right
+# where the flat notch wall merges into the curve, not just the notch
+# wall itself. Measured: the old window read 0.897/0.901mm where the
+# lug/notch clearance actually built is 0.6mm (R60_Tether_Clear) -- and at
+# R60_Tether_Clear=0 (mutation, the notch cut exactly the lug's own
+# footprint with zero clearance -- the original defect this check exists
+# to catch) it STILL read ~0.9mm and passed, because the number it was
+# actually measuring was never the notch's own width at all, it was how
+# far the round OD's tessellation happens to spread near that azimuth --
+# a quantity R60_Tether_Clear does not touch. Capped comfortably below
+# the OD's own radius (28.2) so the window sees only the notch's flat
+# side walls, confirmed to still isolate real notch-wall vertices with
+# TETHER_NOTCH_YLO (Tether_Notch_MinR sits at ~23.8-24.4 across the
+# R60_Tether_Clear range tested).
+TETHER_NOTCH_YHI = 27.0
 
 # Spring reaction tabs (part 3) vs. the CS4323 spring -- defect 1c.
 SPRING_OD = 44.30
@@ -316,17 +354,56 @@ COVER_OUTER_R    = BODY_R + DOOR_COVER_T   # cover's own outer face
 DOOR_Z_OFFSET     = 40.0
 DOOR_HOLE_Z_TUBE  = (43.0, 134.0)
 
-# Vega sled retention rails -- defect 1b (2nd review). Rail_Inner_R is the
-# rails' own exposed, functional radius (see R60_EBayTube()'s Rail_Inner_R
-# comment) -- NOT the tube ID, which is what the pre-fix formula used.
-RAIL_INNER_R = 24.0    # R60_Body_ID/2 - R60_Vega_RailH (28.4 - 4.4)
-# Rail_Z0 (3rd review, defect 2 fix) -- the rail's own start-cap Z, where
-# its cross-section (and so its facing corners) is exposed as an edge
-# loop. Was the old flat Rail_Margin=5; now derived per-end
-# (R60_AftBulk_T + Rail_Clear = 12+2) so the rails actually clear the
-# aft bulkhead's disc and the neck skirt/forward bulkhead -- see
-# R60_EBayTube()'s own Rail_Z0/Rail_Z1 comment.
-RAIL_Z_CAP   = 14.0
+# Vega sled retention -- 6th review, finding 1: the rail/zip-tie scheme
+# (and this file's own rail_facing_gap()/RAIL_INNER_R/RAIL_Z_CAP that used
+# to check it) is RETIRED, not fixed a fourth time -- see R60Lib.scad's
+# "Sled retention" comment and R60_EBayTube()'s module comment for why.
+# Replaced by 2 bolted feet per end into ruthex inserts; see
+# FOOT_HOLE_X/FOOT_HOLE_Y/vega_facing_y()/foot_hole_center() below.
+#
+# R60_VegaFoot_HoleX (R60Lib.scad), restated (rule 4).
+FOOT_HOLE_X = 14.0
+# R60_VegaFoot_Hole_d / R60_VegaFoot_Insert_d (both M3-class, ~3.4/4.0mm) --
+# search radii below are sized off these, not restated as their own name.
+FOOT_HOLE_SEARCH_R = 2.4     # > Hole_d/2=1.7, < the pad edge (>=3mm away)
+FOOT_INSERT_SEARCH_R = 2.6   # > Insert_d/2=2.0, < the boss edge
+
+
+def vega_facing_y():
+    """R60_Vega_Facing_Y_Nom (R60Lib.scad), restated as the SAME closed
+    form (rule 4: a Python file cannot include<> a .scad file) -- the
+    deepest the sled's flat back can sit while its own two long back
+    corners still clear the tube ID by R60_Vega_Wall_Clear=0.4mm. Body
+    ID/2=28.4, Sled_W/2=22.0."""
+    return -math.sqrt((28.4 - 0.4) ** 2 - 22.0 ** 2)
+
+
+def foot_hole_center(stl, band_axis, band_at, cx, cy, search_r, band_win=0.4):
+    """Measured (u, v) centre of a round hole's own edge loop, exposed in
+    a plane normal to band_axis ('x'/'y'/'z') at band_at, read from
+    vertices near (cx, cy) in the OTHER two axes (natural x,y,z order)
+    within search_r of it -- same "read the real edge loop, don't infer
+    from the constant that cut it" idiom as hole_azimuth_at_r()/
+    door_switch_hole(), generalised so ONE function covers both the
+    sled's own local frame (band_axis='y', an axially-bored through-hole
+    exposed at its own printed tip) and the bulkheads' (band_axis='z', a
+    blind hole exposed at a fixed Z face) instead of two near-duplicates."""
+    idx = {"x": 0, "y": 1, "z": 2}[band_axis]
+    others = [i for i in range(3) if i != idx]
+    pts = []
+    for tri in tris(stl):
+        for p in tri:
+            if abs(p[idx] - band_at) <= band_win:
+                u, v = p[others[0]], p[others[1]]
+                if math.hypot(u - cx, v - cy) <= search_r:
+                    pts.append((u, v))
+    if not pts:
+        raise RuntimeError(
+            "no geometry near hole (%.2f,%.2f) %s=%.2f of %s"
+            % (cx, cy, band_axis, band_at, stl))
+    us = [p[0] for p in pts]
+    vs = [p[1] for p in pts]
+    return (min(us) + max(us)) / 2.0, (min(vs) + max(vs)) / 2.0
 
 # Door boss OD stations -- defect 2a. TUBE_BAND only reads the tube's
 # plain base face (z~0); the door bosses sit at DOOR_HOLE_Z_TUBE, which
@@ -455,32 +532,6 @@ def hole_azimuth_at_r(stl, cx, cy, z_at, r_target, search_r=4.0, zwin=2.0,
     return sum(azs) / len(azs)
 
 
-def rail_facing_gap(stl, r_inner, z_at, r_win=0.3, zwin=0.1):
-    """Measured tangential gap between the Vega-sled retention rails'
-    FACING (toward each other) corners, and that corner's own Y depth,
-    read from the rails' own rendered geometry at their innermost exposed
-    radius (r_inner) -- not computed from the angle that was supposed to
-    produce it (defect 1b). Each rail's cross-section at r_inner has two
-    corners, offset +-RailW/2 tangentially from its own centreline; for
-    both rails sitting in the -Y hemisphere the corner facing the OTHER
-    rail (the one that actually bounds the capture gap) is always the one
-    with the more negative y -- true for both a too-narrow (pre-fix) and a
-    properly-spread rail, confirmed against the rendered mesh of each."""
-    xs_pos, xs_neg = [], []
-    for tri in tris(stl):
-        for (x, y, z) in tri:
-            if (y < 0 and abs(z - z_at) <= zwin
-                    and abs(math.hypot(x, y) - r_inner) <= r_win):
-                (xs_pos if x > 0 else xs_neg).append((x, y))
-    if not xs_pos or not xs_neg:
-        raise RuntimeError(
-            "rail corners not found near r=%.2f z=%.2f of %s"
-            % (r_inner, z_at, stl))
-    facing_pos = min(xs_pos, key=lambda p: p[1])   # most negative y = facing
-    facing_neg = min(xs_neg, key=lambda p: p[1])
-    return facing_pos[0] - facing_neg[0], facing_pos[1]
-
-
 def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
     """Arming-switch hole's own measured (X centre, Z centre), off part 7
     (door cover)'s rendered edge loop (a Ø12 hole cut through the cover's
@@ -506,6 +557,28 @@ def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
     xs = [p[0] for p in pts]
     zs = [p[1] for p in pts]
     return (min(xs) + max(xs)) / 2.0, (min(zs) + max(zs)) / 2.0
+
+
+def hole_flat_max_x(stl, r_at, z_at, x_side=1, r_win=0.02, zwin=1.5):
+    """Max flat X reach (x_side>0: +X, else -X) of a hole's own edge loop
+    exposed on a cylindrical face at radius r_at, near Z-plane z_at --
+    6th review, finding 3.2: a hole bored along the wall's own RADIAL
+    direction (not a flat axis) through a CURVED shell sweeps further in
+    flat X than its own diameter alone suggests, the same curved-vs-flat
+    effect defect 1a (2nd review) fixed for hole AZIMUTH -- so the real
+    wall margin past such a hole has to be MEASURED here, not estimated
+    from Hole_X + hole radius alone (confirmed: naive predicts ~1.65mm on
+    R60_Door()'s own screw holes, the rendered mesh reads ~0.6mm, a real
+    ~1mm gap the old check never saw because it never looked at the
+    hole's own edge loop at all)."""
+    xs = [x for tri in tris(stl) for (x, y, z) in tri
+          if abs(math.hypot(x, y) - r_at) <= r_win and abs(z - z_at) <= zwin
+          and (x > 0 if x_side > 0 else x < 0)]
+    if not xs:
+        raise RuntimeError(
+            "no hole edge geometry near r=%.2f z=%.2f (x_side=%+d) of %s"
+            % (r_at, z_at, x_side, stl))
+    return max(xs) if x_side > 0 else min(xs)
 
 
 def bore_annulus(stl, zlo, zhi, r_lo):
@@ -537,9 +610,9 @@ def safe(fn, *args, nvals=1, **kwargs):
     """Call fn(*args, **kwargs); a RuntimeError becomes nan(s) of the same
     shape, not a crash (5th review, finding 6). Every scanner checks()
     calls reads geometry off a rendered mesh and can raise RuntimeError on
-    missing/moved features (bore() in scad_verify.py; rail_facing_gap(),
-    hole_azimuth_at_r(), hole_max_reach(), pin_hole_diameter(),
-    xy_extent_in_window(), fincan_slot_width/length(), door_switch_hole()
+    missing/moved features (bore() in scad_verify.py; hole_azimuth_at_r(),
+    hole_max_reach(), pin_hole_diameter(), xy_extent_in_window(),
+    fincan_slot_width/length(), door_switch_hole(), foot_hole_center()
     in this file) -- only switch_hole_z() (now door_switch_hole()) was
     ever wrapped before this fix. Every OTHER call sat bare in checks(),
     so a single missing/moved feature raised straight out of checks(),
@@ -547,7 +620,7 @@ def safe(fn, *args, nvals=1, **kwargs):
     the identical "one bad row kills the whole report" failure class the
     genus loop and the arming-switch check were already fixed for.
     nvals controls how many nan values are returned, matching how many
-    the call site unpacks (bore() and rail_facing_gap() return 2;
+    the call site unpacks (bore() and foot_hole_center() return 2;
     xy_extent_in_window() returns 4; everything else returns 1) -- nan
     compares false against every tolerance (same convention as a missing
     genus), so a failure here is a loud FAIL on just the checks that
@@ -610,69 +683,76 @@ def checks(m):
                    boss_od, 60.0, 0.1)]
 
     if 6 in m:
-        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 112.0, 0.2),
+        # sled length: 6th review, finding 1 -- now the FULL bolted
+        # bridge (board-carrying plate 112mm + 2 derived feet), not just
+        # the plate alone. Restated per this file's rule 4:
+        # R60Lib.scad's R60_Vega_Window_Z1 (=R60_FwdBulkhead_TubeZ0(152)
+        # -R60_VegaFoot_FwdBossExtra(1.7)=150.3) minus
+        # R60_Vega_Window_Z0(12) minus 2*R60_Vega_Foot_Clear(0.2) =
+        # 137.9mm -- the sled's own full printed length by construction
+        # (R60_VegaSled()'s own Foot_L is derived so L+2*Foot_L equals
+        # this window exactly).
+        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 137.9, 0.2),
               ("sled width", a(6, "xmax") - a(6, "xmin"), 44.0, 0.2)]
 
         if 2 in m:
-            # Rails actually capture the sled -- defect 1b (2nd review),
-            # checked mesh against mesh: the gap MEASURED between the two
-            # rails' own facing corners (rail_facing_gap(), on part 2's
-            # rendered geometry) must be at least as wide as the sled's
-            # own MEASURED width (part 6), not merely both existing.
-            # Nothing covered the rails themselves before this check --
-            # the pre-fix rails measured a 35.65mm gap against a 44.0mm
-            # sled and passed every existing check, because none of them
-            # looked at the rails at all.
-            gap, facing_y = safe(rail_facing_gap, a(2, "stl"), RAIL_INNER_R, RAIL_Z_CAP, nvals=2)
+            # Sled's own back corners clear the e-bay bore -- cross-
+            # checked against the MEASURED tube ID (part 2) and MEASURED
+            # sled width (part 6), not just trusted from
+            # R60_Vega_Facing_Y_Nom's own closed form (vega_facing_y(),
+            # restated per rule 4).
+            facing_y = vega_facing_y()
             sled_w = a(6, "xmax") - a(6, "xmin")
-            c += [("vega rails capture gap vs measured sled width",
-                   gap - sled_w, 0.4, 0.3)]
-
-            # The board must physically fit the tube bore lying on the
-            # sled. FIXED (defect 1g, prior round): the sled sits as a
-            # flat plate against the rails, not centred through the axis.
-            # FIXED AGAIN (defect 1b corollary, this round): the prior
-            # formula (chord_dist = sqrt(tube_r**2-(sled_w/2)**2) = 17.96)
-            # assumed the sled's edges rest against the tube ID itself --
-            # they do not, they rest against the RAILS, which (once
-            # correctly captured) sit at facing_y (~9.24mm from the axis,
-            # not 17.96mm), overstating available depth by ~8.7mm. Uses
-            # the SAME measured facing_y from the rail-capture check
-            # above rather than a second, independently-derived formula.
             tube_id, _ = safe(bore, a(2, "stl"), *TUBE_BAND, nvals=2)
-            tube_r = tube_id / 2.0
-            avail = tube_r + abs(facing_y)
-            # stack: T+Standoff_h (a(6,"height")=8, MEASURED off part 6's
-            # own rendered mesh) + Vega_H (21, a restated hardware
-            # literal -- there is no STL for the board itself). Spelled
-            # out here on purpose (defect 15): "sled height + Vega_H"
-            # reads like it could double-count the plate's own T=4mm --
-            # it does not, R60_Vega_H=21 is the board's OWN total height
-            # alone (R60Lib.scad: "Manual says 15mm total height,
-            # catsystems.io says 21mm. Cut for 21." -- a component spec,
-            # not an installed-including-standoffs figure), and
-            # a(6,"height") already correctly covers T+Standoff_h, once.
-            stack = a(6, "height") + 21.0   # (T+Standoff_h, measured) + Vega_H
-            # want/tol (defect 15): was (15.0, 10.0) -- a window
-            # ([5,25]) wide enough that this check could not fail for any
-            # plausible geometry (confirmed: even a 5mm swing in EBay_L,
-            # a materially different rail angle, or a wrong board height
-            # would all still land inside it). CLEAR_EXPECT is the same
-            # calculation, restated as a literal per this file's rule-4
-            # convention -- TUBE_R_EXPECT=28.4 (=R60_Body_ID/2, matches
-            # the "part 2 bore" check above) and FACING_Y_EXPECT=-9.24
-            # (the rail corner's own measured depth -- restated, not a
-            # closed-form constant: the sled's flat plate meets the
-            # tube's CURVED rail corners, and rail_facing_gap()'s own
-            # docstring is why that has no clean closed form). A real
-            # +-0.5mm tolerance actually catches a regression in any of
-            # these instead of absorbing it.
-            TUBE_R_EXPECT = 28.4
-            FACING_Y_EXPECT = -9.24
-            STACK_EXPECT = 4.0 + 4.0 + 21.0   # Sled_T + Standoff_h + Vega_H
-            CLEAR_EXPECT = TUBE_R_EXPECT + abs(FACING_Y_EXPECT) - STACK_EXPECT
-            c += [("sled + Vega clears e-bay bore (rail-corrected)",
-                   avail - stack, CLEAR_EXPECT, 0.5)]
+            corner_r = math.hypot(sled_w / 2.0, facing_y)
+            c += [("sled back corners clear e-bay bore (radial)",
+                   tube_id / 2.0 - corner_r, 0.4, 0.15)]
+
+        # Foot retention coaxiality (6th review, finding 1 -- REPLACES the
+        # rail-capture check, which measured a rail geometry that turned
+        # out to be unable to capture anything -- see R60Lib.scad's own
+        # "Sled retention" comment). The sled's own mounting holes must
+        # land ON each bulkhead's insert, not merely both exist: the
+        # sled's MEASURED local hole position (X, local Z) is transformed
+        # the SAME way R60_VegaSled()'s own assembly placement does
+        # (global Y = facing_y + local Z, VegaSledPlaced() in
+        # r60_assembly.scad) and compared DIRECTLY against the
+        # bulkhead's own MEASURED global hole position -- not against a
+        # shared constant either module could independently drift away
+        # from while still matching it (a restated literal proves the
+        # DESIGN intent agrees, not that either module's IMPLEMENTATION
+        # actually builds it there). Not hypothetical: a first draft of
+        # this fix left the forward bulkhead's own module 1.7mm off its
+        # true tube position while deriving the sled's own foot length
+        # against the CORRECT position, producing a real 0.0937cm3
+        # collision (tools/verify_rocket60_assembly.py pair 24) that a
+        # coaxiality check like this would catch directly, without
+        # needing the full assembly render.
+        if 4 in m or 5 in m:
+            facing_y = vega_facing_y()
+            HOLE_Z_LOCAL = 3.3   # R60_VegaFoot_HoleZ_Local (R60Lib.scad)
+            for end, sled_y, bulk_p in (("aft", a(6, "ymin"), 5),
+                                         ("fwd", a(6, "ymax"), 4)):
+                if bulk_p not in m:
+                    continue
+                bulk_z = a(bulk_p, "zmin")   # each bulkhead's own hole-
+                                               # exposure face (0 for the
+                                               # aft disc; the boss tip,
+                                               # ~-1.7, for the forward one)
+                for x_side in (1, -1):
+                    hx, hz = safe(foot_hole_center, a(6, "stl"), "y", sled_y,
+                                  x_side * FOOT_HOLE_X, HOLE_Z_LOCAL,
+                                  FOOT_HOLE_SEARCH_R, nvals=2)
+                    sled_global_y = facing_y + hz
+                    bx, by = safe(foot_hole_center, a(bulk_p, "stl"), "z",
+                                  bulk_z, x_side * FOOT_HOLE_X,
+                                  facing_y + HOLE_Z_LOCAL,
+                                  FOOT_INSERT_SEARCH_R, nvals=2)
+                    c += [("%s foot/insert coaxial X (x=%+.0f side)"
+                           % (end, x_side * FOOT_HOLE_X), hx - bx, 0.0, 0.4),
+                          ("%s foot/insert coaxial Y (x=%+.0f side)"
+                           % (end, x_side * FOOT_HOLE_X),
+                           sled_global_y - by, 0.0, 0.4)]
 
     if 7 in m:
         # FIXED (defect 1d): R60_Door() is now a COVER, DOOR_OVERLAP larger
@@ -681,10 +761,41 @@ def checks(m):
         # see R60_Door()'s module comment. The door's 85mm dimension runs
         # along Z; its Y extent is only the chord depth of the curved
         # cover, so measure height, not ymax-ymin.
+        #
+        # DOOR_COVER_W_EXPECT (6th review, finding 3.2): the X width is no
+        # longer just DOOR_OPEN_W+2*DOOR_OVERLAP -- R60_Door()'s own
+        # Cover_W now also has to leave a real wall past the screw hole's
+        # own edge (its module comment), and that requirement is the
+        # larger of the two here at the current dimensions:
+        # max(18+6, 21+1.35+1.6+1.5) = max(24, 25.45) = 25.45, so
+        # Cover_W = 2*25.45 = 50.9. Restated as a literal per this file's
+        # rule 4, matching R60_Door()'s own Cover_HalfW formula.
+        DOOR_COVER_W_EXPECT = 50.9
         c += [("door cover height", a(7, "height"),
                DOOR_OPEN_H + 2 * DOOR_OVERLAP, 0.15),
               ("door cover chord width", a(7, "xmax") - a(7, "xmin"),
-               DOOR_OPEN_W + 2 * DOOR_OVERLAP, 0.15)]
+               DOOR_COVER_W_EXPECT, 0.15)]
+
+        # Screw hole wall margin (6th review, finding 3.2) -- see
+        # hole_flat_max_x()'s own docstring. Checked MESH AGAINST MESH,
+        # both sides off this SAME render: the hole's own edge loop (at
+        # the cover's outer face, r=R60_Body_OD/2+T=32, near the bottom
+        # hole's own Z) against the part's own overall measured xmax
+        # (a(7,"xmax"), the SAME quantity the "door cover chord width"
+        # check above already reads) -- not against DOOR_COVER_W_EXPECT/2,
+        # a hand-typed literal a regression in R60_Door()'s own Cover_W
+        # formula could silently drift away from while this check kept
+        # comparing against the OLD, no-longer-true value (confirmed:
+        # reverting Cover_HalfW to its pre-fix formula while leaving a
+        # literal-based version of this check untouched still read the
+        # ORIGINAL 2.109mm margin -- a check that cannot see the part it
+        # is supposed to be measuring is exactly finding 2's "cannot
+        # fail" class, so this reads the mesh's own actual edge instead).
+        # want/tol matches the rendered margin (~2.11mm) with real room to
+        # catch a regression toward the old ~0.6mm defect.
+        hole_max_x = safe(hole_flat_max_x, a(7, "stl"), BODY_R + 2.0, 3.0)
+        c += [("door cover screw hole wall margin",
+               a(7, "xmax") - hole_max_x, 2.1, 0.6)]
 
         # Arming switch position -- 5th review, finding 1: nothing checked
         # this on the door before (it did not live there); this reads the
@@ -708,10 +819,15 @@ def checks(m):
         if 2 in m:
             door_h = a(7, "height")
             door_w = a(7, "xmax") - a(7, "xmin")
+            # Width overlap grew past 2*DOOR_OVERLAP (6th review, finding
+            # 3.2 -- see DOOR_COVER_W_EXPECT's own comment above): still a
+            # real, checked minimum, just no longer exactly 2*DOOR_OVERLAP
+            # on this axis now that the screw-hole wall requirement binds
+            # instead of the plain retention-overlap one.
             c += [("door cover overlaps aperture height",
                    door_h - DOOR_OPEN_H, 2 * DOOR_OVERLAP, 0.3),
                   ("door cover overlaps aperture width",
-                   door_w - DOOR_OPEN_W, 2 * DOOR_OVERLAP, 0.3)]
+                   door_w - DOOR_OPEN_W, DOOR_COVER_W_EXPECT - DOOR_OPEN_W, 0.3)]
 
             # Screw axis actually passes through both parts -- defect 1a
             # (2nd review). A screw hole bored along the wall's true local
@@ -740,8 +856,12 @@ def checks(m):
 
     # Part 5's height grew from a plain 12mm disc to 12 + a 15mm aft skirt
     # (SKIRT_T + 15 = 27) that carries the shear pins into the real joint --
-    # see R60_EBayAftBulkhead()'s module comment.
-    for p, want_h in ((4, 6.0), (5, 27.0)):
+    # see R60_EBayAftBulkhead()'s module comment. Part 4's height grew
+    # from a plain 6mm disc to 6 + a 1.7mm foot boss that reaches AFT of
+    # (past) its own z=0 face (6th review, finding 1) -- see
+    # R60_EBayFwdBulkhead()'s own module comment for why T=6mm alone is
+    # too shallow for the ruthex insert this boss exists to host.
+    for p, want_h in ((4, 7.7), (5, 27.0)):
         if p in m:
             _, bulk_od = safe(bore, a(p, "stl"), *BULK_BAND, nvals=2)
             c += [("part %d height" % p, a(p, "height"), want_h, 0.1)]
@@ -776,7 +896,8 @@ def checks(m):
             lug_xmin, lug_xmax, lug_ymin, _ = safe(xy_extent_in_window,
                 a(3, "stl"), *TETHER_LUG_XZ, nvals=4)
             notch_xmin, notch_xmax, notch_ymin, _ = safe(xy_extent_in_window,
-                a(5, "stl"), *TETHER_NOTCH_XZ, ylo=TETHER_NOTCH_YLO, nvals=4)
+                a(5, "stl"), *TETHER_NOTCH_XZ, ylo=TETHER_NOTCH_YLO,
+                yhi=TETHER_NOTCH_YHI, nvals=4)
             # Radial: the notch's back wall (smaller y) must sit farther
             # in than the lug's own tip (larger y) -- a POSITIVE gap.
             c += [("tether lug clears skirt notch (radius)",
@@ -980,10 +1101,18 @@ def checks(m):
         c += [("latch wall beyond mounting hole edge",
                base_xmax - (insert_x_latch + mount_hole_r), 1.6, 0.2)]
 
-    # Build volume, every part.
+    # Build volume, every part -- 6th review, finding 4: this used to
+    # derive its own "expected" FROM the measurement (min(height, MAX_Z)),
+    # so a part comfortably under budget printed "177.000  want 177.000"
+    # -- a passing row that looks like a no-op self-comparison rather than
+    # the real constraint (height <= MAX_Z) it was supposed to state.
+    # Reports the OVERAGE past MAX_Z instead (0 for anything that fits,
+    # the actual excess in mm otherwise) against a stated 0 -- legible
+    # either way, and still fails loudly (and more usefully, by how much)
+    # for a part that does not fit.
     for p in m:
         c += [("part %d fits %.0fmm Z" % (p, MAX_Z),
-               m[p]["height"], min(m[p]["height"], MAX_Z), 0.01)]
+               max(0.0, m[p]["height"] - MAX_Z), 0.0, 0.01)]
 
     # Connected components, every part (4th review, harden-the-harness
     # item 1). A part that exports as N disjoint solids is unprintable as
@@ -1017,23 +1146,26 @@ def main(argv):
     parts = [int(x) for x in argv[1:]] or sorted(NAMES)
     m = {}
     tmp = tempfile.mkdtemp(prefix="r60-")
+    bad = 0
+    # `return 1` on a failed render (6th review, finding 4) used to abort
+    # the WHOLE run: any part after the failed one never rendered, and
+    # checks() -- and every one of its ~90 rows -- never printed at all,
+    # the identical "one bad row kills the whole report" failure class
+    # safe() was introduced to fix for individual checks, one level up.
+    # A failed/slow render is now a counted FAIL for just that part, and
+    # the loop (and the report) continues with whatever DID render.
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
-        # FIXED (defect 3c): render() carries a 900s subprocess timeout
-        # (scad_verify.py) but this loop used to catch nothing at all, so
-        # either a failed render (RuntimeError) or a slow one
-        # (subprocess.TimeoutExpired) died on a raw traceback instead of a
-        # clear FAIL. Same fix as verify_nosecone.py.
         try:
             g = render(SCAD, p, out)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
+            bad += 1
+            continue
         m[p] = measure(out, g)
         print("rendered %-2d %-20s  %.2f x %.2f x %.2f mm  %.1f cm3"
               % (p, NAMES.get(p, "?"), m[p]["xmax"] - m[p]["xmin"],
                  m[p]["ymax"] - m[p]["ymin"], m[p]["height"], volume(out)))
-    bad = 0
     print()
     for (label, actual, expected, tol) in checks(m):
         ok = abs(actual - expected) <= tol

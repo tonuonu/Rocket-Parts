@@ -26,10 +26,13 @@
 //   Stop_Z = R60_Pin_Skirt_L+65 = 80, which is that module's own
 //   independent statement of where the carrier ends once assembled, and
 //   is the cross-check that this frame is built correctly.
-// -D Facing_Y=nn (mm) is the Vega sled's measured rail-contact Y
-//   (Pairs 3 and 21) -- MEASURED off part 2's own rendered rails by the
-//   Python driver (rail_facing_gap() in verify_rocket60.py), not a
-//   formula restated here, per this repo's own rule 4.
+// The Vega sled's own radial position (Pairs 3, 21-24) used to be a
+// driver-measured "-D Facing_Y=nn" (rail_facing_gap() in
+// verify_rocket60.py, per this repo's own rule 4) -- REMOVED, 6th review,
+// finding 1: the rails it measured are gone, and the sled's radial
+// position is now a closed-form R60Lib.scad constant
+// (R60_Vega_Facing_Y_Nom), included live like every other shared constant
+// this file already uses directly.
 //
 // Frame convention: every pair is rendered in PART B's own local frame
 // (the physically larger/fixed part, second in each comment below); part
@@ -54,8 +57,6 @@ Motor_Class = 0;
 
 Pair = 0;
 Ins  = 80;
-Facing_Y = -9.24;   // documented fallback for standalone rendering; the
-                     // driver always overrides this with a measured value
 Push = 0;            // overtravel probe distance, mm -- Pairs 10/11 only
 
 // Pair 0: neck (part 1) <-> e-bay tube (part 2), in the tube's frame.
@@ -96,18 +97,46 @@ module Pair2_A(){ translate([0,0,12]) mirror([0,0,1]) R60_EBayAftBulkhead(); }
 module Pair2_B(){ R60_EBayTube(); }
 
 // Pair 3: Vega sled (part 6) <-> e-bay tube (part 2).
-// The sled is a FLAT plate captured by the two rails at its two long
-// edges (R60_VegaSled()'s own comment), not built in a frame that maps
-// onto the tube's curved wall directly. Its local Z (thickness, 0..T)
-// is the radial direction once assembled, with its rail-contact face at
-// the rails' own measured facing-corner Y (Facing_Y, driver-supplied --
-// see rail_facing_gap() in verify_rocket60.py) and increasing local Z
-// moving toward +Y (into the open bore, where the Vega board stacks on
-// the standoffs). Its local Y (length, +-L/2) becomes the tube's axial
-// (global Z) direction; centred at R60_EBay_L/2, well inside the rails'
-// own span, for a representative check.
-module Pair3_A(){ translate([0,Facing_Y,R60_EBay_L/2]) rotate([-90,0,0]) R60_VegaSled(); }
+// The sled now BRIDGES the full window between the two bulkheads
+// (R60Lib.scad's R60_Vega_Window_Z0/Z1, 6th review finding 1) instead of
+// floating centred with slack -- its own local Y=0 (mid-length) lands at
+// the window's own midpoint, R60_Vega_AxialCenter, NOT R60_EBay_L/2 (the
+// window is not centred on the tube: the aft bulkhead alone is 12mm, the
+// forward bulkhead + neck skirt together are 25mm). Local Z (thickness)
+// is the radial direction once assembled, with its back face at
+// R60_Vega_Facing_Y_Nom (closed-form now, not driver-measured -- see the
+// file header) and increasing local Z moving toward +Y (into the open
+// bore, where the Vega board stacks on the standoffs). Local Y (length,
+// including the feet) becomes the tube's axial (global Z) direction.
+// Factored into its own module: Pairs 21-24 below all place the sled (or
+// its board envelope) the SAME way.
+module VegaSledPlaced(){
+    translate([0, R60_Vega_Facing_Y_Nom, R60_Vega_AxialCenter])
+        rotate([-90,0,0])
+            R60_VegaSled();
+}
+module Pair3_A(){ VegaSledPlaced(); }
 module Pair3_B(){ R60_EBayTube(); }
+
+// Pairs 23/24: Vega sled's FEET (part 6) <-> the aft/forward bulkheads
+// they bolt to (parts 5/4) -- 6th review, finding 1. A flush-fit
+// interference probe proves the feet do not COLLIDE with their bulkhead;
+// it does not by itself prove the mounting holes land ON the insert
+// bosses -- that coaxiality is checked mesh-against-mesh in
+// verify_rocket60.py (foot_bulkhead_hole_offset(), matching this file's
+// own hole_azimuth_at_r() idiom). Both bulkheads placed in the SAME tube
+// frame Pairs 1/2 already use, but via the shared R60_Vega_Window_Z0/Z1
+// constants instead of restating "12"/"...-6" a second time (this file
+// already include<>s R60Lib.scad -- rule 4).
+module Pair23_A(){ VegaSledPlaced(); }
+module Pair23_B(){ translate([0,0,R60_Vega_Window_Z0]) mirror([0,0,1]) R60_EBayAftBulkhead(); }
+module Pair24_A(){ VegaSledPlaced(); }
+// R60_FwdBulkhead_TubeZ0, NOT R60_Vega_Window_Z1: the bulkhead's own disc
+// still sits at its TRUE tube position regardless of where its foot boss
+// reaches -- see R60Lib.scad's own R60_FwdBulkhead_TubeZ0 comment for the
+// bug this distinction fixes (translating the whole module to the
+// boss-tip position moved the disc itself, and the boss along with it).
+module Pair24_B(){ translate([0,0,R60_FwdBulkhead_TubeZ0]) R60_EBayFwdBulkhead(); }
 
 // Pair 4: access door (part 7) <-> e-bay tube (part 2).
 // R60_Door() is already built directly in the tube's own XY convention
@@ -328,25 +357,45 @@ module Pair11_B(){
 // 14  thrust ring    -- motor+spacer(12)[10, obstruction]; fin can(9),
 //                       excluded above (plain concentric bore fit).
 //
-// Two further checks (15, 17-19) are NOT part-vs-part pairs at all -- they
+// Two further checks (15, 17, 19) are NOT part-vs-part pairs at all -- they
 // assert a DECLARED MOVING ELEMENT's required path is not obstructed by
 // any real part (harness item 3), which no static dimension check or the
-// pairs above can express. Pairs 16/20/21 ARE part-vs-part (the switch
-// and board are now real, if unmodelled-in-detail, hardware appendages of
-// real parts, not abstract paths), but are grouped here since they arose
-// from the same "model what's actually there, not what a dimension check
-// alone can see" instruction:
+// pairs above can express. Pair 21 IS part-vs-part (the board is a real,
+// if unmodelled-in-detail, hardware appendage of a real part, not an
+// abstract path):
 // 15  servo-2-horn/pin-release actuation path vs. tether latch(13) --
 //     finding 5.
-// 16  fitted arming switch's own envelope (in the door, part 7) vs. e-bay
-//     tube(2) -- finding 1, harness item 4 ("model the fitted switch").
-// 20  same switch envelope vs. Vega sled(6) -- another part it could
-//     reach once installed.
 // 21  Vega BOARD's own envelope (not modelled by Pair 3's sled-only probe)
 //     vs. e-bay tube(2) -- finding 2.
-// 22  same switch envelope vs. the Vega BOARD's own envelope (pair 21's
-//     BoardProbe) -- the board's own Z span overlaps the door's aperture
-//     by construction, so this is a real reach, not a hypothetical one.
+// 22  fitted arming switch's own envelope (in the door, part 7) vs. the
+//     Vega BOARD's own envelope (pair 21's BoardProbe) -- the board's own
+//     Z span overlaps the door's aperture by construction, so this is a
+//     real reach, not a hypothetical one.
+// 23  Vega sled's FEET (part 6) vs. the aft bulkhead (part 5) they bolt
+//     to -- 6th review, finding 1 (the retention scheme that replaced the
+//     rails/zip-ties).
+// 24  same feet vs. the forward bulkhead (part 4).
+//
+// 6th review, finding 2 (probes that cannot fail): pairs 16 (switch vs
+// tube) and 20 (switch vs sled) are DELETED, not fixed -- both were
+// structurally incapable of failing under any change plausible in this
+// codebase, not merely passing with some margin:
+//   - Pair 16: the switch's own X reach (governed by SW_D=12mm, a fixed
+//     hardware dimension) is 15mm short of the nearest solid tube
+//     material (the door boss at x~21mm) even at the aperture's own edge
+//     (x=18mm) -- SW_D would need to more than double before this could
+//     ever register, and nothing else in this design moves that boundary.
+//   - Pair 20: even correctly placed (it never was -- Pair20_B rendered
+//     R60_VegaSled() in its own raw, unplaced local frame, so the "pass"
+//     it read was two unrelated Z ranges never overlapping at all, not a
+//     real clearance result), the switch's reach and the sled's position
+//     are governed by entirely independent constants ~31mm apart; nothing
+//     the switch can plausibly reach that clears the much-nearer Vega
+//     BOARD (pair 22, which strictly shadows the sled from the switch's
+//     approach and always fails first) leaves any way for this pair to
+//     fail either. A probe that cannot fail is worse than no probe -- see
+//     the review round's own framing -- so both rows are removed rather
+//     than kept "passing".
 //
 // Harness item 3 names three moving elements: "servo horn, pin, cord".
 // The CORD path (chute tube lug -> aft bulkhead notch -> carrier notch)
@@ -434,51 +483,48 @@ module HornPath(){
 module Pair15_A(){ HornPath(); }
 module Pair15_B(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) R60_TetherLatch(); }
 
-// Pairs 16/20/22: arming switch's own physical envelope (5th review,
-// finding 1: now fitted IN the access door, part 7, not the tube) vs.
-// every part it could reach once installed -- harness item 4 ("model the
-// fitted switch"), extended per finding 1's own instruction ("add an
-// assembly-probe pair for the fitted switch against every part it could
-// reach") now that the switch is a real appendage of a real part rather
-// than a hole in one. Checking it against the door it is CUT INTO would
+// Pair 22: arming switch's own physical envelope (5th review, finding 1:
+// fitted IN the access door, part 7, not the tube) vs. the Vega BOARD's
+// own envelope (Pair 21's BoardProbe) -- harness item 4 ("model the
+// fitted switch"). Checking it against the door it is CUT INTO would
 // prove nothing (a probe built from the same cut it stands in for is
-// tautologically clear); the parts/hardware actually reachable from the
-// door's own crown position, aimed inward into the open bore, are the
-// e-bay tube itself (whatever is NOT open aperture there -- the door
-// bosses, the tube wall either side of the opening), the Vega sled on the
-// far (-Y) wall, and the Vega BOARD (Pair 22, using the SAME BoardProbe
-// Pair 21 uses below) -- the board's own Z span (its full R60_Vega_L,
-// centred the same as the sled) overlaps the door's own aperture Z range
-// by construction, so a switch reaching far enough inward can hit the
-// board even though it clears the thin sled itself (Pair 20) with room to
-// spare; this was caught DURING this fix, not assumed clear (a first
-// draft's SW_REACH=15 read a genuine 0.538cm^3 collision against
-// BoardProbe before SW_REACH was derived against it below).
+// tautologically clear); the board is the nearest real hardware it can
+// reach (6th review, finding 2: pairs 16/20, switch vs tube/sled, are
+// DELETED -- see the pair-enumeration comment above for why neither could
+// ever fail).
 //
-// SwitchProbe is a PROBE-ONLY solid standing in for the installed switch
-// hardware: SW_D matches R60_Door()'s own Sw_d exactly (rule 4); SW_REACH
-// is DERIVED (not a free hand-picked number) as the largest reach that
-// still clears the board's own inner face (R60_Vega_Board_Inner_Y,
-// R60Lib.scad) by a stated minimum -- no datasheet exists for the actual
-// switch part, so "as deep as the installation allows, not deeper" is the
-// honest envelope, same "unmodelled companion hardware" treatment as
-// R60_SpringCarrier()'s plunger/lock ring. Built directly in the DOOR's
-// own local frame (matching R60_Door()'s own Sw_X/Sw_Z exactly), so it
-// drops into the SAME Pair4/Pair16-style door-placement transform below.
+// SW_REACH (6th review, finding 2 -- was circular): used to be DERIVED
+// from R60_Vega_Board_Inner_Y minus a stated clearance, which means
+// growing R60_Vega_H (or the standoff height, or anything else that
+// shifts the board) moved BOTH the probe's own reach and the board's
+// position together, by construction leaving the same 2mm gap regardless
+// -- a check that cannot fail no matter how the board stack changes. Now
+// a STATED HARDWARE ENVELOPE instead: no datasheet exists for the actual
+// switch part, so this is the maximum installed depth (threaded bushing +
+// body/lugs) a purchased panel-mount toggle switch of this bushing
+// diameter is assumed to need, same "unmodelled companion hardware"
+// treatment as R60_SpringCarrier()'s plunger/lock ring -- but FIXED,
+// independent of the board's own position, so this pair can genuinely
+// fail if a future change to the Vega stack lets the board encroach on
+// it (mutation-tested: growing R60_Vega_H past ~13.2mm collides).
+// SwitchProbe is a PROBE-ONLY solid: SW_D matches R60_Door()'s own Sw_d
+// exactly (rule 4). Built directly in the DOOR's own local frame
+// (matching R60_Door()'s own Sw_X/Sw_Z exactly, both READ here -- 6th
+// review, finding 4: SW_X used to be declared and never consumed,
+// SwitchProbe() hardcoded 0 -- a restated constant nothing reads is
+// coverage that does not exist), so it drops into the SAME Pair4-style
+// door-placement transform below.
 SW_D = 12.0;        // R60_Door()'s own Sw_d, restated (rule 4)
-SW_REACH_Clear = 2.0;   // stated minimum clearance to the board's own face
-SW_REACH = R60_Body_OD/2 - R60_Vega_Board_Inner_Y - SW_REACH_Clear;  // ~8.24
+SW_REACH = 10.0;     // stated hardware envelope -- typical mini panel-
+                       // mount toggle switch installed depth (threaded
+                       // bushing + body/lugs) behind a 2mm-thick panel
 SW_X = 0;           // R60_Door()'s own Sw_X -- the cover's own crown
 SW_Z = R60_Door_Overlap + R60_Door_Open_H/2;   // R60_Door()'s own Sw_Z, 48.5
 module SwitchProbe(){
-    translate([0, R60_Body_OD/2, SW_Z])
+    translate([SW_X, R60_Body_OD/2, SW_Z])
         rotate([90,0,0])
             cylinder(d=SW_D, h=SW_REACH);
 }
-module Pair16_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
-module Pair16_B(){ R60_EBayTube(); }
-module Pair20_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
-module Pair20_B(){ R60_VegaSled(); }
 
 // Pair 21: Vega BOARD's own envelope (5th review, finding 2) vs. e-bay
 // tube (part 7's door bosses live in part 2, R60_EBayTube()). Pair 3
@@ -488,25 +534,32 @@ module Pair20_B(){ R60_VegaSled(); }
 // BoardProbe is a PROBE-ONLY solid: the board's own footprint
 // (R60_Vega_L x R60_Vega_W x R60_Vega_H, no mounting/standoff detail --
 // none of that is load-bearing for a clearance check), positioned the
-// SAME way Pair 3 positions the sled (Facing_Y, the rails' own measured
-// contact surface) plus the stack height (sled T+Standoff_h+Vega_H) that
-// sits between the rails and the board's own inner face.
+// SAME way Pair 3 positions the sled (VegaSledPlaced()'s own frame) plus
+// the stack height (sled T+Standoff_h+Vega_H) that sits between the
+// sled's back and the board's own inner face.
 module BoardProbe(){
-    translate([0, Facing_Y + (R60_Vega_Sled_T+R60_Vega_Standoff_h), R60_EBay_L/2])
+    translate([0, R60_Vega_Facing_Y_Nom + (R60_Vega_Sled_T+R60_Vega_Standoff_h),
+               R60_Vega_AxialCenter])
         rotate([-90,0,0])
             translate([-R60_Vega_W/2, -R60_Vega_L/2, 0])
                 cube([R60_Vega_W, R60_Vega_L, R60_Vega_H]);
 }
 module Pair21_A(){ BoardProbe(); }
 module Pair21_B(){ R60_EBayTube(); }
-// Pair 22: fitted arming switch envelope vs. the Vega BOARD itself --
-// see the Pairs 16/20/22 comment above for why this is a real, not
-// hypothetical, risk despite the board not being a printed part.
 module Pair22_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
 module Pair22_B(){ BoardProbe(); }
 
-// Pairs 17-19: tether latch PIN withdrawal path vs. every real part
+// Pairs 17/19: tether latch PIN withdrawal path vs. every real part
 // around it once assembled -- coordinator override (same review round).
+// Pair 18 (vs. the aft bulkhead itself) is DELETED (6th review, finding
+// 2): the latch mounts FLUSH on the bulkhead's own aft-most face (bulkhead
+// z=Total_H=27, Pair9's own transform), and the pin lives entirely inside
+// the latch's own posts, 4-16mm PAST that face -- by construction there is
+// no bulkhead-frame Z the pin can ever reach (checked: pin z=27+12=39,
+// bulkhead's own material stops at z=27, no shared Z under any change to
+// Pin_d/Pin_Reach/Post_H plausible in this design). Not a coverage gap:
+// the geometry that would make this pair meaningful (the pin reaching
+// back INTO the bulkhead) cannot occur given how the latch is mounted.
 // Flagged in this file's own pair-enumeration comment above as
 // unverified; the same "geometry fits but cannot function" failure
 // class the horn-path check (pair 15) already caught, so it gets the
@@ -539,12 +592,38 @@ module PinPath(){
 // vs. spring carrier -- same frame as Pair12.
 module Pair17_A(){ translate([0,R60_Tether_Y,0]) PinPath(); }
 module Pair17_B(){ R60_SpringCarrier(); }
-// vs. e-bay aft bulkhead -- same frame as Pair9.
-module Pair18_A(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) PinPath(); }
-module Pair18_B(){ R60_EBayAftBulkhead(); }
 // vs. chute tube, at full seating -- same frame as Pair13 (Ins=80 default).
 module Pair19_A(){ translate([0,R60_Tether_Y,Ins-65]) PinPath(); }
 module Pair19_B(){ R60_ChuteTube(); }
+
+// Dispatch. Pairs 16/18/20 are intentionally ABSENT (6th review, finding
+// 2 -- deleted, not renumbered away, so the gap in the sequence itself is
+// a visible record of what was removed and why -- see the pair-
+// enumeration comment above each deletion for the reason).
+//
+// KNOWN_PAIRS + the trailing assert (6th review, finding 2, "render_probe
+// still passes empty renders"): a Pair value with NO matching `if` below
+// renders NOTHING, and OpenSCAD's own "Current top level object is
+// empty" message is IDENTICAL whether that happened because nothing
+// matched or because two real, correctly-transformed solids truly do not
+// overlap -- verify_rocket60_assembly.py's render_probe() cannot tell
+// those apart from the console output alone no matter what order it
+// checks strings in. The actual fix has to live HERE, in the one place
+// that knows which Pair values are real: assert it explicitly, so a pair
+// added to PAIRS (the Python side) but never wired into an `if` below
+// halts with a real ERROR instead of silently reading "OK 0.0000 cm3"
+// forever. A separate hand-maintained list (rather than reusing the `if`
+// conditions themselves) is deliberate -- it is the SAME kind of
+// restatement rule 4 already accepts (Python cannot execute this file's
+// own `if` chain to ask it), and unlike a totally silent gap, a value
+// missing from BOTH this list and the dispatch below is caught anyway:
+// the run simply asks for a Pair number verify_rocket60_assembly.py's own
+// PAIRS dict never requested.
+KNOWN_PAIRS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,21,22,23,24];
+assert(search([Pair], KNOWN_PAIRS)[0] != [],
+    str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
+        "(or was deleted and should be removed from verify_rocket60_",
+        "assembly.py's PAIRS dict too)"));
 
 if (Pair==0) intersection(){ Pair0_A(); Pair0_B(); }
 if (Pair==1) intersection(){ Pair1_A(); Pair1_B(); }
@@ -562,10 +641,9 @@ if (Pair==12) intersection(){ Pair12_A(); Pair12_B(); }
 if (Pair==13) intersection(){ Pair13_A(); Pair13_B(); }
 if (Pair==14) intersection(){ Pair14_A(); Pair14_B(); }
 if (Pair==15) intersection(){ Pair15_A(); Pair15_B(); }
-if (Pair==16) intersection(){ Pair16_A(); Pair16_B(); }
 if (Pair==17) intersection(){ Pair17_A(); Pair17_B(); }
-if (Pair==18) intersection(){ Pair18_A(); Pair18_B(); }
 if (Pair==19) intersection(){ Pair19_A(); Pair19_B(); }
-if (Pair==20) intersection(){ Pair20_A(); Pair20_B(); }
 if (Pair==21) intersection(){ Pair21_A(); Pair21_B(); }
 if (Pair==22) intersection(){ Pair22_A(); Pair22_B(); }
+if (Pair==23) intersection(){ Pair23_A(); Pair23_B(); }
+if (Pair==24) intersection(){ Pair24_A(); Pair24_B(); }
