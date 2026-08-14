@@ -136,12 +136,15 @@ Per-part mass now comes from these measured mesh volumes (PETG 1.27 g/cm³,
 PC 1.20 g/cm³ per `R60-PrintSettings.md` sec 3, at a stated 78% effective
 print density), not a round-number estimate — see
 `tools/rocket60_model.py`. **Liftoff mass on the G80T-14A (the sizing
-motor) is 871 g**, giving **1.53 cal** static margin and **18.9 m/s** off
-a 1.5 m 1010 rail — both clear their targets (1.5 cal, 15 m/s), though the
-stability margin now clears by only 0.03 cal (4th review, should-fix 11:
-the previously-reported 1.61 cal was inflated by two station bugs --
-see the design spec §6 for the derivation). H182R-14A gives 938 g / 1.34
-cal / 27.9 m/s; H135W-14A gives 941 g / 1.35
+motor) is 871 g**, giving **18.9 m/s** off
+a 1.5 m 1010 rail (clears its 15 m/s target) but only **1.45 cal** static
+margin — BELOW the 1.5 cal target (4th review: a full station audit,
+coordinator override, found the previously-published 1.53 cal -- itself
+already a correction of an inflated 1.61 cal -- was still short six more
+station errors; see the design spec §6 for the full audit table). No
+design change was made to force this back above 1.5 cal. H182R-14A gives
+938 g / 1.27
+cal / 27.9 m/s; H135W-14A gives 941 g / 1.28
 cal. Full breakdown, all three motors, in `tools/rocket60_model.py`'s own
 output.
 

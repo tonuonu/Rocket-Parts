@@ -42,12 +42,16 @@ tether latch this section used to say had "no STL":
   door, fin can, fins, motor retainer, motor spacer, forward thrust ring,
   plus the fixed `NoseCone.stl` — exists as a mesh and is covered below.
 
-**Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins are
-sized to give it **1.53 cal** static margin at liftoff (4th review,
-should-fix 11: this used to read 1.61 cal, inflated by two uncorrected
-station bugs — see spec §6). Airframe is sized for
+**Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins were
+sized for a **1.5 cal** static-margin target at liftoff, but a full
+station audit (coordinator override, 4th review) found the TRUE margin
+is **1.45 cal — below the 1.5 cal target**, not the 1.53 cal (itself
+already a correction of an inflated 1.61 cal) previously published here.
+No design change was made to force it back above 1.5 cal; see spec §6
+for the full station-audit table and the open decision this leaves.
+Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
-no reprint (spec §1.1, §5); both give **1.3+ cal** on this fin size (§9).
+no reprint (spec §1.1, §5); both give **1.2+ cal** on this fin size (§9).
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -408,17 +412,19 @@ Copied from spec §11, with one adaptation flagged below.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
   `tools/rocket60_model.py`, not built by any printable part.
 
-**Fin sizing (resolved).** The original Barrowman analysis counted the
+**Fin sizing (open — below target).** The original Barrowman analysis counted the
 fin's full 55mm span as exposed to the airflow, when 14mm of it
 (`R60_Body_OD/2 - R60_MMT_OD/2`) actually sits buried under the epoxied
 joint inside the fin can. Fed the correct exposed geometry, the as-shipped
 fin gave the G80T-14A — the motor actually owned, and the sizing case —
 only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
-`(exposed span/D)²`) to bring the G80T to **1.53 cal** (4th review,
-should-fix 11 corrected two station bugs that had inflated this to a
-reported 1.61 cal — see spec §6 for the derivation; the true margin is
-1.53 cal). H182R-14A gives 1.34 cal and H135W-14A gives 1.35 cal on the
+`(exposed span/D)²`) targeting 1.5 cal on the G80T. A full station audit
+(coordinator override, 4th review, spec §6) found the TRUE margin is
+**1.45 cal — below the 1.5 cal target**, not the 1.53 cal previously
+published here (itself already a correction of an inflated 1.61 cal).
+No further span growth was made to force it back above 1.5 cal — that is
+a design decision for whoever owns the gate. H182R-14A gives 1.27 cal and H135W-14A gives 1.28 cal on the
 same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from

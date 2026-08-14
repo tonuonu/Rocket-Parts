@@ -396,38 +396,60 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 `exposed_geom()`), 3 fins:
 
 - CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.71 at ~493 mm
-- **CP = 452.4 mm** from the nose tip (shifted +11.9 mm from 440.5 this
-  pass: the fin can's own station moves with R60_EBay_L (165->177mm,
+- **CP = 452.4 mm** from the nose tip (shifted +11.9 mm from 440.5 last
+  round: the fin can's own station moves with R60_EBay_L (165->177mm,
   critical 3) and the neck-flange length fix (should-fix 12), and only
   the fin-CN share of total CN moves with them)
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 871 g | 360.8 mm | **1.53 cal** | 340.4 mm | 1.87 cal |
-| H182R-14A | 938 g | 371.9 mm | **1.34 cal** | 342.5 mm | 1.83 cal |
-| H135W-14A | 941 g | 371.3 mm | **1.35 cal** | 351.8 mm | 1.68 cal |
+| G80T-14A | 871 g | 365.5 mm | **1.45 cal** | 345.5 mm | 1.78 cal |
+| H182R-14A | 938 g | 376.3 mm | **1.27 cal** | 347.5 mm | 1.75 cal |
+| H135W-14A | 941 g | 375.7 mm | **1.28 cal** | 356.6 mm | 1.60 cal |
 
-**The G80T-14A is the sizing case** (it is the motor actually owned; the H
-motors are a future purchase) at **1.53 cal**, clearing the 1.5 cal
-target -- but with much less room to spare than the previously reported
-1.61 cal. **4th review, should-fix 11:** that 1.61 cal figure was
-inflated by two station bugs -- the e-bay aft bulkhead+skirt assembly's
-CG was placed 14 mm forward of where its own geometry (disc+skirt,
-247..274 mm) actually sits, and the spring carrier's 39.5 mm forward of
-its own (274..339 mm) -- pulling reported CG ~3.7 mm forward, ~+0.06 cal
-of margin that was never real. Correcting both, together with the
-R60_EBay_L 165->177 mm growth (critical 3) that also moves CP aft, nets
-out to the 1.53 cal above: the TRUE margin, not a margin grown by an
-uncaught bug. **This is now within 0.03 cal of the 1.5 cal gate** — the
-next design change that adds aft mass or removes fin span must re-run
-`tools/rocket60_model.py` before flying, not assume the old 1.61 cal
-headroom still exists. H182R-14A and H135W-14A land at 1.34-1.35 cal —
-reported, not optimised for, per the coordinator's explicit instruction:
-this is comfortably above 1.0 cal and needs no ballast, though nose
+**⚠ The G80T-14A sizing case is BELOW the 1.5 cal target: 1.45 cal, not
+1.53 cal.** (Full station audit, coordinator override, same round as
+should-fix 11.) The previously-published 1.53 cal itself was only
+PARTIALLY corrected -- should-fix 11 fixed the two largest station bugs
+(aft bulkhead+skirt, spring carrier) but left the rest of `build()`'s
+station list un-audited, on the "report don't fix" convention this
+review otherwise follows. The coordinator overrode that for the two
+remaining flagged items (tether latch, CS4323 spring) and ordered a full
+item-by-item audit of every station against the assembled geometry. It
+found six more errors, ALL biased the same direction as the first two
+(understating how far aft the mass actually sits):
+
+| Item | Old station | Corrected | Delta | Basis |
+|---|---|---|---|---|
+| e-bay fwd bulkhead | 105.0 mm | 121.0 mm | +16.0 mm | sits past the neck skirt's own 19mm depth, not at the tube's forward rim |
+| access door + switch | 236.0 mm | 187.5 mm | −48.5 mm | the aperture is symmetric in the tube's own frame by construction; the old figure was one edge, not the true centre |
+| e-bay aft bulkhead + skirt | 246.0 mm | 277.5 mm | +31.5 mm | fixed should-fix 11, last round |
+| spring carrier | 267.0 mm | 323.5 mm | +56.5 mm | fixed should-fix 11, last round |
+| CS4323 spring (est.) | 316.0 mm | 334.2 mm | +18.2 mm | bounded between the carrier's diaphragm seat and its own aft reaction tabs |
+| tether latch + pin | 271.0 mm | 299.0 mm | +28.0 mm | mounts on the SAME aft-bulkhead face the carrier does, never derived from that before |
+| shear pins x2 | 276.0 mm | 284.0 mm | +8.0 mm | 8mm past the joint, matching R60_Pin_Z_FromJoint (0.5g total, immaterial) |
+| parachute+cord+hw | 357.0 mm | 406.0 mm | +49.0 mm | packed AFT of the spring mechanism's own footprint, not inside it |
+| fins x3 | 626.5 mm | 638.5 mm | +12.0 mm | true polygon centroid (52.5mm of Cr), not an arbitrary 0.45×Cr fraction |
+| motor retainer | 654.0 mm | 681.0 mm | +27.0 mm | flush with the fin can's aft (nozzle) tip, not 27mm forward of it |
+
+Every other station in `build()` was checked and confirmed already
+correct (uniform-tube items use their own geometric midpoint; a few
+loose/external-hardware items -- nosecone shell, camera, battery+wiring,
+CATS Vega+sled, rail buttons -- have no SCAD geometry to derive a more
+precise station from and are kept as documented heuristics). **This is
+now the TRUE margin, not a margin grown by an uncaught bug, and it is
+below the 1.5 cal gate.** Per explicit instruction, no design change
+(fin growth, mass removal, etc.) was made to force it back above 1.5 --
+that is a design decision for whoever owns the gate, not something to
+engineer backwards into. H182R-14A and H135W-14A land at 1.27-1.28 cal —
+still comfortably above 1.0 cal and needing no ballast, though nose
 ballast is standard practice if either H's margin is ever wanted higher.
-Margin *increases* through the burn on every configuration.
+Margin *increases* through the burn on every configuration (burnout
+G80T margin is 1.78 cal).
 
-**Mass is the G80T's binding constraint, not stability.** Liftoff mass
+**Both mass and stability are now binding on the G80T** (this was
+written as "mass, not stability" before the station audit above; no
+longer accurate -- stability now misses its own gate). Liftoff mass
 grew from the original 805g estimate through several necessary
 corrections (measured-mesh part masses, the missing spring/tether-latch
 hardware, +14g of fin, and now the R60_EBay_L growth) to **871 g**. At
