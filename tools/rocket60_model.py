@@ -2,9 +2,14 @@ import math
 
 RHO_PETG = 1.27   # g/cm3, R60-PrintSettings.md sec 3
 RHO_PC   = 1.20   # g/cm3, R60-PrintSettings.md sec 3 (fin can/retainer/spacer)
-INFILL_EFF = 0.78  # effective print density, matching STL Files/Rocket60/
-                    # README.md's own "~78%... plausible but not verified"
-                    # assumption (the figure the spec's 887g liftoff implies)
+INFILL_EFF = 0.78  # single blended effective print density (walls +
+                    # infill) applied to every PETG part's measured mesh
+                    # volume -- a stated, UNVERIFIED assumption, not
+                    # derived from R60-PrintSettings.md sec 4's actual
+                    # PER-PART infill settings (25-62% depending on part).
+                    # Weigh the printed parts and compare (STL Files/
+                    # Rocket60/README.md's own instruction) before relying
+                    # on the masses this produces.
 D   = 60.0           # airframe OD, fixed by nosecone base
 WALL= 1.6            # airframe wall
 
@@ -28,9 +33,17 @@ S_FIN  = S_CHUTE+L_CHUTE
 # every printed part, and 58g for a bayonet ring that was abandoned and
 # deleted from the design two tasks ago). Material per part from
 # R60-PrintSettings.md sec 3.
+#
+# STL_VOL[10] and [13] re-measured this round (defect 3c / re-export
+# after this round's SCAD fixes): [10] was 13.8, the pre-fin-growth fin
+# volume (stale -- the fin span grew 55->63mm since, and this entry was
+# never actually READ by the fin mass line below, which computed a
+# separate planform-prism estimate instead; both are fixed together
+# below). [13] grew 3.3->3.5 as a direct consequence of this round's
+# defect 2b fix (R60_TetherLatch()'s Base_L: 36.0->38.6mm).
 NOSECONE_VOL = 29.4                 # NoseCone.stl
 STL_VOL = {1: 16.2, 2: 45.7, 3: 53.5, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
-           8: 55.1, 9: 114.0, 10: 13.8, 11: 13.4, 12: 17.6, 13: 3.3}
+           8: 55.1, 9: 114.0, 10: 15.8, 11: 13.4, 12: 17.6, 13: 3.5}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 
 def petg(vol_cm3, infill=INFILL_EFF):
@@ -86,7 +99,6 @@ MOTORS = {
 
 def build(motor):
     mlen, mtot, mprop, Ns, avgN, burn = MOTORS[motor]
-    fin_area = (Cr+Ct)/2*span   # full fin (mass is real regardless of exposure)
     # Motor spacer scales with the actual R60_MotorSpacer() length for
     # this motor (MMT_L - motor length); TSP E20-P is excluded from the
     # design (spec sec 1.1) and would use MotorAdapter29, not this
@@ -119,7 +131,17 @@ def build(motor):
      ('tether latch + pin',    petg(STL_VOL[13]) + 1.0,  S_EBAY+L_EBAY-5),
      ('shear pins x2',         0.5,                      S_CHUTE),
      ('fin can (PC)',          pc(STL_VOL[9]),           S_FIN+L_FINCAN/2),
-     ('fins x3 (62% infill)',  NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62,
+     # FIXED (defect 3c): was NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62, a
+     # planform-prism ESTIMATE (chord x span x thickness) that broke this
+     # file's own "measured mesh volumes, NOT estimates" convention --
+     # STL_VOL[10] existed but was never read, so it silently went stale
+     # (13.8 vs the actual, re-measured 15.8) with nothing to catch it: the
+     # prism formula agreed with the true mass by coincidence at 62%
+     # infill and would track neither STL_VOL[10] nor the prism inputs if
+     # either changed independently. Uses the measured volume directly,
+     # same convention as every other part above; infill (62%, spec sec 8,
+     # literal) is unchanged.
+     ('fins x3 (62% infill)',  NFIN*STL_VOL[10]*RHO_PETG*0.62,
                                                           S_finLE+0.45*Cr),
      ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL-30),
      ('rail buttons x2',       4.0,                      TOTAL-60),
@@ -193,7 +215,10 @@ print(f"   {'TOTAL':<32}{m:>7.1f} g")
 
 # ---------------- flight sim ----------------
 def curve_scaled(shape, Ns, tb):
-    I=sum((shape[i+1][0]-shape[i][0])*(shape[i][1]+shape[i+1][1])/2 for i in range(len(shape)-1))
+    # (defect 3e: this trapezoidal integral used to be computed twice --
+    # once over the un-scaled `shape`, immediately overwritten, unread,
+    # by a second pass over the time-scaled `c`. Only the second (correct)
+    # integral -- of the curve actually being normalised to Ns -- is kept.)
     sc_t = tb/shape[-1][0]
     c=[(t*sc_t, f) for t,f in shape]
     I=sum((c[i+1][0]-c[i][0])*(c[i][1]+c[i+1][1])/2 for i in range(len(c)-1))

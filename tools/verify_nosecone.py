@@ -59,9 +59,18 @@ def checks(m):
 
     # 1. Genus per part. Catches an interior defect (e.g. a webbed
     # eyelet) that leaves every zmin/zmax/height/dmax check untouched.
+    # FIXED (defect 3a): scad_verify.measure() now always injects a
+    # "genus" key (defaulting to None when render() found no "Genus:"
+    # line), so the old `"genus" in m[p]` guard was always True regardless
+    # of whether a real value was found, and `abs(None - GENUS[p])` raised
+    # TypeError instead of failing cleanly. A missing genus is now a loud
+    # FAIL (actual=nan, never <= any tolerance) instead of a crash or a
+    # silently-skipped check -- same fix verify_rocket60.py already has.
     for p in m:
-        if "genus" in m[p] and p in GENUS:
-            c += [("part %d genus" % p, m[p]["genus"], GENUS[p], 0)]
+        if p in GENUS:
+            g = m[p].get("genus")
+            c += [("part %d genus" % p,
+                   g if g is not None else float("nan"), GENUS[p], 0)]
 
     # 2. Ring-in-flange clearance, MEASURED bore vs MEASURED ring OD
     # (never against the hardcoded 82.0/52.0 design constants, which is
@@ -103,11 +112,15 @@ def main(argv):
             # slow render died on a raw traceback rather than this FAIL.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
             return 1
-        m[p] = measure(out)
+        # genus passed straight to measure() (defect 3a) -- it already
+        # sets "genus": genus (None when render() found no "Genus:" line)
+        # and "stl": stl in its own return dict, so the two follow-up
+        # assignments this used to do here (`m[p]["stl"] = out`,
+        # `if genus is not None: m[p]["genus"] = genus`) were redundant at
+        # best and, for "genus", part of why a missing value was
+        # indistinguishable from a found one downstream.
+        m[p] = measure(out, genus)
         m[p]["vol"] = volume(out)
-        m[p]["stl"] = out
-        if genus is not None:
-            m[p]["genus"] = genus
         print("  part %d %-14s h=%7.2f  dia=%7.2f  z=%7.2f..%7.2f  %5.0f g PETG"
               % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
                  m[p]["zmin"], m[p]["zmax"], m[p]["vol"] * 1.27))

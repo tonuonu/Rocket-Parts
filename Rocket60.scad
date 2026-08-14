@@ -850,11 +850,12 @@ module R60_FinCan(){
     // ring is where the permanent shock cord ties off on the aft
     // section's end -- without a real anchor feature here, nothing holds
     // the aft section (chute bay + fin can + motor) after separation. Two
-    // axial Ø5 holes, same size/spacing convention as
-    // R60_EBayAftBulkhead()'s own cord holes (Cord_d, +-6mm), through the
-    // FORWARD ring only, at -Y -- clear of all 3 fin slots (0/120/240deg)
-    // and solidly inside the ring's own annulus (MMT_OD/2=16.15 ..
-    // Body_ID/2=28.4).
+    // axial Ø5 holes at x=+-4mm (Cord_d matches R60_EBayAftBulkhead()'s
+    // own cord holes; the x spacing does not -- this ring's annulus is
+    // narrower, so +-4mm, not that part's +-6mm, is what actually clears
+    // both the MMT and the fin slots here), through the FORWARD ring
+    // only, at -Y -- clear of all 3 fin slots (0/120/240deg) and solidly
+    // inside the ring's own annulus (MMT_OD/2=16.15 .. Body_ID/2=28.4).
     FwdRing_Z = R60_FinCan_L - Ring_T - 6;
     Cord_d    = 5;
     Cord_R    = 22.5;
@@ -934,8 +935,9 @@ module R60_MotorRetainer(){
     }
 } // R60_MotorRetainer
 
-// Forward spacer so a motor shorter than the 223mm MMT still sits flush at
-// the aft end. Open bore: ejection gas and the forward closure pass through.
+// Forward spacer so a motor shorter than the R60_MMT_L (228mm) MMT still
+// sits flush at the aft end. Open bore: ejection gas and the forward
+// closure pass through.
 module R60_MotorSpacer(){
     L = R60_MMT_L - R60_Motor_L[Motor_Class];
     if (L > 1)

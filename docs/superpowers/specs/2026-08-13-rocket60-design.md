@@ -287,9 +287,15 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 887 g | 8.9 | **15.2 m/s** | 129 m/s | **0.38** | 615 m | 10.8 s |
-| **H182R-14A** (29 mm DMS) | 966 g | 19.2 | 22.3 m/s | 204 m/s | **0.60** | 970 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 971 g | 12.0 | 16.4 m/s | 190 m/s | **0.55** | 1010 m | 13.2 s |
+| **G80T-14A** (owned) | 868 g | 9.1 | **15.3 m/s** | 132 m/s | **0.39** | 626 m | 10.9 s |
+| **H182R-14A** (29 mm DMS) | 934 g | 19.9 | 22.5 m/s | 210 m/s | **0.62** | 983 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 937 g | 12.6 | 17.3 m/s | 195 m/s | **0.58** | 1032 m | 13.2 s |
+
+(Figures from `tools/rocket60_model.py`'s own output, run after this
+round's fixes -- see §6 below for the matching stability table, which
+already carried the correct 867-868 g liftoff mass; this table was the
+one still showing the pre-fin-growth 887 g figure, with the 15.2 m/s
+rail-exit risk it implied.)
 
 Motor data, all from thrustcurve.org:
 
@@ -371,7 +377,7 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 867 g | 340.0 mm | **1.62 cal** | 319.6 mm | 1.96 cal |
+| G80T-14A | 868 g | 340.0 mm | **1.62 cal** | 319.6 mm | 1.96 cal |
 | H182R-14A | 934 g | 351.1 mm | **1.43 cal** | 321.7 mm | 1.92 cal |
 | H135W-14A | 937 g | 350.5 mm | **1.44 cal** | 331.0 mm | 1.77 cal |
 
@@ -386,7 +392,7 @@ higher. Margin *increases* through the burn on every configuration.
 **Mass is the G80T's binding constraint, not stability.** Liftoff mass
 grew from the original 805g estimate through several necessary
 corrections (measured-mesh part masses, the missing spring/tether-latch
-hardware, and now +14g of fin) to **867 g**. At that mass the rocket
+hardware, and now +14g of fin) to **868 g**. At that mass the rocket
 leaves a 1.5 m rail at **18.9 m/s**, comfortably above the ~15 m/s
 minimum despite the added fin span. A 1.5 m rail is adequate for the
 G80T. The H182R is unaffected (28.0 m/s).

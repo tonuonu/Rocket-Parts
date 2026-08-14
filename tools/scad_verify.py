@@ -68,20 +68,9 @@ def measure(stl, genus=None):
 
 
 @functools.lru_cache(maxsize=None)
-def bore(stl, zlo, zhi):
-    """Return (min_dia, max_dia) of material within the Z band [zlo, zhi].
-
-    min_dia is the smallest radius seen doubled, i.e. the bore; max_dia the
-    largest, i.e. the OD. Vertices outside the band are ignored.
-
-    Memoised on (stl, zlo, zhi): callers routinely re-check the same band
-    on the same part (verify_rocket60.py calls bore() on the same (stl,
-    band) pair from several independent checks, e.g. per bulkhead and at
-    lines scattered through checks()), and each call re-reads and
-    re-parses the ENTIRE ascii STL from scratch -- part 9 alone is
-    ~114 cm^3 of triangles. stl paths are per-render tempfiles that are
-    never reused for different content within a run, so caching on the
-    path (plus the band) is safe."""
+def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi):
+    """Actual bore() body, memoised on (path, mtime, size, band) -- see
+    bore() below for why mtime/size are part of the key, not just path."""
     rmin, rmax = None, 0.0
     for tri in _tris(stl):
         for (x, y, z) in tri:
@@ -92,6 +81,31 @@ def bore(stl, zlo, zhi):
     if rmin is None:
         raise RuntimeError("no geometry in Z band %.2f..%.2f of %s" % (zlo, zhi, stl))
     return 2.0 * rmin, 2.0 * rmax
+
+
+def bore(stl, zlo, zhi):
+    """Return (min_dia, max_dia) of material within the Z band [zlo, zhi].
+
+    min_dia is the smallest radius seen doubled, i.e. the bore; max_dia the
+    largest, i.e. the OD. Vertices outside the band are ignored.
+
+    Memoised (in _bore_cached) on (path, mtime_ns, size, zlo, zhi): callers
+    routinely re-check the same band on the same part (verify_rocket60.py
+    calls bore() on the same (stl, band) pair from several independent
+    checks, e.g. per bulkhead and at lines scattered through checks()), and
+    each call re-reads and re-parses the ENTIRE ascii STL from scratch --
+    part 9 alone is ~114 cm^3 of triangles.
+
+    Keyed on path ALONE, this was unsafe (defect 3d): the docstring's "stl
+    paths are never reused for different content within a run" is a
+    property of today's CALLERS, not of this function, and nothing enforces
+    it -- re-rendering to a path already measured (e.g. looping Motor_Class
+    over the same tempfile) would silently return the FIRST render's stale
+    geometry for every subsequent call on that path, wrong and undetected.
+    Including the file's own mtime/size in the key makes a re-render (which
+    always changes at least one of them) a cache miss instead."""
+    st = os.stat(stl)
+    return _bore_cached(stl, st.st_mtime_ns, st.st_size, zlo, zhi)
 
 
 def volume(stl):
