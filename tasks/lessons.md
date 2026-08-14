@@ -257,3 +257,75 @@ the material the screw is designed to displace as an obstruction. None
 of these three are exotic: all three showed up writing this one check
 class for a single design, and all three look identical to a genuine
 defect (a non-zero intersection volume) until traced to their source.
+
+## 9. A sweep probe's own axis/direction was assumed, not verified against the real assembly
+
+Three probes in one review round (9th) all had the same shape: the
+*geometry* they modelled was reasonable (a stated hardware envelope, a
+fastener's shank+engagement) but the transform placing it in the shared
+frame pointed the wrong way, so the probe swept clear, uncontested space
+instead of the material it existed to check against — and rendered
+"empty" (a clean pass) regardless of the real design, for reasons that
+have nothing to do with the real design being clean. `SwitchProbe`
+(`rotate([-90,0,0])`) swept OUTWARD from the tube wall, away from every
+other part in the scene, when the stated hardware reaches INWARD —
+confirmed by mutation, `SW_REACH` at 10x the real value still measured
+zero. `RetainerBoltSweep` placed its own local origin at the wrong face
+of the part it bears on (the INNER face instead of the EXPOSED one) with
+no compensating translate, so its "engagement" segment swept 6.7mm of
+open air on the wrong side of the part entirely, and the part it was
+meant to check the engagement INTO (the fin can) was not even present in
+the scene. This is the identical class the 8th review already fixed once
+in `NutSweep_Sled` (a `rotate([-90,0,0])` vs `rotate([90,0,0])` sign
+error swept the nut's own approach corridor INTO the rail instead of the
+open bench space aft of it) — `SwitchProbe` did not get the same fix
+applied, and `RetainerBoltSweep` was never checked at all, despite the
+fix for one instance already being on record.
+
+Getting the fix right is not just "flip the sign": for a placement that
+also carries real X/Y asymmetry (a multi-boss pattern, not a plain
+coaxial cylinder pair), the WRONG axis of a 180° flip does not fail
+safe — it can produce a plausible-looking but spurious collision on a
+correct design (confirmed: flipping `RetainerBoltSweep`'s fin-can
+placement about the Y axis instead of X gave a real, non-zero 0.019cm3
+"defect" at default parameters, not a clean empty result and not a
+second silently-vacuous check). The two axis choices are NOT
+interchangeable once the shape being placed has its own asymmetry, even
+though they ARE interchangeable for a shape (like `FastenerSweep`
+itself) that has none.
+
+**Guard against this**: when a probe's `rotate([a,0,0])`/`rotate([0,a,0])`
+was chosen by matching an existing idiom elsewhere in the file rather
+than re-derived from the two real parts' own stated local-frame
+conventions (which face is "local z=0", which direction is "into the
+material"), render it and check the RESULT's own bounding box/volume
+against what the real geometry's own placement comments say — do not
+assume a fix already applied to one probe in the same file was
+propagated to a sibling probe of the same shape, and do not assume a
+result of "empty" means the check passed for the reason you think it
+did. Every fix in this class needs the SAME mutation-test proof as a
+brand-new check: show a stated hardware envelope well past its real
+value still measuring zero before the fix, and a real, non-degenerate
+collision after it, on a mutation that a correctly-aimed probe should
+catch.
+
+## Cross-references (9th review) to existing patterns above
+
+- `verify_docs_sync.py`'s `run_model()` accepting the model's own
+  regression exit code as success, and `verify_nosecone.py`'s four bare
+  `bore()` calls aborting the whole report on one moved feature, are both
+  pattern 3 (a check silently skips instead of failing) — not new
+  shapes, just two more instances; fixed the same way (loud FAIL/`nan`,
+  not a swallowed exception or an accepted non-zero exit code).
+- `scad_verify.render()` trusting a caller-supplied `var` without
+  checking it names a real top-level variable in the target file is also
+  pattern 3's shape (a mistyped/renamed selector silently falls back to
+  the file's own default part and reports success) — fixed with a static
+  pre-flight check plus the same "Ignoring unknown variable" guard
+  `render_probe()` already carried for the sibling bug class.
+- `R60-PrintSettings.md`'s stale "1.47 cal" surviving next to an already-
+  corrected "1.46 cal" is pattern 1 (a restated literal drifts from the
+  constant that produced it) — the fix (`doc_has()` gaining a companion
+  bold-cal staleness scan) is the general form of pattern 1's own
+  "Guard against this": the gate needed to assert absence of the
+  superseded value, not just presence of the current one.

@@ -1235,8 +1235,12 @@ module R60_FinCan(){
 } // R60_FinCan
 
 // Fin, printed flat. Low aspect ratio (0.87, exposed) is deliberate - it
-// is what puts flutter velocity at ~959 m/s, 4.6x the H182R's Vmax
-// (~210 m/s) and 3.0x the H135W's -- both re-derived on the EXPOSED
+// is what puts flutter velocity at ~955 m/s (9th review: was 959,
+// predating the 8th review's MMT_r correction), 4.6x the H182R's Vmax
+// (~210 m/s) and 4.9x the H135W's (9th review: was 3.0x, materially
+// wrong against this design's own "Vf >= 3x fastest Vmax" gate -- a
+// reader would have concluded the H135W sits near the limit when it
+// clears it 4.9x over) -- both re-derived on the EXPOSED
 // panel (root at the body OD, not the buried root at the MMT), which is
 // the panel that actually flexes. Span grew 55->63mm (task report,
 // coordinator decision) to fix the G80T-14A's static margin, which was
@@ -1503,18 +1507,29 @@ module R60_TetherLatch(){
             //
             // Withdrawal only ever needs to clear both posts
             // (Post_X+Post_d/2=13mm) plus a stated hand-grip allowance --
-            // nowhere near that ceiling -- so Pin_Reach is capped there
-            // explicitly, with a stated real clearance to the rim, instead
-            // of reaching for the old bore's full width. That means this
-            // bore no longer breaks through the base's own outer edge
-            // (Pin_Reach=17 < Base_L/2=19.3) -- a BLIND channel, which is
-            // fine: nothing in this module's scope requires the printed
-            // bore itself to reach open air at the base's edge, only that
-            // it give the pin (separate steel hardware) a straight,
-            // adequately long channel to travel in. Asserted so a future
-            // change to R60_Tether_Y/R60_SpringCarrier_CB_D/Pin_d that eats
-            // this margin fails loudly instead of silently reopening the
-            // same 0.15mm gap.
+            // nowhere near the counterbore-rim ceiling above -- so
+            // Pin_Reach is capped there explicitly, with a stated real
+            // clearance to the rim, instead of reaching for the old
+            // bore's full width.
+            //
+            // 9th review: the base comparison this comment used to make
+            // (Pin_Reach=17 < Base_L/2=19.3, "a BLIND channel") compared
+            // against the wrong material -- this bore sits at
+            // z=Base_T+Post_H-4, well above the base plate's own Z range
+            // (z=0..Base_T), so at this height the ONLY material is the
+            // two POSTS (x=5..13 and x=-13..-5), not the base slab. The
+            // bore's own x=-17..17 span opens to air on BOTH sides of
+            // BOTH posts (17 > 13) -- it IS a genuine through-tunnel, not
+            // blind, matching this part's own GENUS[13]=5 derivation
+            // (tools/verify_rocket60.py: "pin bore still a genuine
+            // tunnel through each post"), which this comment used to
+            // contradict. The REASONING above is unaffected -- Pin_Reach
+            // is still capped by the withdrawal clearance need, not the
+            // (irrelevant) base width -- only the geometric claim about
+            // where the bore terminates was wrong. Asserted so a future
+            // change to R60_Tether_Y/R60_SpringCarrier_CB_D/Pin_d that
+            // eats the counterbore-rim margin fails loudly instead of
+            // silently reopening the same 0.15mm gap.
             Pin_Reach_Grip = 4;    // hand-grip/actuation allowance past the post
             Pin_Reach = Post_X + Post_d/2 + Pin_Reach_Grip;   // 17
             Pin_Reach_MaxSafe = sqrt(pow(R60_SpringCarrier_CB_D/2, 2)

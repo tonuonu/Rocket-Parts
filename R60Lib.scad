@@ -373,6 +373,34 @@ R60_Vega_Rail_AftTip_Y = R60_Vega_AxialCenter
 // from what the tips themselves say.
 R60_Vega_Rail_L = R60_Vega_Rail_AftTip_Y - R60_Vega_Rail_FwdTip_Y;
 
+// Physical M3 rod length to cut (9th review, finding 3): NOT stated
+// anywhere before this -- R60-PrintSettings.md section 6 says "thread two
+// M3 rods" with no length, and nothing derived one, so a builder cutting
+// to the sled's own R60_Vega_Rail_L (133.1mm) would produce a cartridge
+// whose rods never reach the aft pocket (r60_assembly.scad's own
+// RodSweep_Sled() had the same gap -- see that module's own comment,
+// fixed the same review round). Four terms, all measured from the rod's
+// FIXED forward end (deep in the fwd bulkhead's insert) to its FREE aft
+// tip (the pocket floor, its second support point against side-load):
+//   R60_Vega_RodInsert_h  -- threaded into the fwd insert (permanent)
+//   R60_Vega_Rail_L       -- the full rail span the rod passes through
+//   R60_Vega_Rail_AftClear -- the rail's aft tip to the aft bulkhead's
+//                             own e-bay-facing face; the nut+washer stack
+//                             sits AROUND the rod inside this gap, not as
+//                             extra length past it (a bare "+3mm for the
+//                             nut" double-counts material already inside
+//                             AftClear)
+//   R60_Vega_RodPocket_Depth -- the pocket's own full depth, so the tip
+//                               genuinely reaches the floor, not merely
+//                               enters the opening
+// SAME four terms RodSweep_Sled() sweeps (r60_assembly.scad) -- restated
+// there per rule 4, not re-derived, so the probe and the BOM figure can
+// never silently disagree on how far the rod is supposed to reach.
+R60_Vega_RodLength = R60_Vega_RodInsert_h + R60_Vega_Rail_L
+                      + R60_Vega_Rail_AftClear + R60_Vega_RodPocket_Depth;
+                      // ~152.8mm
+echo(str("R60_Vega_RodLength (M3 rod, cut length): ", R60_Vega_RodLength, " mm"));
+
 // Vega board worst-case radial reach into the e-bay bore, installed (5th
 // review, finding 2). NOMINAL closed form of the SAME quantity
 // tools/verify_rocket60.py's own CLEAR_EXPECT check measures off the
@@ -564,15 +592,20 @@ R60_SpringCarrier_L = 65;
 // and Ct-trim alternatives that were rejected for costing more mass at
 // the same margin). 63mm clears the design's real physical minimum --
 // 1.0 cal, standard high-power practice's accepted 1.0-2.0 cal band --
-// with genuine room: 1.45 cal at liftoff on the G80T (5th review,
+// with genuine room: 1.46 cal at liftoff on the G80T (9th review: was
+// 1.45, predating the 8th review's MMT_r correction; 5th review,
 // finding 11: this comment used to cite a 1.5 cal target, since retired
 // as never having been a physical requirement, and a 1.61 cal figure,
 // itself twice corrected downward by a full station audit -- see spec
 // section 6.1 for the ruling and tools/rocket60_model.py's own
 // MIN_MARGIN_CAL for the current gate). Flutter velocity -- a function of
 // exposed AR, which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s;
-// 63->0.869->959; 70->0.982->802 -- growing span 18% raised AR 18% and
-// CUT Vf 21%, the opposite of a free lever) -- still stays comfortably
+// 63->0.869->955; 70->0.982->802 -- growing span 18% raised AR 18% and
+// CUT Vf ~21%, the opposite of a free lever; the 55mm/70mm points are
+// PRE-CORRECTION illustrations of the same trend, not current model
+// output for those spans -- only 63mm, the shipped span, is re-verified
+// against tools/rocket60_model.py's own current Vf=955 above) -- still
+// stays comfortably
 // above 3x the fastest flight speed on any motor at 63mm. This is a real
 // cost, not a margin grown for free: do not read this as licence to keep
 // growing span for stability headroom without re-checking Vf each time

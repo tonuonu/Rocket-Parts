@@ -6,7 +6,7 @@ is measured from the STL rather than inferred from parameters.
 """
 import os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, overshoot
+from scad_verify import REPO, render, measure, bore, volume, overshoot, safe
 
 SCAD = os.path.join(REPO, "PeregrineNoseCone.scad")
 
@@ -85,23 +85,35 @@ def checks(m):
     # 2. Ring-in-flange clearance, MEASURED bore vs MEASURED ring OD
     # (never against the hardcoded 82.0/52.0 design constants, which is
     # exactly what let an interference fit pass the old gate).
+    #
+    # (9th review) bore() calls here used to sit bare: a moved ring
+    # flange or shoulder spigot (the band no longer straddles the real
+    # feature) raised RuntimeError straight out of checks(), aborting the
+    # WHOLE run with a traceback before a single row printed -- the exact
+    # "one bad row kills the whole report" class safe() (scad_verify.py)
+    # exists to fix, and the same commit gave verify_camnose.py's one
+    # bare bore() a try/except-and-count and every scanner in
+    # verify_rocket60.py the safe() wrapper. Mutation-tested: temporarily
+    # moving SHOULDER_SPIGOT_BAND off part 1's real geometry crashed this
+    # whole script with a traceback before this fix; now it is a loud,
+    # counted FAIL on just the checks that needed that measurement.
     if 2 in m and 5 in m:
         zlo, zhi = FLANGE_TOP_BAND[2]
-        flange_bore, _ = bore(a(2, "stl"), zlo, zhi)
+        flange_bore, _ = safe(bore, a(2, "stl"), zlo, zhi, nvals=2)
         c += [("ring5-in-flange clearance", flange_bore - a(5, "dmax"), 0.45, 0.15)]
     if 3 in m and 6 in m:
         zlo, zhi = FLANGE_TOP_BAND[3]
-        flange_bore, _ = bore(a(3, "stl"), zlo, zhi)
+        flange_bore, _ = safe(bore, a(3, "stl"), zlo, zhi, nvals=2)
         c += [("ring6-in-flange clearance", flange_bore - a(6, "dmax"), 0.45, 0.15)]
 
     # 3. Shoulder spigot: its own OD, and its measured clearance in the
     # bottom slice's actual coupler bore (not the Peregrine_Coupler_OD
     # constant it is only supposed to match).
     if 1 in m:
-        _, spigot_od = bore(a(1, "stl"), *SHOULDER_SPIGOT_BAND)
+        _, spigot_od = safe(bore, a(1, "stl"), *SHOULDER_SPIGOT_BAND, nvals=2)
         c += [("shoulder spigot dia", spigot_od, 96.7, 0.1)]
         if 2 in m:
-            bottom_bore, _ = bore(a(2, "stl"), *BOTTOM_SLICE_BASE_BAND)
+            bottom_bore, _ = safe(bore, a(2, "stl"), *BOTTOM_SLICE_BASE_BAND, nvals=2)
             c += [("spigot-in-bottom-bore clearance", bottom_bore - spigot_od, 0.4, 0.1)]
     return c
 

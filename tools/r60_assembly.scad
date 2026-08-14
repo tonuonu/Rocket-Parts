@@ -557,9 +557,23 @@ SW_REACH = 10.0;     // stated hardware envelope -- typical mini panel-
                        // bushing + body/lugs) behind a 2mm-thick panel
 SW_X = 0;           // R60_Door()'s own Sw_X -- the cover's own crown
 SW_Z = R60_Door_Overlap + R60_Door_Open_H/2;   // R60_Door()'s own Sw_Z, 48.5
+// 9th review: rotate([-90,0,0]) here mapped the cylinder's local +Z (its
+// own h=0..SW_REACH span) to GLOBAL +Y -- the envelope swept OUTWARD from
+// the tube wall (Y=30..40 at the stated SW_REACH=10), off the airframe
+// entirely and away from BoardProbe (Y=-8.25..12.75), so this pair could
+// never intersect anything regardless of SW_REACH: confirmed by mutation,
+// -D Pair=22 -D SW_REACH=100 (10x the stated hardware) still rendered
+// "Current top level object is empty". The switch's installed hardware
+// reaches INWARD from the door (toward the board), matching this file's
+// own "~17.3mm" threshold comment two paragraphs up
+// (R60_Body_OD/2 - R60_Vega_Board_Inner_Y), which is only the right
+// number for an inward sweep. rotate([90,0,0]) maps local +Z to GLOBAL
+// -Y instead, sweeping from the tube wall INWARD -- re-tested with the
+// same mutation: SW_REACH=100 now measures a real, non-zero collision
+// against BoardProbe.
 module SwitchProbe(){
     translate([SW_X, R60_Body_OD/2, SW_Z])
-        rotate([-90,0,0])
+        rotate([90,0,0])
             cylinder(d=SW_D, h=SW_REACH);
 }
 
@@ -698,17 +712,39 @@ module FastenerSweep(Shank_d, Head_d, Travel, Engage){
 // re-derivation was the SAME swapped arithmetic R60_VegaSled() itself had,
 // so this probe silently agreed with the sled's own mistake instead of
 // catching it. Origin sits RodInsert_h BEFORE the fwd tip (inside the fwd
-// bulkhead's own insert, where the rod's fixed end actually threads in)
-// and Engage reaches the rail's full length plus that insert engagement,
-// ending exactly at the aft tip (the nut's own bearing face).
+// bulkhead's own insert, where the rod's fixed end actually threads in).
+//
+// 9th review, finding 1: Engage used to stop at R60_Vega_Rail_L +
+// R60_Vega_RodInsert_h -- exactly the rail's own aft tip (the nut's
+// bearing face) and NO FURTHER. That is the right reach for Pair 25
+// (this module vs. R60_VegaSled() alone, which has no material past that
+// tip anyway), but the SAME Engage was also reused for Pair 26 (this
+// module vs. BOTH bulkheads, in the assembled tube frame -- see below),
+// where it left the rod's own modelled tip 5mm short of the aft
+// bulkhead's pocket-opening face and nowhere near the pocket floor.
+// Mutation-tested: with the old Engage, `-D Pair=26
+// -D R60_Vega_RodPocket_Depth=0` (the pocket deleted entirely) still
+// rendered "Current top level object is empty" -- Pair 26's own stated
+// purpose ("proves ... the fwd insert and aft pocket are genuinely
+// coaxial") held only for the forward insert; the whole nut-face-to-
+// pocket-floor segment was unmodelled and the pocket's own existence or
+// depth was provably irrelevant to the check's result.
+//
+// Engage now reads R60Lib.scad's own R60_Vega_RodLength directly (rule
+// 4): RodInsert_h + Rail_L + Rail_AftClear + RodPocket_Depth, the SAME
+// four terms that constant derives the physical rod's own cut length
+// from, so the rod modelled here and the rod a builder actually cuts can
+// never silently disagree on how far it is supposed to reach. Ends
+// exactly at the aft pocket's own floor (Pair 26's own frame), 5mm
+// further than the rail's aft tip alone (Pair 25 stays clear either way
+// -- R60_VegaSled() has no material past the rail's own tip regardless
+// of how far past it this sweeps).
 module RodSweep_Sled(){
     Y0 = R60_Vega_Rail_FwdTip_Y - R60_Vega_RodInsert_h;   // rod's fixed
                                                              // end, inside
                                                              // the fwd
                                                              // insert
-    Engage = R60_Vega_Rail_L + R60_Vega_RodInsert_h;   // reaches to the
-                                                          // aft tip (nut
-                                                          // face)
+    Engage = R60_Vega_RodLength;   // reaches the aft pocket's own floor
     for (s=[-1,1])
         translate([s*R60_Vega_Rail_X, Y0, R60_Vega_Rail_Z_Local])
             rotate([-90,0,0])
@@ -839,17 +875,89 @@ module Pair29_B(){ union(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Doo
 // Pair 30: motor retainer bolts (3x M3, R60_MotorRetainer()/
 // R60_FinCan()'s own Boss_BC_R=24 pattern, 60deg off the fins). ACCESS:
 // from OUTSIDE, the fin can's fully open aft end (assembly step 10) --
-// never inside a tube. Head bears on the retainer's own exposed aft
-// face (local z=0); shank continues through the retainer's own T(6)
-// into the fin can's own insert (6.7mm engagement) -- Engage=12.7.
+// never inside a tube. Head bears on the retainer's own EXPOSED aft face
+// -- local z=T(6), NOT z=0 as this comment used to say: Pair 11's own
+// comment (above) already establishes R60_MotorRetainer()'s local z=0 as
+// its INNER, motor-facing side, and this pair contradicted it. Shank
+// continues from the exposed face through the retainer's own T(6) into
+// the fin can's own insert (6.7mm engagement) -- Engage=12.7=T+Insert_h.
+//
+// 9th review, finding 1: with no translate/rotate at all, FastenerSweep's
+// own local (0,0,0) (its seated head/nut-bearing plane) landed directly
+// on the retainer's local z=0 -- its INNER face, not the exposed one --
+// so the head corridor (z=-20..0) swept pure air on the wrong side while
+// the shank (z=0..12.7) only ever overlapped the retainer's own
+// ALREADY-CUT Bolt_d=3.4 clearance hole (a degenerate, zero-clearance
+// tangent) before running 6.7mm PAST the retainer's own material (z>6)
+// into open space -- Pair30_B never rendered the fin can at all, so that
+// final 6.7mm could not have found the insert even if it had been aimed
+// correctly. Confirmed: Pair 30 at defaults (both before and after this
+// fix's frame correction, with Pair30_B still retainer-only) measures
+// 0.0000 cm3 -- proving nothing about the insert engagement, since there
+// is no insert geometry in the scene to fail against.
+//
+// Fixed two ways together: (1) translate to the retainer's own EXPOSED
+// face (z=6) and rotate([180,0,0]) to flip FastenerSweep's own driven-in
+// direction -- the AXIS chosen for this specific flip does not matter
+// (TetherBoltSweep's own comment: FastenerSweep is two coaxial cylinders
+// with no off-axis feature, so a 180deg rotation about any axis in its
+// own XY plane is the same non-chiral flip), it is written [180,0,0] only
+// to match the OTHER flip below, which is NOT axis-interchangeable. (2)
+// Pair30_B now unions in R60_FinCan() itself (Pair 29's own
+// union(){door; tube} is the precedent for a bolt sweep needing more
+// than the one part its head bears on), placed with rotate([180,0,0]) --
+// an X-axis flip, NOT the Y-axis flip used elsewhere in this file
+// (TetherBoltSweep's rotate([0,180,0])): unlike FastenerSweep, R60_FinCan()
+// is NOT axisymmetric -- its 3-boss pattern only maps onto itself under
+// the RIGHT axis. Negating Y (X-axis flip) maps angle set {60,180,300} to
+// {300,180,60}, the SAME set; negating X (Y-axis flip) maps it to
+// {120,0,240}, a DIFFERENT set 60deg off every real boss. Confirmed
+// empirically, NOT merely reasoned: substituting rotate([0,180,0]) here
+// renders a SPURIOUS 0.0191cm3 collision at DEFAULT parameters on the
+// otherwise-correct design (the misaligned boss pattern clips real
+// material nowhere the true assembly does) -- i.e. the wrong axis does
+// not fail safe as a second vacuous check, it actively breaks the gate on
+// a clean build, which is the more falsifiable proof that axis choice
+// here is a real geometric fact, not a stylistic pick.
+//
+// NO translate on the fin can placement -- tools/rocket60_model.py's own
+// station-audit comment is the authority: "R60_MotorRetainer()'s own
+// local z=0, its INNER motor-facing side, MEETS the fin can's aft tip
+// [i.e. the SAME point, not offset], and its solid material -- z=0..T --
+// grows AWAY from the motor, i.e. AFT of that tip, not back into the fin
+// can." So retainer z=0 and fin can z=0 (its own aft tip, where the
+// boss/insert cut starts) are the SAME global point; a flip with no added
+// offset is what makes them coincide. (First attempt added
+// translate([0,0,6]) here, reasoning the retainer's z=6 exposed face was
+// the shared point instead -- caught by the mutation below: it rendered
+// a real 0.0626cm3 collision at DEFAULT parameters, no mutation needed,
+// because it planted 6mm of fin can boss material inside the bolt's own
+// modelled travel that the real assembly does not have there.)
+//
+// Mutation-tested: temporarily shrinking R60_FinCan()'s own Insert_h
+// 6.7->3 (a boss whose insert no longer reaches as deep as the retainer
+// assumes) rendered EMPTY under the OLD (retainer-only, wrong-frame)
+// dispatch regardless of Insert_h -- the fin can was never in the scene,
+// so no value of Insert_h could ever matter. With this fix, the same
+// mutation gives a real, robust collision (fixed diameter path 3.4mm
+// finds only 3mm of insert depth where it expects 6.7); at the real
+// Insert_h=6.7 this pair renders empty (clean, real margin against the
+// Ø4.0 insert bore), confirming the fix does not false-positive on the
+// real design.
 module RetainerBoltSweep(){
     for (i=[0:R60_nFins-1])
         rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
-            translate([24,0,0])
-                FastenerSweep(Shank_d=3.4, Head_d=5.5, Travel=20, Engage=12.7);
+            translate([24,0,6])
+                rotate([180,0,0])
+                    FastenerSweep(Shank_d=3.4, Head_d=5.5, Travel=20, Engage=12.7);
 }
 module Pair30_A(){ RetainerBoltSweep(); }
-module Pair30_B(){ R60_MotorRetainer(); }
+module Pair30_B(){
+    union(){
+        R60_MotorRetainer();
+        rotate([180,0,0]) R60_FinCan();
+    }
+}
 
 // Pair 31: tether latch mounting bolts (2x M3, R60_TetherLatch()'s own
 // Mount_Hole_d pattern into R60_EBayAftBulkhead()'s inserts). ACCESS:

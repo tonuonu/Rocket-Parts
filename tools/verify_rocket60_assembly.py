@@ -20,7 +20,7 @@ still jam partway through assembly (exactly what defect 1 does: clear at
 the seated position, but the tether lug catches solid carrier material
 partway through the stroke and the rocket cannot be assembled at all).
 """
-import os, subprocess, sys, tempfile
+import os, shutil, subprocess, sys, tempfile
 
 from scad_verify import REPO, OPENSCAD, volume
 
@@ -117,7 +117,7 @@ PAIRS = {
     27: "vega sled rod nut sweep vs sled rail",
     28: "camera bolts sweep vs neck",
     29: "access door screws sweep vs door+tube",
-    30: "motor retainer bolts sweep vs retainer",
+    30: "motor retainer bolts sweep vs retainer + fin can insert",
     31: "tether latch bolts sweep vs aft bulkhead",
     32: "Vega board mounting screws sweep vs sled",
 }
@@ -233,62 +233,68 @@ def render_probe(pair, ins, out, push=0.0):
 def main(argv):
     pairs = [int(x) for x in argv[1:]] or sorted(PAIRS)
     tmp = tempfile.mkdtemp(prefix="r60asm-")
-    bad = 0
+    # (9th review) try/finally: this used to mkdtemp() and never clean up
+    # -- see verify_rocket60.py's own main() comment for the measured
+    # 16-27 MB/run figure and the two files sharing this same gap.
+    try:
+        bad = 0
 
-    for p in pairs:
-        name = PAIRS.get(p, "?")
-        if p in STROKE_PAIRS:
-            worst = (0.0, None)
-            for ins in INS_SWEEP:
-                out = os.path.join(tmp, "pair%d_ins%d.stl" % (p, ins))
+        for p in pairs:
+            name = PAIRS.get(p, "?")
+            if p in STROKE_PAIRS:
+                worst = (0.0, None)
+                for ins in INS_SWEEP:
+                    out = os.path.join(tmp, "pair%d_ins%d.stl" % (p, ins))
+                    try:
+                        vol = render_probe(p, ins, out)
+                    except (RuntimeError, subprocess.TimeoutExpired) as e:
+                        print("FAIL  pair %d %-42s Ins=%3d  render error: %s"
+                              % (p, name, ins, e))
+                        bad += 1
+                        continue
+                    ok = vol <= EPS_CM3
+                    bad += 0 if ok else 1
+                    print("%-4s pair %d %-42s Ins=%3dmm  %.4f cm3"
+                          % ("OK" if ok else "FAIL", p, name, ins, vol))
+                    if vol > worst[0]:
+                        worst = (vol, ins)
+                print("      -> worst along stroke: %.4f cm3 at Ins=%s\n"
+                      % worst)
+            elif p in OBSTRUCTION_PAIRS:
                 try:
-                    vol = render_probe(p, ins, out)
+                    out0 = os.path.join(tmp, "pair%d_push0.stl" % p)
+                    vol0 = render_probe(p, None, out0, push=0.0)
+                    out1 = os.path.join(tmp, "pair%d_push.stl" % p)
+                    vol1 = render_probe(p, None, out1, push=OVERTRAVEL_MM)
                 except (RuntimeError, subprocess.TimeoutExpired) as e:
-                    print("FAIL  pair %d %-42s Ins=%3d  render error: %s"
-                          % (p, name, ins, e))
+                    print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
+                    bad += 1
+                    continue
+                ok0 = vol0 <= EPS_CM3
+                ok1 = vol1 >= OBSTRUCT_MIN_CM3
+                bad += 0 if ok0 else 1
+                bad += 0 if ok1 else 1
+                print("%-4s pair %2d %-42s  flush (Push=0):    %.4f cm3"
+                      % ("OK" if ok0 else "FAIL", p, name, vol0))
+                print("%-4s pair %2d %-42s  overtravel (%.0fmm): %.4f cm3"
+                      % ("OK" if ok1 else "FAIL", p, name, OVERTRAVEL_MM, vol1))
+            else:
+                out = os.path.join(tmp, "pair%d.stl" % p)
+                try:
+                    vol = render_probe(p, None, out)
+                except (RuntimeError, subprocess.TimeoutExpired) as e:
+                    print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
                     bad += 1
                     continue
                 ok = vol <= EPS_CM3
                 bad += 0 if ok else 1
-                print("%-4s pair %d %-42s Ins=%3dmm  %.4f cm3"
-                      % ("OK" if ok else "FAIL", p, name, ins, vol))
-                if vol > worst[0]:
-                    worst = (vol, ins)
-            print("      -> worst along stroke: %.4f cm3 at Ins=%s\n"
-                  % worst)
-        elif p in OBSTRUCTION_PAIRS:
-            try:
-                out0 = os.path.join(tmp, "pair%d_push0.stl" % p)
-                vol0 = render_probe(p, None, out0, push=0.0)
-                out1 = os.path.join(tmp, "pair%d_push.stl" % p)
-                vol1 = render_probe(p, None, out1, push=OVERTRAVEL_MM)
-            except (RuntimeError, subprocess.TimeoutExpired) as e:
-                print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
-                bad += 1
-                continue
-            ok0 = vol0 <= EPS_CM3
-            ok1 = vol1 >= OBSTRUCT_MIN_CM3
-            bad += 0 if ok0 else 1
-            bad += 0 if ok1 else 1
-            print("%-4s pair %2d %-42s  flush (Push=0):    %.4f cm3"
-                  % ("OK" if ok0 else "FAIL", p, name, vol0))
-            print("%-4s pair %2d %-42s  overtravel (%.0fmm): %.4f cm3"
-                  % ("OK" if ok1 else "FAIL", p, name, OVERTRAVEL_MM, vol1))
-        else:
-            out = os.path.join(tmp, "pair%d.stl" % p)
-            try:
-                vol = render_probe(p, None, out)
-            except (RuntimeError, subprocess.TimeoutExpired) as e:
-                print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
-                bad += 1
-                continue
-            ok = vol <= EPS_CM3
-            bad += 0 if ok else 1
-            print("%-4s pair %d %-42s  %.4f cm3"
-                  % ("OK" if ok else "FAIL", p, name, vol))
+                print("%-4s pair %d %-42s  %.4f cm3"
+                      % ("OK" if ok else "FAIL", p, name, vol))
 
-    print("\n%d check(s) failed" % bad)
-    return 1 if bad else 0
+        print("\n%d check(s) failed" % bad)
+        return 1 if bad else 0
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

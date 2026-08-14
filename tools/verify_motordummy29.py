@@ -14,7 +14,7 @@ own selector is `-D Motor_Class=N`, so this file calls
 render(SCAD, part, out, var="Motor_Class")) instead of maintaining a
 second, hardcoded copy of the subprocess/OpenSCAD-path plumbing.
 """
-import os, re, subprocess, sys, tempfile
+import os, re, shutil, subprocess, sys, tempfile
 
 from scad_verify import REPO, render, measure, components, volume, overshoot
 
@@ -175,28 +175,34 @@ def main(argv):
     parts = [int(x) for x in argv[1:]] or [0, 1, 2]
     m, echoed = {}, {}
     tmp = tempfile.mkdtemp(prefix="motordummy29-")
-    bad = 0
-    for p in parts:
-        out = os.path.join(tmp, "motor%d.stl" % p)
-        try:
-            genus, echoed[p] = render_with_echo(p, out)
-        except (RuntimeError, subprocess.TimeoutExpired) as e:
-            print("FAIL  render Motor_Class %d (%s)\n%s"
-                  % (p, NAMES.get(p, "?"), e))
-            bad += 1
-            continue
-        m[p] = measure(out, genus)
-        print("rendered Motor_Class %d %-12s h=%7.2f  dia=%6.2f  vol=%6.2f cm3"
-              % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
-                 volume(out)))
-    print()
-    for (label, actual, expected, tol) in checks(m, echoed):
-        ok = abs(actual - expected) <= tol
-        bad += 0 if ok else 1
-        print("%-4s %-58s %10.4f  want %.4f +/- %.4f"
-              % ("OK" if ok else "FAIL", label, actual, expected, tol))
-    print("\n%d check(s) failed" % bad)
-    return 1 if bad else 0
+    # (9th review) try/finally: this used to mkdtemp() and never clean up
+    # -- see verify_rocket60.py's own main() comment for the measured
+    # 16-27 MB/run figure and the two other files sharing this same gap.
+    try:
+        bad = 0
+        for p in parts:
+            out = os.path.join(tmp, "motor%d.stl" % p)
+            try:
+                genus, echoed[p] = render_with_echo(p, out)
+            except (RuntimeError, subprocess.TimeoutExpired) as e:
+                print("FAIL  render Motor_Class %d (%s)\n%s"
+                      % (p, NAMES.get(p, "?"), e))
+                bad += 1
+                continue
+            m[p] = measure(out, genus)
+            print("rendered Motor_Class %d %-12s h=%7.2f  dia=%6.2f  vol=%6.2f cm3"
+                  % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
+                     volume(out)))
+        print()
+        for (label, actual, expected, tol) in checks(m, echoed):
+            ok = abs(actual - expected) <= tol
+            bad += 0 if ok else 1
+            print("%-4s %-58s %10.4f  want %.4f +/- %.4f"
+                  % ("OK" if ok else "FAIL", label, actual, expected, tol))
+        print("\n%d check(s) failed" % bad)
+        return 1 if bad else 0
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

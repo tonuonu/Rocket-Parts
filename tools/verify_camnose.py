@@ -9,7 +9,7 @@ the lens face it gives the camera's maximum radius from the lens axis.
 """
 import math, os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, overshoot
+from scad_verify import REPO, render, measure, bore, volume, overshoot, shortfall
 
 SCAD = os.path.join(REPO, "PeregrineCamNose.scad")
 
@@ -47,24 +47,6 @@ NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
          4:"top slice", 5:"spacer front", 6:"spacer rear"}
 
 
-def clearance_shortfall(value, floor):
-    """max(0.0, floor - value), but nan-safe -- the same fix as
-    scad_verify.overshoot(), mirrored for a MINIMUM (clearance must be >=
-    floor) instead of a maximum (height must be <= limit). 0 for anything
-    that clears the floor, the actual shortfall otherwise (8th review,
-    finding 3c: this REPLACES `max(c, MIN_CLEAR)` as the check's own
-    "expected" value, which derived the target FROM the measurement itself
-    -- always exactly equal to `c` whenever it cleared MIN_CLEAR, so a
-    comfortably-fitting nosecone printed a self-comparing "0.31 expected
-    0.31" that could never fail regardless of how the clearance moved).
-    +inf for a nan `value` (scad_verify's own nan-as-failure convention):
-    a bare `max(0.0, floor - nan)` would silently read as a 0mm shortfall
-    -- nan comparisons are always False, so Python's max() keeps its first
-    argument -- exactly the same silent-pass shape overshoot()'s own
-    docstring documents for the maximum-side check."""
-    if math.isnan(value):
-        return float("inf")
-    return max(0.0, floor - value)
 
 
 def camera_clearance(stls):
@@ -188,7 +170,7 @@ def main(argv):
         c, at = camera_clearance(stls)
         at_label = at if at is not None else "no station measured, "
         checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at_label,
-                    clearance_shortfall(c, MIN_CLEAR), 0.0, 0.001)]
+                    shortfall(c, MIN_CLEAR), 0.0, 0.001)]
     print()
     for label, actual, expected, tol in checks:
         ok = abs(actual - expected) <= tol

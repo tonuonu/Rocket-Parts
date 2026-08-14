@@ -5,9 +5,9 @@ A part that does not fit still renders cleanly, so every mating dimension is
 measured from the STL rather than inferred from the parameter that was
 supposed to produce it.
 """
-import math, os, subprocess, sys, tempfile
+import math, os, shutil, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, tris, components, overshoot
+from scad_verify import REPO, render, measure, bore, volume, tris, components, overshoot, safe
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
@@ -237,9 +237,11 @@ FINCAN_BAND = (-0.01, 0.5)
 # ONLY Z where the fin can's OWN body ID (28.4) is isolable from the MMT
 # that runs the fin can's full length underneath it -- confirmed
 # empirically: at z~228 the ONLY 4 radii present are {14.65, 16.15 (MMT
-# bore/OD), 28.4, 30.0 (body ID/OD)}, so bore_annulus()'s r_lo=20 cleanly
-# keeps just the body pair (a plain bore() call would read the MMT's
-# 29.3mm bore as the "min", not the body's own 56.8mm ID). Part 3's own
+# bore/OD), 28.4, 30.0 (body ID/OD)}, so bore()'s own r_lo=20 (9th review:
+# was a separate bore_annulus() wrapper, now bore()'s own optional
+# parameter) cleanly keeps just the body pair (a plain r_lo=0.0 bore()
+# call would read the MMT's 29.3mm bore as the "min", not the body's own
+# 56.8mm ID). Part 3's own
 # spigot tip (z=185.5, its own measured height) is likewise the only Z
 # where the spigot's own {26.6, 28.2} pair stands alone, clear of the
 # weld-ring transition just below it (z=178..180).
@@ -542,16 +544,30 @@ def hole_azimuth_at_r(stl, cx, cy, z_at, r_target, search_r=4.0, zwin=2.0,
     radial line (defect 1a): a hole bored along a flat axis instead of the
     wall's true local radial direction reads a materially different
     azimuth from its mating part's hole at the SAME nominal (x, z), even
-    though both were built from the identical Hole_X."""
-    azs = [math.degrees(math.atan2(y, x)) for tri in tris(stl)
+    though both were built from the identical Hole_X.
+
+    (9th review) Circular mean, not a plain arithmetic mean of the degree
+    values: this file's own probed features all sit near +Y (well away
+    from the +-180 seam), so the bug was latent, not live, but a plain
+    mean is simply wrong across that wrap -- +179 and -179 average to
+    ~0 (confirmed: sum([179.0,-179.0])/2 == 0.0), nowhere near either
+    input, because degrees restart at -180 rather than continuing past
+    +180. Summing each vertex's own unit vector and taking atan2 of the
+    total is the standard fix -- equivalent to a plain mean far from the
+    seam (where it agrees with the old code to the last decimal on every
+    real check this file runs today) and correct AT the seam, so this is
+    a pure robustness fix with no effect on any current passing check."""
+    pts = [(x, y) for tri in tris(stl)
            for (x, y, z) in tri
            if abs(z - z_at) <= zwin and math.hypot(x - cx, y - cy) <= search_r
            and abs(math.hypot(x, y) - r_target) <= r_win]
-    if not azs:
+    if not pts:
         raise RuntimeError(
             "no geometry near (%.2f,%.2f) r=%.1f z=%.1f of %s"
             % (cx, cy, r_target, z_at, stl))
-    return sum(azs) / len(azs)
+    sx = sum(x / math.hypot(x, y) for (x, y) in pts)
+    sy = sum(y / math.hypot(x, y) for (x, y) in pts)
+    return math.degrees(math.atan2(sy, sx))
 
 
 def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
@@ -603,55 +619,13 @@ def hole_flat_max_x(stl, r_at, z_at, x_side=1, r_win=0.02, zwin=1.5):
     return max(xs) if x_side > 0 else min(xs)
 
 
-def bore_annulus(stl, zlo, zhi, r_lo):
-    """Like scad_verify.bore(), but ignores vertices with radius < r_lo
-    (5th review, finding 9). bore() returns the GLOBAL min/max radius in a
-    Z band -- fine for a plain tube, but R60_FinCan() runs its MMT the
-    part's FULL length concentric with the body wall, so a plain bore()
-    call at the fin can's forward-open annulus would read the MMT's own
-    bore/OD (14.65/16.15mm) as the min/max, not the body's own ID/OD
-    (28.4/30.0mm) -- the surface actually mating with the chute tube's
-    spigot. r_lo excludes the MMT's own radius range; see
-    FINCAN_SPIGOT_BAND/FINCAN_SPIGOT_R_LO's own comment for the
-    empirical confirmation this isolates the right pair."""
-    rmin, rmax = None, 0.0
-    for tri in tris(stl):
-        for (x, y, z) in tri:
-            if zlo <= z <= zhi:
-                r = math.hypot(x, y)
-                if r >= r_lo:
-                    rmin = r if rmin is None else min(rmin, r)
-                    rmax = max(rmax, r)
-    if rmin is None:
-        raise RuntimeError("no geometry with r>=%.2f in Z band %.2f..%.2f of %s"
-                            % (r_lo, zlo, zhi, stl))
-    return 2.0 * rmin, 2.0 * rmax
-
-
-def safe(fn, *args, nvals=1, **kwargs):
-    """Call fn(*args, **kwargs); a RuntimeError becomes nan(s) of the same
-    shape, not a crash (5th review, finding 6). Every scanner checks()
-    calls reads geometry off a rendered mesh and can raise RuntimeError on
-    missing/moved features (bore() in scad_verify.py; hole_azimuth_at_r(),
-    hole_max_reach(), pin_hole_diameter(), xy_extent_in_window(),
-    fincan_slot_width/length(), door_switch_hole(), rail_hole_center()
-    in this file) -- only switch_hole_z() (now door_switch_hole()) was
-    ever wrapped before this fix. Every OTHER call sat bare in checks(),
-    so a single missing/moved feature raised straight out of checks(),
-    aborting the WHOLE run with a traceback before any check printed --
-    the identical "one bad row kills the whole report" failure class the
-    genus loop and the arming-switch check were already fixed for.
-    nvals controls how many nan values are returned, matching how many
-    the call site unpacks (bore() and rail_hole_center() return 2;
-    xy_extent_in_window() returns 4; everything else returns 1) -- nan
-    compares false against every tolerance (same convention as a missing
-    genus), so a failure here is a loud FAIL on just the checks that
-    needed this measurement, not a silent skip or a crash."""
-    try:
-        return fn(*args, **kwargs)
-    except RuntimeError:
-        nan = float("nan")
-        return nan if nvals == 1 else (nan,) * nvals
+# bore_annulus()/safe() moved to scad_verify.py (9th review): bore_annulus
+# duplicated bore()'s ENTIRE scan body just to add the r_lo filter, and
+# lost bore()'s own memoisation doing it -- bore() itself now takes an
+# optional r_lo (same filter, same cache key), and safe() moved there too
+# so verify_nosecone.py's own bare bore() calls -- the same "one bad row
+# kills the whole report" class this exists to fix -- can use it without
+# growing a second copy. See scad_verify.bore()/safe()'s own docstrings.
 
 
 def checks(m):
@@ -1029,9 +1003,8 @@ def checks(m):
         # (its body ID, isolated from the full-length MMT by
         # bore_annulus()) measured against the chute tube's own spigot OD.
         if 3 in m:
-            fincan_bore, _ = safe(bore_annulus, a(9, "stl"),
-                                   *FINCAN_SPIGOT_BAND, FINCAN_SPIGOT_R_LO,
-                                   nvals=2)
+            fincan_bore, _ = safe(bore, a(9, "stl"), *FINCAN_SPIGOT_BAND,
+                                   r_lo=FINCAN_SPIGOT_R_LO, nvals=2)
             _, spigot_od = safe(bore, a(3, "stl"), *CHUTE_SPIGOT_BAND, nvals=2)
             c += [("chute tube spigot clears fin can forward bore",
                    fincan_bore - spigot_od, 0.4, 0.15)]
@@ -1194,34 +1167,47 @@ def main(argv):
     parts = [int(x) for x in argv[1:]] or sorted(NAMES)
     m = {}
     tmp = tempfile.mkdtemp(prefix="r60-")
-    bad = 0
-    # `return 1` on a failed render (6th review, finding 4) used to abort
-    # the WHOLE run: any part after the failed one never rendered, and
-    # checks() -- and every one of its ~90 rows -- never printed at all,
-    # the identical "one bad row kills the whole report" failure class
-    # safe() was introduced to fix for individual checks, one level up.
-    # A failed/slow render is now a counted FAIL for just that part, and
-    # the loop (and the report) continues with whatever DID render.
-    for p in parts:
-        out = os.path.join(tmp, "part%d.stl" % p)
-        try:
-            g = render(SCAD, p, out)
-        except (RuntimeError, subprocess.TimeoutExpired) as e:
-            print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            bad += 1
-            continue
-        m[p] = measure(out, g)
-        print("rendered %-2d %-20s  %.2f x %.2f x %.2f mm  %.1f cm3"
-              % (p, NAMES.get(p, "?"), m[p]["xmax"] - m[p]["xmin"],
-                 m[p]["ymax"] - m[p]["ymin"], m[p]["height"], volume(out)))
-    print()
-    for (label, actual, expected, tol) in checks(m):
-        ok = abs(actual - expected) <= tol
-        bad += 0 if ok else 1
-        print("%-4s %-42s %10.3f  want %.3f +/- %.3f"
-              % ("OK" if ok else "FAIL", label, actual, expected, tol))
-    print("\n%d check(s) failed" % bad)
-    return 1 if bad else 0
+    # (9th review) try/finally: this used to mkdtemp() and never clean up
+    # -- measured 16-27 MB left behind per run, one abandoned tree per
+    # invocation (this file, verify_rocket60_assembly.py and
+    # verify_motordummy29.py all had the identical gap; verify_nosecone.py
+    # and verify_camnose.py, predating this PR, are the same latent
+    # pattern but outside this fix's scope). finally (not a plain rmtree
+    # call after the loop) so a raised exception -- checks() itself
+    # raising, an unexpected error a `safe()`/try-except somewhere below
+    # did not anticipate -- still cleans up on the way out.
+    try:
+        bad = 0
+        # `return 1` on a failed render (6th review, finding 4) used to
+        # abort the WHOLE run: any part after the failed one never
+        # rendered, and checks() -- and every one of its ~90 rows -- never
+        # printed at all, the identical "one bad row kills the whole
+        # report" failure class safe() was introduced to fix for
+        # individual checks, one level up. A failed/slow render is now a
+        # counted FAIL for just that part, and the loop (and the report)
+        # continues with whatever DID render.
+        for p in parts:
+            out = os.path.join(tmp, "part%d.stl" % p)
+            try:
+                g = render(SCAD, p, out)
+            except (RuntimeError, subprocess.TimeoutExpired) as e:
+                print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
+                bad += 1
+                continue
+            m[p] = measure(out, g)
+            print("rendered %-2d %-20s  %.2f x %.2f x %.2f mm  %.1f cm3"
+                  % (p, NAMES.get(p, "?"), m[p]["xmax"] - m[p]["xmin"],
+                     m[p]["ymax"] - m[p]["ymin"], m[p]["height"], volume(out)))
+        print()
+        for (label, actual, expected, tol) in checks(m):
+            ok = abs(actual - expected) <= tol
+            bad += 0 if ok else 1
+            print("%-4s %-42s %10.3f  want %.3f +/- %.3f"
+                  % ("OK" if ok else "FAIL", label, actual, expected, tol))
+        print("\n%d check(s) failed" % bad)
+        return 1 if bad else 0
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 if __name__ == "__main__":

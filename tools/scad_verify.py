@@ -40,7 +40,36 @@ def render(scad, part, out, var="Render_Part", return_log=False):
     identical render just to capture output this function already has in
     hand. Defaults False so every existing single-value caller
     (verify_rocket60.py, verify_nosecone.py, verify_camnose.py) is
-    unaffected."""
+    unaffected.
+
+    (9th review, finding: `render()` used to trust `var` blindly. A
+    renamed/mistyped `var` (e.g. a caller's own typo, or a dispatch
+    variable renamed in the .scad file but not in the call site) makes
+    `-D <var>=<part>` define a top-level variable NOTHING in the file
+    reads -- OpenSCAD does not warn about an unused `-D` (confirmed
+    empirically: `-D Bogus_Var=0` renders clean, exit 0, no warning of any
+    kind), so the file just falls back to its OWN default dispatch value
+    and renders THAT part instead, successfully -- every downstream check
+    then silently measures the wrong part. Guarded here with a static
+    pre-flight check: `var` must actually appear as a top-level assignment
+    in the target file, or this raises immediately instead of asking
+    OpenSCAD to render something else and calling it a success. Mutation-
+    tested: `render(SCAD, 5, out, var="Render_Prat")` (typo) used to
+    return the genus of part 0 (Render_Part's own default) with no error
+    at all.
+
+    Separately, "Ignoring unknown variable" (r60_assembly.scad's own
+    render_probe() already guards this, added for the concrete
+    Motor_Class/use<> scoping instance that file's own header comment
+    records) is now also a failure here, for the same class of bug in a
+    plain per-part render: an expression inside the .scad file itself
+    referencing a variable that was never actually defined/passed."""
+    with open(scad) as f:
+        if not re.search(r"(?m)^%s\s*=" % re.escape(var), f.read()):
+            raise RuntimeError(
+                "render(): var=%r is not a top-level variable assignment "
+                "in %s -- typo, or the file's own dispatch variable was "
+                "renamed without updating this call site" % (var, scad))
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out,
@@ -50,6 +79,7 @@ def render(scad, part, out, var="Render_Part", return_log=False):
     if (r.returncode != 0 or "ERROR:" in err.upper()
             or "Can't find include file" in err
             or "Ignoring unknown module" in err
+            or "Ignoring unknown variable" in err
             or not os.path.exists(out) or os.path.getsize(out) < 200):
         raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
     g = re.search(r"Genus:\s*(-?\d+)", err)
@@ -219,10 +249,37 @@ def overshoot(value, limit):
     return max(0.0, value - limit)
 
 
+def shortfall(value, floor):
+    """max(0.0, floor - value), but nan-safe -- overshoot()'s own mirror
+    for a MINIMUM (clearance must be >= floor) instead of a maximum
+    (height must be <= limit).
+
+    (9th review) Moved here from verify_camnose.py's own
+    clearance_shortfall(), which had re-implemented this exact function,
+    in the one file whose own consolidation comment (module docstring,
+    top of this file) exists specifically to eliminate duplicate copies
+    of these helpers. 0 for anything that clears the floor, the actual
+    shortfall otherwise (8th review, verify_camnose.py finding 3c: this
+    REPLACES `max(c, MIN_CLEAR)` as a check's own "expected" value, which
+    derived the target FROM the measurement itself -- always exactly
+    equal to the measurement whenever it cleared the floor, so a
+    comfortably-fitting part printed a self-comparing "0.31 expected
+    0.31" that could never fail regardless of how the clearance moved).
+    +inf for a nan `value` (same nan-as-failure convention as
+    overshoot()): a bare `max(0.0, floor - nan)` would silently read as a
+    0mm shortfall -- nan comparisons are always False, so Python's max()
+    keeps its first argument -- exactly the same silent-pass shape
+    overshoot()'s own docstring documents for the maximum-side check."""
+    if math.isnan(value):
+        return float("inf")
+    return max(0.0, floor - value)
+
+
 @functools.lru_cache(maxsize=8)
-def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi):
-    """Actual bore() body, memoised on (path, mtime, size, band) -- see
-    bore() below for why mtime/size are part of the key, not just path.
+def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi, r_lo):
+    """Actual bore() body, memoised on (path, mtime, size, band, r_lo) --
+    see bore() below for why mtime/size are part of the key, not just
+    path.
 
     Bounded to 8 (5th review, finding 10), matching _tris_cached's own
     policy just above -- maxsize=None was left unbounded here for the
@@ -237,23 +294,38 @@ def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi):
         for (x, y, z) in tri:
             if zlo <= z <= zhi:
                 r = math.hypot(x, y)
-                rmin = r if rmin is None else min(rmin, r)
-                rmax = max(rmax, r)
+                if r >= r_lo:
+                    rmin = r if rmin is None else min(rmin, r)
+                    rmax = max(rmax, r)
     if rmin is None:
-        raise RuntimeError("no geometry in Z band %.2f..%.2f of %s" % (zlo, zhi, stl))
+        raise RuntimeError(
+            "no geometry with r>=%.2f in Z band %.2f..%.2f of %s"
+            % (r_lo, zlo, zhi, stl))
     return 2.0 * rmin, 2.0 * rmax
 
 
-def bore(stl, zlo, zhi):
+def bore(stl, zlo, zhi, r_lo=0.0):
     """Return (min_dia, max_dia) of material within the Z band [zlo, zhi].
 
     min_dia is the smallest radius seen doubled, i.e. the bore; max_dia the
     largest, i.e. the OD. Vertices outside the band are ignored.
 
-    Memoised (in _bore_cached) on (path, mtime_ns, size, zlo, zhi): callers
-    routinely re-check the same band on the same part (verify_rocket60.py
-    calls bore() on the same (stl, band) pair from several independent
-    checks, e.g. per bulkhead and at lines scattered through checks()).
+    `r_lo` (9th review, moved here from verify_rocket60.py's own
+    bore_annulus(), which duplicated this function's entire scan body just
+    to add this one filter and lost the memoisation doing it): ignore
+    vertices with radius < r_lo too. Plain bore() reads the GLOBAL min/max
+    radius in a Z band -- fine for a simple tube, but a part that runs a
+    narrower concentric bore (e.g. R60_FinCan()'s own MMT) the part's full
+    length would have a plain bore() call at that part's forward-open
+    annulus read the INNER bore's own min/max, not the outer wall's --
+    r_lo excludes the inner bore's own radius range so this measures the
+    surface actually mating with whatever is checked against it.
+
+    Memoised (in _bore_cached) on (path, mtime_ns, size, zlo, zhi, r_lo):
+    callers routinely re-check the same band on the same part
+    (verify_rocket60.py calls bore() on the same (stl, band) pair from
+    several independent checks, e.g. per bulkhead and at lines scattered
+    through checks()).
     tris() below is itself cached now (defect 12), so a repeat call no
     longer re-reads the file from disk -- but re-scanning even an
     in-memory tuple of every triangle (part 9 alone is ~114 cm^3 of them)
@@ -269,7 +341,36 @@ def bore(stl, zlo, zhi):
     Including the file's own mtime/size in the key makes a re-render (which
     always changes at least one of them) a cache miss instead."""
     st = os.stat(stl)
-    return _bore_cached(stl, st.st_mtime_ns, st.st_size, zlo, zhi)
+    return _bore_cached(stl, st.st_mtime_ns, st.st_size, zlo, zhi, r_lo)
+
+
+def safe(fn, *args, nvals=1, **kwargs):
+    """Call fn(*args, **kwargs); a RuntimeError becomes nan(s) of the same
+    shape, not a crash (verify_rocket60.py, 5th review, finding 6; moved
+    here 9th review so verify_nosecone.py's own bare bore() calls -- the
+    exact "one bad row kills the whole report" failure class this exists
+    to fix -- could use it too, instead of growing a second copy).
+
+    Every scanner that reads geometry off a rendered mesh can raise
+    RuntimeError on missing/moved features (bore() above;
+    hole_azimuth_at_r(), hole_max_reach(), pin_hole_diameter(),
+    xy_extent_in_window(), fincan_slot_width/length(), door_switch_hole(),
+    rail_hole_center() in verify_rocket60.py) -- a bare call left sitting
+    directly in a checks() function raises straight out of it, aborting
+    the WHOLE run with a traceback before any check prints, rather than
+    failing just the one check that needed the missing measurement.
+
+    nvals controls how many nan values are returned, matching how many
+    the call site unpacks (bore() returns 2; xy_extent_in_window() returns
+    4; most others return 1) -- nan compares false against every
+    tolerance (same convention as a missing genus), so a failure here is a
+    loud FAIL on just the checks that needed this measurement, not a
+    silent skip or a crash."""
+    try:
+        return fn(*args, **kwargs)
+    except RuntimeError:
+        nan = float("nan")
+        return nan if nvals == 1 else (nan,) * nvals
 
 
 def volume(stl):

@@ -133,10 +133,15 @@ CARRIER_L  = 65.0    # R60Lib.scad's R60_SpringCarrier_L (8th review,
 # geometry sits once assembled, not a hand-picked offset -- the two
 # fixed above were not isolated bugs, they were symptoms of this file
 # never having been audited item-by-item against the SCAD it claims to
-# model. Every correction found below moves CG AFT (the model had been
-# biased toward an optimistic, forward CG on every single item checked,
-# never the other way) -- restated literals matching R60Lib.scad/
-# Rocket60.scad's own constants, same rule-4 convention as AFTBULK_T etc.
+# model. Nearly every correction found below moves CG AFT (the model had
+# been biased toward an optimistic, forward CG on most items checked) --
+# EXCEPT the access door (9th review: -48.5, the single largest error
+# found in the whole audit -- see that item's own comment below: an old
+# edge-station literal replaced by the tube's own true, symmetric
+# midpoint, which happens to sit forward of the stale value, not aft of
+# it). Every OTHER correction is restated literals matching
+# R60Lib.scad/Rocket60.scad's own constants, same rule-4 convention as
+# AFTBULK_T etc.
 NECK_SKIRT_L = 19.0   # R60_Neck_Skirt_L
 FWDBULK_T    = 6.0    # R60_FwdBulk_T -- R60_EBayFwdBulkhead()'s own T
 # Vega sled's true axial centre (7th review, finding 6): R60Lib.scad's
@@ -301,11 +306,14 @@ def build(motor):
     # buttons) are flagged inline as heuristic estimates, unchanged
     # because there is nothing more precise to derive them from.
     #
-    # station-audit table (mm; delta = new - old; every correction moves
-    # CG AFT, i.e. delta > 0 -- see the per-item comments for why):
+    # station-audit table (mm; delta = new - old; nearly every correction
+    # moves CG AFT, i.e. delta > 0, EXCEPT the access door -- see the
+    # per-item comments for why):
     #   item                          old      new     delta
     #   e-bay fwd bulkhead            105.0    121.0    +16.0
-    #   access door + switch          236.0    187.5    -48.5
+    #   access door + switch          236.0    187.5    -48.5  (forward --
+    #                                                     the single largest
+    #                                                     error in this audit)
     #   e-bay aft bulkhead+servos     246.0    277.5    +31.5  (fixed last round)
     #   spring carrier                267.0    323.5    +56.5  (fixed last round)
     #   CS4323 spring                 316.0    334.25   +18.25
@@ -313,7 +321,13 @@ def build(motor):
     #   shear pins x2                 276.0    284.0     +8.0
     #   parachute+cord+hw             357.0    406.0    +49.0
     #   fins x3                       626.5    638.5    +12.0
-    #   motor retainer                654.0    681.0    +27.0
+    #   motor retainer                654.0    687.0    +33.0  (9th review:
+    #                                                     was 681/+27, the
+    #                                                     "intermediate (also
+    #                                                     wrong)" value the
+    #                                                     item's own comment
+    #                                                     below already
+    #                                                     disowns)
     #   (all others confirmed already correct; see per-item comments)
     items = [
     # (name, mass g, station mm)

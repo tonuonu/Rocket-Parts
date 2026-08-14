@@ -157,7 +157,7 @@ hunt for. Printing the fin can in PC satisfies "PC for the centering
 rings" automatically.
 
 **Fins stay PETG.** Spec §6 computes the fin flutter margin explicitly
-from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 959 m/s (63mm-span fin, exposed
+from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 955 m/s (63mm-span fin, exposed
 geometry — see §9's fin-sizing note), 1.52× the required 3× floor against
 the H182R's 210 m/s Vmax. Moving the fins to PC would change that shear
 modulus and orphan the documented margin without a recompute, and neither
@@ -280,8 +280,20 @@ Build order for what exists today:
 3. Build the forward e-bay cartridge on the BENCH, not inside the tube
    (7th review, finding 1/2 — retired the 6th review's bolted feet, which
    could not physically be inserted once seated in the tube; see spec
-   §7.2). Thread two M3 rods into `04_EBayFwdBulkhead.stl`'s own inserts
-   (fixed, permanent). Slide `06_VegaSled.stl` onto the two rods —
+   §7.2). Thread two M3 rods, **cut to 150–152 mm** (`R60Lib.scad`'s
+   derived `R60_Vega_RodLength`, ≈152.8 mm — see that constant's own
+   comment for the 4 terms it sums: fwd insert engagement + full rail
+   length + aft clearance gap + aft pocket depth), into
+   `04_EBayFwdBulkhead.stl`'s own inserts (fixed, permanent). **Do not
+   cut long**: at 152.8 mm the rod's free tip exactly reaches the aft
+   pocket's own floor (step 6 below) — any longer and the rod bottoms
+   out in the pocket before the aft bulkhead can seat flush against the
+   sled's rail. Cutting a little short costs some of that pocket's
+   side-load support but is not otherwise unsafe; a rod cut to the old,
+   undocumented assumption of the rail's own length alone (133.1 mm)
+   is 20 mm short and never reaches the pocket at all — 9th review,
+   finding 3, closes exactly this gap (no length was stated anywhere
+   before this). Slide `06_VegaSled.stl` onto the two rods —
    antenna side still radially outward — until it hard-stops against the
    forward bulkhead's own boss face. Thread a nut+washer onto each rod's
    free end, against the sled's own rail face, drawing the sled snug
@@ -492,19 +504,19 @@ only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
 `(exposed span/D)²`) originally targeting 1.5 cal on the G80T. A full station audit
 (coordinator override, 4th review, spec §6) found the TRUE margin is
-**1.47 cal**, not the 1.53 cal previously
+**1.46 cal**, not the 1.53 cal previously
 published here (itself already a correction of an inflated 1.61 cal).
 The 1.5 cal target was retired rather than chased with further span
 growth (spec §6.1): it was never a physical requirement, only this
 project's own earlier comfort target, and buying back the remaining
 margin would cost mass on the exact G80T flight where rail exit, not
 stability, is the binding constraint. The gate is now the real physical
-minimum, **1.0 cal**, and 1.47 cal clears it with genuine room. H182R-14A gives 1.28 cal and H135W-14A gives 1.29 cal on the
+minimum, **1.0 cal**, and 1.46 cal clears it with genuine room. H182R-14A gives 1.28 cal and H135W-14A gives 1.29 cal on the
 same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from
-the fins growing (959 m/s vs. the original claim of ~850 m/s against the
-WRONG, buried-root geometry) but stays 1.53× the required 3× floor against
+the fins growing (955 m/s vs. the original claim of ~850 m/s against the
+WRONG, buried-root geometry) but stays 1.52× the required 3× floor against
 the fastest motor (H182R-14A, 209 m/s Vmax → 627 m/s floor). Rail exit on
 the G80T on a 1.5 m rail is 18.8 m/s, still comfortably above the ~15 m/s
 minimum despite the added fin mass (+4.7g/fin, +14.0g total) and the mass
