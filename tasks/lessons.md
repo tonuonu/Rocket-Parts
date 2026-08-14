@@ -153,3 +153,52 @@ remove material that was otherwise there, does the boss's other face clear
 what's supposed to be inside it — not just whether its own stated dimension
 matches its own stated tolerance. A dimension check proves the number; it
 does not prove the number does anything.
+
+## 7. A clearance check whose two sides derive from one constant can never fail
+
+Distinct from pattern 5 (tolerance too wide for the smallest real defect):
+here the *numbers themselves* are wrong, not just the tolerance around
+them, because the "actual" and "target" sides of the comparison are not
+independent measurements of two different things — they are the same
+formula computed twice with a constant subtracted in between. Pair 22's
+`SW_REACH` (6th review, finding 2) was `R60_Body_OD/2 -
+R60_Vega_Board_Inner_Y - SW_REACH_Clear`: since `R60_Vega_Board_Inner_Y`
+*is* the position of the thing being checked against, the probe's own
+reach was defined to stop exactly `SW_REACH_Clear` short of the board,
+by construction, for any value the board's position ever takes. Growing
+`R60_Vega_H` (or the standoff height, or anything else that moves the
+board) moved both sides of the comparison together and the check kept
+reading a clean 2mm margin regardless. This is a different failure shape
+from a check that samples the wrong location (round 6's own pairs 16/18/
+20, or the tether-lug width check reading the tube's OD tessellation
+instead of the notch) or one with a stale expected value (pattern 1) — the
+sampling is correct and the formula is internally consistent; the defect
+is that the comparison has only one true degree of freedom instead of two.
+
+Three related shapes of "derives its own success" surfaced in the same
+review round and are worth naming together: (a) an assembly clearance
+whose probe reach is computed FROM the target's position (Pair 22, above)
+— fixed by making the probe a stated, independent hardware envelope; (b) a
+build-volume-style check whose "expected" is `min(actual, LIMIT)` — always
+exactly equal to `actual` whenever the part is within budget, so a
+comfortably-fitting part prints a self-comparing "177.000 want 177.000"
+that looks like a no-op rather than the real constraint — fixed by
+reporting the overage past the limit (0 when clear) against a stated 0;
+(c) a check written during THIS fix that compared a derived quantity to
+itself (`MMT_ID_EXPECT - body_od` against `MMT_ID_EXPECT - body_od`,
+caught before it shipped) — fixed by comparing the measured value against
+a stated target with real tolerance. All three read as passing rows in a
+green report; none of them can ever produce a red one.
+
+**Guard against this**: for any clearance/margin check, trace BOTH sides
+back to their root inputs and ask whether they share a variable that
+would move them in lockstep — if the "actual" side is defined as a
+function of the same thing the "expected" side represents, the check
+proves the arithmetic, not the geometry. The tell is a formula shaped
+like `X - f(target) - clearance` compared against `target's own
+position` — rewrite the probe's own reach as a stated, independent
+figure (a hardware datasheet number, a fixed design allowance) so
+growing the OTHER side's inputs can actually open a gap. When reviewing a
+new check before claiming coverage, substitute each symbol with what it
+ultimately traces to and confirm two genuinely different quantities are
+being compared, not the same one under two names.

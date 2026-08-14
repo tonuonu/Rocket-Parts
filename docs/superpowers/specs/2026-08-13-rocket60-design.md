@@ -159,22 +159,34 @@ H182R is 203 mm and the G80T only 124 mm.
 
 ### 3.2 Parts
 
+Numbered by `Render_Part` (Rocket60.scad's own dispatch, `-D Render_Part=N`) —
+the SAME numbering `tools/verify_rocket60.py`, `tools/r60_assembly.scad`,
+`R60-PrintSettings.md` and every other tool in this tree already use.
+Rewritten (6th review) after five review rounds left this table's own
+P-numbers, tube lengths, fin span and P4's mechanism all stale relative to
+the as-built design; see git history for the retired P1-P14 scheme.
+
 | # | Part | Print | Notes |
 |---|---|---|---|
-| P1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by 3× **Ø3.4 clearance holes** on Ø37.96 BC, no counterbore (M3×10 SHCS into the camera's heat-set inserts, heads proud on the aft face where nothing bears); open-centre spider for the harness; skirt down into the e-bay tube. |
-| P2 | E-bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm, door cutout 36 × 85 mm |
-| P3 | E-bay fwd bulkhead | new | Neck interface + harness pass-through |
-| P4 | E-bay aft bulkhead | new | Shock-cord anchor, 2× servo mounts, bayonet ring drive. **Servos stand upright with shafts along the rocket axis**, following `PeregrineEjection.scad`: servo 1 on the centreline rotates the bayonet ring through its centre, servo 2 sits beside it and drives the tether latch through a slot. A radial layout is geometrically impossible — from the drive bore (r=6) to the disc edge (r=28.2) is 22.2 mm and an MG90S body is 22.8 mm long. |
-| P5 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. |
-| P6 | Access door | reuse `DoorLib.scad` | 4× M2.5, curved panel, plus an **external arming switch** operable with the rocket vertical on the rail |
-| P7 | Spring separation + shear pins | adapt `SpringThingBooster.scad` + `CableReleaseBBMini.scad` | Replaces the abandoned bayonet (§4.2). Ball-lock retains the `CS4323` spring; 2× nylon shear pins bridge the airframe joint. |
-| P8 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 130 mm |
-| P9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (228 mm), 3 fin slots, 3 centering rings |
-| P10 | Fins ×3 | new | Cr 90 / Ct 35 / span 55 / sweep 45 / t 4.0 |
-| P11 | Motor retainer | adapt `MotorAdapter29.scad` patterns | 29 mm aft retainer -- resists AFT motion only; see P14 |
-| P12 | Rail buttons ×2 | reuse `RailGuide.scad` | `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` — 1010 |
-| P13 | Motor spacers | new | 98 mm for the G80T, 19 mm for the H182R (228 mm MMT − 6 mm P14 − motor length); ~6 mm for the H135W |
-| P14 | Forward thrust ring | new | Reacts the motor's FORWARD thrust reaction (P11 alone only resists aft motion); Ø26.8 mm lip, flush with the fin can's own forward tip |
+| 0 | Test ring | new | Print-fit gauge, not a flight part — flange OD, camera bolt circle/clocking, coupler spigot, all on one 10 mm print. Print this first. |
+| 1 | Neck | new | **Butt joint, no spigot** — the camera fills the bore and is flush at the base, so nothing can enter it. Flat Ø59.98 top face bearing on the nosecone base annulus *and* the camera's bottom face; located by 3× **Ø3.4 clearance holes** on Ø37.96 BC, no counterbore (M3×10 SHCS into the camera's heat-set inserts, heads proud on the aft face where nothing bears); open-centre spider for the harness; skirt down into the e-bay tube. |
+| 2 | E-bay tube | new | Ø60 OD, 1.6 mm wall, 177 mm, door cutout 36 × 85 mm (§3's own history above). |
+| 3 | Chute bay tube | new | Ø60 OD, 1.6 mm wall, 180 mm + a 5.5 mm spigot into the fin can (185.5 mm printed). Carries the tether tie-off lug and one shear-pin hole. |
+| 4 | E-bay fwd bulkhead | new | Neck interface + harness pass-through. Carries 2× ruthex inserts (a local boss, since its 6 mm disc alone is shallower than the insert) for the Vega sled's forward foot (part 6). |
+| 5 | E-bay aft bulkhead | new | Shock-cord anchor, shear-pin skirt, 2× servo mounts, 2× ruthex inserts for the Vega sled's aft foot. **Servos stand upright with shafts along the rocket axis**, following `PeregrineEjection.scad`: servo 1 on the centreline drives the spring/ball-lock carrier's (part 8) release — **not** a bayonet ring, superseded by §4.2 — servo 2 sits beside it and drives the tether latch (part 13) through a slot. A radial layout is geometrically impossible — from the drive bore (r=6) to the disc edge (r=28.2) is 22.2 mm and an MG90S body is 22.8 mm long. |
+| 6 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. Bridges the full e-bay span and bolts to parts 4/5 at each end, 2× M3 into ruthex inserts per end — both radial position and clocking about the tube axis are fixed by those 4 holes, not by resting against anything (6th review, finding 1; retired a rail/zip-tie scheme that failed three review rounds running). |
+| 7 | Access door | new (hand-built) | 4× M2.5, curved panel, plus a panel-mount arming switch cut into the door itself (moved off the tube wall, 5th review) operable with the rocket vertical on the rail. |
+| 8 | Spring/ball-lock carrier | hand-built (design draws on `SpringThingBooster.scad` + `CableReleaseBBMini.scad`, see module comment for why it is not `use<>`-included) | Replaces the abandoned bayonet (§4.2). Ball-lock retains the `CS4323` spring; 2× nylon shear pins in parts 3/5 bridge the airframe joint directly, independent of this carrier's own release state. |
+| 9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (228 mm), 3 fin slots, 3 centering rings. |
+| 10 | Fins ×3 | new | Cr 90 / Ct 35 / span 63 / sweep 45 / t 4.0 (span grown 55→63 mm — a Barrowman stability re-target, see §6). |
+| 11 | Motor retainer | adapt `MotorAdapter29.scad` patterns | 29 mm aft retainer — resists AFT motion only; see part 14. |
+| 12 | Motor spacer | new | 98 mm for the G80T, 19 mm for the H182R (228 mm MMT − 6 mm part-14 ring − motor length); ~6 mm for the H135W. |
+| 13 | Tether latch | new | Task 8. Mounts to part 5's aft face, 2× M3 into ruthex inserts, offset under servo 2's horn. Carries the ~50 mm tether's own release pin/loop; the actuation linkage from servo 2's horn to this latch is an unmodelled companion mechanism (see module comment). |
+| 14 | Forward thrust ring | new | Reacts the motor's FORWARD thrust reaction (part 11 alone only resists aft motion); Ø26.8 mm lip, flush with the fin can's own forward tip. |
+
+Rail buttons (2×, 1010, `RailGuide.scad`'s `RailButton(OD=11, Flange_h=2,
+Slot_w=2.8)`) and the nosecone itself are external hardware/reused stock, not
+`Render_Part` numbers in `Rocket60.scad`.
 
 New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad` convention.
 
@@ -186,8 +198,8 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
-| 0 | — | Launch | 1010 rail, 1.5 m, exit 18.9 m/s |
-| 10.9 s | 625 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
+| 0 | — | Launch | 1010 rail, 1.5 m, exit 18.8 m/s |
+| 10.8 s | 623 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
 | — | 627→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
@@ -310,28 +322,23 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 871 g | 9.1 | **15.3 m/s** | 131 m/s | **0.39** | 625 m | 10.9 s |
-| **H182R-14A** (29 mm DMS) | 937 g | 19.8 | 22.7 m/s | 210 m/s | **0.62** | 982 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 940 g | 12.6 | 17.3 m/s | 195 m/s | **0.57** | 1031 m | 13.2 s |
+| **G80T-14A** (owned) | 874 g | 9.0 | **15.3 m/s** | 131 m/s | **0.38** | 623 m | 10.8 s |
+| **H182R-14A** (29 mm DMS) | 941 g | 19.7 | 22.6 m/s | 209 m/s | **0.62** | 980 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 944 g | 12.5 | 17.4 m/s | 194 m/s | **0.57** | 1029 m | 13.2 s |
 
-(Figures from `tools/rocket60_model.py`'s own output, run after the 4th
+(Figures from `tools/rocket60_model.py`'s own output, run after the 6th
 review's fixes -- see §6 below for the matching stability table. Liftoff
-mass moved ~4 g from the 3rd-review pass: R60_EBay_L grew 165->177 mm
-(critical 3, +12 mm of tube wall and rail length on part 2), the tether
-latch's corner clip and base pass-through (criticals 2/5) remove a little
-material from part 13, and the chute tube's weld ring (critical 1) adds a
-little to part 3 -- see `tools/rocket60_model.py`'s STL_VOL comment for
-the full breakdown. TOTAL also now counts the neck's own 5 mm flange
-(should-fix 12, previously omitted entirely), and the e-bay aft
-bulkhead/spring carrier/thrust ring stations were corrected to where
-their geometry actually sits once assembled (should-fix 10/11) --
-together these moved CG ~3.7 mm forward before the E-bay length growth
-partially offset it; net effect on the G80T's own stability margin is in
-§6. Re-run after the 5th review's fixes: H182R-14A/H135W-14A liftoff mass
-each dropped 1 g (938->937, 941->940 -- the arming switch's own hole,
-finding 1, shrank part 7's measured volume by ~0.2 cm3); apogee moved
-+1 m (624->625) for the same reason. G80T-14A and every margin figure
-below are unchanged at this file's own precision.)
+mass moved +3-4 g from the 5th-review pass on every configuration (6th
+review, finding 1): the Vega sled retention redesign (a rail/zip-tie
+scheme retired after three straight review-round failures, replaced by a
+bolted bridge spanning the full e-bay) grew part 6 20.0->25.4 cm3, and
+the door cover's own screw-hole wall-margin fix (finding 3.2) grew part 7
+10.4->11.3 cm3 -- both real, if partly offset by part 2 SHRINKING
+50.0->47.2 cm3 once the rails/ties it used to cut were removed entirely.
+See `tools/rocket60_model.py`'s STL_VOL comment for the full per-part
+breakdown. Net effect on station/CG is small at this file's own
+precision (apogee/Mach move by ≤1 unit in the last displayed digit);
+margins are updated in §6.)
 
 Motor data, all from thrustcurve.org:
 
@@ -419,9 +426,14 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 871 g | 365.6 mm | **1.45 cal** | 345.6 mm | 1.78 cal |
-| H182R-14A | 937 g | 376.4 mm | **1.27 cal** | 347.6 mm | 1.75 cal |
-| H135W-14A | 940 g | 375.8 mm | **1.28 cal** | 356.7 mm | 1.60 cal |
+| G80T-14A | 874 g | 364.9 mm | **1.46 cal** | 344.9 mm | 1.79 cal |
+| H182R-14A | 941 g | 375.7 mm | **1.28 cal** | 346.9 mm | 1.76 cal |
+| H135W-14A | 944 g | 375.1 mm | **1.29 cal** | 356.0 mm | 1.61 cal |
+
+(Re-run after the 6th review's Vega sled retention redesign, finding 1 --
+liftoff mass moved +3-4 g per motor, station/CG moved <1mm at this
+file's own precision; margins moved +0.01 cal across the board. See §5's
+own table comment for the per-part volume breakdown.)
 
 **The G80T-14A sizing case corrected from 1.53 cal to 1.45 cal.** (Full
 station audit, coordinator override, same round as should-fix 11.) The
@@ -457,10 +469,10 @@ now the TRUE margin, not a margin grown by an uncaught bug.** No design
 change (fin growth, mass removal, etc.) was made to reach any particular
 number -- see "1.5 target, 1.45 accepted" below for what happened to the
 gate once this figure was known. H182R-14A and H135W-14A land at
-1.27-1.28 cal — still comfortably above 1.0 cal and needing no ballast,
+1.28-1.29 cal — still comfortably above 1.0 cal and needing no ballast,
 though nose ballast is standard practice if either H's margin is ever
 wanted higher. Margin *increases* through the burn on every
-configuration (burnout G80T margin is 1.78 cal).
+configuration (burnout G80T margin is 1.79 cal).
 
 ### 6.1 Stability gate: 1.5 cal target retired, 1.0 cal minimum accepted
 
@@ -475,12 +487,12 @@ Recorded here, not applied quietly, per explicit instruction.
   spec, the airframe geometry or flight mechanics demanded 1.5
   specifically.
 - The accepted static-margin band in high-power rocketry is 1.0–2.0
-  cal, with **1.0 cal the physical minimum**. G80T (1.45 cal), H182R
-  (1.27 cal) and H135W (1.28 cal) all clear it with real room, not a
+  cal, with **1.0 cal the physical minimum**. G80T (1.46 cal), H182R
+  (1.28 cal) and H135W (1.29 cal) all clear it with real room, not a
   hairline.
-- Buying back the missing 0.05 cal on the G80T would cost fin area or
+- Buying back the missing 0.04 cal on the G80T would cost fin area or
   nose ballast — i.e. mass, on the exact flight where **rail exit**
-  (18.9 m/s off a 1.5 m rail, ~4 m/s above the 15 m/s minimum) is
+  (18.8 m/s off a 1.5 m rail, ~4 m/s above the 15 m/s minimum) is
   already the binding constraint, not stability. That is a bad trade
   for a target number that was never physical to begin with.
 
@@ -488,8 +500,8 @@ Recorded here, not applied quietly, per explicit instruction.
 check that used to compare against 1.5 cal now compares against 1.0
 cal, the actual physical requirement, and the reasoning above is on the
 record at the point the decision was made — `tools/rocket60_model.py`'s
-own `MIN_MARGIN_CAL` constant carries the same comment. 1.45 cal on the
-G80T is accepted, not merely tolerated: it is roughly 45% above the
+own `MIN_MARGIN_CAL` constant carries the same comment. 1.46 cal on the
+G80T is accepted, not merely tolerated: it is roughly 46% above the
 physical minimum, in a rocket where the real limiting factor is mass
 (rail exit), not stability.
 
@@ -498,11 +510,12 @@ stability** (stability now clears its own, physical gate with room).
 Liftoff mass
 grew from the original 805g estimate through several necessary
 corrections (measured-mesh part masses, the missing spring/tether-latch
-hardware, +14g of fin, and now the R60_EBay_L growth) to **871 g**. At
-that mass the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably
+hardware, +14g of fin, the R60_EBay_L growth, and now the 6th review's
+Vega sled retention redesign, finding 1) to **874 g**. At
+that mass the rocket leaves a 1.5 m rail at **18.8 m/s**, comfortably
 above the ~15 m/s minimum despite the added fin span. A 1.5 m rail is
 adequate for the G80T. The H182R is unaffected (27.9 m/s). Roughly 31%
-of that 871g liftoff mass is unweighed hardware ESTIMATES, not measured
+of that 874g liftoff mass is unweighed hardware ESTIMATES, not measured
 mesh volumes — see `R60-PrintSettings.md`'s own pre-flight weigh-in
 step, added for exactly this reason: rail exit is what mass actually
 threatens here, and the model's own liftoff figure carries real

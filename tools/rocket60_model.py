@@ -95,8 +95,19 @@ S_FIN  = S_CHUTE+L_CHUTE
 # finding 3's shorter pin bore, finding 4's dead-cut removal) -- inside
 # this file's own 0.1 cm3 rounding, so their published figures are
 # unchanged.
+#
+# Re-measured AGAIN this round (6th review, finding 1 -- the Vega sled
+# retention redesign): [2] SHRANK 50.0->47.2 (the 2 rails + 4 zip-tie
+# slots are gone, and that was more material than the door boss depth
+# grew back, finding 3.1); [6] GREW 20.0->25.4 (the sled now bridges the
+# full e-bay span with 2 bolted feet instead of a bare 112mm plate); [7]
+# GREW 10.4->11.3 (Cover_W widened for the door screw hole's own real
+# wall margin, finding 3.2); [4]/[5] moved <0.1 cm3 (a local foot-mount
+# boss on [4], 4 small blind insert holes on [5]) -- inside this file's
+# own 0.1 cm3 rounding, so [4]'s published figure is unchanged and [5]'s
+# moves the one place it does not round away (54.4->54.3).
 NOSECONE_VOL = 29.4                 # NoseCone.stl
-STL_VOL = {1: 16.2, 2: 50.0, 3: 55.7, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.4,
+STL_VOL = {1: 16.2, 2: 47.2, 3: 55.7, 4: 12.7, 5: 54.3, 6: 25.4, 7: 11.3,
            8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.0, 14: 0.6}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
