@@ -69,15 +69,37 @@ M_Dry  = M_Wet - M_Prop;
 
 Wall     = 2.0;
 End_T    = 3.0;
+// M_OD (29mm nominal, all 3 classes -- the AeroTech 29mm motor family) is
+// the SAME real-world motor OD Rocket60.scad's own design derives from:
+// R60Lib.scad's R60_MMT_ID ("R60_MMT_ID = 29.0 + 0.3; // 29mm motor, slip
+// fit") and tools/r60_assembly.scad's Pair 11, which stands in for the
+// motor directly (`cylinder(d=29.0, ...)`, "the real motor case's own
+// known OD"). This file is deliberately standalone (no include<> of
+// R60Lib.scad -- a mass-equivalent dummy is useful outside this specific
+// rocket too), so that agreement is NOT enforced by any shared constant;
+// if the assumed motor OD ever needs correcting, update Motor_Data here
+// AND both of those references by hand (6th review, finding 4 -- flagged
+// as an unexplained disagreement, 28.8 vs 29.0, between this and Pair
+// 11's own stand-in for "the same object"). Body_OD below is NOT that
+// same 29.0mm figure: it is THIS PRINTED PART's own reduced-for-slip-fit
+// OD (M_OD-IDXtra), deliberately smaller so a dummy that gets repeatedly
+// inserted and withdrawn for ground testing never jams -- a real motor
+// (and Pair 11's own stand-in for one) is not print-fit-reduced and
+// stays at the full 29.0mm.
 Body_OD  = M_OD - IDXtra;         // slip fit in a 29mm motor tube
 Cavity_d = Body_OD - 2*Wall;
 // Closed at the FORWARD end only (3rd review, defect 10 -- was labelled
 // "AFT" here and printed/loaded accordingly, which put the ballast port
 // and the grip flats below at the BURIED end instead of the reachable
 // one; see the module comment below for the full reasoning). Sealing
-// both ends makes an enclosed void: the ballast cannot go in, and the
-// render reports genus -1 (two surface components) rather than 1 -
-// which is how the first version was caught.
+// BOTH ends instead (the pre-fix defect) makes an enclosed void: the
+// ballast cannot go in, and the render reports genus -1 (two disjoint
+// closed surfaces -- the outer shell and the sealed cavity -- combine to
+// a negative value under OpenSCAD's own Euler-characteristic formula),
+// which is how the first version was caught. A one-end-open cup (this,
+// the fixed design) is genus 0, not genus 1 as this comment previously
+// (and wrongly) claimed -- confirmed on the rendered mesh, all 3 motor
+// classes (6th review, finding 4; tools/verify_motordummy29.py).
 Cavity_L = M_L - End_T;
 
 // Solid shell volume in mm3, then cm3.

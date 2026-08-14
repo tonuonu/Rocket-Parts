@@ -72,13 +72,22 @@ def camera_clearance(stls):
 def main(argv):
     parts = [int(a) for a in argv[1:]] or [0, 1, 2, 3, 4, 5, 6]
     m, genus, stls, tmp = {}, {}, {}, tempfile.mkdtemp()
+    bad = 0
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
             genus[p] = render(SCAD, p, out)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
+            # `return 1` here (6th review, finding 4, rocket60) used to
+            # abort the WHOLE run -- any part after this one never
+            # rendered and the checks below never printed at all, the
+            # identical "one bad row kills the whole report" class
+            # verify_rocket60.py's safe() exists to fix for individual
+            # checks. Now a counted FAIL for just this part; the loop and
+            # the report continue with whatever DID render.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
+            bad += 1
+            continue
         stls[p] = out
         m[p] = measure(out)
         print("  part %d %-14s h=%7.2f dia=%7.2f z=%7.2f..%7.2f %5.0f g"
@@ -105,9 +114,15 @@ def main(argv):
         if p in m:
             want = 2.83 if p == 5 else 6.08
             checks += [("spacer %d thickness" % p, m[p]["height"], want, 0.05)]
+    # 6th review (rocket60), finding 4: report the OVERAGE past 250mm
+    # instead of deriving "expected" from the measurement itself
+    # (min(height,250.0) always exactly equals the measured height
+    # whenever it fits, printing a self-comparing "115.00 expected
+    # 115.00" instead of the real constraint, height<=250). 0 for
+    # anything that fits, the actual excess in mm otherwise.
     for p in m:
-        checks += [("part %d fits 250mm Z" % p, m[p]["height"],
-                    min(m[p]["height"], 250.0), 0.01)]
+        checks += [("part %d fits 250mm Z" % p,
+                    max(0.0, m[p]["height"] - 250.0), 0.0, 0.01)]
     # A missing genus (render succeeded but no "Genus:" line was found)
     # used to be silently dropped by `and g is not None` -- the check just
     # never ran, rather than failing loudly. Emit nan instead: it never
@@ -123,7 +138,6 @@ def main(argv):
         checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at,
                     c, max(c, MIN_CLEAR), 0.001)]
     print()
-    bad = 0
     for label, actual, expected, tol in checks:
         ok = abs(actual - expected) <= tol
         bad += not ok

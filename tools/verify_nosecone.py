@@ -52,8 +52,15 @@ def checks(m):
         c += [("ring lower dia", a(5, "dmax"), 82.0, 0.2)]
     if 6 in m:
         c += [("ring upper dia", a(6, "dmax"), 52.0, 0.2)]
+    # 6th review (rocket60), finding 4: report the OVERAGE past 250mm
+    # instead of deriving "expected" from the measurement itself
+    # (min(height,250.0) is always exactly the measured height whenever it
+    # fits, so a healthy part printed a self-comparing "177.000 want
+    # 177.000" instead of the real constraint, height<=250). 0 for
+    # anything that fits, the actual excess in mm otherwise -- legible
+    # either way.
     for p in m:
-        c += [("part %d fits 250mm Z" % p, m[p]["height"], min(m[p]["height"], 250.0), 0.01)]
+        c += [("part %d fits 250mm Z" % p, max(0.0, m[p]["height"] - 250.0), 0.0, 0.01)]
 
     # --- interior checks: bounding box / OD alone cannot see these ---
 
@@ -99,6 +106,7 @@ def checks(m):
 def main(argv):
     parts = [int(a) for a in argv[1:]] or [0, 1, 2, 3, 4, 5, 6]
     m, tmp = {}, tempfile.mkdtemp()
+    bad = 0
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
@@ -110,8 +118,15 @@ def main(argv):
             # subprocess.TimeoutExpired instead, and this module didn't
             # even import subprocess to name it in an except clause. A
             # slow render died on a raw traceback rather than this FAIL.
+            # `return 1` here (6th review, finding 4, rocket60) used to
+            # abort the WHOLE run -- any part after this one never
+            # rendered and checks() never printed at all, the identical
+            # "one bad row kills the whole report" class safe() exists to
+            # fix for individual checks. Now a counted FAIL for just this
+            # part; the loop and the report continue.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
+            bad += 1
+            continue
         # genus passed straight to measure() (defect 3a) -- it already
         # sets "genus": genus (None when render() found no "Genus:" line)
         # and "stl": stl in its own return dict, so the two follow-up
@@ -125,7 +140,6 @@ def main(argv):
               % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
                  m[p]["zmin"], m[p]["zmax"], m[p]["vol"] * 1.27))
     print()
-    bad = 0
     for label, actual, expected, tol in checks(m):
         ok = abs(actual - expected) <= tol
         bad += not ok
