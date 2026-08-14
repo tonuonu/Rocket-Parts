@@ -108,9 +108,16 @@ def main(argv):
     for p in m:
         checks += [("part %d fits 250mm Z" % p, m[p]["height"],
                     min(m[p]["height"], 250.0), 0.01)]
+    # A missing genus (render succeeded but no "Genus:" line was found)
+    # used to be silently dropped by `and g is not None` -- the check just
+    # never ran, rather than failing loudly. Emit nan instead: it never
+    # equals GENUS[p] within any tolerance, so a genuine miss is a visible
+    # FAIL, not a quietly-absent row -- same fix verify_nosecone.py and
+    # verify_rocket60.py already have.
     for p, g in genus.items():
-        if p in GENUS and g is not None:
-            checks += [("part %d genus" % p, g, GENUS[p], 0)]
+        if p in GENUS:
+            checks += [("part %d genus" % p,
+                       g if g is not None else float("nan"), GENUS[p], 0)]
     if {2, 3, 4} <= set(m):
         c, at = camera_clearance(stls)
         checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at,

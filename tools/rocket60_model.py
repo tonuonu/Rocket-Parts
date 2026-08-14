@@ -1,4 +1,18 @@
-import math
+import math, sys
+
+# Failure tracking (3rd review, should-fix 7 corollary): every OK/FAIL
+# printed below used to be text only -- the process always exited 0, so a
+# margin, rail-exit or flutter regression printed "FAIL" but nothing
+# downstream (CI, a human skimming output) was forced to notice. Same
+# silently-skipped-check pattern the review's items 4/5 fix elsewhere in
+# this repo's tooling. bad() records a failure and returns the same OK/
+# FAIL string so call sites don't need a separate branch.
+_bad = 0
+def bad(ok):
+    global _bad
+    if not ok:
+        _bad += 1
+    return "OK" if ok else "FAIL"
 
 RHO_PETG = 1.27   # g/cm3, R60-PrintSettings.md sec 3
 RHO_PC   = 1.20   # g/cm3, R60-PrintSettings.md sec 3 (fin can/retainer/spacer)
@@ -18,8 +32,11 @@ WALL= 1.6            # airframe wall
 # pre-redesign figures -- R60Lib.scad has had 160/180 (TOTAL 662mm) since
 # the e-bay upright-servo redesign and the spring-mechanism chute
 # lengthening. This model was of a rocket that no longer exists.
+# L_EBAY grew again, 160->165 (3rd review, defect 2d/9): R60_EBay_L now
+# carries 5mm of headroom above the bare minimum so the arming-switch Z
+# window is a genuine ~3mm margin instead of a 0.5mm hair gap.
 L_NOSE = 94.0
-L_EBAY = 160.0
+L_EBAY = 165.0
 L_CHUTE= 180.0
 L_FINCAN=228.0
 TOTAL  = L_NOSE+L_EBAY+L_CHUTE+L_FINCAN
@@ -34,17 +51,25 @@ S_FIN  = S_CHUTE+L_CHUTE
 # deleted from the design two tasks ago). Material per part from
 # R60-PrintSettings.md sec 3.
 #
-# STL_VOL[10] and [13] re-measured this round (defect 3c / re-export
-# after this round's SCAD fixes): [10] was 13.8, the pre-fin-growth fin
-# volume (stale -- the fin span grew 55->63mm since, and this entry was
-# never actually READ by the fin mass line below, which computed a
-# separate planform-prism estimate instead; both are fixed together
-# below). [13] grew 3.3->3.5 as a direct consequence of this round's
-# defect 2b fix (R60_TetherLatch()'s Base_L: 36.0->38.6mm).
+# Re-measured this round (3rd review fixes) after re-export: [2] shrank
+# 45.7->44.9 (Vega rail Z window derived per-end instead of a flat 5mm
+# margin, defect 2); [3] grew 53.5->55.2 (new Ø56.4 spigot onto the fin
+# can, should-fix 6); [8] shrank 55.1->52.9 (spring carrier's tether
+# relief channel now runs the carrier's full length instead of 5mm,
+# defect 1); [12] shrank 17.6->16.6 (spacer now stops short of the new
+# part 14 instead of running the full MMT_L, see build()'s own
+# spacer_len below); [14] is new (forward thrust ring, defect 3 -- see
+# R60_ThrustRing()'s own module comment for why nothing reacted the
+# motor's forward thrust load before this). [2] grew again 44.9->46.2
+# (should-fix 9/11: R60_EBay_L 160->165 adds tube wall and lengthens the
+# Vega rails; the zip-tie redesign from 2 slots to 4 removes a little
+# back, net +1.3 cm3) -- re-measured off the freshly re-exported mesh.
 NOSECONE_VOL = 29.4                 # NoseCone.stl
-STL_VOL = {1: 16.2, 2: 45.7, 3: 53.5, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
-           8: 55.1, 9: 114.0, 10: 15.8, 11: 13.4, 12: 17.6, 13: 3.5}
+STL_VOL = {1: 16.2, 2: 46.2, 3: 55.2, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
+           8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.5, 14: 0.6}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
+THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
+                        # stops this much short of MMT_L, see build()
 
 def petg(vol_cm3, infill=INFILL_EFF):
     return vol_cm3 * RHO_PETG * infill
@@ -100,11 +125,16 @@ MOTORS = {
 def build(motor):
     mlen, mtot, mprop, Ns, avgN, burn = MOTORS[motor]
     # Motor spacer scales with the actual R60_MotorSpacer() length for
-    # this motor (MMT_L - motor length); TSP E20-P is excluded from the
-    # design (spec sec 1.1) and would use MotorAdapter29, not this
-    # spacer, but the scaled figure is kept for a like-for-like row.
-    spacer_len = max(0.0, MMT_L - mlen)
-    spacer_g = pc(STL_VOL[12] / 104.0 * spacer_len) if spacer_len > 1 else 0.0
+    # this motor (MMT_L - THRUST_RING_T - motor length -- part 14 now
+    # occupies the last THRUST_RING_T of the MMT, so the spacer no longer
+    # runs the full MMT_L, see R60_MotorSpacer()'s own comment); TSP
+    # E20-P is excluded from the design (spec sec 1.1) and would use
+    # MotorAdapter29, not this spacer, but the scaled figure is kept for
+    # a like-for-like row. STL_VOL[12]'s own reference length is 98.0mm
+    # (the G80T's spacer, Motor_Class default 0 -- STL Files/Rocket60/
+    # README.md), not MMT_L, so the scale factor is against that.
+    spacer_len = max(0.0, MMT_L - THRUST_RING_T - mlen)
+    spacer_g = pc(STL_VOL[12] / 98.0 * spacer_len) if spacer_len > 1 else 0.0
     items = [
     # (name, mass g, station mm)
      ('nosecone shell',        petg(NOSECONE_VOL),       0.45*L_NOSE),
@@ -146,6 +176,9 @@ def build(motor):
      ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL-30),
      ('rail buttons x2',       4.0,                      TOTAL-60),
      ('motor spacer (PC)',     spacer_g,                 TOTAL-mlen-spacer_len/2),
+     # Forward thrust ring (part 14) -- new this round (defect 3). Flush
+     # with the fin can's own forward tip, TOTAL-THRUST_RING_T/2.
+     ('thrust ring (PC)',      pc(STL_VOL[14]),          TOTAL-THRUST_RING_T/2),
      ('MOTOR '+motor,          mtot,                     TOTAL-mlen/2),
     ]
     m  = sum(i[1] for i in items)
@@ -200,6 +233,7 @@ for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen = build(mo)
     margin = (CP-cg)/D
     if mo == 'G80T-14A':
+        bad(margin >= 1.5)
         flag = "  <-- BELOW 1.5 cal TARGET" if margin < 1.5 else "  (meets 1.5 cal target)"
     elif mo in ('H182R-14A', 'H135W-14A'):
         flag = "  <-- below 1.0 cal, needs nose ballast" if margin < 1.0 else ""
@@ -266,7 +300,13 @@ for mo in ('G80T-14A','H182R-14A','TSP E20-P'):
     while h<1.5 and t<burn:
         F=thr(c,t); mm-=mdot*dt
         v+=((F-0.5*1.225*v*v*A*0.52)/mm-9.81)*dt; h+=v*dt; t+=dt
-    print(f"   {mo:<12} {v:>5.1f} m/s   ({'OK' if v>15 else 'MARGINAL - want >15 m/s'})")
+    # TSP E20-P is excluded from this design already (spec sec 1.1 -- it
+    # was simulated and dropped specifically because it cannot clear
+    # 15 m/s here), so it is reported but does not fail the regression;
+    # only a motor the design actually flies on can fail this.
+    ok = v > 15
+    status = ("OK" if ok else "EXCLUDED, as expected") if mo == 'TSP E20-P' else bad(ok)
+    print(f"   {mo:<12} {v:>5.1f} m/s   ({status}{'' if ok else ' - want >15 m/s'})")
 
 # ---------------- flutter margin, all three motors ----------------
 # Group 2 re-target's 3rd requirement: flutter velocity >= 3x the FASTEST
@@ -281,5 +321,9 @@ for mo in ('G80T-14A','H182R-14A','H135W-14A'):
 fastest_mo = max(vmaxes, key=vmaxes.get)
 fastest_v = vmaxes[fastest_mo]
 print(f"   Fastest: {fastest_mo} at {fastest_v:.0f} m/s -> 3x = {3*fastest_v:.0f} m/s")
-print(f"   Vf = {Vf:.0f} m/s  ({'OK' if Vf >= 3*fastest_v else 'FAIL'}, "
+print(f"   Vf = {Vf:.0f} m/s  ({bad(Vf >= 3*fastest_v)}, "
       f"{Vf/(3*fastest_v):.2f}x the 3x-speed floor)")
+
+if _bad:
+    print(f"\n{_bad} check(s) failed")
+sys.exit(1 if _bad else 0)

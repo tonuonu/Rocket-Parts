@@ -39,29 +39,76 @@ def render(scad, part, out):
     return int(g.group(1)) if g else None
 
 
-def _tris(stl):
-    """Yield (v0, v1, v2) vertex triples from an ASCII STL."""
-    vs = []
+@functools.lru_cache(maxsize=None)
+def _tris_cached(stl, st_mtime_ns, st_size):
+    """Actual STL parse, memoised on (path, mtime, size) -- see tris()
+    below. Materialised as a tuple (not left as a generator) so the same
+    cached result can be iterated more than once, by different callers,
+    without re-reading the file."""
+    vs, out = [], []
     with open(stl) as fh:
         for line in fh:
             s = line.lstrip()
             if s.startswith("vertex "):
                 vs.append(tuple(float(x) for x in s.split()[1:4]))
                 if len(vs) == 3:
-                    yield tuple(vs)
+                    out.append(tuple(vs))
                     vs = []
+    return tuple(out)
+
+
+def tris(stl):
+    """(v0, v1, v2) vertex triples from an ASCII STL.
+
+    Memoised on (path, mtime_ns, size) (defect 12): bore() already had its
+    own private cache for exactly this reason (re-parsing the whole file
+    per call is real cost -- part 9 alone is ~114 cm^3 of triangles), but
+    every OTHER scanner in verify_rocket60.py (hole_azimuth_at_r,
+    hole_max_reach, pin_hole_diameter, the fin-can slot scanners,
+    xy_extent_in_window, rail_facing_gap) and volume() below all called
+    the plain per-call parse directly and re-read/re-parsed the file from
+    scratch on every single call, even when checking the SAME rendered
+    part repeatedly -- the common case, since verify_rocket60.py's
+    checks() calls several of these on the same a(p, "stl") path back to
+    back. This is also the shared cache those scanners were reaching past
+    the module boundary for a private _tris() to approximate (defect 14)
+    -- this is now the one public entry point every caller (including
+    scad_verify's own measure()/volume()/bore() below) uses instead.
+
+    Keyed on mtime/size, not path alone, for the same reason bore()'s own
+    cache is (defect 3d): a path that gets re-rendered to (temp files are
+    reused across Motor_Class variants, for instance) must be a cache
+    miss, not a silent return of the first render's stale geometry."""
+    st = os.stat(stl)
+    return _tris_cached(stl, st.st_mtime_ns, st.st_size)
 
 
 def measure(stl, genus=None):
     """Bounding box, height and max diameter about the Z axis."""
     xs = ys = zs = None
     dmax = 0.0
-    for tri in _tris(stl):
+    for tri in tris(stl):
         for (x, y, z) in tri:
             xs = (x, x) if xs is None else (min(xs[0], x), max(xs[1], x))
             ys = (y, y) if ys is None else (min(ys[0], y), max(ys[1], y))
             zs = (z, z) if zs is None else (min(zs[0], z), max(zs[1], z))
             dmax = max(dmax, 2.0 * math.hypot(x, y))
+    if xs is None:
+        # Zero-triangle mesh (defect 13) -- render() already guards
+        # against a too-small/missing STL file, but an ASCII STL that
+        # parses as syntactically valid with zero "vertex " lines (e.g. a
+        # degenerate empty solid CGAL still happily wrote out) used to
+        # reach here and raise TypeError on zs[1]-zs[0] against None,
+        # crashing the WHOLE verify run instead of failing the one check
+        # that measured this part. nan compares false against every
+        # tolerance, same convention as a missing genus (see the genus
+        # checks in verify_nosecone.py/verify_rocket60.py/
+        # verify_camnose.py) -- a loud FAIL instead of a crash or a
+        # silently wrong number.
+        nan = float("nan")
+        return {"stl": stl, "genus": genus, "dmax": nan,
+                "xmin": nan, "xmax": nan, "ymin": nan, "ymax": nan,
+                "zmin": nan, "zmax": nan, "height": nan}
     return {"stl": stl, "genus": genus, "dmax": dmax,
             "xmin": xs[0], "xmax": xs[1], "ymin": ys[0], "ymax": ys[1],
             "zmin": zs[0], "zmax": zs[1], "height": zs[1] - zs[0]}
@@ -72,7 +119,7 @@ def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi):
     """Actual bore() body, memoised on (path, mtime, size, band) -- see
     bore() below for why mtime/size are part of the key, not just path."""
     rmin, rmax = None, 0.0
-    for tri in _tris(stl):
+    for tri in tris(stl):
         for (x, y, z) in tri:
             if zlo <= z <= zhi:
                 r = math.hypot(x, y)
@@ -92,9 +139,12 @@ def bore(stl, zlo, zhi):
     Memoised (in _bore_cached) on (path, mtime_ns, size, zlo, zhi): callers
     routinely re-check the same band on the same part (verify_rocket60.py
     calls bore() on the same (stl, band) pair from several independent
-    checks, e.g. per bulkhead and at lines scattered through checks()), and
-    each call re-reads and re-parses the ENTIRE ascii STL from scratch --
-    part 9 alone is ~114 cm^3 of triangles.
+    checks, e.g. per bulkhead and at lines scattered through checks()).
+    tris() below is itself cached now (defect 12), so a repeat call no
+    longer re-reads the file from disk -- but re-scanning even an
+    in-memory tuple of every triangle (part 9 alone is ~114 cm^3 of them)
+    for the same exact band is still real, avoidable work this layer
+    skips.
 
     Keyed on path ALONE, this was unsafe (defect 3d): the docstring's "stl
     paths are never reused for different content within a run" is a
@@ -109,9 +159,13 @@ def bore(stl, zlo, zhi):
 
 
 def volume(stl):
-    """Signed mesh volume in cm^3 (divergence theorem over the triangles)."""
+    """Signed mesh volume in cm^3 (divergence theorem over the triangles).
+
+    Uses the shared tris() cache (defect 12) -- this used to re-parse the
+    whole file on every call, same as every scanner in verify_rocket60.py
+    did before that fix."""
     v = 0.0
-    for (a, b, c) in _tris(stl):
+    for (a, b, c) in tris(stl):
         v += (a[0] * (b[1] * c[2] - b[2] * c[1])
               - a[1] * (b[0] * c[2] - b[2] * c[0])
               + a[2] * (b[0] * c[1] - b[1] * c[0])) / 6.0

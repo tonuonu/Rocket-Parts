@@ -35,15 +35,47 @@ R60_Body_ID    = R60_Body_OD - 2*R60_Wall_T;   // 56.8
 // interference fit here.
 R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
 
-R60_EBay_L   = 160;   // fits Vega 100 + upright MG90S 29 + slack
+R60_EBay_L   = 165;   // fits Vega 100 + upright MG90S 29 + slack, +5mm
+                       // over the minimum so the arming-switch Z window
+                       // (Rocket60.scad) gets a genuine ~3mm margin on
+                       // both sides instead of a 0.5mm hair gap
 R60_Chute_L  = 180;   // spring mechanism 80 + 24in main 100
 R60_FinCan_L = 228;
+
+// Chute-bay-to-fin-can spigot (3rd review, should-fix 6). Every OTHER
+// internal airframe joint in this design gets a Ø56.4 (R60_Coupler_OD)
+// spigot locating it concentrically and giving it something more than a
+// glue ring to resist bending -- the neck's skirt into the e-bay tube,
+// the e-bay aft bulkhead's skirt into the chute tube -- except this one,
+// which used to be a bare butt bond between two 1.6mm walls across a
+// 662mm airframe. Built onto the chute tube's own aft end, PAST its
+// existing R60_Chute_L (not into R60_FinCan() -- that part's own forward
+// annulus is already open and unmodified, so nothing there needs to
+// change; see R60_ChuteTube()'s own comment for why 6mm and not
+// R60_Pin_Skirt_L=15 like the other skirts -- the fin can's forward
+// centring ring sits only R60_FinCan_L-6mm from the tip, so 6mm is what
+// is actually free to receive a spigot in the outer annulus there
+// without colliding with it).
+R60_FinCanSpigot_L = 6;
 
 // Neck skirt length -- shared with R60_EBayTube() so the arming switch
 // hole can be positioned clear of it by construction instead of a
 // hand-picked Z that can silently start overlapping it again. See task
 // report (the switch used to land inside this skirt's own span).
 R60_Neck_Skirt_L = 19;
+
+// E-bay aft bulkhead disc thickness (R60_EBayAftBulkhead()'s own T) --
+// shared with R60_EBayTube() (3rd review, defect 2) so the Vega
+// retention rails can be kept clear of the disc BY CONSTRUCTION, the
+// same treatment R60_Neck_Skirt_L above already gets for the skirt end.
+// Was a second, local-only `T=12` inside R60_EBayAftBulkhead() with
+// nothing else deriving from it -- the rails' own Z window had no way to
+// know where the disc actually sits, and silently overlapped it.
+R60_AftBulk_T = 12;
+// E-bay forward bulkhead disc thickness (R60_EBayFwdBulkhead()'s own T)
+// -- shared for the same reason as R60_AftBulk_T above: the rails must
+// also clear this bulkhead, which sits immediately below the neck skirt.
+R60_FwdBulk_T = 6;
 
 // Access door aperture (R60_EBayTube()) and the retaining frame/bosses on
 // R60_Door() that mate with it -- shared so the two are always derived
@@ -98,8 +130,10 @@ R60_Vega_Sled_T = 4;                  // sled plate thickness
 // rails run the tube's full length at the -Y wall (opposite the door and
 // switch, both at +Y, so neither competes for space), capturing the
 // sled's two long edges so it can neither slide radially nor rotate about
-// the tube axis; 2 zip-tie slots straddling its mid-length stop axial
-// sliding and hold it down against the rails.
+// the tube axis; 4 zip-tie slots (2 Z stations, one pair of holes per
+// station at 270+-Rail_HalfAng -- straddling the sled TANGENTIALLY, not
+// sharing an azimuth -- 3rd review, defect 11) let 2 ties cinch it down
+// against the rails and stop axial sliding.
 R60_Vega_RailGap = R60_Vega_Sled_W + 2*IDXtra;   // inner-to-inner rail
                                                    // spacing = sled width
                                                    // + clearance
@@ -121,6 +155,23 @@ R60_MMT_OD  = R60_MMT_ID + 3.0;
 // report.
 R60_MMT_L   = R60_FinCan_L;
 R60_Motor_L = [124, 203, 216];  // G80T-14A, H182R-14A, H135W-14A
+
+// Motor-catching lip bore -- shared between R60_MotorRetainer() (aft,
+// catches the motor's own aft rim, resisting AFT motion) and
+// R60_ThrustRing() (forward, part 14, 3rd review defect 3: catches the
+// motor+spacer stack's forward face, resisting FORWARD motion -- nothing
+// did before this, so the ~66N forward thrust reaction on a G80T-14A had
+// only a 0.3mm slip fit standing between the motor+spacer stack and the
+// packed parachute). Same lip width both ends, one derived constant.
+R60_Motor_Lip_d = R60_MMT_ID - 2.5;
+// R60_ThrustRing()'s own thickness -- shared with R60_MotorSpacer() so
+// the spacer's length is derived knowing the ring now occupies the last
+// R60_ThrustRing_T of the MMT's own R60_MMT_L, not a second part sized
+// as if it had the whole length to itself (which would make the ring
+// and the spacer's forward end occupy the same 6mm and collide -- caught
+// on the rendered assembly, tools/verify_rocket60_assembly.py pair 10,
+// before this was wired through).
+R60_ThrustRing_T = 6;
 
 // ============================================
 // SPRING SEPARATION JOINT (spec 4.2 -- supersedes the cam-ramped bayonet)
@@ -212,10 +263,18 @@ R60_TetherLatch_HoleX = R60_Horn_L/2 + R60_TetherInsert_d/2 + R60_Tether_Wall_Mi
 // chord -- see tools/rocket60_model.py's own sweep for the chord-only
 // and Ct-trim alternatives that were rejected for costing more mass at
 // the same margin). 63mm clears 1.5 cal on the G80T with margin to
-// spare (1.62 cal) while flutter velocity (a function of exposed AR,
-// which DROPS as span grows) stays comfortably above 3x the fastest
-// flight speed on any motor -- see the module comment on R60_Fin() for
-// the current AR/flutter figures. Slot geometry in R60_FinCan() needs no
+// spare (1.61 cal) while flutter velocity -- a function of exposed AR,
+// which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s; 63->0.869
+// ->959; 70->0.982->802 -- growing span 18% raised AR 18% and CUT Vf
+// 21%, the opposite of a free lever) -- still stays comfortably above 3x
+// the fastest flight speed on any motor at 63mm. This is a real cost,
+// not a margin grown for free: do not read this as licence to keep
+// growing span for stability headroom without re-checking Vf each time
+// (R60_Fin()'s own module comment already says this; restated here so
+// this comment does not contradict it) -- see
+// tools/verify_rocket60.py's fin-span check (3rd review, should-fix 7)
+// and the module comment on R60_Fin() for the current AR/flutter
+// figures. Slot geometry in R60_FinCan() needs no
 // width change: the slot already cuts clear through to the body OD
 // (r=30) regardless of span, so only Slot_L (root chord, unchanged) sets
 // its footprint -- span only changes how far the fin's OWN tip reaches

@@ -34,6 +34,7 @@ include<R60Lib.scad>
 // 11 = Motor retainer
 // 12 = Motor spacer
 // 13 = Tether latch
+// 14 = Forward thrust ring
 Render_Part = 0;
 
 // 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
@@ -128,13 +129,17 @@ module R60_EBayTube(){
     Sw_Margin = 3;   // clear of both the door top and the skirt start
     Sw_Z0 = Door_Z1 + Sw_Margin + Sw_d/2;
     Sw_Z1 = R60_EBay_L - R60_Neck_Skirt_L - Sw_Margin - Sw_d/2;
-    // Defect 2d: this window is only Sw_Z1-Sw_Z0 wide (0.5mm as currently
-    // dimensioned) -- (Sw_Z0+Sw_Z1)/2 below returns a number regardless of
-    // sign, so if a future change to R60_Door_Open_H/R60_Neck_Skirt_L/
-    // R60_EBay_L ever inverts it (Sw_Z1 < Sw_Z0), the render still
-    // succeeds and the switch silently lands back inside the neck skirt
-    // -- the exact defect the derivation above replaced. Assert instead
-    // of letting that pass silently.
+    // Defect 2d (3rd review): this window used to be only Sw_Z1-Sw_Z0 wide
+    // (0.5mm, when R60_EBay_L was 160) -- a hair gap that made the switch
+    // barrel's fit a coin flip against any rounding. R60_EBay_L carries
+    // 5mm of headroom above the bare minimum specifically so this window
+    // (which gets 2.5mm of every 5mm added to EBay_L, per the formulas
+    // above) is a genuine ~3mm on both sides instead. (Sw_Z0+Sw_Z1)/2
+    // below returns a number regardless of sign, so if a future change to
+    // R60_Door_Open_H/R60_Neck_Skirt_L/R60_EBay_L ever inverts the window
+    // (Sw_Z1 < Sw_Z0), the render still succeeds and the switch silently
+    // lands back inside the neck skirt. Assert instead of letting that
+    // pass silently.
     assert(Sw_Z1 > Sw_Z0,
         str("R60_EBayTube: arming switch Z window is empty/inverted (Sw_Z0=",
             Sw_Z0, " Sw_Z1=", Sw_Z1,
@@ -234,26 +239,69 @@ module R60_EBayTube(){
                         / sqrt((2*Rail_Inner_R)*(2*Rail_Inner_R)
                                + R60_Vega_RailW*R60_Vega_RailW));
     Rail_Overlap_R = 1.2;   // fuses into the wall without breaking its OD
-    // Stop 5mm short of each end -- both so the tube's own base/top faces
-    // stay a plain, unobstructed circle for every other part's mating
-    // check that reads this tube's bore/OD near z=0 or z=EBay_L (a
-    // full-length rail read as bore material there, corrupting those
-    // checks -- caught by running verify_rocket60.py before this fix),
-    // and because the sled (112mm) is shorter than the tube (160mm)
-    // anyway and does not need the rails at the very tips.
-    Rail_Margin = 5;
-    // Zip-tie slots straddling the rails' mid-length -- cinch the sled
-    // down against the rails so it cannot lift off them radially or slide
-    // axially. 10mm x 3mm, a standard small zip tie, straight -Y (270deg,
-    // centred between the two rails so one loop reaches both).
+    // Rail Z window (3rd review, defect 2): the rails used to run
+    // Rail_Margin=5 in from EITHER end, a flat 5mm regardless of what
+    // actually sits there. That was enough clearance for the tube's own
+    // plain end faces (still true -- see below) but NOT for the parts
+    // that glue inside those ends: the aft bulkhead's disc (thickness
+    // R60_AftBulk_T, glued flush with the tube's own z=0) and, at the
+    // other end, the forward bulkhead (R60_FwdBulk_T) sitting
+    // immediately below the neck's skirt (R60_Neck_Skirt_L). Measured on
+    // the assembled mesh (tools/verify_rocket60_assembly.py pairs 0/1/2):
+    // the old fixed 5mm margin left the rails overlapping the neck skirt
+    // by 0.134 cm3, the forward bulkhead by 0.151 cm3 and the aft
+    // bulkhead disc by 0.176 cm3 -- neck and aft bulkhead seated proud
+    // instead of flush, and TUBE_BAND (which only reads z~=0) never saw
+    // any of it. Derive the window from what is ACTUALLY there at each
+    // end, not a single hand-picked number that has to happen to be
+    // bigger than every part that might glue in near it.
+    Rail_Clear = 2;   // stated clearance beyond each mating part's own
+                        // footprint, past the constants below -- small on
+                        // purpose: the sled (R60_Vega_L+12=112mm) has to
+                        // fit inside whatever span is left (Rail_Z1-
+                        // Rail_Z0), so this is real margin, not slack to
+                        // spend freely
+    Rail_Z0 = R60_AftBulk_T + Rail_Clear;
+    Rail_Z1 = R60_EBay_L - R60_Neck_Skirt_L - R60_FwdBulk_T - Rail_Clear;
+    assert(Rail_Z1 > Rail_Z0,
+        str("R60_EBayTube: Vega rail Z window is empty/inverted (Rail_Z0=",
+            Rail_Z0, " Rail_Z1=", Rail_Z1,
+            ") -- e-bay length/skirt/bulkhead sizes no longer leave room for the rails"));
+    // The tube's own plain end faces (z=0/EBay_L) still stay clear for
+    // every OTHER mating check that reads them (TUBE_BAND etc.) -- both
+    // Rail_Z0 and EBay_L-Rail_Z1 are well clear of 0, same property the
+    // old Rail_Margin already had.
+    // Zip-tie slots, 2 stations along the rails -- cinch the sled down
+    // against the rails so it cannot lift off them radially or slide
+    // axially. 10mm x 3mm, a standard small zip tie.
+    //
+    // Azimuth (3rd review, defect 11): the pre-fix pair shared ONE
+    // azimuth (straight -Y, 270deg) at these same two Z stations. Both
+    // holes opened into the SAME point behind the sled's own centre, so
+    // a tie strung between them ran entirely inside the ~15mm gap
+    // between the sled's outer (antenna) face and the tube wall behind
+    // it -- never crossing the sled at all. Cinching that tie just drew
+    // the loop taut against nothing; it touched neither the sled nor the
+    // rails ("zero retention" per the task report). A tie only presses
+    // the plate down if its two ends are on OPPOSITE tangential sides of
+    // it, so each Z station now gets a PAIR of holes at 270+-Rail_HalfAng
+    // -- the exact azimuth each rail already sits at (see Rail_HalfAng
+    // above), i.e. right where the sled's two captured edges are. A tie
+    // threaded in one hole crosses OVER the sled's exposed outer face to
+    // exit the other, and cinching it now genuinely sandwiches the plate
+    // against both rails. Each hole's radial reach (R60_Body_ID/2-1 out
+    // through R60_Wall_T*3, unchanged from the pre-fix slot) only opens
+    // the OUTER ~2.2mm of that rail's own 5.6mm radial depth (24.0..29.6)
+    // -- the rail's inner, sled-facing capture surface stays solid; only
+    // a small pass-through nearer the OD is cut.
     Tie_Z = [R60_EBay_L/2 - 20, R60_EBay_L/2 + 20];
     difference(){
         union(){
             R60_Tube(R60_EBay_L);
             for (s=[1,-1])
                 rotate([0,0,270+s*Rail_HalfAng])
-                    translate([R60_Body_ID/2-R60_Vega_RailH, -R60_Vega_RailW/2, Rail_Margin])
-                        cube([R60_Vega_RailH+Rail_Overlap_R, R60_Vega_RailW, R60_EBay_L-2*Rail_Margin]);
+                    translate([R60_Body_ID/2-R60_Vega_RailH, -R60_Vega_RailW/2, Rail_Z0])
+                        cube([R60_Vega_RailH+Rail_Overlap_R, R60_Vega_RailW, Rail_Z1-Rail_Z0]);
             // Door screw bosses -- local wall thickening on the INSIDE,
             // flush with the true OD, giving the 4 M2.5 screws real
             // material to thread into without propping the cover up off
@@ -298,11 +346,28 @@ module R60_EBayTube(){
         translate([0, R60_Body_OD/2, Sw_Z])
             rotate([90, 0, 0])
                 cylinder(d=Sw_d, h=R60_Wall_T*3, center=true);
-        // Zip-tie slots, straight through the -Y wall.
-        for (tz=Tie_Z)
-            rotate([0,0,270])
-                translate([R60_Body_ID/2-1, -5, tz-1.5])
-                    cube([R60_Wall_T*3, 10, 3]);
+        // Zip-tie slots -- see the module comment above (defect 11): one
+        // pair per Z station, straddling the sled tangentially at each
+        // rail's own azimuth instead of both sharing 270deg.
+        //
+        // Starts at Rail_Inner_R-Overlap, not R60_Body_ID/2-1: a cut that
+        // only opened the rail's OUTER portion (from the ID out) left its
+        // INNER, sled-capturing face standing alone across the gap as a
+        // thin free-hanging bridge (still fused to the rest of the rail
+        // fore and aft, in Z, but unsupported at this band) -- valid
+        // manifold, but genus jumped 5->11 for 2 new holes instead of the
+        // expected 5->7, and a bridge that thin is also a real overhang
+        // for the printer. Cutting from inside the rail's own inner face
+        // instead removes the rail's full cross-section at this one
+        // narrow (3mm of its 124mm) Z-band -- a clean local gap, not a
+        // stub -- confirmed back to the expected +1 genus per hole on
+        // the rendered mesh.
+        Tie_X0 = Rail_Inner_R - Overlap;
+        Tie_Depth = R60_Body_OD/2 - Rail_Inner_R + 2 + Overlap;   // clears true OD by 2mm
+        for (tz=Tie_Z, s=[1,-1])
+            rotate([0,0,270+s*Rail_HalfAng])
+                translate([Tie_X0, -5, tz-1.5])
+                    cube([Tie_Depth, 10, 3]);
     }
 } // R60_EBayTube
 
@@ -368,6 +433,30 @@ module R60_ChuteTube(){
     difference(){
         union(){
             R60_Tube(R60_Chute_L);
+            // Aft spigot (3rd review, should-fix 6), ADDITIONAL length
+            // past R60_Chute_L (same "spigot adds to the part's own
+            // printed height, not carved from within a fixed total"
+            // idiom as R60_Neck()'s skirt past its flange and
+            // R60_EBayAftBulkhead()'s skirt past its disc -- a spigot
+            // that stopped flush at the nominal 180mm boundary instead
+            // of reaching past it would just touch the fin can's own
+            // forward face, not insert into it, and prove nothing on the
+            // assembly probe; caught there, tools/verify_rocket60_
+            // assembly.py pair 7, before this was corrected to reach
+            // past 180). Reduces to Coupler_OD so the joint to the fin
+            // can gets the same concentric spigot every other internal
+            // joint in this design already has, instead of a bare
+            // 1.6mm-wall-to-1.6mm-wall butt bond. Fits the fin can's OWN
+            // unmodified body ID (56.8mm) in the open outer annulus just
+            // short of its forward centring ring -- see R60Lib.scad's
+            // R60_FinCanSpigot_L comment for why 6mm and not
+            // R60_Pin_Skirt_L=15 like the OTHER skirts (there is simply
+            // less room here before that ring). Same "reduced OD/ID tube
+            // section" idiom as R60_Neck()'s skirt and
+            // R60_EBayAftBulkhead()'s skirt -- R60_Tube()'s own od/wall
+            // parameters, not a hand-built difference().
+            translate([0,0,R60_Chute_L-Overlap])
+                R60_Tube(R60_FinCanSpigot_L+Overlap, od=R60_Coupler_OD, wall=R60_Wall_T);
             // Spring reaction tabs, inward from the tube wall.
             for (i=[0:nStopTabs-1])
                 rotate([0,0,i*360/nStopTabs])
@@ -395,7 +484,8 @@ module R60_ChuteTube(){
 
 // Forward bulkhead: closes the top of the e-bay, passes the camera harness.
 module R60_EBayFwdBulkhead(){
-    T = 6;
+    T = R60_FwdBulk_T;   // shared with R60_EBayTube()'s Vega rails
+                          // (3rd review, defect 2)
     difference(){
         cylinder(d=R60_Coupler_OD, h=T);
         translate([0,0,-Overlap]) cylinder(d=22, h=T+Overlap*2);
@@ -448,7 +538,8 @@ module R60_EBayFwdBulkhead(){
 // under solid skirt material); the cord holes so the shock cord still
 // threads through into the chute bay.
 module R60_EBayAftBulkhead(){
-    T         = 12;
+    T         = R60_AftBulk_T;   // shared with R60_EBayTube()'s Vega
+                                   // rails (3rd review, defect 2)
     Skirt_L   = R60_Pin_Skirt_L;
     Total_H   = T + Skirt_L;
     P_L       = 23.0 + IDXtra;   // MG90S body footprint
@@ -726,9 +817,13 @@ module R60_Door(){
 // bore=CB_D -- so it glues flush against R60_EBayAftBulkhead()'s skirt
 // aft face (same OD, same convention as every internal part in this
 // repo). The diaphragm sits well inboard of that rim, not at it. A
-// notch through that rim at R60_Tether_Az (+Y) continues the tether's
-// relief channel from the skirt into the counterbore -- see
-// R60_ChuteTube()'s module comment for the tether's fixed end.
+// channel through the wall at R60_Tether_Az (+Y), running this carrier's
+// FULL length (3rd review, defect 1 -- see the cut's own comment below:
+// a short notch at the rim only relieves where the tether cord ends up
+// once fully assembled, not the clearance the chute tube's rigid tether
+// lug needs while sliding on), continues the tether's relief channel
+// from the skirt into the counterbore -- see R60_ChuteTube()'s module
+// comment for the tether's fixed end.
 module R60_SpringCarrier(){
     OD      = R60_Coupler_OD;      // 56.4 -- 0.4mm clearance in the chute
                                     // tube's 56.8mm bore, same convention
@@ -785,22 +880,62 @@ module R60_SpringCarrier(){
         for (s=[1,-1])
             translate([s*Cord_x, Cord_y, -Overlap])
                 cylinder(d=Cord_d, h=L+Overlap*2);
-        // Tether relief notch through the forward rim (the OD-to-CB_D
-        // annulus, the only material at z=0 outside the already-open
-        // counterbore), at R60_Tether_Az (+Y) matching
-        // R60_EBayAftBulkhead()'s skirt channel -- defect 2c: this notch
-        // used to be a hardcoded 8mm wide while the skirt channel it must
-        // match DERIVES as R60_TetherLug_W + 2*R60_Tether_Clear = 9.2mm,
-        // necking the cord from 9.2 down to 8.0mm and stepping 1.2mm
-        // outward in radius at the glue joint despite the comment's claim
-        // they "match exactly". Same formula as
-        // R60_EBayAftBulkhead()'s Tether_Notch_W, not a hand-matched
-        // copy -- the whole point of the R60_TetherLug_* constants (see
-        // R60Lib.scad) is that this notch be derived, never a second,
-        // independently-typed number that can silently drift.
+        // Tether relief channel through the OD-to-CB_D/Bore annulus (the
+        // wall thickness outside whatever is already hollow at each Z --
+        // CB_D's counterbore for z<CB_Depth, the narrower Bore beyond
+        // it), at R60_Tether_Az (+Y) matching R60_EBayAftBulkhead()'s
+        // skirt channel -- defect 2c: this notch used to be a hardcoded
+        // 8mm wide while the skirt channel it must match DERIVES as
+        // R60_TetherLug_W + 2*R60_Tether_Clear = 9.2mm, necking the cord
+        // from 9.2 down to 8.0mm and stepping 1.2mm outward in radius at
+        // the glue joint despite the comment's claim they "match
+        // exactly". Same formula as R60_EBayAftBulkhead()'s
+        // Tether_Notch_W, not a hand-matched copy -- the whole point of
+        // the R60_TetherLug_* constants (see R60Lib.scad) is that this
+        // notch be derived, never a second, independently-typed number
+        // that can silently drift.
+        //
+        // Height (3rd review, defect 1): this used to stop at 5mm,
+        // relieving only the forward rim. That is not what the channel
+        // has to clear -- the chute tube's tether tie-off lug
+        // (R60_ChuteTube(), a FIXED boss at chute-frame z=4..9) does not
+        // stay near the forward rim as the chute tube is assembled onto
+        // this carrier; the carrier is 65mm long and the tube telescopes
+        // over its ENTIRE length before finally seating with the lug
+        // back inside the (already-relieved) skirt span. A 5mm-tall
+        // relief only covers the very end of that stroke, so for most of
+        // the assembly the lug rides against this wall's solid OD and
+        // the two parts physically cannot be pushed together --
+        // confirmed on the rendered mesh
+        // (tools/verify_rocket60_assembly.py, pair 6: intersecting the
+        // carrier with the chute tube along the insertion stroke reads
+        // 0 cm3 at first contact, but 0.0838 cm3 for most of the middle
+        // of the stroke, not clearing again until the lug re-enters the
+        // skirt's own span -- the rocket could not be assembled at all).
+        // Run the channel the carrier's FULL length instead: the ball
+        // pockets (60/180/300deg) and the cord channels (~255-285deg)
+        // are both well clear of R60_Tether_Az=90deg, so a full-length
+        // slot here does not touch either.
+        //
+        // Radial depth: a first draft kept the ORIGINAL CB_D/2-0.5=25.0mm
+        // inner bound (correct for the short forward-rim notch it
+        // replaced, where everything inboard of CB_D was already open
+        // counterbore) and only extended the LENGTH. That left a real
+        // gap for z>CB_Depth=17mm, where the bore has already narrowed to
+        // Bore=44.8 (r=22.4) and the channel is the ONLY relief -- the
+        // lug's own inner reach (R60_Body_ID/2-R60_TetherLug_D=24.4mm, on
+        // R60_ChuteTube()) is INSIDE this channel's 25.0mm bound, so a
+        // 0.6mm-thick sliver of solid material remained between the
+        // lug's tip and the channel's own wall for the whole
+        // post-counterbore length -- caught by the SAME rendered-mesh
+        // check (0.0223 cm3 residual after the length-only fix, vs. 0
+        // once this is corrected too). Match R60_EBayAftBulkhead()'s own
+        // Tether_Notch_MinR formula instead of a value that only worked
+        // for one specific Z range.
         Notch_W = R60_TetherLug_W + 2*R60_Tether_Clear;
-        translate([-Notch_W/2, CB_D/2-0.5, -Overlap])
-            cube([Notch_W, OD/2-CB_D/2+1, 5+Overlap]);
+        Notch_MinR = R60_Body_ID/2 - R60_TetherLug_D - R60_Tether_Clear;
+        translate([-Notch_W/2, Notch_MinR, -Overlap])
+            cube([Notch_W, OD/2-Notch_MinR+1, L+Overlap]);
         // Ball pockets: radial slots through the wall so a ball can travel
         // from fully engaged (inner) to retracted (outer), same hull-of-
         // two-spheres pattern as SpringThingBooster.scad's
@@ -918,7 +1053,10 @@ module R60_Fin(){
                  [R60_Fin_Sweep, R60_Fin_Span]]);
 } // R60_Fin
 
-// Aft retainer. Screws to the fin can and traps the motor's aft rim.
+// Aft retainer. Screws to the fin can and traps the motor's aft rim --
+// resists AFT motion only (the motor sliding out the nozzle end). See
+// R60_ThrustRing() (part 14) for the forward-thrust counterpart this
+// alone does not provide.
 module R60_MotorRetainer(){
     T = 6;
     // Same bolt circle and 60deg fin offset as R60_FinCan()'s bosses.
@@ -927,7 +1065,7 @@ module R60_MotorRetainer(){
     difference(){
         cylinder(d=R60_Body_OD, h=T);
         translate([0,0,-Overlap])
-            cylinder(d=R60_MMT_ID-2.5, h=T+Overlap*2);
+            cylinder(d=R60_Motor_Lip_d, h=T+Overlap*2);
         for (i=[0:R60_nFins-1])
             rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
                 translate([Bolt_BC_R, 0, -Overlap])
@@ -938,8 +1076,17 @@ module R60_MotorRetainer(){
 // Forward spacer so a motor shorter than the R60_MMT_L (228mm) MMT still
 // sits flush at the aft end. Open bore: ejection gas and the forward
 // closure pass through.
+//
+// Length (3rd review, defect 3 corollary): the spacer's own forward face
+// used to be sized flush with R60_MMT_L, the fin can's own full build
+// depth -- correct before this task, when nothing else lived in that
+// last stretch of the MMT. R60_ThrustRing() (part 14) now glues in
+// flush with that same forward tip, occupying its own R60_ThrustRing_T
+// there; the spacer must stop that much short of R60_MMT_L instead, or
+// the two occupy the same space (caught on the rendered assembly,
+// tools/verify_rocket60_assembly.py pair 10, before this line existed).
 module R60_MotorSpacer(){
-    L = R60_MMT_L - R60_Motor_L[Motor_Class];
+    L = R60_MMT_L - R60_ThrustRing_T - R60_Motor_L[Motor_Class];
     if (L > 1)
         difference(){
             cylinder(d=R60_MMT_ID-0.3, h=L);
@@ -947,6 +1094,68 @@ module R60_MotorSpacer(){
                 cylinder(d=R60_MMT_ID-0.3-2*2.0, h=L+Overlap*2);
         }
 } // R60_MotorSpacer
+
+// Forward thrust ring (part 14, 3rd review defect 3). Glues into the
+// MMT's forward opening, flush with the fin can's own forward tip, and
+// reacts the motor's FORWARD thrust load -- the load R60_MotorRetainer()
+// (aft) cannot touch, because it only meets the motor's AFT rim.
+//
+// Nothing reacted this before. During the burn the motor case feels a
+// FORWARD reaction force (Newton's third law -- the exhaust is expelled
+// aft, so the case is pushed forward), roughly the motor's own average
+// thrust: 77.6N for the G80T-14A (thrustcurve.org), more for either H.
+// R60_FinCan()'s forward centring ring bores 32.25mm and bonds to the
+// MMT's OUTSIDE, so it never reaches into the 29.3mm bore at all; the
+// only thing between the motor+R60_MotorSpacer() stack and the packed
+// parachute forward of it was a 0.3mm slip fit -- friction alone,
+// against tens of newtons, for the whole burn.
+//
+// Bore: R60_Motor_Lip_d (R60Lib.scad), the SAME lip width as
+// R60_MotorRetainer()'s own aft bore -- smaller than the motor/spacer's
+// own OD (R60_MMT_ID-0.3=29.0mm) so it physically catches whichever one
+// is flush at the front (see below), but well clear of
+// R60_MotorSpacer()'s own internal bore (R60_MMT_ID-0.3-2*2.0=25.0mm) so
+// it adds no new restriction to the ejection-gas/forward-closure path
+// that spacer already exists to keep open.
+//
+// Axial position: this ring occupies the LAST R60_ThrustRing_T of the
+// MMT's own R60_MMT_L=R60_FinCan_L=228mm, flush with the fin can's own
+// forward tip and immediately aft of R60_FinCan()'s own forward centring
+// ring (z=FwdRing_Z..R60_FinCan_L-6) so it bonds against existing
+// structure rather than an unsupported span of MMT wall. It glues in
+// from the fin can's still-open forward end -- the last step before
+// bonding R60_ChuteTube() on, per R60-PrintSettings.md.
+// R60_MotorSpacer()'s own length is derived to stop R60_ThrustRing_T
+// short of R60_MMT_L for exactly this reason (see that module's own
+// comment) -- whatever is forward-most in the motor+spacer stack, the
+// spacer for any motor shorter than R60_MMT_L-R60_ThrustRing_T, or the
+// motor itself if one is ever added that long, always has its own
+// forward face flush against this ring's aft face, not sharing its
+// space.
+//
+// OD: R60_MMT_ID-0.4, the same "-0.4mm" glued-internal-tube-in-tube
+// convention as every other glued internal part in this repo
+// (R60_Coupler_OD = R60_Body_ID-0.4), sized to the MMT's own measured
+// bore rather than a second, independently-typed number.
+//
+// Verified mesh-against-mesh, not by reasoning (tools/verify_rocket60.py
+// and tools/verify_rocket60_assembly.py, pairs 10/11): the ring's own
+// bore is measured off its rendered mesh and checked smaller than the
+// spacer's own measured OD (it obstructs), and the assembled
+// intersection of the motor+spacer stack against this ring, pushed a
+// deliberate few mm past its resting position, confirms real, solid
+// contact in the forward direction -- not just two numbers that happen
+// to compare correctly. Pair 11 does the same for R60_MotorRetainer()'s
+// existing aft lip, so both directions of the trap are confirmed, not
+// just the one this task added.
+module R60_ThrustRing(){
+    T = R60_ThrustRing_T;
+    difference(){
+        cylinder(d=R60_MMT_ID-0.4, h=T);
+        translate([0,0,-Overlap])
+            cylinder(d=R60_Motor_Lip_d, h=T+Overlap*2);
+    }
+} // R60_ThrustRing
 
 // Tether latch. Servo 2 withdraws the 3mm pin at 150m, freeing the 50mm
 // tether loop so the sections separate fully and the main is drawn out.
@@ -1038,3 +1247,4 @@ if (Render_Part==10) R60_Fin();
 if (Render_Part==11) R60_MotorRetainer();
 if (Render_Part==12) R60_MotorSpacer();
 if (Render_Part==13) R60_TetherLatch();
+if (Render_Part==14) R60_ThrustRing();

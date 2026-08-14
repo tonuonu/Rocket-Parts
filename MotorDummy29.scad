@@ -71,9 +71,13 @@ Wall     = 2.0;
 End_T    = 3.0;
 Body_OD  = M_OD - IDXtra;         // slip fit in a 29mm motor tube
 Cavity_d = Body_OD - 2*Wall;
-// Closed at the AFT end only. Sealing both ends makes an enclosed void:
-// the ballast cannot go in, and the render reports genus -1 (two surface
-// components) rather than 1 - which is how the first version was caught.
+// Closed at the FORWARD end only (3rd review, defect 10 -- was labelled
+// "AFT" here and printed/loaded accordingly, which put the ballast port
+// and the grip flats below at the BURIED end instead of the reachable
+// one; see the module comment below for the full reasoning). Sealing
+// both ends makes an enclosed void: the ballast cannot go in, and the
+// render reports genus -1 (two surface components) rather than 1 -
+// which is how the first version was caught.
 Cavity_L = M_L - End_T;
 
 // Solid shell volume in mm3, then cm3.
@@ -95,15 +99,31 @@ echo(str("ballast density needed, loaded: ",
 // ============================================
 // PART
 // ============================================
-// Prints aft-end down, no supports: the cavity is a plain bore and the
-// open forward end needs no bridging. Tape or a printed plug retains the
+// Prints forward-end down, no supports: the cavity is a plain bore and
+// the open aft end needs no bridging. Tape or a printed plug retains the
 // ballast - deliberately not a screw thread, so you can change the fill
 // between the loaded and burnout tests without tools.
+//
+// Grip flats and fill opening are at the AFT end (3rd review, defect
+// 10 -- the pre-fix part had both at the open end, which this file
+// mislabelled "forward"). A real motor loads forward-closure-first:
+// that closed end leads the insertion and ends up
+// buried against the thrust ring, ~104mm+ deep for the G80T; the
+// nozzle end trails and stays at the tube's aft opening, reachable,
+// where the retainer clips on. A mass-equivalent dummy has to load the
+// same way for the ground test to mean anything, so its own closed end
+// (below, z=0) is the FORWARD end -- correctly buried and inert -- and
+// its open end (grip flats + ballast port, z=M_L) is the AFT end,
+// staying at the tube's mouth where you can actually reach it to pull
+// the dummy back out or change the ballast. The pre-fix version called
+// the closed end "aft" and the open end "forward", which is backwards:
+// following those labels at insertion buries the ballast port and grip
+// flats 104mm+ into the tube, unreachable once loaded.
 module MotorDummy(){
     difference(){
         cylinder(d=Body_OD, h=M_L);
         translate([0,0,End_T])
-            cylinder(d=Cavity_d, h=Cavity_L + Overlap);   // opens at the top
+            cylinder(d=Cavity_d, h=Cavity_L + Overlap);   // opens at the top (aft)
         // Grip flats so it can be pulled back out of the motor tube.
         for (a=[0,180])
             rotate([0,0,a]) translate([Body_OD/2-0.6, -4, M_L-8])
