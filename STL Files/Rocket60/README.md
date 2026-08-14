@@ -156,22 +156,21 @@ print density), not a round-number estimate — see
 hardware ESTIMATES rather than measured mesh volumes -- see
 `R60-PrintSettings.md` §8's pre-flight weigh-in step for the itemised
 list. **Liftoff mass on the G80T-14A (the sizing
-motor) is 871 g**, giving **18.9 m/s** off
+motor) is 874 g**, giving **18.8 m/s** off
 a 1.5 m 1010 rail (clears its 15 m/s target -- this, not stability, is
-the G80T's real binding constraint) and **1.45 cal** static
+the G80T's real binding constraint) and **1.47 cal** static
 margin. A full station audit (4th review, coordinator override) found
 the previously-published 1.53 cal (itself already a correction of an
 inflated 1.61 cal) was still short eight more station errors; corrected,
-the true figure is 1.45 cal, which clears the design's actual physical
+the true figure is 1.47 cal, which clears the design's actual physical
 minimum (1.0 cal, spec §6.1 -- the earlier 1.5 cal figure was a comfort
 target, not a requirement, and was retired rather than chased with
 further fin growth). See the design spec §6/§6.1 for the full audit
-table and the gate-retirement decision. H182R-14A gives
-937 g / 1.27
-cal / 27.9 m/s; H135W-14A gives 940 g / 1.28
-cal (5th review: both dropped 1g from a re-export -- the arming switch's
-own hole, finding 1, shrank the access door's measured volume). Full
-breakdown, all three motors, in `tools/rocket60_model.py`'s own output.
+table and the gate-retirement decision. H182R-14A gives 941 g / 1.28 cal
+/ 27.9 m/s; H135W-14A gives 944 g / 1.29 cal / 21.4 m/s (7th review: the
+Vega sled's retention redesign moved its own station 7.35mm aft,
+shifting all three by a few grams/cal). Full breakdown, all three
+motors, in `tools/rocket60_model.py`'s own output.
 
 **Weigh the parts as they come off the printer** and compare against
 `tools/rocket60_model.py`'s per-part figures before committing to a rail

@@ -20,14 +20,31 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
 
 
-def render(scad, part, out):
+def render(scad, part, out, var="Render_Part", return_log=False):
     """Render `part` of `scad` to `out`. Returns the OpenSCAD-reported
     genus (int), or None if the render statistics did not contain a Genus
-    line."""
+    line.
+
+    `var` names the `-D <var>=<part>` selector used to pick which
+    part/class gets rendered -- defaults to "Render_Part"
+    (Rocket60.scad/PeregrineNoseCone.scad/PeregrineCamNose.scad's shared
+    convention), overridable per-call for a .scad file with its own
+    dispatch variable (e.g. MotorDummy29.scad's `Motor_Class`,
+    verify_motordummy29.py's `render(SCAD, p, out, var="Motor_Class")`).
+
+    `return_log`, when True, returns `(genus, err)` instead of just
+    `genus` -- `err` is the raw stdout+stderr OpenSCAD produced, for a
+    caller that needs to scrape its own echo() lines out of the same
+    render (verify_motordummy29.py cross-checks MotorDummy29.scad's
+    echoed ballast masses this way) without paying for a second,
+    identical render just to capture output this function already has in
+    hand. Defaults False so every existing single-value caller
+    (verify_rocket60.py, verify_nosecone.py, verify_camnose.py) is
+    unaffected."""
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out,
-         "-D", "Render_Part=%d" % part, scad],
+         "-D", "%s=%d" % (var, part), scad],
         capture_output=True, text=True, env=env, timeout=900)
     err = r.stdout + r.stderr
     if (r.returncode != 0 or "ERROR:" in err.upper()
@@ -36,7 +53,8 @@ def render(scad, part, out):
             or not os.path.exists(out) or os.path.getsize(out) < 200):
         raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
     g = re.search(r"Genus:\s*(-?\d+)", err)
-    return int(g.group(1)) if g else None
+    genus = int(g.group(1)) if g else None
+    return (genus, err) if return_log else genus
 
 
 # Bounded (4th review, should-fix 13): maxsize=None retained every parsed
@@ -177,6 +195,28 @@ def measure(stl, genus=None):
     return {"stl": stl, "genus": genus, "dmax": dmax,
             "xmin": xs[0], "xmax": xs[1], "ymin": ys[0], "ymax": ys[1],
             "zmin": zs[0], "zmax": zs[1], "height": zs[1] - zs[0]}
+
+
+def overshoot(value, limit):
+    """max(0.0, value - limit), but nan-safe.
+
+    verify_camnose.py/verify_nosecone.py/verify_motordummy29.py's own
+    build-volume checks all report "how much a part overshoots the
+    printer's limit" as `max(0.0, height - LIMIT)` -- 0 for anything that
+    fits, the actual excess otherwise. But measure()'s own convention
+    (its docstring above) is to return nan height for a degenerate,
+    zero-triangle mesh, so a totally empty/broken render used to sail
+    through that check silently: Python's `max(0.0, nan - LIMIT)` picks
+    0.0, because every comparison against nan is False and max() just
+    returns its first argument when the second never compares greater.
+    That is a silent PASS for exactly the case (no geometry at all) this
+    check most needs to catch. Return +inf for a nan input instead, so it
+    fails whatever `<= tolerance` check the caller runs against it --
+    consistent with every other nan-as-loud-failure convention in this
+    file (see measure()'s own docstring)."""
+    if math.isnan(value):
+        return float("inf")
+    return max(0.0, value - limit)
 
 
 @functools.lru_cache(maxsize=8)

@@ -100,11 +100,26 @@ PAIRS = {
     # the board's own position, which could never fail regardless of how
     # the board stack changed).
     22: "fitted arming switch envelope vs Vega board",
-    # 6th review, finding 1: the Vega sled's retention scheme (2 bolted
-    # feet, replacing the rails/zip-ties) -- flush-fit interference
-    # against each bulkhead it bolts to.
-    23: "vega sled feet vs aft bulkhead",
-    24: "vega sled feet vs fwd bulkhead",
+    # 6th review, finding 1 -- rod retention, 7th review, finding 1/2:
+    # the Vega sled's rails, flush-fit interference against each bulkhead
+    # they mount to.
+    23: "vega sled rails vs aft bulkhead",
+    24: "vega sled rails vs fwd bulkhead",
+    # 7th review, finding 1: fastener INSERTION checks (r60_assembly.scad's
+    # own FastenerSweep() header comment) -- a bore/clearance check proves
+    # a hole is the right size; these prove a fastener can actually travel
+    # from an accessible point to its seated position without solid
+    # material in the way. This is the check that would have caught (and,
+    # via mutation test, did catch: 3.91cm3) the retired bolted-foot
+    # design's own defect before it shipped.
+    25: "vega sled rod sweep vs sled rail (mutation-test regression)",
+    26: "vega sled rod sweep vs both bulkheads",
+    27: "vega sled rod nut sweep vs sled rail",
+    28: "camera bolts sweep vs neck",
+    29: "access door screws sweep vs door+tube",
+    30: "motor retainer bolts sweep vs retainer",
+    31: "tether latch bolts sweep vs aft bulkhead",
+    32: "Vega board mounting screws sweep vs sled",
 }
 STROKE_PAIRS = (5, 6, 13)
 # Insertion stroke sweep -- 0 (first contact) through 80 (fully seated,

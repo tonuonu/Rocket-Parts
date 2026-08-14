@@ -7,7 +7,7 @@ supposed to produce it.
 """
 import math, os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, tris, components
+from scad_verify import REPO, render, measure, bore, volume, tris, components, overshoot
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
@@ -62,10 +62,12 @@ GENUS[4] = 1
 #   part 6: Vega sled. Started at 3 (flat plate, 3 standoff bores).
 #   RE-DERIVED (6th review, finding 1): the rail/zip-tie retention scheme
 #   is retired (see R60Lib.scad's own "Sled retention" comment) --
-#   REPLACED by 2 mounting feet, 2 M3 through-holes each (4 total, all the
-#   way through the pad, unlike the bulkheads' own blind inserts), so
-#   +4 handles; rendered, `Genus: 7` (3+4), confirmed.
-GENUS[6] = 7
+#   REPLACED (7th review, finding 1/2, superseding the 6th review's own
+#   4-foot-hole bolted bridge, which could not be inserted) by 2
+#   continuous rails, ONE M3 rod clearance hole each (2 total, the full
+#   rail length, not 4 short foot holes), so +2 handles; rendered,
+#   `Genus: 5` (3+2), confirmed.
+GENUS[6] = 5
 
 #   part 2: e-bay tube. Started at 3 (tube(1) + door opening(1) + switch
 #   hole(1)). RE-DERIVED (defect 1d/1g fix) after 2 zip-tie slots were
@@ -355,18 +357,25 @@ DOOR_Z_OFFSET     = 40.0
 DOOR_HOLE_Z_TUBE  = (43.0, 134.0)
 
 # Vega sled retention -- 6th review, finding 1: the rail/zip-tie scheme
-# (and this file's own rail_facing_gap()/RAIL_INNER_R/RAIL_Z_CAP that used
-# to check it) is RETIRED, not fixed a fourth time -- see R60Lib.scad's
-# "Sled retention" comment and R60_EBayTube()'s module comment for why.
-# Replaced by 2 bolted feet per end into ruthex inserts; see
-# FOOT_HOLE_X/FOOT_HOLE_Y/vega_facing_y()/foot_hole_center() below.
+# is RETIRED (see R60Lib.scad's "Sled retention" comment). 7th review,
+# finding 1/2: the 6th review's own bolted-feet replacement is ALSO
+# retired -- it could not physically be inserted (mutation test: a
+# real 3.91cm3 collision between the retired foot screw's own swept
+# insertion path and the sled's own plate). Replaced by 2 threaded rods
+# through continuous rails; see RAIL_X/HOLE_Z_LOCAL/vega_facing_y()/
+# rail_hole_center() below.
 #
-# R60_VegaFoot_HoleX (R60Lib.scad), restated (rule 4).
-FOOT_HOLE_X = 14.0
-# R60_VegaFoot_Hole_d / R60_VegaFoot_Insert_d (both M3-class, ~3.4/4.0mm) --
-# search radii below are sized off these, not restated as their own name.
-FOOT_HOLE_SEARCH_R = 2.4     # > Hole_d/2=1.7, < the pad edge (>=3mm away)
-FOOT_INSERT_SEARCH_R = 2.6   # > Insert_d/2=2.0, < the boss edge
+# R60_Vega_Rail_X (R60Lib.scad), restated (rule 4).
+RAIL_X = 17.9
+# R60_Vega_Rail_d (rail's own rod-clearance hole, both ends) / R60_Vega_
+# RodInsert_d (fwd bulkhead's insert, M3-class ~3.4/4.0mm) -- search radii
+# below are sized off these, not restated as their own name. The AFT
+# bulkhead's own rod pocket is Rail_d (3.4mm), NOT RodInsert_d (4.0mm) --
+# it is an unthreaded guide pocket, not a second insert (see R60Lib.scad's
+# R60_Vega_RodPocket_Depth comment) -- so it shares RAIL_HOLE_SEARCH_R
+# with the rail's own hole, not FWD_INSERT_SEARCH_R.
+RAIL_HOLE_SEARCH_R = 2.4     # > Rail_d/2=1.7, < the rail's own edge
+FWD_INSERT_SEARCH_R = 2.6    # > RodInsert_d/2=2.0, < the boss edge
 
 
 def vega_facing_y():
@@ -374,11 +383,13 @@ def vega_facing_y():
     form (rule 4: a Python file cannot include<> a .scad file) -- the
     deepest the sled's flat back can sit while its own two long back
     corners still clear the tube ID by R60_Vega_Wall_Clear=0.4mm. Body
-    ID/2=28.4, Sled_W/2=22.0."""
-    return -math.sqrt((28.4 - 0.4) ** 2 - 22.0 ** 2)
+    ID/2=28.4, Sled_W/2=22.8 (7th review: grew from 22.0 -- the rail now
+    has to physically fit on the plate outboard of the board's own mount
+    holes, see R60Lib.scad's R60_Vega_Sled_W comment)."""
+    return -math.sqrt((28.4 - 0.4) ** 2 - 22.8 ** 2)
 
 
-def foot_hole_center(stl, band_axis, band_at, cx, cy, search_r, band_win=0.4):
+def rail_hole_center(stl, band_axis, band_at, cx, cy, search_r, band_win=0.4):
     """Measured (u, v) centre of a round hole's own edge loop, exposed in
     a plane normal to band_axis ('x'/'y'/'z') at band_at, read from
     vertices near (cx, cy) in the OTHER two axes (natural x,y,z order)
@@ -612,7 +623,7 @@ def safe(fn, *args, nvals=1, **kwargs):
     calls reads geometry off a rendered mesh and can raise RuntimeError on
     missing/moved features (bore() in scad_verify.py; hole_azimuth_at_r(),
     hole_max_reach(), pin_hole_diameter(), xy_extent_in_window(),
-    fincan_slot_width/length(), door_switch_hole(), foot_hole_center()
+    fincan_slot_width/length(), door_switch_hole(), rail_hole_center()
     in this file) -- only switch_hole_z() (now door_switch_hole()) was
     ever wrapped before this fix. Every OTHER call sat bare in checks(),
     so a single missing/moved feature raised straight out of checks(),
@@ -620,7 +631,7 @@ def safe(fn, *args, nvals=1, **kwargs):
     the identical "one bad row kills the whole report" failure class the
     genus loop and the arming-switch check were already fixed for.
     nvals controls how many nan values are returned, matching how many
-    the call site unpacks (bore() and foot_hole_center() return 2;
+    the call site unpacks (bore() and rail_hole_center() return 2;
     xy_extent_in_window() returns 4; everything else returns 1) -- nan
     compares false against every tolerance (same convention as a missing
     genus), so a failure here is a loud FAIL on just the checks that
@@ -683,17 +694,16 @@ def checks(m):
                    boss_od, 60.0, 0.1)]
 
     if 6 in m:
-        # sled length: 6th review, finding 1 -- now the FULL bolted
-        # bridge (board-carrying plate 112mm + 2 derived feet), not just
-        # the plate alone. Restated per this file's rule 4:
-        # R60Lib.scad's R60_Vega_Window_Z1 (=R60_FwdBulkhead_TubeZ0(152)
-        # -R60_VegaFoot_FwdBossExtra(1.7)=150.3) minus
-        # R60_Vega_Window_Z0(12) minus 2*R60_Vega_Foot_Clear(0.2) =
-        # 137.9mm -- the sled's own full printed length by construction
-        # (R60_VegaSled()'s own Foot_L is derived so L+2*Foot_L equals
-        # this window exactly).
-        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 137.9, 0.2),
-              ("sled width", a(6, "xmax") - a(6, "xmin"), 44.0, 0.2)]
+        # sled length: 7th review, finding 1/2 -- now 2 continuous RAILS
+        # (constant cross-section, full window length) instead of a plate
+        # plus 2 short end feet, but the OVERALL printed length is the
+        # same shape of quantity: the full window minus the two (now
+        # independently stated) end clearances. Restated per this file's
+        # rule 4: R60Lib.scad's R60_Vega_Window_Z1(150.3) -
+        # R60_Vega_Window_Z0(12) - R60_Vega_Rail_FwdClear(0.2) -
+        # R60_Vega_Rail_AftClear(5.0) = 133.1mm (R60_Vega_Rail_L).
+        c += [("sled length", a(6, "ymax") - a(6, "ymin"), 133.1, 0.2),
+              ("sled width", a(6, "xmax") - a(6, "xmin"), 45.6, 0.2)]
 
         if 2 in m:
             # Sled's own back corners clear the e-bay bore -- cross-
@@ -708,31 +718,42 @@ def checks(m):
             c += [("sled back corners clear e-bay bore (radial)",
                    tube_id / 2.0 - corner_r, 0.4, 0.15)]
 
-        # Foot retention coaxiality (6th review, finding 1 -- REPLACES the
+        # Rail/rod coaxiality (6th review, finding 1 -- REPLACES the
         # rail-capture check, which measured a rail geometry that turned
-        # out to be unable to capture anything -- see R60Lib.scad's own
-        # "Sled retention" comment). The sled's own mounting holes must
-        # land ON each bulkhead's insert, not merely both exist: the
-        # sled's MEASURED local hole position (X, local Z) is transformed
-        # the SAME way R60_VegaSled()'s own assembly placement does
-        # (global Y = facing_y + local Z, VegaSledPlaced() in
-        # r60_assembly.scad) and compared DIRECTLY against the
-        # bulkhead's own MEASURED global hole position -- not against a
-        # shared constant either module could independently drift away
-        # from while still matching it (a restated literal proves the
-        # DESIGN intent agrees, not that either module's IMPLEMENTATION
-        # actually builds it there). Not hypothetical: a first draft of
-        # this fix left the forward bulkhead's own module 1.7mm off its
-        # true tube position while deriving the sled's own foot length
-        # against the CORRECT position, producing a real 0.0937cm3
-        # collision (tools/verify_rocket60_assembly.py pair 24) that a
-        # coaxiality check like this would catch directly, without
-        # needing the full assembly render.
+        # out to be unable to capture anything; 7th review, finding 1/2:
+        # feet -> continuous rails; 7th review, finding 5: ymin/ymax
+        # pairing FIXED, see below). The sled's own rod-clearance holes
+        # must land ON each bulkhead's insert/pocket, not merely both
+        # exist: the sled's MEASURED local hole position (X, local Z) is
+        # transformed the SAME way R60_VegaSled()'s own assembly placement
+        # does (global Y = facing_y + local Z, VegaSledPlaced() in
+        # r60_assembly.scad) and compared DIRECTLY against the bulkhead's
+        # own MEASURED global hole position -- not against a shared
+        # constant either module could independently drift away from
+        # while still matching it (a restated literal proves the DESIGN
+        # intent agrees, not that either module's IMPLEMENTATION actually
+        # builds it there).
+        #
+        # end<->ymin/ymax pairing (7th review, finding 5): VegaSledPlaced()
+        # is `translate([0,facing_y,AxialCenter]) rotate([-90,0,0])
+        # R60_VegaSled()` -- rotate([-90,0,0]) maps local (x,y,z) to
+        # (x,z,-y), so global_z = AxialCenter - local_y. The sled's own
+        # local ymin (most negative -- the rail reaching furthest AWAY
+        # from the plate's own centre on the low-Y side) therefore maps to
+        # the LARGEST global z (forward, near the neck), and local ymax
+        # maps to the SMALLEST global z (aft, near the tube's open end) --
+        # the OPPOSITE of what a naive "ymin sounds aft" reading suggests.
+        # This file previously paired ("aft", ymin) and ("fwd", ymax),
+        # backwards; masked only because both bulkheads' own X/Y hole
+        # patterns happen to be identical, so swapping WHICH measured
+        # sled-end value got compared against WHICH bulkhead's measured
+        # hole never actually changed the arithmetic's result.
         if 4 in m or 5 in m:
             facing_y = vega_facing_y()
-            HOLE_Z_LOCAL = 3.3   # R60_VegaFoot_HoleZ_Local (R60Lib.scad)
-            for end, sled_y, bulk_p in (("aft", a(6, "ymin"), 5),
-                                         ("fwd", a(6, "ymax"), 4)):
+            HOLE_Z_LOCAL = 3.3   # R60_Vega_Rail_Z_Local (R60Lib.scad)
+            for end, sled_y, bulk_p, search_r in (
+                    ("fwd", a(6, "ymin"), 4, FWD_INSERT_SEARCH_R),
+                    ("aft", a(6, "ymax"), 5, RAIL_HOLE_SEARCH_R)):
                 if bulk_p not in m:
                     continue
                 bulk_z = a(bulk_p, "zmin")   # each bulkhead's own hole-
@@ -740,18 +761,18 @@ def checks(m):
                                                # aft disc; the boss tip,
                                                # ~-1.7, for the forward one)
                 for x_side in (1, -1):
-                    hx, hz = safe(foot_hole_center, a(6, "stl"), "y", sled_y,
-                                  x_side * FOOT_HOLE_X, HOLE_Z_LOCAL,
-                                  FOOT_HOLE_SEARCH_R, nvals=2)
+                    hx, hz = safe(rail_hole_center, a(6, "stl"), "y", sled_y,
+                                  x_side * RAIL_X, HOLE_Z_LOCAL,
+                                  RAIL_HOLE_SEARCH_R, nvals=2)
                     sled_global_y = facing_y + hz
-                    bx, by = safe(foot_hole_center, a(bulk_p, "stl"), "z",
-                                  bulk_z, x_side * FOOT_HOLE_X,
+                    bx, by = safe(rail_hole_center, a(bulk_p, "stl"), "z",
+                                  bulk_z, x_side * RAIL_X,
                                   facing_y + HOLE_Z_LOCAL,
-                                  FOOT_INSERT_SEARCH_R, nvals=2)
-                    c += [("%s foot/insert coaxial X (x=%+.0f side)"
-                           % (end, x_side * FOOT_HOLE_X), hx - bx, 0.0, 0.4),
-                          ("%s foot/insert coaxial Y (x=%+.0f side)"
-                           % (end, x_side * FOOT_HOLE_X),
+                                  search_r, nvals=2)
+                    c += [("%s rail/insert coaxial X (x=%+.0f side)"
+                           % (end, x_side * RAIL_X), hx - bx, 0.0, 0.4),
+                          ("%s rail/insert coaxial Y (x=%+.0f side)"
+                           % (end, x_side * RAIL_X),
                            sled_global_y - by, 0.0, 0.4)]
 
     if 7 in m:
@@ -1112,7 +1133,7 @@ def checks(m):
     # for a part that does not fit.
     for p in m:
         c += [("part %d fits %.0fmm Z" % (p, MAX_Z),
-               max(0.0, m[p]["height"] - MAX_Z), 0.0, 0.01)]
+               overshoot(m[p]["height"], MAX_Z), 0.0, 0.01)]
 
     # Connected components, every part (4th review, harden-the-harness
     # item 1). A part that exports as N disjoint solids is unprintable as

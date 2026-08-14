@@ -6,7 +6,7 @@ is measured from the STL rather than inferred from parameters.
 """
 import os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume
+from scad_verify import REPO, render, measure, bore, volume, overshoot
 
 SCAD = os.path.join(REPO, "PeregrineNoseCone.scad")
 
@@ -58,9 +58,12 @@ def checks(m):
     # fits, so a healthy part printed a self-comparing "177.000 want
     # 177.000" instead of the real constraint, height<=250). 0 for
     # anything that fits, the actual excess in mm otherwise -- legible
-    # either way.
+    # either way. overshoot() (scad_verify) instead of a bare
+    # max(0.0, ...): a nan height (a degenerate, zero-triangle mesh,
+    # measure()'s own convention) must fail this loudly, not silently
+    # compare as a 0mm overshoot -- see that helper's own docstring.
     for p in m:
-        c += [("part %d fits 250mm Z" % p, max(0.0, m[p]["height"] - 250.0), 0.0, 0.01)]
+        c += [("part %d fits 250mm Z" % p, overshoot(m[p]["height"], 250.0), 0.0, 0.01)]
 
     # --- interior checks: bounding box / OD alone cannot see these ---
 

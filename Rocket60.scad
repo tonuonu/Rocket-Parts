@@ -451,50 +451,47 @@ module R60_ChuteTube(){
 
 // Forward bulkhead: closes the top of the e-bay, passes the camera harness.
 //
-// Vega sled mounting (6th review, finding 1): 2 ruthex RX-M3x5.7 inserts
-// on the AFT (e-bay-facing, local z=0) face for the sled's forward foot --
-// matching R60_EBayAftBulkhead() and R60_VegaSled()'s own foot holes
-// exactly (R60Lib.scad's R60_VegaFoot_*), same idiom as
-// R60_MotorRetainer()'s own insert bosses. The plain disc's own T=6mm is
-// shorter than the insert's own 6.7mm depth, so a local boss grows the
-// disc AFT-ward (local z<0, into the e-bay, where the sled's forward foot
-// actually lands) at each insert. This part is NO LONGER symmetric
-// front/back the way it was before this fix: the boss/insert face MUST be
-// the aft face, matching R60_Neck()'s own comment and
+// Vega sled mounting (7th review, finding 1/2 -- REPLACES the 6th
+// review's 2-screws-per-end bolted feet, which could not physically be
+// inserted; see R60Lib.scad's "Sled retention" comment for the full
+// story). 2 ruthex RX-M3x5.7 inserts on the AFT (e-bay-facing, local z=0)
+// face -- now each is a FIXED ANCHOR for one threaded rod's forward end
+// (a stud, not a screw), matching R60_VegaSled()'s own rail holes exactly
+// (R60Lib.scad's R60_Vega_Rail_*), same idiom as R60_MotorRetainer()'s
+// own insert bosses. The plain disc's own T=6mm is shorter than the
+// insert's own 6.7mm depth, so a local boss grows the disc AFT-ward
+// (local z<0, into the e-bay, where the sled's rail actually lands) at
+// each insert. This part is NOT symmetric front/back -- the boss/insert
+// face MUST be the aft face, matching R60_Neck()'s own comment and
 // r60_assembly.scad's Pair 1 frame (this module's own z=0 lands at tube
 // z=R60_EBay_L-R60_Neck_Skirt_L-R60_FwdBulk_T, growing +z toward the neck
 // skirt) -- mark the aft face on the print.
 module R60_EBayFwdBulkhead(){
     T = R60_FwdBulk_T;
-    Boss_d = R60_VegaFoot_Boss_d;
-    Insert_d = R60_VegaFoot_Insert_d;
-    Insert_h = R60_VegaFoot_Insert_h;
+    Boss_d = R60_Vega_RodBoss_d;
+    Insert_d = R60_Vega_RodInsert_d;
+    Insert_h = R60_Vega_RodInsert_h;
     // Boss_Extra: how far the boss must grow PAST the plain disc's own
     // T=6mm so the insert (bored from the boss's own new outer/contact
-    // face) still leaves R60_VegaFoot_Insert_Backing of solid material
+    // face) still leaves R60_Vega_RodInsert_Backing of solid material
     // before the disc's forward face. SHARED with R60Lib.scad's
     // R60_Vega_Window_Z1 (not recomputed locally) -- that constant has to
     // know exactly how far this boss reaches into the e-bay so the sled's
-    // own Foot_L stops short of it, not just short of the plain disc face
-    // (6th review, finding 1: a first version of this fix computed
-    // Boss_Extra here only, leaving Window_Z1 still measured to the
-    // plain disc face -- a real, measured 0.0937cm3 interference between
-    // the sled's foot and this exact boss, tools/verify_rocket60_
-    // assembly.py pair 24, before the two were unified).
-    Boss_Extra = R60_VegaFoot_FwdBossExtra;
+    // own rail stops short of it, not just short of the plain disc face.
+    Boss_Extra = R60_Vega_RodBoss_FwdExtra;
     assert(Boss_Extra > 0.5,
-        str("R60_EBayFwdBulkhead: foot boss too shallow for a real ",
+        str("R60_EBayFwdBulkhead: rod boss too shallow for a real ",
             "backing margin (Boss_Extra=", Boss_Extra, ")"));
     difference(){
         union(){
             cylinder(d=R60_Coupler_OD, h=T);
-            for (x=[-R60_VegaFoot_HoleX, R60_VegaFoot_HoleX])
-                translate([x, R60_VegaFoot_HoleY, -Boss_Extra])
+            for (x=[-R60_Vega_Rail_X, R60_Vega_Rail_X])
+                translate([x, R60_Vega_Rail_Y, -Boss_Extra])
                     cylinder(d=Boss_d, h=Boss_Extra+Overlap);
         }
         translate([0,0,-Overlap]) cylinder(d=22, h=T+Overlap*2);
-        for (x=[-R60_VegaFoot_HoleX, R60_VegaFoot_HoleX])
-            translate([x, R60_VegaFoot_HoleY, -Boss_Extra-Overlap])
+        for (x=[-R60_Vega_Rail_X, R60_Vega_Rail_X])
+            translate([x, R60_Vega_Rail_Y, -Boss_Extra-Overlap])
                 cylinder(d=Insert_d, h=Insert_h+Overlap);
     }
 } // R60_EBayFwdBulkhead
@@ -614,19 +611,26 @@ module R60_EBayAftBulkhead(){
                 rotate([0,90,0])
                     cylinder(d=R60_Pin_d, h=Pin_Depth+Overlap, center=true);
 
-        // Vega sled mounting (6th review, finding 1): 2 ruthex RX-M3x5.7
-        // inserts on this disc's own forward (e-bay-facing, z=0) face for
-        // the sled's aft foot -- matching R60_EBayFwdBulkhead() and
-        // R60_VegaSled()'s own foot holes exactly (R60Lib.scad's
-        // R60_VegaFoot_*). This disc's own T=12mm has ample depth for the
-        // insert's 6.7mm without a boss (unlike the forward bulkhead,
-        // T=6mm there -- see that module's own comment). X/Y both clear
-        // the servo pockets (max reach x=6.1,y=6.2), the horn slot (max
-        // reach x=12,y=18.1) and the shock cord holes (x=+-6,y=-22) by
-        // several mm, confirmed on the rendered mesh.
-        for (x=[-R60_VegaFoot_HoleX, R60_VegaFoot_HoleX])
-            translate([x, R60_VegaFoot_HoleY, -Overlap])
-                cylinder(d=R60_VegaFoot_Insert_d, h=R60_VegaFoot_Insert_h+Overlap);
+        // Vega sled mounting (7th review, finding 1/2 -- REPLACES the 6th
+        // review's 2 ruthex inserts here): the rod's forward end is
+        // already fixed at R60_EBayFwdBulkhead()'s own insert, so this
+        // end is a BLIND, UNTHREADED guide pocket, not a second anchor --
+        // it only locates the rod's free aft tip (see R60Lib.scad's
+        // R60_Vega_RodPocket_Depth comment for why: a second support
+        // point against a cantilevered rod, nothing more). Matches
+        // R60_VegaSled()'s own rail holes exactly (R60Lib.scad's
+        // R60_Vega_Rail_*). Depth (8mm) stops well short of this disc's
+        // own T=12mm -- the skirt beyond z=12 is busy (shear pins at
+        // z=20, shaft bore, horn slot, cord holes, spring-carrier glue
+        // face) and this pocket has no business reaching any of it. X/Y
+        // both clear the servo pockets (max reach x=6.1,y=6.2), the horn
+        // slot (max reach x=12,y=18.1) and the shock cord holes
+        // (x=+-6,y=-22) by several mm, confirmed on the rendered mesh --
+        // MORE clearance than the retired design's own X=14, since
+        // R60_Vega_Rail_X (~17.9) is further outboard.
+        for (x=[-R60_Vega_Rail_X, R60_Vega_Rail_X])
+            translate([x, R60_Vega_Rail_Y, -Overlap])
+                cylinder(d=R60_Vega_Rail_d, h=R60_Vega_RodPocket_Depth+Overlap);
 
         // Tether latch (part 13) mounting inserts -- ruthex RX-M3x5.7,
         // same convention as R60_FinCan()/R60_MotorRetainer(). X offset is
@@ -669,23 +673,31 @@ module R60_EBayAftBulkhead(){
 // with no battery, loom or metal between it and the airframe wall. Mark
 // the antenna side on the print.
 //
-// RETENTION (6th review, finding 1 -- REPLACES the rail/zip-tie scheme,
-// retired after 3 straight review-round failures; see R60Lib.scad's own
-// "Sled retention" comment and R60_EBayTube()'s module comment for the
-// closed-form proof the rails' capturing frame had no solution). This
-// plate now BRIDGES the full axial gap between the aft and forward
-// bulkheads' own e-bay-facing faces (R60_Vega_Window_Z0/Z1, R60Lib.scad)
-// -- the board-carrying middle is unchanged (L=R60_Vega_L+12=112, same
-// R60_Vega_Holes pattern), extended at each end by a derived FOOT that
-// reaches the corresponding bulkhead and bolts to it, 2x M3 into ruthex
-// RX-M3x5.7 inserts per end (4 total). Both the sled's radial position
-// (R60_Vega_Facing_Y_Nom -- closed-form now, not a number that fell out
-// of the rail math) and its clocking about the tube axis (the 2 holes'
-// own X spread at each end -- a rigid body pinned at 2 non-collinear
-// points per end cannot spin about the tube axis) are geometric, not
-// frictional. Assembly: feed the plate in lengthwise before the neck is
-// glued on, seat both feet against their bulkhead faces, drive the 4
-// screws from inside the open bore.
+// RETENTION (7th review, finding 1/2 -- REPLACES the 6th review's bolted
+// feet, retired because they could not physically be inserted: see
+// R60Lib.scad's own "Sled retention" comment for the full history and
+// the mutation-test measurement that proved it). This plate still
+// BRIDGES the full axial gap between the aft and forward bulkheads' own
+// e-bay-facing faces (R60_Vega_Window_Z0/Z1, R60Lib.scad) -- the
+// board-carrying middle is unchanged (L=R60_Vega_L+12=112, same
+// R60_Vega_Holes pattern) -- but now via 2 continuous RAILS (constant
+// 6.6x6.6mm cross-section, the rod's own clearance hole bored their FULL
+// length, never just near one end) instead of discrete end feet. Each
+// rail slides onto one M3 threaded rod: the FORWARD end is fixed (a stud
+// threaded into R60_EBayFwdBulkhead()'s own insert), the rail's forward
+// tip hard-stops against that bulkhead's boss face, and a nut+washer
+// threaded onto the rod against the rail's own flat AFT face captures
+// the sled axially. Both the sled's radial position
+// (R60_Vega_Facing_Y_Nom) and its clocking about the tube axis (the 2
+// rails' own X spread -- a rigid body pinned at 2 non-collinear points
+// cannot spin about the tube axis) are geometric, not frictional.
+//
+// Assembly is now BENCH-BUILT, not built inside the tube (see
+// R60Lib.scad's own module-adjacent comment for the full sequence): slide
+// this plate onto the 2 rods (already threaded into the forward
+// bulkhead), thread on the 2 aft nuts, THEN insert the whole cartridge
+// into the tube. No fastener here is ever turned down a blind 150mm
+// tube.
 module R60_VegaSled(){
     T = R60_Vega_Sled_T;
     L = R60_Vega_L + 12;   // board-carrying plate, unchanged
@@ -697,27 +709,42 @@ module R60_VegaSled(){
     // clearance convention used everywhere else in this file
     // (R60_Cam_Bolt_d, R60_MotorRetainer()'s Bolt_d, R60_TetherLatch()'s
     // mounting holes).
-    Hole_d = 3.4;
+    Hole_d = R60_Vega_BoardHole_d;
 
-    // Foot geometry -- see R60Lib.scad's own comments for each constant's
-    // derivation. Foot_L (how far each foot reaches past the plate's own
-    // +-L/2) is the one quantity computed HERE rather than in R60Lib.scad,
-    // since it depends on this module's own L: DERIVED from the real
-    // axial gap between the two bulkhead mounting faces, not a free
-    // constant, so it grows/shrinks automatically with R60_EBay_L or
+    // Rail geometry -- see R60Lib.scad's own comments for each shared
+    // constant's derivation. RailFwd_L/RailAft_L (how far the rail
+    // reaches past the plate's own +-L/2, at EACH end independently --
+    // the two end clearances differ, see R60_Vega_Rail_AftClear's own
+    // comment) are the one quantity computed HERE rather than in
+    // R60Lib.scad, since they depend on this module's own L: DERIVED from
+    // the real axial gap between the two bulkhead mounting faces, not a
+    // free constant, so they grow/shrink automatically with R60_EBay_L or
     // either bulkhead's thickness instead of silently falling short (or
     // overlapping) the next time either changes.
-    Foot_HoleX = R60_VegaFoot_HoleX;
-    Foot_Hole_d = R60_VegaFoot_Hole_d;
-    Foot_PadZ = R60_VegaFoot_PadZ;   // local Z (=radial once assembled)
-    Foot_PadX = R60_VegaFoot_PadX;   // local X width, spans both holes
-                                       // with real wall either side
-    Window_L = R60_Vega_Window_Z1 - R60_Vega_Window_Z0 - 2*R60_Vega_Foot_Clear;
-    Foot_L = (Window_L - L) / 2;
-    assert(Foot_L > 5,
-        str("R60_VegaSled: foot too short to be a rigid mounting tab ",
-            "(Foot_L=", Foot_L, ") -- e-bay length/skirt/bulkhead sizes ",
-            "no longer leave room for the bridge"));
+    Rail_X = R60_Vega_Rail_X;
+    Rail_d = R60_Vega_Rail_d;
+    Rail_WZ = R60_Vega_Rail_WZ;         // local Z (=radial once
+                                          // assembled) AND local X width,
+                                          // CONSTANT along the rail's
+                                          // entire length -- deliberately
+                                          // never a separate, narrower
+                                          // "pad" only near one end: that
+                                          // inconsistent cross-section is
+                                          // exactly why the retired
+                                          // bolted-foot design's own hole
+                                          // was unreachable (see the
+                                          // module comment above)
+    Rail_Z_Local = R60_Vega_Rail_Z_Local;
+    RailFwd_L = (R60_Vega_Window_Z1 - R60_Vega_Rail_FwdClear) - (R60_Vega_AxialCenter + L/2);
+    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
+    assert(RailFwd_L > 5 && RailAft_L > 5,
+        str("R60_VegaSled: rail too short to be a rigid mounting rail ",
+            "(RailFwd_L=", RailFwd_L, ", RailAft_L=", RailAft_L, ") -- ",
+            "e-bay length/skirt/bulkhead sizes no longer leave room for ",
+            "the bridge"));
+    Rail_Y0 = -L/2 - RailAft_L;   // rail's own aft-most tip (nut face)
+    Rail_Y1 = L/2 + RailFwd_L;    // rail's own forward-most tip (hard
+                                    // stop against the fwd bulkhead boss)
 
     difference(){
         union(){
@@ -725,30 +752,31 @@ module R60_VegaSled(){
             for (h=R60_Vega_Holes)
                 translate([h[0], h[1], T-Overlap])
                     cylinder(d=7, h=R60_Vega_Standoff_h+Overlap);
-            // Foot pads, both ends. Local Z grown to Foot_PadZ (not just
-            // the plain plate's T=4) so the M3 hole gets a real wall
-            // around it once assembled -- R60Lib.scad's R60_VegaFoot_PadZ
-            // comment: T alone would leave only 0.3mm, the same
-            // "boss sized to fit the OD, never checked against the hole
-            // it hosts" defect class as finding 3.1's door boss. Local Y
-            // runs from the plate's own +-L/2 out to +-(L/2+Foot_L),
-            // reaching the bulkheads with R60_Vega_Foot_Clear to spare.
+            // Rails, both sides -- CONSTANT cross-section the plate's
+            // own board-carrying middle to well past each bulkhead face,
+            // Rail_Y0..Rail_Y1 (see above). Local Z grown to Rail_WZ (not
+            // just the plain plate's T=4) so the M3 hole gets a real wall
+            // around it -- R60Lib.scad's R60_Vega_Rail_WZ comment: T
+            // alone would leave only 0.3mm, the same "boss sized to fit
+            // the OD, never checked against the hole it hosts" defect
+            // class as finding 3.1's door boss.
             for (s=[-1,1])
-                translate([-Foot_PadX/2, s>0 ? L/2-Overlap : -L/2-Foot_L,
-                           0])
-                    cube([Foot_PadX, Foot_L+Overlap, Foot_PadZ]);
+                translate([s*Rail_X - Rail_WZ/2, Rail_Y0, 0])
+                    cube([Rail_WZ, Rail_Y1-Rail_Y0, Rail_WZ]);
         }
         for (h=R60_Vega_Holes)
             translate([h[0], h[1], -Overlap])
                 cylinder(d=Hole_d, h=T+R60_Vega_Standoff_h+Overlap*2);
-        // Foot mounting holes -- bored along local Y (axial once
-        // assembled) the full length of each pad, so the M3 screw runs
-        // straight through into the bulkhead's own insert.
-        for (s=[-1,1], x=[-Foot_HoleX, Foot_HoleX])
-            translate([x, s>0 ? L/2-Overlap : -L/2-Foot_L-Overlap,
-                       R60_VegaFoot_HoleZ_Local])
+        // Rod clearance holes -- bored along local Y (axial once
+        // assembled) the rail's FULL length, Rail_Y0 to Rail_Y1, at the
+        // SAME local Z the rail itself is centred on (Rail_Z_Local) --
+        // there is no axial position along this bore where the
+        // surrounding rail material does not exist, unlike the retired
+        // per-end pad this replaces.
+        for (s=[-1,1])
+            translate([s*Rail_X, Rail_Y0-Overlap, Rail_Z_Local])
                 rotate([-90,0,0])
-                    cylinder(d=Foot_Hole_d, h=Foot_L+2*Overlap);
+                    cylinder(d=Rail_d, h=(Rail_Y1-Rail_Y0)+2*Overlap);
     }
 } // R60_VegaSled
 

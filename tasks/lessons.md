@@ -202,3 +202,58 @@ growing the OTHER side's inputs can actually open a gap. When reviewing a
 new check before claiming coverage, substitute each symbol with what it
 ultimately traces to and confirm two genuinely different quantities are
 being compared, not the same one under two names.
+
+## 8. A fastener that cannot be inserted
+
+The Vega sled's 6th-review bolted feet passed every check this harness
+had: the mounting hole's own diameter was correct (bore()), the foot did
+not collide with the bulkhead it bolted to (the assembly-interference
+pairs), and genus even counted the hole as a real handle. All of that
+proves the hole is the right SIZE, sitting in the right FINAL position.
+None of it asks whether a screw can actually TRAVEL from an accessible
+point to that position: the hole existed only inside the foot's own
+short pad, never continuing through the board-carrying plate between it
+and the tube's open end — the plate's own thickness was solid plastic at
+every (x,z) that hole ever occupied, for the plate's full 112mm length.
+A screw fed in from the only accessible point (deep inside the open
+tube, per the module's own assembly instructions) had nowhere to enter.
+Mutation test: sweeping the screw's own shank+head along its insertion
+axis and intersecting against the sled's rendered mesh gave a real,
+solid 3.91cm3 collision — three orders of magnitude over this harness's
+own zero-tolerance threshold, not a marginal near-miss.
+
+**Bore clearance and insertion clearance are two different checks.**
+`bore(stl, zlo, zhi)` (and any dimensional check like it) answers "is
+this cross-section wide enough" at a SAMPLED location. It cannot answer
+"is there a continuous, sufficiently-wide passage all the way from
+wherever a hand or tool can first reach the fastener to where it seats" —
+that requires modelling the fastener's own swept volume (shank AND head,
+since the head drags the same corridor the shank does) across its whole
+travel, then intersecting that against the real assembled parts, exactly
+like this repo's own mating-fit interference pairs already do for two
+solids. A hole that is the right diameter everywhere it exists can still
+be unreachable if it does not exist somewhere in between.
+
+**Guard against this**: for every threaded fastener in a design, state
+its ACCESS ROUTE explicitly (which face is reachable, at which assembly
+step, per the real build order — not "reachable" in an abstract, empty
+scene) and build the swept-insertion check from that stated point to the
+seated position, not just a check at the seated position alone. When
+building such a check, watch for three ways the check ITSELF can lie:
+(a) reusing a UNION-cleanliness overlap value (this repo's `Overlap`,
+sized for printed geometry) as the seam between the check's own head and
+shank pieces will register as a false collision against real material
+whenever the head is wider than what surrounds the shank there — use a
+seam near-zero instead, since this is an intersection test, not a union;
+(b) a sweep left at the file's default facet count ($fn) checked against
+real geometry that was deliberately cut at a coarser, LOCAL $fn (common
+for small bosses at odd azimuths in this repo) reads as a false collision
+too — a rounder polygon is a larger-area one than a coarse one at the
+same nominal diameter, and pokes past the coarse hole's own flat facets;
+(c) a self-tapping fastener's pilot hole is deliberately NARROWER than
+its own clearance shank elsewhere along its length (the thread is meant
+to cut it) — sweeping one constant "shank" diameter the whole way treats
+the material the screw is designed to displace as an obstruction. None
+of these three are exotic: all three showed up writing this one check
+class for a single design, and all three look identical to a genuine
+defect (a non-zero intersection volume) until traced to their source.

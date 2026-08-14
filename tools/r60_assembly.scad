@@ -65,20 +65,33 @@ Push = 0;            // overtravel probe distance, mm -- Pairs 10/11 only
 // (z=Flange_T) is inside the airframe... the e-bay tube's end lands at
 // r=28.4..30" there. So the neck's aft face lands on the tube's own top
 // rim (tube z=R60_EBay_L), and the skirt (neck z=5..24) plugs DOWN into
-// the tube from there, ending at R60_EBay_L-R60_Neck_Skirt_L. A Z-only
-// mirror reverses the direction the skirt grows (built toward +z from
-// the flange; assembled, it must run toward -z from the tube's top)
-// while leaving every X/Y (azimuthal) feature untouched.
-module Pair0_A(){ translate([0,0,R60_EBay_L+5]) mirror([0,0,1]) R60_Neck(); }
+// the tube from there, ending at R60_EBay_L-R60_Neck_Skirt_L. A proper
+// end-for-end FLIP is needed here (rotate, not mirror -- 7th review,
+// finding 5: mirror([0,0,1]) only negates Z, which is CHIRAL for any
+// part with an off-axis feature -- R60_Neck()'s own camera bolt pattern,
+// R60_Cam_Ang=[52.2,-52.2,180], is exactly such a feature. rotate([0,180,0])
+// is the genuine rigid-body rotation a real part undergoes when installed
+// pointing the other way: it reverses the skirt's growth direction (built
+// toward +z from the flange; assembled, it must run toward -z from the
+// tube's top) the same way mirror did, but ALSO correctly flips X, not
+// just Z, matching what physically happens when you turn the same
+// printed part around).
+module Pair0_A(){ translate([0,0,R60_EBay_L+5]) rotate([0,180,0]) R60_Neck(); }
 module Pair0_B(){ R60_EBayTube(); }
 
 // Pair 1: e-bay forward bulkhead (part 4) <-> e-bay tube (part 2).
 // R60_EBayFwdBulkhead() "closes the top of the e-bay" -- placed flush
 // against the underside of the neck skirt's own tip
-// (R60_EBay_L-R60_Neck_Skirt_L), its own T=6mm thick, extending aft from
-// there. Symmetric front/back (a plain disc + centred bore), so no flip
-// is needed -- either orientation is the identical shape.
-module Pair1_A(){ translate([0,0,R60_EBay_L-R60_Neck_Skirt_L-6]) R60_EBayFwdBulkhead(); }
+// (R60_EBay_L-R60_Neck_Skirt_L), its own T=R60_FwdBulk_T thick, extending
+// aft from there (restated from the shared constant, not a bare literal
+// -- this file already include<>s R60Lib.scad, rule 4; a bare "6" here
+// and R60_FwdBulk_T elsewhere give the same part two different stations
+// the moment either one changes). NOT symmetric front/back since the 7th
+// review's rod-anchor inserts (R60_Vega_RodBoss_*): the boss/insert face
+// MUST be the aft (e-bay-facing) face -- matching that module's own
+// current comment -- so no flip is applied here either (this module's
+// own local z=0 IS its aft face already).
+module Pair1_A(){ translate([0,0,R60_EBay_L-R60_Neck_Skirt_L-R60_FwdBulk_T]) R60_EBayFwdBulkhead(); }
 module Pair1_B(){ R60_EBayTube(); }
 
 // Pair 2: e-bay aft bulkhead (part 5) <-> e-bay tube (part 2).
@@ -92,8 +105,14 @@ module Pair1_B(){ R60_EBayTube(); }
 // past the tube's own aft rim -- matching R60_EBayAftBulkhead()'s own
 // comment ("projects aft, past the e-bay tube's cut end") and the
 // review's own reported footprint ("aft bulkhead disc 12mm (z=0..12)")
-// exactly. Same Z-only-mirror idiom as Pair 0, for the same reason.
-module Pair2_A(){ translate([0,0,12]) mirror([0,0,1]) R60_EBayAftBulkhead(); }
+// exactly. Same end-for-end-rotation idiom as Pair 0, for the same
+// reason (7th review, finding 5): this part's servo pockets/horn slot
+// are off-axis (servo-1 pocket spans local x=-17.1..6.1), so a Z-only
+// mirror rendered a MIRROR IMAGE of the real part here (and at Pair 23,
+// which reuses this same placement) while Pair 5's plain-translate frame
+// rendered the true part -- the same physical bulkhead modelled with two
+// different handednesses in one harness. rotate([0,180,0]) fixes both.
+module Pair2_A(){ translate([0,0,12]) rotate([0,180,0]) R60_EBayAftBulkhead(); }
 module Pair2_B(){ R60_EBayTube(); }
 
 // Pair 3: Vega sled (part 6) <-> e-bay tube (part 2).
@@ -107,9 +126,9 @@ module Pair2_B(){ R60_EBayTube(); }
 // R60_Vega_Facing_Y_Nom (closed-form now, not driver-measured -- see the
 // file header) and increasing local Z moving toward +Y (into the open
 // bore, where the Vega board stacks on the standoffs). Local Y (length,
-// including the feet) becomes the tube's axial (global Z) direction.
-// Factored into its own module: Pairs 21-24 below all place the sled (or
-// its board envelope) the SAME way.
+// including the rod-carrying rails) becomes the tube's axial (global Z)
+// direction. Factored into its own module: Pairs 21-24 below all place
+// the sled (or its board envelope) the SAME way.
 module VegaSledPlaced(){
     translate([0, R60_Vega_Facing_Y_Nom, R60_Vega_AxialCenter])
         rotate([-90,0,0])
@@ -118,18 +137,21 @@ module VegaSledPlaced(){
 module Pair3_A(){ VegaSledPlaced(); }
 module Pair3_B(){ R60_EBayTube(); }
 
-// Pairs 23/24: Vega sled's FEET (part 6) <-> the aft/forward bulkheads
-// they bolt to (parts 5/4) -- 6th review, finding 1. A flush-fit
-// interference probe proves the feet do not COLLIDE with their bulkhead;
-// it does not by itself prove the mounting holes land ON the insert
-// bosses -- that coaxiality is checked mesh-against-mesh in
-// verify_rocket60.py (foot_bulkhead_hole_offset(), matching this file's
-// own hole_azimuth_at_r() idiom). Both bulkheads placed in the SAME tube
-// frame Pairs 1/2 already use, but via the shared R60_Vega_Window_Z0/Z1
-// constants instead of restating "12"/"...-6" a second time (this file
-// already include<>s R60Lib.scad -- rule 4).
+// Pairs 23/24: Vega sled's RAILS (part 6) <-> the aft/forward bulkheads
+// they mount to (parts 5/4) -- 6th review, finding 1; rod-based retention,
+// 7th review, finding 1/2. A flush-fit interference probe proves the
+// rails do not COLLIDE with their bulkhead; it does not by itself prove
+// the rod holes land ON the insert/pocket bosses -- that coaxiality is
+// checked mesh-against-mesh in verify_rocket60.py (rail_bulkhead_hole_
+// offset(), matching this file's own hole_azimuth_at_r() idiom). Both
+// bulkheads placed in the SAME tube frame Pairs 1/2 already use, but via
+// the shared R60_Vega_Window_Z0/Z1 constants instead of restating
+// "12"/"R60_EBay_L-R60_Neck_Skirt_L-R60_FwdBulk_T" a second time (this
+// file already include<>s R60Lib.scad -- rule 4). Same rotate([0,180,0])
+// end-for-end fix as Pair 2 (7th review, finding 5) -- this reuses that
+// exact placement, so it inherited the same chirality bug.
 module Pair23_A(){ VegaSledPlaced(); }
-module Pair23_B(){ translate([0,0,R60_Vega_Window_Z0]) mirror([0,0,1]) R60_EBayAftBulkhead(); }
+module Pair23_B(){ translate([0,0,R60_Vega_Window_Z0]) rotate([0,180,0]) R60_EBayAftBulkhead(); }
 module Pair24_A(){ VegaSledPlaced(); }
 // R60_FwdBulkhead_TubeZ0, NOT R60_Vega_Window_Z1: the bulkhead's own disc
 // still sits at its TRUE tube position regardless of where its foot boss
@@ -199,31 +221,38 @@ module Pair6_A(){ translate([0,0,Ins-65]) R60_SpringCarrier(); }
 module Pair6_B(){ R60_ChuteTube(); }
 
 // Pair 7: chute tube (part 3) <-> fin can (part 9).
-// Plain butt joint (assembly step 10: "Bond the chute bay tube to the
+// Plain butt joint (assembly step 11: "Bond the chute bay tube to the
 // fin can's forward end"). Fin can z=0 is its AFT (retainer) end (fin
 // slots/retainer bosses near z=0, forward centring ring near
 // z=R60_FinCan_L); chute tube z=R60_Chute_L is ITS aft end (bonds to the
 // fin can) -- i.e. the fin can's own "more aft" direction is DECREASING
 // local z, while the chute tube's is INCREASING local z (opposite
 // conventions, like Pair 0/2's neck/bulkhead), so this needs the same
-// Z-only-mirror idiom, not a plain translate (a first draft used a plain
-// translate here and got a 51.8 cm3 "overlap" -- the two tubes' ENTIRE
-// bodies stacked on the same axial span instead of meeting at one
-// boundary plane, caught by sanity-checking the reported volume against
-// the physical joint, which is a razor-thin butt joint, not a 51.8 cm3
-// interference). Mirror reverses the fin can's own +z growth direction
-// so it runs aft from the chute tube's own aft rim, matching physical
-// reality: chute_z = R60_Chute_L+R60_FinCan_L - fincan_z.
-module Pair7_A(){ translate([0,0,R60_Chute_L+R60_FinCan_L]) mirror([0,0,1]) R60_FinCan(); }
+// end-for-end-rotation idiom (7th review, finding 5), not a plain
+// translate (a first draft used a plain translate here and got a 51.8
+// cm3 "overlap" -- the two tubes' ENTIRE bodies stacked on the same
+// axial span instead of meeting at one boundary plane, caught by
+// sanity-checking the reported volume against the physical joint, which
+// is a razor-thin butt joint, not a 51.8 cm3 interference), and NOT a
+// Z-only mirror (same chirality bug as Pairs 0/2/23 -- a mirror is not a
+// rotation any real print can undergo). rotate([0,180,0]) reverses the
+// fin can's own +z growth direction so it runs aft from the chute tube's
+// own aft rim, matching physical reality: chute_z = R60_Chute_L+R60_FinCan_L
+// - fincan_z, with X also correctly flipping this time.
+module Pair7_A(){ translate([0,0,R60_Chute_L+R60_FinCan_L]) rotate([0,180,0]) R60_FinCan(); }
 module Pair7_B(){ R60_ChuteTube(); }
 
 // Pair 8: motor spacer (part 12) <-> fin can's MMT (part 9, built into
 // R60_FinCan()). "Forward spacer so a motor shorter than R60_MMT_L still
 // sits flush at the aft end" -- the motor occupies the fin can's own aft
 // portion (fincan z=0..motor length), the spacer fills the rest forward
-// of it, fincan z=motor_length..R60_MMT_L. Motor_Class default (0,
-// G80T-14A, 124mm) matches R60_MotorSpacer()'s own default.
-module Pair8_A(){ translate([0,0,124]) R60_MotorSpacer(); }
+// of it, fincan z=motor_length..R60_MMT_L. R60_Motor_L[Motor_Class] (7th
+// review, finding 5), not a bare "124" -- the old hardcode matched only
+// the G80T-14A default (Motor_Class=0); probing -D Motor_Class=1 or 2
+// left the spacer at the G80T's own 124mm station instead of the H182R's
+// 203mm or the H135W's 216mm, so this pair never actually checked the
+// spacer against the position it occupies for either H motor.
+module Pair8_A(){ translate([0,0,R60_Motor_L[Motor_Class]]) R60_MotorSpacer(); }
 module Pair8_B(){ R60_FinCan(); }
 
 // Pair 9: tether latch (part 13) <-> e-bay aft bulkhead (part 5).
@@ -506,7 +535,15 @@ module Pair15_B(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) R60_TetherLatc
 // treatment as R60_SpringCarrier()'s plunger/lock ring -- but FIXED,
 // independent of the board's own position, so this pair can genuinely
 // fail if a future change to the Vega stack lets the board encroach on
-// it (mutation-tested: growing R60_Vega_H past ~13.2mm collides).
+// it. Re-mutation-tested (7th review, after the rail retention redesign
+// moved R60_Vega_Facing_Y_Nom from -17.32 to ~-16.25 -- growing
+// R60_Vega_Sled_W to fit the new rail pushed the whole board stack
+// ~1mm closer to the door/switch side): growing SW_REACH itself past
+// ~17.3mm now collides (was governed by R60_Vega_H before, which this
+// design can never actually grow -- SW_REACH is the genuinely uncertain
+// one of the two, being an assumed hardware envelope with no datasheet,
+// so this is the more meaningful of the two possible mutations and this
+// pair is no longer a check that cannot fail).
 // SwitchProbe is a PROBE-ONLY solid: SW_D matches R60_Door()'s own Sw_d
 // exactly (rule 4). Built directly in the DOOR's own local frame
 // (matching R60_Door()'s own Sw_X/Sw_Z exactly, both READ here -- 6th
@@ -596,6 +633,266 @@ module Pair17_B(){ R60_SpringCarrier(); }
 module Pair19_A(){ translate([0,R60_Tether_Y,Ins-65]) PinPath(); }
 module Pair19_B(){ R60_ChuteTube(); }
 
+// ===========================================================================
+// FASTENER INSERTION CHECK (7th review, finding 1). Every check above
+// this point asks "do two SOLIDS overlap once assembled" -- but a bore or
+// clearance dimension can be correctly sized and STILL be unreachable:
+// the Vega sled's own retired bolted feet (6th review) were exactly this
+// -- the M3 screw's Ø3.4 clearance hole was the right diameter everywhere
+// it existed, it just didn't exist along the screw's own approach path.
+// Confirmed by mutation test (this review): sweeping the retired Ø3.4
+// shank + Ø5.5 SHCS head along its own insertion axis from the tube's
+// open end and intersecting against R60_VegaSled()'s own rendered mesh
+// gave a real, solid 3.91cm3 collision -- not a marginal near-miss, and
+// invisible to every dimensional/bore check in verify_rocket60.py and
+// every mating-fit pair above, because those all measure the FINAL
+// position, never the path TO it.
+//
+// FastenerSweep(Shank_d, Head_d, Travel, Engage) models the swept CLEAR
+// VOLUME a fastener genuinely needs, built in its own frame: local
+// (0,0,0) is the SEATED head/nut-bearing plane, +Z is the direction
+// driven IN. The head/nut drags the SAME corridor the whole way in (it
+// does not suddenly appear at the seat), so it sweeps the FULL approach,
+// -Travel..0; the shank continues narrower past the seated plane, into
+// its own thread/insert/pocket engagement, 0..Engage. A working fastener
+// renders intersection(){FastenerSweep_placed(); real_part();} EMPTY;
+// one that cannot be installed renders a measurable collision, the same
+// pass/fail idiom this file already uses for mating-fit interference.
+//
+// ACCESS ROUTE is stated per fastener below, in the real assembly order
+// (R60-PrintSettings.md section 6) -- "reachable" means reachable at the
+// step it is actually installed, not merely unobstructed in an empty
+// scene. Travel is always generous (>=15mm) past that accessible point,
+// never tuned to the one part being checked.
+// FS_SEAM (not this file's own Overlap=0.05mm): the tiny lap between the
+// head and shank cylinders below exists only so their shared z=0 face
+// unions cleanly -- Overlap is sized for PRINTED geometry (0.05mm is
+// nothing next to a 1.6mm wall); reused here it would itself register as
+// a false collision against real material at the exact seat plane
+// whenever Head_d is meaningfully wider than what surrounds the shank
+// there (measured on Pair 27's nut sweep: 0.003cm3 of pure Overlap
+// artifact, three orders of magnitude over EPS_CM3, before this was
+// separated out). 1e-6mm is far below anything this check needs to
+// resolve.
+FS_SEAM = 0.000001;
+module FastenerSweep(Shank_d, Head_d, Travel, Engage){
+    translate([0,0,-Travel]) cylinder(d=Head_d, h=Travel+FS_SEAM);
+    cylinder(d=Shank_d, h=Engage+FS_SEAM);
+}
+
+// Pair 25: Vega sled retention ROD (7th review, finding 1/2 -- REPLACES
+// the retired bolted feet this whole check class exists because of).
+// ACCESS: bench-built cartridge (R60Lib.scad's own "Sled retention"
+// comment) -- the rod's forward end is already fixed in
+// R60_EBayFwdBulkhead()'s insert; R60_VegaSled() is then SLID onto the
+// rod's free aft end, in open bench space, well before anything is
+// inside a tube. This is the direct, corrected re-run of the mutation
+// test above: same shape of check (rod swept the rail's own full length
+// plus its forward insert engagement), same real part (R60_VegaSled()),
+// now against the rail instead of the retired foot pad. Renders EMPTY
+// only because the rail's hole is now bored its FULL length -- there is
+// no axial position along it the retired design's own hole skipped.
+module RodSweep_Sled(){
+    L = R60_Vega_L + 12;
+    RailFwd_L = (R60_Vega_Window_Z1 - R60_Vega_Rail_FwdClear) - (R60_Vega_AxialCenter + L/2);
+    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
+    Y0 = -L/2 - RailAft_L;   // rail's own aft tip -- rod enters here
+    Y1 = L/2 + RailFwd_L;    // rail's own fwd tip -- rod continues past
+                               // this into the fwd bulkhead's own insert
+    for (s=[-1,1])
+        translate([s*R60_Vega_Rail_X, Y0, R60_Vega_Rail_Z_Local])
+            rotate([-90,0,0])
+                // No separate head here -- a threaded ROD (unlike a
+                // screw) is one constant diameter its whole length, so
+                // Head_d=Shank_d and Travel=0 collapse FastenerSweep to a
+                // plain full-length cylinder; the real "head" analog (the
+                // aft nut) is checked separately below (Pair 26), since
+                // IT does have its own wider envelope.
+                FastenerSweep(Shank_d=R60_Vega_Rail_d, Head_d=R60_Vega_Rail_d,
+                               Travel=0, Engage=(Y1-Y0)+R60_Vega_RodInsert_h);
+}
+module Pair25_A(){ RodSweep_Sled(); }
+module Pair25_B(){ R60_VegaSled(); }
+
+// Pair 26: same rod, checked in the ASSEMBLED tube frame against BOTH
+// bulkheads (VegaSledPlaced()'s own transform) -- proves the rod's full
+// path also clears the bulkheads' own material (not just the rail
+// itself), e.g. that the fwd insert and aft pocket are genuinely coaxial
+// with the rail's own hole once everything is really assembled, not just
+// independently correct in each part's own local frame.
+module Pair26_A(){
+    translate([0, R60_Vega_Facing_Y_Nom, R60_Vega_AxialCenter])
+        rotate([-90,0,0])
+            RodSweep_Sled();
+}
+module Pair26_B(){
+    union(){
+        translate([0,0,R60_Vega_Window_Z0]) rotate([0,180,0]) R60_EBayAftBulkhead();
+        translate([0,0,R60_FwdBulkhead_TubeZ0]) R60_EBayFwdBulkhead();
+    }
+}
+
+// Pair 27: Vega sled retention NUT (+washer). ACCESS: same bench
+// cartridge step as Pair 25 -- threaded onto the rod's free aft end,
+// bearing on the rail's own flat aft face (no counterbore needed: an M3
+// nut's 6.35mm across-corners fits within the rail's 6.6mm square face
+// with real, if tight, margin). NUT_HEAD_D is a stated generous nut+
+// washer envelope, not a tight fit -- swept from open bench space
+// (well aft of the rail) to the seated position.
+NUT_HEAD_D = 7.5;
+NUT_TRAVEL = 15.0;
+module NutSweep_Sled(){
+    L = R60_Vega_L + 12;
+    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
+    Y0 = -L/2 - RailAft_L;   // rail's own aft tip = nut's seated position
+    for (s=[-1,1])
+        translate([s*R60_Vega_Rail_X, Y0, R60_Vega_Rail_Z_Local])
+            rotate([-90,0,0])
+                FastenerSweep(Shank_d=R60_Vega_Rail_d, Head_d=NUT_HEAD_D,
+                               Travel=NUT_TRAVEL, Engage=0);
+}
+module Pair27_A(){ NutSweep_Sled(); }
+module Pair27_B(){ R60_VegaSled(); }
+
+// Pair 28: camera bolts (3x M3x10 SHCS, R60_Neck()/R60_TestRing()'s own
+// R60_CameraBoltPattern()). ACCESS: from OUTSIDE the airframe (the
+// nosecone/camera end), before the neck is joined to anything (assembly
+// step 7) -- always open, unobstructed air on that side. Head bears on
+// the neck's own forward flange face (local z=0); shank continues
+// through Flange_T(5) into the camera's own insert (5.0mm engagement,
+// "does not bottom out" per that module's comment) -- Engage=10, matching
+// the M3x10 screw length exactly.
+module CamBoltSweep(){
+    R60_CameraBoltPattern()
+        FastenerSweep(Shank_d=R60_Cam_Bolt_d, Head_d=5.5, Travel=20, Engage=10);
+}
+module Pair28_A(){ CamBoltSweep(); }
+module Pair28_B(){ R60_Neck(); }
+
+// Pair 29: access door screws (4x M2.5 self-tap, R60_Door()/
+// R60_EBayTube()'s own boss/pilot pattern). ACCESS: from OUTSIDE the
+// airframe, radially -- always open (assembly step 8, and for the life
+// of the rocket: this is the one fastener meant to be removed/replaced
+// repeatedly). Radial axis, not axial: same Door_Boss_Az() idiom Pair 4's
+// own header comment and R60_EBayTube()/R60_Door() already use for a
+// hole bored along the wall's true local radial direction, restated here
+// (rule 4, this file cannot call a function local to another module).
+// Head bears on the door cover's own outer face (r=R60_Body_OD/2+T);
+// shank continues through the cover's own T(2) at the clearance
+// diameter (Door_Hole_d=2.7). Past that, the engagement is NOT the same
+// diameter: R60_EBayTube()'s own pilot hole (Door_Pilot_d=2.0mm) is
+// deliberately NARROWER than the clearance shank -- a self-tapping M2.5
+// is meant to CUT its own thread into that pilot, not pass through it
+// with clearance, so a straight 2.7mm sweep through the pilot's own
+// depth would read as a false collision against material the screw is
+// designed to displace (measured before this split: 0.065cm3, the
+// pilot's own annulus). Modelled as two stages, not one FastenerSweep
+// call: 2.7mm through the cover's own T(2), then 2.0mm for the pilot's
+// own Door_Pilot_Depth(6).
+function DoorBoltAz(x) = acos(x/(R60_Body_OD/2));
+// $fn=32 (not the file-wide 180): R60_Door()'s own switch/screw holes and
+// R60_EBayTube()'s own door boss/pilot cuts are ALL bored at a local
+// $fn=32 (both modules' own comments: the fine 180-facet tessellation at
+// this off-axis azimuth produced a numerically degenerate boolean). A
+// sweep cylinder left at the file-wide $fn=180 is a rounder, LARGER-area
+// polygon than the real $fn=32 hole it is being checked against, so it
+// pokes past the coarse hole's own flat facets into real material that
+// was never actually removed -- measured before this fix: 0.00075cm3 of
+// pure tessellation-mismatch artifact, matching neither Pair 27's
+// FS_SEAM class nor a real defect.
+module DoorBoltSweep(){
+    Hole_X = R60_Door_Open_W/2 + R60_Door_Hole_Clear;
+    Hole_Z = [Door_Z0_ - R60_Door_Hole_Clear, Door_Z0_ + R60_Door_Open_H + R60_Door_Hole_Clear];
+    for (x=[-Hole_X, Hole_X], z=Hole_Z)
+        rotate([0,0,DoorBoltAz(x)])
+            translate([R60_Body_OD/2 + 2, 0, z])
+                rotate([0,-90,0])
+                    union(){
+                        FastenerSweep(Shank_d=2.7, Head_d=5.0, Travel=20, Engage=2.0, $fn=32);
+                        translate([0,0,2.0]) cylinder(d=2.0, h=6.0+FS_SEAM, $fn=32);
+                    }
+}
+module Pair29_A(){ DoorBoltSweep(); }
+module Pair29_B(){ union(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); R60_EBayTube(); } }
+
+// Pair 30: motor retainer bolts (3x M3, R60_MotorRetainer()/
+// R60_FinCan()'s own Boss_BC_R=24 pattern, 60deg off the fins). ACCESS:
+// from OUTSIDE, the fin can's fully open aft end (assembly step 10) --
+// never inside a tube. Head bears on the retainer's own exposed aft
+// face (local z=0); shank continues through the retainer's own T(6)
+// into the fin can's own insert (6.7mm engagement) -- Engage=12.7.
+module RetainerBoltSweep(){
+    for (i=[0:R60_nFins-1])
+        rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
+            translate([24,0,0])
+                FastenerSweep(Shank_d=3.4, Head_d=5.5, Travel=20, Engage=12.7);
+}
+module Pair30_A(){ RetainerBoltSweep(); }
+module Pair30_B(){ R60_MotorRetainer(); }
+
+// Pair 31: tether latch mounting bolts (2x M3, R60_TetherLatch()'s own
+// Mount_Hole_d pattern into R60_EBayAftBulkhead()'s inserts). ACCESS:
+// this bulkhead's TRUE aft face (bulkhead z=Total_H=27) is fully exposed
+// on the bench at assembly step 4 -- servos/latch are mounted well
+// before the e-bay is closed up, let alone before the chute tube/spring
+// carrier are bonded over this same face at step 9. Checked against the
+// BULKHEAD only, so Engage is that part's own insert depth (6.7mm) --
+// NOT stacked with the latch's own Base_T(4mm), which is a hole through
+// a DIFFERENT part (R60_TetherLatch() itself) this pair does not render;
+// a first version double-counted that 4mm as if the bulkhead needed
+// clearance for it too, and got a real (if self-inflicted) 0.073cm3
+// collision against the bulkhead's own solid disc material beyond its
+// insert's true 6.7mm depth. The
+// bulkhead's own material lies BELOW this seat (bulkhead z=27 down to
+// 20.3, not upward -- Total_H=27 is this part's own aft-most extent), so
+// FastenerSweep's default +Z convention needs flipping here.
+// rotate([0,180,0]) is safe on this specific shape (unlike the mirror
+// bug this same review round fixed elsewhere, 7th review finding 5):
+// FastenerSweep is two coaxial cylinders with no off-axis feature, so a
+// 180deg rotation about ANY axis in its own XY plane is a real,
+// non-chiral symmetry of the shape itself, not an approximation of one.
+module TetherBoltSweep(){
+    for (x=[-R60_TetherLatch_HoleX, R60_TetherLatch_HoleX])
+        translate([x, R60_Tether_Y, 12+R60_Pin_Skirt_L])
+            rotate([0,180,0])
+                FastenerSweep(Shank_d=3.4, Head_d=5.5, Travel=20, Engage=6.7);
+}
+module Pair31_A(){ TetherBoltSweep(); }
+module Pair31_B(){ R60_EBayAftBulkhead(); }
+
+// Pair 32: Vega board mounting screws (3x M3, R60_Vega_Holes into
+// R60_VegaSled()'s own standoffs). ACCESS: entirely on the bench -- the
+// board is mounted to the sled BEFORE the sled goes anywhere near a rod
+// or a tube (R60-PrintSettings.md step 2). Included for completeness
+// (the review's own fastener list names it explicitly), even though a
+// bench-only fastener with open access on both sides is the least likely
+// of this whole list to ever fail. Shank travels through the standoff's
+// own T+Standoff_h(8mm) -- Engage=8, no separate thread engagement (the
+// board's own hole is a plain clearance hole, capped with a nut, not
+// threaded into the standoff). Driven from BELOW the plate (its own
+// underside, z=0, open bench air before the board is mounted) UP through
+// the standoff to the board, where a nut on top captures it -- the seat
+// is the plate's own bottom face, z=0, not the standoff's own top.
+module BoardBoltSweep(){
+    for (h=R60_Vega_Holes)
+        translate([h[0], h[1], 0])
+            FastenerSweep(Shank_d=R60_Vega_BoardHole_d, Head_d=5.5, Travel=20, Engage=8);
+}
+module Pair32_A(){ BoardBoltSweep(); }
+module Pair32_B(){ R60_VegaSled(); }
+
+// R60_ThrustRing() (part 14) carries NO fastener at all -- it is bonded
+// (glued) into the MMT's forward opening, flush with the fin can's own
+// forward tip, "the last step before bonding the chute bay tube on" (its
+// own module comment) -- i.e. installed at the fin can's own fully open
+// forward end, the shortest and most directly accessible reach in this
+// entire design, not a fastener travelling any real distance at all. A
+// FastenerSweep() here would be checking a hardware class this part does
+// not use; its own installation reachability is already the direct
+// consequence of R60_MotorSpacer()'s length derivation (that module's
+// comment) and Pair 10's own obstruction-proof, not a gap this check
+// class needs to fill.
+
 // Dispatch. Pairs 16/18/20 are intentionally ABSENT (6th review, finding
 // 2 -- deleted, not renumbered away, so the gap in the sequence itself is
 // a visible record of what was removed and why -- see the pair-
@@ -619,7 +916,8 @@ module Pair19_B(){ R60_ChuteTube(); }
 // missing from BOTH this list and the dispatch below is caught anyway:
 // the run simply asks for a Pair number verify_rocket60_assembly.py's own
 // PAIRS dict never requested.
-KNOWN_PAIRS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,21,22,23,24];
+KNOWN_PAIRS = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,19,21,22,23,24,
+               25,26,27,28,29,30,31,32];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -647,3 +945,11 @@ if (Pair==21) intersection(){ Pair21_A(); Pair21_B(); }
 if (Pair==22) intersection(){ Pair22_A(); Pair22_B(); }
 if (Pair==23) intersection(){ Pair23_A(); Pair23_B(); }
 if (Pair==24) intersection(){ Pair24_A(); Pair24_B(); }
+if (Pair==25) intersection(){ Pair25_A(); Pair25_B(); }
+if (Pair==26) intersection(){ Pair26_A(); Pair26_B(); }
+if (Pair==27) intersection(){ Pair27_A(); Pair27_B(); }
+if (Pair==28) intersection(){ Pair28_A(); Pair28_B(); }
+if (Pair==29) intersection(){ Pair29_A(); Pair29_B(); }
+if (Pair==30) intersection(){ Pair30_A(); Pair30_B(); }
+if (Pair==31) intersection(){ Pair31_A(); Pair31_B(); }
+if (Pair==32) intersection(){ Pair32_A(); Pair32_B(); }

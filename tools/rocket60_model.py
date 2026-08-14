@@ -135,6 +135,21 @@ CARRIER_L  = 65.0    # R60_SpringCarrier()'s own L
 # Rocket60.scad's own constants, same rule-4 convention as AFTBULK_T etc.
 NECK_SKIRT_L = 19.0   # R60_Neck_Skirt_L
 FWDBULK_T    = 6.0    # R60_FwdBulk_T -- R60_EBayFwdBulkhead()'s own T
+# Vega sled's true axial centre (7th review, finding 6): R60Lib.scad's
+# R60_Vega_AxialCenter, the midpoint of the window between the aft
+# bulkhead's own e-bay face (tube z=AFTBULK_T) and the forward bulkhead's
+# own rod-boss face (tube z=(L_EBAY-NECK_SKIRT_L-FWDBULK_T)-VEGA_RODBOSS_
+# FWDEXTRA) -- restated per this file's own rule-4 convention, not
+# S_EBAY+L_EBAY/2 (the e-bay TUBE's own geometric midpoint), which was
+# only ever correct for the zip-tie/rail retention this file's own
+# comment (superseded twice now: 6th review's bolted feet, 7th review's
+# rods) still cited. The window is not centred on the tube (the aft
+# bulkhead alone is 12mm; the forward bulkhead + neck skirt together are
+# 25mm), so the two stations differ by 7.35mm.
+VEGA_RODBOSS_FWDEXTRA = 1.7   # R60_Vega_RodBoss_FwdExtra
+VEGA_AXIAL_CENTER = (AFTBULK_T
+                      + ((L_EBAY - NECK_SKIRT_L - FWDBULK_T) - VEGA_RODBOSS_FWDEXTRA)
+                      ) / 2.0
 PIN_Z_FROM_JOINT = 8.0   # R60_Pin_Z_FromJoint
 LATCH_H      = 16.0   # R60_TetherLatch()'s own Base_T+Post_H (=part 13's
                         # own measured height, 16.00mm)
@@ -262,7 +277,7 @@ def build(motor):
     # 2x MG90S servos (27g, datasheet), switch hardware (8g),
     # parachute+cord+hw (70g), CS4323 spring (25g, explicitly flagged
     # "est., unverified"), tether latch pin (1g), shear pins (0.5g), rail
-    # buttons (4g). That is roughly 269g of this rocket's 871g liftoff
+    # buttons (4g). That is roughly 269g of this rocket's 874g liftoff
     # mass -- 31% -- resting on unweighed hardware estimates, not
     # measured mesh volumes. STL Files/Rocket60/README.md's own
     # instruction ("weigh the parts as they come off the printer") covers
@@ -311,13 +326,17 @@ def build(motor):
      # Plain uniform tube -- geometric midpoint. Audited, confirmed
      # correct.
      ('e-bay tube',            petg(STL_VOL[2]),         S_EBAY+L_EBAY/2),
-     # Sled's own AXIAL position is set by the zip-tie stations
-     # (R60_EBayTube()'s Tie_Z, centred on R60_EBay_L/2 in the tube's own
-     # frame) -- the rails constrain radial position/rotation only, not
-     # axial. That centres the sled on the TUBE's own midpoint exactly,
-     # same as the e-bay tube itself. No SCAD backing for the board's own
-     # mass distribution beyond that. Audited, confirmed correct.
-     ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_EBAY+L_EBAY/2),
+     # Sled's own AXIAL position (7th review, finding 6): the sled now
+     # bridges a window between the two bulkheads and is captured by rods
+     # threaded/nutted at each end (R60Lib.scad's "Sled retention"
+     # comment) -- its station is that window's own midpoint,
+     # VEGA_AXIAL_CENTER, NOT the e-bay tube's own geometric midpoint
+     # (S_EBAY+L_EBAY/2). The stale comment this replaces described a
+     # zip-tie retention scheme retired two reviews ago; the station
+     # itself was never updated when the retention mechanism changed.
+     # No SCAD backing for the board's own mass distribution beyond
+     # centring on the sled's own station.
+     ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_EBAY+VEGA_AXIAL_CENTER),
      # No SCAD backing (loose hardware, no specific mounting geometry) --
      # kept at the e-bay tube's own midpoint, the best available estimate.
      ('battery + wiring',      45.0,                     S_EBAY+L_EBAY/2),
@@ -575,14 +594,36 @@ def thr(c,t):
             (t0,f0),(t1,f1)=c[i],c[i+1]
             return f0+(f1-f0)*(t-t0)/(t1-t0)
     return 0.0
+# Transonic peak, derived (not hardcoded) as the subsonic quadratic's own
+# value AT M=1.0 -- cd0*(1+2.2*0.25**2/0.0625) = cd0*3.2 exactly. Used by
+# BOTH branches of cdM() below so they meet continuously at Mach 1 instead
+# of stepping: the supersonic branch used to independently return a flat
+# cd0*3.0, ~6% BELOW the subsonic curve's own 3.2x peak one dt earlier --
+# a drag coefficient that steps DOWN exactly at the transonic transition,
+# backwards from every real rocket Cd-vs-Mach curve (drag rises approaching
+# Mach 1 and stays elevated into the low supersonic regime, it does not
+# drop the instant M passes 1.0). Raising the supersonic plateau to meet
+# the subsonic peak (rather than lowering the peak to meet the old 3.0
+# plateau) keeps the higher, transonic-rise-motivated figure and matches
+# the "stays elevated" shape; the supersonic branch is still a flat
+# constant past M=1 (this function does not model the further gradual
+# decline through higher supersonic Mach), unchanged by this fix.
+#
+# Latent-but-real bug, not a live one: the fastest of the four motors
+# modeled below (H182R-14A) peaks at Mach 0.62 (see the Mach column
+# printed below), which does not even reach the M<0.75 branch's cd0
+# plateau, let alone the transonic quadratic or this fix's own M=1
+# junction -- so no currently-published flight number moves because of
+# this change. Re-check this comment if a faster motor is ever added.
+TRANSONIC_PEAK = 1 + 2.2*(1.0-0.75)**2/0.0625   # = 3.2
 def cdM(M,cd0):
     if M<0.75: return cd0
     if M<1.0: return cd0*(1+2.2*(M-0.75)**2/0.0625)
-    return cd0*3.0
+    return cd0*TRANSONIC_PEAK
 def fly(m0_g, prop_g, Ns, burn, cd0=0.52):
     c=curve_scaled(SHAPE,Ns,burn); A=math.pi*(D/2000.0)**2
     dt=0.001;t=0;v=0;h=0;m=m0_g/1000.0;mdot=(prop_g/1000.0)/burn
-    vmax=0;Mmax=0;vburn=0;rail=0;trail=0
+    vmax=0;Mmax=0;rail=0;trail=0
     while v>=0 or t<burn:
         F=thr(c,t)
         if t<burn: m-=mdot*dt
@@ -591,7 +632,6 @@ def fly(m0_g, prop_g, Ns, burn, cd0=0.52):
         v+=((F-Dg)/m-9.81)*dt; h+=v*dt; t+=dt
         if h>=1.0 and rail==0: rail=v; trail=t
         if v>vmax: vmax=v;Mmax=M
-        if t>=burn and vburn==0: vburn=v
         if t>40: break
     return vmax,Mmax,h,t,rail
 print()
@@ -614,13 +654,34 @@ for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     while h<1.5 and t<burn:
         F=thr(c,t); mm-=mdot*dt
         v+=((F-0.5*1.225*v*v*A*0.52)/mm-9.81)*dt; h+=v*dt; t+=dt
-    # TSP E20-P is excluded from this design already (spec sec 1.1 -- it
-    # was simulated and dropped specifically because it cannot clear
-    # 15 m/s here), so it is reported but does not fail the regression;
-    # only a motor the design actually flies on can fail this.
-    ok = v > 15
-    status = ("OK" if ok else "EXCLUDED, as expected") if mo == 'TSP E20-P' else bad(ok)
-    print(f"   {mo:<12} {v:>5.1f} m/s   ({status}{'' if ok else ' - want >15 m/s'})")
+    # The loop above ends exactly one of two ways: h reached 1.5m (a
+    # genuine rail exit -- v below really is the exit velocity), or the
+    # motor burned out first (t>=burn) with h STILL short of 1.5m, in
+    # which case v is the BURNOUT velocity, not a rail-exit velocity --
+    # reporting it unconditionally as "rail exit speed" (the old code)
+    # would silently claim the rocket left the rail when it is actually
+    # still sitting on it, unpowered, coasting the rest of the way up on
+    # momentum alone. h<1.5 after the loop can ONLY mean the burnout leg
+    # fired (the h<1.5 leg cannot itself have made the loop exit), so it
+    # is the correct, sufficient discriminator between the two cases.
+    if h < 1.5:
+        # Same "TSP E20-P is excluded already, reported but not gated"
+        # rule as the normal case below -- burning out on the rail is a
+        # real design problem for the three motors this design actually
+        # flies on (worse than merely a slow, still-genuine rail exit),
+        # so it fails the regression there; TSP E20-P was already known
+        # to underperform this constraint and stays excluded.
+        status = "EXCLUDED, as expected" if mo == 'TSP E20-P' else bad(False)
+        print(f"   {mo:<12} BURNOUT ON RAIL -- never reached the 1.5 m rail-exit "
+              f"height; burnout velocity was {v:.1f} m/s at {h:.2f} m   ({status})")
+    else:
+        # TSP E20-P is excluded from this design already (spec sec 1.1 -- it
+        # was simulated and dropped specifically because it cannot clear
+        # 15 m/s here), so it is reported but does not fail the regression;
+        # only a motor the design actually flies on can fail this.
+        ok = v > 15
+        status = ("OK" if ok else "EXCLUDED, as expected") if mo == 'TSP E20-P' else bad(ok)
+        print(f"   {mo:<12} {v:>5.1f} m/s   ({status}{'' if ok else ' - want >15 m/s'})")
 
 # ---------------- flutter margin, all three motors ----------------
 # Group 2 re-target's 3rd requirement: flutter velocity >= 3x the FASTEST

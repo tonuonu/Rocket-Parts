@@ -139,145 +139,210 @@ R60_Vega_H = 21;
 // L-shaped M3 pattern, 60mm apart along the length, 27mm across the width.
 // X = across width, Y = along length.
 R60_Vega_Holes = [[-13.5, -25], [-13.5, +35], [+13.5, +35]];
+R60_Vega_BoardHole_d = 3.4;   // M3 clearance, the board's own mounting
+                                // screws into R60_VegaSled()'s standoffs
+                                // -- promoted from a local module variable
+                                // to a shared constant so the rail's own X
+                                // position (below) can be derived from it
+                                // without a second, independently-typed
+                                // 3.4
 R60_Vega_Standoff_h = 4;   // manual recommends spacers under the board
-R60_Vega_Sled_W = R60_Vega_W + 11;   // sled plate width (chord), matches
-                                       // R60_VegaSled()'s own W
-R60_Vega_Sled_T = 4;                  // sled plate thickness
+R60_Vega_Sled_T = 4;                  // sled plate thickness -- unchanged
+                                       // by the 7th-review retention
+                                       // redesign below; the board-
+                                       // carrying middle's own radial
+                                       // reach is untouched
 
-// Sled retention -- REPLACES the rail/zip-tie scheme (6th review, finding
-// 1: the THIRD distinct failure of that concept -- round 2 shipped no
-// retention at all, round 3's rails blocked the bulkheads, and round 5's
-// "fixed" Rail_HalfAng (a*sinH-b*cosH solve for the rails' own facing
-// gap) turns out to open the two rails' facing planes AWAY from each
-// other with increasing radius rather than toward: transforming a sled
-// corner into either rail's own local frame has no solution simultaneously
-// satisfying "past the rail's inner face" and "within the rail's own
-// width" -- the sled slides past both rails' corners and falls to the
-// tube ID, uncaptured, which rail_facing_gap()'s tangential-only sample
-// could never see. Abandoning the concept per the review's own verdict:
-// the sled now BRIDGES the full axial gap between the aft and forward
-// bulkheads' own e-bay-facing faces (R60_Vega_Window_Z0/Z1 below) and
-// bolts directly to each, 2x M3 into ruthex RX-M3x5.7 inserts per end (4
-// total) -- see R60_VegaSled()/R60_EBayAftBulkhead()/R60_EBayFwdBulkhead()
-// in Rocket60.scad. Both the sled's radial position and its clocking
-// about the tube axis are now fixed by where those 4 holes/inserts land,
-// not by resting against (or being captured by) anything.
+// Sled retention -- REPLACES the bolted-bridge feet (7th review, finding
+// 1: the FOURTH distinct failure of Vega retention -- round 2 shipped
+// none at all, round 3's rails blocked the bulkheads, round 5's "fixed"
+// rails had no facing-gap solution, and round 6's 4 bolted feet could not
+// physically be INSERTED: each foot's Ø3.4 shank clearance hole existed
+// only within its own short foot-pad span, never continuing through the
+// board-carrying plate between it and the tube's open end -- the plate's
+// own T=4mm is solid at every (x,z) that hole ever occupied, for the
+// plate's FULL 112mm length. A screw fed in from the only accessible
+// point ("drive the 4 screws from inside the open bore") had nowhere to
+// enter; it would have to travel 100+mm through solid plastic before
+// reaching a hole that only started at the very end. Confirmed by
+// mutation test (7th review): sweeping the old Ø3.4 shank + Ø5.5 SHCS
+// head along its own insertion axis and intersecting against
+// R60_VegaSled()'s own rendered mesh gives a real 3.91cm3 collision, not
+// a marginal near-miss -- see tools/r60_assembly.scad's FastenerSweep()
+// pairs, which reproduce this on every fastener in the design now.
 //
+// Replaced with the standard high-power e-bay pattern: 2 threaded M3
+// rods span the full window between the bulkheads; the sled slides onto
+// them through 2 continuous, CONSTANT-cross-section RAILS (never a
+// separate end pad the hole exists in only near the tip -- that
+// inconsistent cross-section was the actual defect, not the concept of
+// a foot/pad at all); a nut+washer per rod, bearing on the rail's own
+// flat aft face, captures the sled axially against a hard stop at the
+// forward end. Both the sled's radial position and its clocking about
+// the tube axis are fixed by the 2 rods' own (X,Z) positions once
+// threaded/slid on -- geometric, not frictional, the one property the
+// retired design already had right.
+//
+// FASTENER ACCESS ROUTE: this is now a BENCH-BUILT CARTRIDGE, not
+// assembled inside the tube. On the bench: thread both rods into
+// R60_EBayFwdBulkhead()'s own inserts (fixed, permanent -- the same
+// ruthex convention used everywhere else in this file); slide
+// R60_VegaSled() onto the two rods until it hard-stops against the
+// forward bulkhead's own boss face; thread the aft nut+washer onto each
+// rod against the rail's own aft face, capturing the sled. Insert the
+// WHOLE cartridge (both bulkheads + sled, now one rigid unit) into the
+// tube forward-bulkhead-first; glue the forward bulkhead at its station;
+// the aft bulkhead seats last, its 2 blind pockets (below) simply
+// receiving the rods' free aft tips as it seats. No tool ever turns a
+// fastener 150mm down a blind tube -- every rod/nut is manipulated in
+// open bench space. R60-PrintSettings.md's assembly order is updated to
+// match.
+R60_Vega_Wall_Clear   = 0.4;
+
+// Rail geometry (7th review, finding 1/2). CONSTANT 6.6x6.6mm cross-
+// section (rod clearance + 2x a real R60_Wall_T print wall, both X and
+// Z -- same stated-minimum-wall idiom as every other boss in this file)
+// along the rail's ENTIRE length, so there is no axial position along
+// the rod's own path where the hole does not exist.
+R60_Vega_Rail_d        = 3.4;    // M3 rod clearance, matching every other
+                                    // M3 clearance hole in this file
+R60_Vega_Rail_WZ = R60_Vega_Rail_d + 2*R60_Wall_T;   // 6.6 (both X and Z)
+// Rail X position: OUTBOARD of the board's own mounting holes
+// (R60_Vega_Holes' own +-13.5mm), not merely clear of the board's
+// printed footprint -- the board sits well above the rail in Z
+// (standoffs start at Sled_T=4, the rail tops out at 6.6, so the two
+// never collide there regardless), but the rail's own rod-clearance hole
+// and a standoff's own board-screw hole are two DIFFERENT holes that
+// must not merge into one ragged void. R60_Vega_Rail_HoleWall is that
+// spacing -- deliberately smaller than R60_Wall_T: it is internal
+// hardware-to-hardware clearance between two hand-driven M3 fasteners,
+// neither of which loads across this specific gap, not the airframe's
+// own pressure-boundary wall convention.
+R60_Vega_Rail_HoleWall = 1.0;
+R60_Vega_Rail_X = abs(R60_Vega_Holes[0][0]) + R60_Vega_BoardHole_d/2
+                  + R60_Vega_Rail_HoleWall + R60_Vega_Rail_d/2;   // ~17.9
+// Sled plate width -- DERIVED from the rail's own footprint (rail's
+// outer edge + a real R60_Wall_T print wall to the plate's own edge),
+// not the board's width plus a free constant the way it used to be: the
+// rail has to physically fit on the plate, so the plate is sized around
+// it, the same "derive the boss from what it hosts, not the other way
+// around" rule finding 3.1 (6th review) already established for the
+// door boss.
+R60_Vega_Sled_W = 2*(R60_Vega_Rail_X + R60_Vega_Rail_WZ/2 + R60_Wall_T);   // ~45.6
+
 // Radial position: closed-form, the DEEPEST the plate's own flat back can
 // sit while its two long back corners (+-Sled_W/2, Facing_Y) still clear
 // the tube ID by a stated print clearance -- i.e. as close to the -Y wall
 // (opposite the door/switch, both +Y) as the plate's own width allows,
-// same 0.4mm clearance convention as R60_Coupler_OD. Replaces the old
-// R60_Vega_Facing_Y_Nom, which had no closed form at all (it fell out of
-// the now-deleted Rail_HalfAng solve) and was only ever a restated
-// measurement of geometry that turns out not to work.
-R60_Vega_Wall_Clear   = 0.4;
+// same 0.4mm clearance convention as R60_Coupler_OD. Formula unchanged
+// from the 6th-review fix; only its input (Sled_W, above) moved.
 R60_Vega_Facing_Y_Nom = -sqrt(pow(R60_Body_ID/2 - R60_Vega_Wall_Clear, 2)
-                               - pow(R60_Vega_Sled_W/2, 2));   // ~-17.32
+                               - pow(R60_Vega_Sled_W/2, 2));   // ~-16.25
 
-// Mounting feet, both ends -- see R60_VegaSled()'s own module comment for
-// the full derivation. Defined BEFORE the axial window below because the
-// window's own forward edge has to account for R60_VegaFoot_FwdBossExtra
+// Forward rod anchor -- see R60_VegaSled()'s own module comment for the
+// full derivation. Defined BEFORE the axial window below because the
+// window's own forward edge has to account for R60_Vega_RodBoss_FwdExtra
 // (see that constant's own comment) -- OpenSCAD does not forward-
 // reference top-level assignments (confirmed empirically), so anything
 // the window formula reads must already be defined above it.
-R60_Vega_Foot_Clear   = 0.2;    // small assembly gap, each end, between
-                                  // the foot's own tip and the bulkhead's
-                                  // mounting face -- the screw draws it
-                                  // flush, not a print fit relying on
-                                  // being dead-on
-R60_VegaFoot_HoleX    = 14;      // M3 hole X offset, symmetric -- clear of
-                                  // the aft bulkhead's servo-1 pocket (max
-                                  // reach x=6.1,y=6.2), horn slot (max
-                                  // reach x=12) and both bulkheads' own
-                                  // OD/central bore, confirmed on the
-                                  // rendered mesh (verify_rocket60.py)
-R60_VegaFoot_Hole_d   = 3.4;     // M3 clearance, matching R60_Vega_Holes'
-R60_VegaFoot_Insert_d = 4.0;     // ruthex RX-M3x5.7 hole per datasheet --
+R60_Vega_Rail_FwdClear = 0.2;    // small assembly gap between the rail's
+                                    // own forward tip and the bulkhead's
+                                    // mounting face -- the rod/nut draws
+                                    // it flush, not a print fit relying
+                                    // on being dead-on
+// Aft-end clearance is NOT the same small print-tolerance gap: unlike
+// the retired screw-head design, real hardware (a nut + washer, ~3-4mm
+// stack) sits AT the rail's own aft face, and it has to physically fit
+// in the space before the aft bulkhead's own e-bay-facing surface, not
+// just clear a manufacturing tolerance. Stated, not derived from the
+// hardware's own dimensions (no datasheet for a generic M3 nut+washer is
+// worth citing) -- comfortably covers a nut (~2.4mm) + washer (~0.5mm) +
+// turning clearance for a driver/pliers.
+R60_Vega_Rail_AftClear = 5.0;
+R60_Vega_RodInsert_d = 4.0;      // ruthex RX-M3x5.7 hole per datasheet --
                                   // same physical part/hole size as
                                   // R60_TetherInsert_d and
                                   // R60_MotorRetainer()'s own Insert_d,
                                   // restated (that constant is defined
                                   // AFTER this point in the file)
-R60_VegaFoot_Insert_h = 6.7;     // same ruthex convention (datasheet:
+R60_Vega_RodInsert_h = 6.7;      // same ruthex convention (datasheet:
                                   // insert length 5.7 + 1mm), matches
                                   // R60_MotorRetainer()'s Insert_h
-R60_VegaFoot_Insert_Backing = 1.0;   // solid material left BEHIND the
+R60_Vega_RodInsert_Backing = 1.0;    // solid material left BEHIND the
                                        // insert's own floor, same
                                        // convention as R60_EBayTube()'s
                                        // door-boss backing
-R60_VegaFoot_Boss_d   = 8;       // >= insert hole + 2x1.6mm min wall, same
+R60_Vega_RodBoss_d   = 8;        // >= insert hole + 2x1.6mm min wall, same
                                   // convention as every other ruthex boss
                                   // in this file
 // R60_EBayFwdBulkhead()'s own disc is only R60_FwdBulk_T=6mm -- shorter
 // than the insert's 6.7mm depth -- so that module grows a LOCAL boss
-// AFT-ward (into the e-bay, past its own z=0 face) at each insert. That
-// boss is real, solid, PRINTED material sitting exactly where the sled's
-// forward foot needs to travel to reach the plain disc face -- caught on
-// the rendered assembly (tools/verify_rocket60_assembly.py Pair 24:
-// 0.0937cm3, first version of this fix, before R60_Vega_Window_Z1 below
-// accounted for it) as a real interference, not a hypothetical one: the
-// foot's own Foot_Clear was measured against the WRONG surface (the
-// plain disc's face, z=R60_Vega_Window_Z1 before this fix) when the
-// ACTUAL nearest solid material is the boss's own outer face,
-// R60_VegaFoot_FwdBossExtra closer. Shared here (not local to
-// R60_EBayFwdBulkhead()) so the window computation below and the boss
-// that creates the constraint can never drift out of sync again.
-R60_VegaFoot_FwdBossExtra = R60_VegaFoot_Insert_h + R60_VegaFoot_Insert_Backing
+// AFT-ward (into the e-bay, past its own z=0 face) at each insert, same
+// as the retired foot design's own boss (this is the ONE piece of that
+// design reused as-is -- the boss/insert stack itself was never the
+// defect, only how the sled's own hole reached it).
+R60_Vega_RodBoss_FwdExtra = R60_Vega_RodInsert_h + R60_Vega_RodInsert_Backing
                              - R60_FwdBulk_T;   // ~1.7
 
 // Forward bulkhead's own TRUE placement in the tube frame -- its plain
-// disc's own z=0 (e-bay-facing) face, UNCHANGED by the foot boss (the
+// disc's own z=0 (e-bay-facing) face, UNCHANGED by the rod boss (the
 // boss reaches FORWARD of this face, into the e-bay, from local
-// z=-R60_VegaFoot_FwdBossExtra to 0 -- see R60_EBayFwdBulkhead()'s own
+// z=-R60_Vega_RodBoss_FwdExtra to 0 -- see R60_EBayFwdBulkhead()'s own
 // module comment). Matches r60_assembly.scad's Pair 1 transform
 // (R60_EBay_L-R60_Neck_Skirt_L-R60_FwdBulk_T) -- restated here as a named
 // constant, not a second inline expression, specifically so
 // R60_Vega_Window_Z1 (below) and the module's own placement can never
-// silently diverge on what "the forward bulkhead's face" means (6th
-// review, finding 1: a first version of this fix conflated the two --
-// TRANSLATING THE WHOLE BULKHEAD MODULE to the boss-tip position instead
-// of just deriving the sled's usable window from it -- which physically
-// moved the disc itself 1.7mm out of its real assembled position and,
-// because the boss is built RELATIVE to that moved disc, left the exact
-// same 0.0937cm3 collision the fix was meant to remove, confirmed on the
-// rendered assembly, tools/verify_rocket60_assembly.py pair 24, before
-// this was corrected).
+// silently diverge on what "the forward bulkhead's face" means.
 R60_FwdBulkhead_TubeZ0 = R60_EBay_L - R60_Neck_Skirt_L - R60_FwdBulk_T;
 
 // Axial window the sled now spans, end to end: the aft bulkhead's own
 // e-bay-facing face (tube z=R60_AftBulk_T -- R60_EBayAftBulkhead()'s own
 // z=0, the "pocket-opening" face, see that module's comment) to the
-// forward bulkhead's own foot-BOSS face (R60_FwdBulkhead_TubeZ0 minus
-// R60_VegaFoot_FwdBossExtra -- R60_EBayFwdBulkhead()'s own boss tip, the
-// NEAREST solid material the sled's forward foot can actually reach, not
+// forward bulkhead's own rod-BOSS face (R60_FwdBulkhead_TubeZ0 minus
+// R60_Vega_RodBoss_FwdExtra -- R60_EBayFwdBulkhead()'s own boss tip, the
+// NEAREST solid material the rail's forward tip can actually reach, not
 // the disc's own plain face behind it). Grows/shrinks automatically with
 // R60_EBay_L or either bulkhead's thickness instead of the sled silently
 // falling short (or overlapping) the next time either changes.
 R60_Vega_Window_Z0 = R60_AftBulk_T;
-R60_Vega_Window_Z1 = R60_FwdBulkhead_TubeZ0 - R60_VegaFoot_FwdBossExtra;
+R60_Vega_Window_Z1 = R60_FwdBulkhead_TubeZ0 - R60_Vega_RodBoss_FwdExtra;
 // Sled's own axial centre once assembled -- the window's midpoint, NOT
 // R60_EBay_L/2 (the window is not centred on the tube: the aft bulkhead
 // alone is 12mm, the forward bulkhead + neck skirt together are 25mm).
+// The board-carrying middle plate stays centred here; the rail (below)
+// extends different amounts fwd/aft of it since the two end clearances
+// now differ (Rail_FwdClear vs the much larger Rail_AftClear).
 R60_Vega_AxialCenter = (R60_Vega_Window_Z0 + R60_Vega_Window_Z1) / 2;
-// Foot pad's own local depth (Z, =radial once assembled) and width (X)
-// around each hole -- derived from a stated minimum wall beyond the
-// hole's own edge (R60_Wall_T, matching R60_TetherLatch()'s
-// Mount_Wall_Min/R60_SpringCarrier()'s Ball_Wall_Min convention), not a
-// hand-picked pad size. The plain plate's own T=4mm alone would leave
-// only (4-3.4)/2=0.3mm of wall around a Z-bored M3 hole -- the same
-// "boss sized to the OD constraint, never checked against the hole it
-// hosts" defect class as finding 3.1's door boss.
-R60_VegaFoot_PadZ = R60_VegaFoot_Hole_d + 2*R60_Wall_T;   // 6.6
-R60_VegaFoot_PadX = 2*(R60_VegaFoot_HoleX + R60_VegaFoot_Hole_d/2
-                        + R60_Wall_T);                     // ~34.6
-// Hole's own Y (radial), both local (R60_VegaSled()'s own frame, Z=0 at
-// the plate's base) and global (tube frame, once assembled) -- shared so
-// R60_EBayAftBulkhead()/R60_EBayFwdBulkhead() drill their insert holes at
-// the IDENTICAL position the sled's own holes land at, not a
-// independently-typed match.
-R60_VegaFoot_HoleZ_Local = R60_VegaFoot_PadZ / 2;
-R60_VegaFoot_HoleY = R60_Vega_Facing_Y_Nom + R60_VegaFoot_HoleZ_Local;
+// Rail's own local Z centre (=radial once assembled) for its hole, both
+// local (R60_VegaSled()'s own frame, Z=0 at the plate's base) and global
+// (tube frame) -- shared so R60_EBayAftBulkhead()/R60_EBayFwdBulkhead()
+// drill their own insert/pocket holes at the IDENTICAL position the
+// rail's own hole lands at, not an independently-typed match.
+R60_Vega_Rail_Z_Local = R60_Vega_Rail_WZ / 2;
+R60_Vega_Rail_Y = R60_Vega_Facing_Y_Nom + R60_Vega_Rail_Z_Local;
+
+// Aft bulkhead's blind rod-guide pockets (7th review): NOT threaded, NOT
+// a full pass-through -- the rod's own forward end is already fixed
+// (threaded into the forward bulkhead's insert above), so this end only
+// needs to LOCATE the rod's free aft tip, giving it a second support
+// point so a ~150mm M3 rod, cantilevered off one end with a sled+board
+// hanging on it, is not relying on that one fixed end alone against
+// handling/vibration. Bored from the aft bulkhead's own e-bay-facing
+// (z=0) face, well short of its own T=12mm disc thickness -- the skirt
+// beyond z=12 is busy (shear pins at z=20, shaft bore, horn slot, cord
+// holes, spring-carrier glue face) and this pocket has no business
+// reaching any of it.
+R60_Vega_RodPocket_Depth = 8.0;
+
+// Rail length (7th review): the FULL axial reach, both ends together --
+// matches the retired design's own "L+2*Foot_L=window, minus 2 clearance
+// gaps" shape, just with the two clearances now independently stated
+// (Rail_FwdClear at the hard stop, the much larger Rail_AftClear for the
+// nut/washer stack) rather than one shared "Foot_Clear". Individual
+// fwd/aft reach past the board-carrying plate's own +-L/2 is computed in
+// R60_VegaSled() itself (it already knows its own L there).
+R60_Vega_Rail_L = R60_Vega_Window_Z1 - R60_Vega_Window_Z0
+                  - R60_Vega_Rail_FwdClear - R60_Vega_Rail_AftClear;
 
 // Vega board worst-case radial reach into the e-bay bore, installed (5th
 // review, finding 2). NOMINAL closed form of the SAME quantity
@@ -290,9 +355,13 @@ R60_VegaFoot_HoleY = R60_Vega_Facing_Y_Nom + R60_VegaFoot_HoleZ_Local;
 // boss's inner tip reached r=25 -- inside this corner's own ~25.7mm --
 // and the assembly harness's own Pair 3 only ever modelled the sled,
 // never the board sitting on top of it, so nothing caught it.
+// 7th review: Facing_Y_Nom moved (-17.32 -> ~-16.25, Sled_W grew to fit
+// the rail) so the two downstream figures below moved with it -- both
+// re-derive automatically, restated here only as fresh comments, not
+// second copies anything reads.
 R60_Vega_Board_Stack    = R60_Vega_Sled_T + R60_Vega_Standoff_h + R60_Vega_H;   // 29
-R60_Vega_Board_Inner_Y  = R60_Vega_Facing_Y_Nom + R60_Vega_Board_Stack;         // ~11.68
-R60_Vega_Board_Corner_R = sqrt(pow(R60_Vega_W/2, 2) + pow(R60_Vega_Board_Inner_Y, 2)); // ~20.22
+R60_Vega_Board_Inner_Y  = R60_Vega_Facing_Y_Nom + R60_Vega_Board_Stack;         // ~12.75
+R60_Vega_Board_Corner_R = sqrt(pow(R60_Vega_W/2, 2) + pow(R60_Vega_Board_Inner_Y, 2)); // ~20.85
 
 // ============================================
 // MOTOR

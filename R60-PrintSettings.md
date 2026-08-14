@@ -45,11 +45,11 @@ tether latch this section used to say had "no STL":
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins were
 originally sized for a 1.5 cal static-margin target at liftoff, but a
 full station audit (coordinator override, 4th review) found the TRUE
-margin is **1.45 cal**, not the 1.53 cal (itself already a correction of
+margin is **1.47 cal**, not the 1.53 cal (itself already a correction of
 an inflated 1.61 cal) previously published here. The 1.5 cal figure was
 never a physical requirement — it was retired as the gate and replaced
 with the actual physical minimum, **1.0 cal** (standard high-power
-practice's accepted 1.0–2.0 cal band); 1.45 cal clears that with real
+practice's accepted 1.0–2.0 cal band); 1.47 cal clears that with real
 room and is accepted, not merely tolerated. See spec §6.1 for the full
 reasoning and station-audit table. Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
@@ -240,9 +240,9 @@ Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 usable at this mass**; at this length a 3 mm rod would whip badly and rail
 exit would be unstable (spec §9).
 
-At the as-built liftoff mass (871 g on the G80T, from
+At the as-built liftoff mass (874 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
-note) the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably clear of
+note) the rocket leaves a 1.5 m rail at **18.8 m/s**, comfortably clear of
 the ~15 m/s minimum needed for the fins to stabilize the vehicle (spec
 §5, §6) despite the fin-span growth. The H182R is unaffected (27.9 m/s off
 1.5 m). A 1.5 m rail is adequate for the G80T; confirm actual rail exit
@@ -276,41 +276,49 @@ Build order for what exists today:
    above) before anything else.
 2. Mount the CATS Vega on `06_VegaSled.stl` on M3 standoffs — antenna side
    faces **radially outward**, nothing between it and the airframe wall
-   (spec §7.1). The sled itself bolts to both e-bay bulkheads (6th
-   review, finding 1 — retired the rail/zip-tie scheme, which failed
-   three review rounds running), 2× M3 into ruthex inserts per end, so
-   its own installation is now part of step 5 below, not a separate
-   in-tube slide.
-3. Install both MG90S servos in `05_EBayAftBulkhead.stl`'s upright
+   (spec §7.1).
+3. Build the forward e-bay cartridge on the BENCH, not inside the tube
+   (7th review, finding 1/2 — retired the 6th review's bolted feet, which
+   could not physically be inserted once seated in the tube; see spec
+   §7.2). Thread two M3 rods into `04_EBayFwdBulkhead.stl`'s own inserts
+   (fixed, permanent). Slide `06_VegaSled.stl` onto the two rods —
+   antenna side still radially outward — until it hard-stops against the
+   forward bulkhead's own boss face. Thread a nut+washer onto each rod's
+   free end, against the sled's own rail face, drawing the sled snug
+   against the forward bulkhead. Check the antenna orientation now — it
+   cannot be corrected once the aft bulkhead closes the assembly in step
+   6. Every fastener here is turned in open bench air; none is reached
+   down a blind tube.
+4. Install both MG90S servos in `05_EBayAftBulkhead.stl`'s upright
    pockets, shafts along the rocket axis (spec §3.2). Screw
    `13_TetherLatch.stl` to the bulkhead's aft face (2× M3 into ruthex
    inserts) so servo 2's horn can reach it.
-4. Anchor the shock cord to the aft bulkhead. Do this before closing the
+5. Anchor the shock cord to the aft bulkhead. Do this before closing the
    e-bay — it is not accessible afterward.
-5. Assemble the e-bay inside `02_EBayTube.stl`: seat `05_EBayAftBulkhead.
-   stl` at the aft opening and bolt the Vega sled's aft foot to it (2× M3
-   into ruthex inserts, reachable from the tube's still-open forward
-   end); feed the sled's forward foot up to `04_EBayFwdBulkhead.stl`'s
-   own boss and bolt that end too, then seat the forward bulkhead. Both
-   the sled's radial position and its clocking (antenna outward) are
-   fixed by these 4 holes, not by resting against anything — check the
-   antenna orientation before driving the last screw, it cannot be
-   corrected once both ends are bolted. Route the camera harness down
-   through the neck's open centre into the e-bay (spec §3.1 invariant 2:
-   no wire crosses the separation joint).
-6. Bolt `01_Neck.stl` to the camera assembly with 3× M3×10 SHCS into the
+6. Assemble the e-bay inside `02_EBayTube.stl`: insert the forward
+   cartridge (step 3) forward-bulkhead-first and glue that bulkhead at
+   its station; route the camera harness down through the neck's open
+   centre into the e-bay (spec §3.1 invariant 2: no wire crosses the
+   separation joint) before it is buried. Seat `05_EBayAftBulkhead.stl`
+   last, at the aft opening, its own two rod holes threading over the
+   cartridge's free rod ends as it seats — a blind guide pocket in this
+   bulkhead's own face receives each rod's tip; no fastener is needed
+   there, it only locates the rod against side-load. Both the sled's
+   radial position and its clocking (antenna outward) were already fixed
+   in step 3, by the two rods, not by anything in this step.
+7. Bolt `01_Neck.stl` to the camera assembly with 3× M3×10 SHCS into the
    heat-set inserts (5.0 mm grip, 5.0 mm thread engagement — does not
    bottom out, spec §2.1), then to the nosecone base and e-bay tube.
-7. Fit `07_AccessDoor.stl` with the external arming switch — reachable
+8. Fit `07_AccessDoor.stl` with the external arming switch — reachable
    with the rocket vertical on the rail (spec §7.1). The door is a cover
    that overlaps the tube's opening on every side; 4× M2.5 into the
    tube's own bosses, not a flush plug.
-8. Glue `08_SpringCarrier.stl`'s forward rim to `05_EBayAftBulkhead.stl`'s
+9. Glue `08_SpringCarrier.stl`'s forward rim to `05_EBayAftBulkhead.stl`'s
    aft skirt (same OD, flush joint) — this closes the e-bay's pressure
    boundary and gives the (separately-sourced) ball-lock plunger/lock ring
    somewhere to seat. **The carrier alone does not make a working release
    — see Status.**
-9. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
+10. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
    `11_MotorRetainer.stl` to the fin can aft end (3× M3 into ruthex
    inserts). Glue `14_ThrustRing.stl` into the MMT's forward opening,
    flush with the fin can's own forward tip — do this before the next
@@ -318,7 +326,7 @@ Build order for what exists today:
    Nothing else reacts the motor's forward thrust: the aft retainer
    only resists motion out the back. Install `12_MotorSpacer.stl` for
    the G80T (re-export for `Motor_Class=1`/`2` for the H182R/H135W).
-10. Slide `03_ChuteBayTube.stl` forward over `05_EBayAftBulkhead.stl`'s
+11. Slide `03_ChuteBayTube.stl` forward over `05_EBayAftBulkhead.stl`'s
     aft skirt until the two shear-pin holes line up, and drive in the 2
     nylon 2-56 pins — this is the joint the ejection-charge backup shears
     (spec §4.2). Do not glue it; it must stay serviceable. Tie the tether
@@ -327,6 +335,34 @@ Build order for what exists today:
     forward end — its own aft end carries a Ø56.4 spigot that inserts
     into the fin can's forward opening, so this is a located, concentric
     joint, not a bare butt bond.
+
+---
+
+## 6.1 Servicing the Vega board after final assembly
+
+Stated explicitly (7th review) rather than left implicit: once the neck
+is glued on (step 7) and the e-bay is closed, the ONLY opening into the
+e-bay is the access door aperture (85 mm tall × 36 mm wide, tube
+z=46–131). The Vega board itself is 100 mm long — it does not fit
+through that aperture as a rigid rectangle, and neither the forward
+bulkhead's own 22 mm centre bore nor the aft bulkhead's own small
+functional holes are anywhere near large enough for it either, so full
+board extraction genuinely has no route that does not also break the
+glued neck joint. That is a real, stated limitation, not a solved one.
+
+What IS serviceable without breaking anything: the board's own 3× M3
+mounting screws (into `06_VegaSled.stl`'s standoffs) land at tube
+z≈46.2 and z≈106.2 — the first is right at the door aperture's own lower
+edge, reachable but tight; the second is well inside it. Reach a
+screwdriver through the door, back both screws out, and the board comes
+free of the sled (the sled itself stays on its rods — it is not part of
+this step). A 100 mm board will not pull straight out through an 85 mm
+opening, but a thin PCB can be walked out diagonally, tilted along its
+own length, using the open e-bay bore behind the door for clearance —
+standard practice for a long board through a short door. The sled itself
+(and, with it, full removal of the rod/nut hardware) is not designed to
+be extracted after the neck is glued — treat a sled failure as requiring
+that joint to be broken, not as a routine service case.
 
 ---
 
@@ -392,14 +428,14 @@ Copied from spec §11, with one adaptation flagged below.
    tether servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
 6. **Weigh the fully assembled rocket and compare against
-   `tools/rocket60_model.py`'s own liftoff-mass figure (871 g, G80T
+   `tools/rocket60_model.py`'s own liftoff-mass figure (874 g, G80T
    config) before committing to a rail length.** Rail exit is what mass
-   actually threatens on this rocket (18.9 m/s off a 1.5 m rail against a
+   actually threatens on this rocket (18.8 m/s off a 1.5 m rail against a
    ~15 m/s minimum, spec §6.1) — NOT stability, which now clears its own
    1.0 cal minimum with real room (spec §6.1). Roughly 269 g of the
-   modelled 871 g (31%) is flat-gram hardware ESTIMATES, not measured
+   modelled 874 g (31%) is flat-gram hardware ESTIMATES, not measured
    mesh volumes, so the real liftoff mass could differ meaningfully from
-   871 g:
+   874 g:
    - camera assembly (60 g), 2× MG90S servos (27 g, datasheet),
      parachute+cord+hardware (70 g), battery+wiring (45 g), CATS Vega
      board (25 g — its sled IS a measured mesh volume, the board itself
@@ -412,7 +448,7 @@ Copied from spec §11, with one adaptation flagged below.
      stated, unverified assumption applied across every PETG part alike,
      not per-part infill actually measured off a scale (§3's own
      infill % differs 25–62% per part).
-   - If the weighed rocket comes in meaningfully over 871 g, re-check
+   - If the weighed rocket comes in meaningfully over 874 g, re-check
      rail exit against the ~15 m/s minimum before flying — a shorter or
      lower-thrust rail exit is the actual failure mode a heavier-than-
      modelled rocket produces, not a stability problem.
@@ -456,21 +492,21 @@ only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
 `(exposed span/D)²`) originally targeting 1.5 cal on the G80T. A full station audit
 (coordinator override, 4th review, spec §6) found the TRUE margin is
-**1.45 cal**, not the 1.53 cal previously
+**1.47 cal**, not the 1.53 cal previously
 published here (itself already a correction of an inflated 1.61 cal).
 The 1.5 cal target was retired rather than chased with further span
 growth (spec §6.1): it was never a physical requirement, only this
-project's own earlier comfort target, and buying back 0.05 cal would
-cost mass on the exact G80T flight where rail exit, not stability, is
-the binding constraint. The gate is now the real physical minimum,
-**1.0 cal**, and 1.45 cal clears it with genuine room. H182R-14A gives 1.27 cal and H135W-14A gives 1.28 cal on the
+project's own earlier comfort target, and buying back the remaining
+margin would cost mass on the exact G80T flight where rail exit, not
+stability, is the binding constraint. The gate is now the real physical
+minimum, **1.0 cal**, and 1.47 cal clears it with genuine room. H182R-14A gives 1.28 cal and H135W-14A gives 1.29 cal on the
 same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from
 the fins growing (959 m/s vs. the original claim of ~850 m/s against the
 WRONG, buried-root geometry) but stays 1.53× the required 3× floor against
-the fastest motor (H182R-14A, 210 m/s Vmax → 629 m/s floor). Rail exit on
-the G80T on a 1.5 m rail is 18.9 m/s, still comfortably above the ~15 m/s
+the fastest motor (H182R-14A, 209 m/s Vmax → 627 m/s floor). Rail exit on
+the G80T on a 1.5 m rail is 18.8 m/s, still comfortably above the ~15 m/s
 minimum despite the added fin mass (+4.7g/fin, +14.0g total) and the mass
 corrections in §9's own history. See `tools/rocket60_model.py`'s own
 output for the full sweep and the rejected alternatives (growing root

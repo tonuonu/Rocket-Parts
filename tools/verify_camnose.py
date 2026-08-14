@@ -9,7 +9,7 @@ the lens face it gives the camera's maximum radius from the lens axis.
 """
 import math, os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume
+from scad_verify import REPO, render, measure, bore, volume, overshoot
 
 SCAD = os.path.join(REPO, "PeregrineCamNose.scad")
 
@@ -119,10 +119,14 @@ def main(argv):
     # (min(height,250.0) always exactly equals the measured height
     # whenever it fits, printing a self-comparing "115.00 expected
     # 115.00" instead of the real constraint, height<=250). 0 for
-    # anything that fits, the actual excess in mm otherwise.
+    # anything that fits, the actual excess in mm otherwise. overshoot()
+    # (scad_verify) instead of a bare max(0.0, ...): a nan height (a
+    # degenerate, zero-triangle mesh, measure()'s own convention) must
+    # fail this loudly, not silently compare as a 0mm overshoot -- see
+    # that helper's own docstring.
     for p in m:
         checks += [("part %d fits 250mm Z" % p,
-                    max(0.0, m[p]["height"] - 250.0), 0.0, 0.01)]
+                    overshoot(m[p]["height"], 250.0), 0.0, 0.01)]
     # A missing genus (render succeeded but no "Genus:" line was found)
     # used to be silently dropped by `and g is not None` -- the check just
     # never ran, rather than failing loudly. Emit nan instead: it never

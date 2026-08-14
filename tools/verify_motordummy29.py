@@ -7,14 +7,16 @@ ballast masses the ground test literally depends on -- a wrong Shell_g (a
 bad density assumption, a cavity math slip) would silently mis-load every
 swing/separation test run against it, with nothing to catch it. Follows
 the SAME render/measure/genus/build-volume conventions as
-verify_rocket60.py/verify_nosecone.py/verify_camnose.py, but cannot reuse
-scad_verify.render() directly: that function hardcodes `-D Render_Part=N`,
-while MotorDummy29.scad's own selector is `-D Motor_Class=N` (see this
-file's own render() below).
+verify_rocket60.py/verify_nosecone.py/verify_camnose.py, and now reuses
+scad_verify.render() itself (that function's own `-D <var>=` selector
+defaults to "Render_Part", but takes an override -- MotorDummy29.scad's
+own selector is `-D Motor_Class=N`, so this file calls
+render(SCAD, part, out, var="Motor_Class")) instead of maintaining a
+second, hardcoded copy of the subprocess/OpenSCAD-path plumbing.
 """
 import os, re, subprocess, sys, tempfile
 
-from scad_verify import REPO, tris, measure, components, volume
+from scad_verify import REPO, render, measure, components, volume, overshoot
 
 SCAD = os.path.join(REPO, "MotorDummy29.scad")
 
@@ -36,24 +38,20 @@ END_T = 3.0
 MMT_ID_EXPECT = 29.3   # R60Lib.scad's R60_MMT_ID = 29.0+0.3
 
 
-def render(part, out):
-    """Render Motor_Class=`part` to `out`. Returns the OpenSCAD-reported
-    genus, or None -- same contract as scad_verify.render(), just with
-    this file's own `-D Motor_Class=` selector instead of `Render_Part`."""
-    env = dict(os.environ, OPENSCADPATH=REPO)
-    r = subprocess.run(
-        [ "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
-          "--export-format", "asciistl", "-o", out,
-          "-D", "Motor_Class=%d" % part, SCAD],
-        capture_output=True, text=True, env=env, timeout=900)
-    err = r.stdout + r.stderr
-    if (r.returncode != 0 or "ERROR:" in err.upper()
-            or "Can't find include file" in err
-            or "Ignoring unknown module" in err
-            or not os.path.exists(out) or os.path.getsize(out) < 200):
-        raise RuntimeError("render of Motor_Class %d failed:\n%s"
-                            % (part, err[-2000:]))
-    g = re.search(r"Genus:\s*(-?\d+)", err)
+def render_with_echo(part, out):
+    """Render Motor_Class=`part` to `out` via the shared scad_verify.render()
+    (var="Motor_Class", MotorDummy29.scad's own dispatch variable), and
+    also scrape MotorDummy29.scad's echoed ballast-mass lines out of the
+    same render's console output (return_log=True) -- an independent
+    second render just to capture output render() already produced would
+    be a needless doubling of an OpenSCAD invocation this file's own
+    900s-timeout comment (see scad_verify.render()) already flags as
+    expensive.
+
+    Returns (genus, echoed) -- genus per scad_verify.render()'s own
+    contract (None if no "Genus:" line was found), echoed a dict of the
+    parsed masses (None per key if that echo line was not found)."""
+    genus, err = render(SCAD, part, out, var="Motor_Class", return_log=True)
     # Targeted per-line patterns, not a generic "key: first number" scan
     # (MotorDummy29.scad's own "shell (100% fill): X cm3 = Y g" line has
     # the mass we actually want to cross-check, Y, AFTER the "=", not the
@@ -66,7 +64,7 @@ def render(part, out):
             ("ballast_burnout_g", r"BALLAST, burnout\s*:\s*([-0-9.]+)\s*g")):
         mo = re.search(pattern, err)
         echoed[key] = float(mo.group(1)) if mo else None
-    return (int(g.group(1)) if g else None), echoed
+    return genus, echoed
 
 
 def checks(m, echoed):
@@ -93,22 +91,34 @@ def checks(m, echoed):
         # Fits the SAME MMT the real motor does (MMT_ID_EXPECT, R60Lib.
         # scad's own R60_MMT_ID) -- a REAL clearance check against the
         # rendered OD, not (MMT_ID_EXPECT-body_od) compared to itself,
-        # which could never fail regardless of what body_od is. Positive
-        # (a genuine slip fit, no interference) and no more than 1.0mm
-        # radial (0.5mm clearance is already deliberately loose --
-        # MotorDummy29.scad's own comment -- so a real regression would
-        # have to be gross before this is too tight to catch it).
-        clear = MMT_ID_EXPECT - a(p, "dmax")
+        # which could never fail regardless of what body_od is. clear is
+        # MMT_ID_EXPECT-dmax, a DIAMETER difference, so /2.0 to get the
+        # true RADIAL clearance the label promises (a diameter difference
+        # is twice the radial gap all the way round). Positive (a genuine
+        # slip fit, no interference) and no more than 0.15mm radial (0.25mm
+        # radial clearance is already deliberately loose -- MotorDummy29.
+        # scad's own comment -- so a real regression would have to be
+        # gross before this is too tight to catch it).
+        clear = (MMT_ID_EXPECT - a(p, "dmax")) / 2.0
         c += [("Motor_Class %d fits its own 29mm MMT (radial clearance)"
-               % p, clear, 0.5, 0.3)]
+               % p, clear, 0.25, 0.15)]
         # Genus 0 (one-end-open cup, not a sealed void) -- see
         # MotorDummy29.scad's own Cavity_L comment for the -1-vs-0
-        # history this cross-checks.
-        c += [("Motor_Class %d genus" % p, a(p, "genus"), 0, 0)]
+        # history this cross-checks. A missing genus (render() found no
+        # "Genus:" line) must be a loud FAIL (nan, never <= any
+        # tolerance), not a TypeError from comparing None -- same idiom
+        # verify_rocket60.py/verify_nosecone.py/verify_camnose.py use.
+        g = a(p, "genus")
+        c += [("Motor_Class %d genus" % p,
+               g if g is not None else float("nan"), 0, 0)]
         c += [("Motor_Class %d connected components" % p,
                components(a(p, "stl")), 1, 0)]
+        # overshoot() (scad_verify) instead of a bare max(0.0, ...): a nan
+        # height (a degenerate, zero-triangle mesh, measure()'s own
+        # convention) must fail this loudly, not silently compare as a
+        # 0mm overshoot -- see that helper's own docstring.
         c += [("Motor_Class %d fits 250mm Z" % p,
-               max(0.0, a(p, "height") - 250.0), 0.0, 0.01)]
+               overshoot(a(p, "height"), 250.0), 0.0, 0.01)]
 
         # Ballast math, cross-checked mesh-against-echo: the SHELL VOLUME
         # this file computes analytically from its own parameters must
@@ -169,7 +179,7 @@ def main(argv):
     for p in parts:
         out = os.path.join(tmp, "motor%d.stl" % p)
         try:
-            genus, echoed[p] = render(p, out)
+            genus, echoed[p] = render_with_echo(p, out)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
             print("FAIL  render Motor_Class %d (%s)\n%s"
                   % (p, NAMES.get(p, "?"), e))
