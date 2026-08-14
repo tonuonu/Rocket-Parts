@@ -20,9 +20,9 @@ still jam partway through assembly (exactly what defect 1 does: clear at
 the seated position, but the tether lug catches solid carrier material
 partway through the stroke and the rocket cannot be assembled at all).
 """
-import math, os, subprocess, sys, tempfile
+import os, subprocess, sys, tempfile
 
-from scad_verify import REPO, OPENSCAD, volume, tris
+from scad_verify import REPO, OPENSCAD, volume
 import verify_rocket60 as vr60
 
 SCAD = os.path.join(REPO, "tools", "r60_assembly.scad")
@@ -49,13 +49,36 @@ PAIRS = {
     9: "tether latch vs aft bulkhead",
     10: "thrust ring obstructs motor+spacer (forward trap)",
     11: "motor retainer obstructs motor (aft trap)",
+    # 4th review, harness item 2 (complete the pair matrix) -- see
+    # r60_assembly.scad's own pair-enumeration comment block for the full
+    # part-by-part table this was read off, including what was
+    # deliberately excluded and why.
+    12: "tether latch vs spring carrier",
+    13: "tether latch vs chute tube (stroke)",
+    14: "spring carrier vs aft bulkhead",
+    # Not part-vs-part -- a declared MOVING ELEMENT's required path
+    # (harness item 3) vs. the real part(s) around it.
+    15: "servo-2 horn/pin-release path vs tether latch",
+    16: "arming switch envelope vs access door",
 }
-STROKE_PAIRS = (5, 6)
+STROKE_PAIRS = (5, 6, 13)
 # Insertion stroke sweep -- 0 (first contact) through 80 (fully seated,
 # shear pins aligned -- see r60_assembly.scad's Pair 5/6 comment for the
-# derivation), fine enough (5mm steps, closing to 1mm near the transition
-# a first coarse pass finds) to catch a jam anywhere along the way.
-INS_COARSE = list(range(0, 81, 5))
+# derivation).
+#
+# 4th review, harness item 5: this used to be a fixed 5mm grid while the
+# comment here claimed a "closing to 1mm near the transition" refinement
+# pass that did not exist anywhere in this file -- a jam narrower than
+# 5mm, sitting entirely BETWEEN two clean coarse samples, would read a
+# clean pass at every one of them (finding 1, 3rd review, was exactly
+# this shape: clear at Ins=0 and at full seating, solid for most of the
+# middle of the stroke). A refine-near-hits scheme cannot fix this
+# either: there is no hit to refine around when both flanking coarse
+# samples are already clean. The only sweep that can actually promise
+# "nothing narrower than Xmm slips through" is one sampled AT Xmm
+# throughout -- so this is now a genuine, unconditional 1mm sweep (81
+# samples per stroke pair), not a coarse pass with a refinement step.
+INS_SWEEP = list(range(0, 81, 1))
 
 # Obstruction-proof pairs (defect 3, the missing forward thrust ring):
 # INVERTED polarity from every other pair here. Push=0 is the normal
@@ -72,7 +95,7 @@ OVERTRAVEL_MM = 2.0
 OBSTRUCT_MIN_CM3 = 0.01
 
 
-def render_probe(pair, ins, out, facing_y=None, push=0.0):
+def render_probe(pair, ins, out, facing_y=None, push=0.0, sw_z=None):
     """Render one assembly-probe pair to ASCII STL. Returns the measured
     intersection volume in cm3 -- 0.0 for a genuinely empty intersection
     (OpenSCAD's own "Current top level object is empty", the expected
@@ -89,6 +112,8 @@ def render_probe(pair, ins, out, facing_y=None, push=0.0):
         args += ["-D", "Facing_Y=%.4f" % facing_y]
     if pair in OBSTRUCTION_PAIRS:
         args += ["-D", "Push=%.3f" % push]
+    if pair == 16:
+        args += ["-D", "SwZ=%.4f" % sw_z]
     args += [SCAD]
     r = subprocess.run(args, capture_output=True, text=True, env=env,
                         timeout=900)
@@ -117,19 +142,57 @@ def measure_facing_y(tmp):
     return facing_y
 
 
+def measure_switch_z(tmp):
+    """Arming switch hole's own measured Z centre, off part 2's rendered
+    mesh -- reuses verify_rocket60.py's switch_hole_z() so Pair 16's
+    switch-envelope probe is derived from the SAME mesh measurement that
+    file's own arming-switch-Z check uses, not a second, independently-
+    typed number (rule 4), and specifically not the kind of restated-
+    formula drift (Sw_Z0 silently omitting R60_Door_Overlap) that caused
+    finding 3 in the first place."""
+    out = os.path.join(tmp, "ebaytube_for_switch_z.stl")
+    vr60.render(vr60.SCAD, 2, out)
+    return vr60.switch_hole_z(out)
+
+
 def main(argv):
     pairs = [int(x) for x in argv[1:]] or sorted(PAIRS)
     tmp = tempfile.mkdtemp(prefix="r60asm-")
-    facing_y = measure_facing_y(tmp) if 3 in pairs else None
-    if facing_y is not None:
-        print("measured Vega sled rail-contact Y = %.3fmm\n" % facing_y)
-
     bad = 0
+
+    # 4th review, harness item 6: measure_facing_y()/measure_switch_z()
+    # both call render() (scad_verify.py), which raises RuntimeError or
+    # subprocess.TimeoutExpired on a failed/slow render -- every OTHER
+    # render call in this file (render_probe(), below) is already guarded
+    # for exactly that; these two were not, so a failed part-2 render used
+    # to kill the WHOLE run with a raw traceback instead of a clean FAIL
+    # on just the pair(s) that needed the measurement. A failure here now
+    # drops only that pair from the run.
+    facing_y = None
+    if 3 in pairs:
+        try:
+            facing_y = measure_facing_y(tmp)
+            print("measured Vega sled rail-contact Y = %.3fmm\n" % facing_y)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  pair 3 setup (measure_facing_y): %s" % e)
+            bad += 1
+            pairs = [p for p in pairs if p != 3]
+
+    sw_z = None
+    if 16 in pairs:
+        try:
+            sw_z = measure_switch_z(tmp)
+            print("measured arming switch hole Z centre = %.3fmm\n" % sw_z)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  pair 16 setup (measure_switch_z): %s" % e)
+            bad += 1
+            pairs = [p for p in pairs if p != 16]
+
     for p in pairs:
         name = PAIRS.get(p, "?")
         if p in STROKE_PAIRS:
             worst = (0.0, None)
-            for ins in INS_COARSE:
+            for ins in INS_SWEEP:
                 out = os.path.join(tmp, "pair%d_ins%d.stl" % (p, ins))
                 try:
                     vol = render_probe(p, ins, out)
@@ -167,7 +230,7 @@ def main(argv):
         else:
             out = os.path.join(tmp, "pair%d.stl" % p)
             try:
-                vol = render_probe(p, None, out, facing_y=facing_y)
+                vol = render_probe(p, None, out, facing_y=facing_y, sw_z=sw_z)
             except (RuntimeError, subprocess.TimeoutExpired) as e:
                 print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
                 bad += 1

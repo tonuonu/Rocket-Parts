@@ -39,7 +39,16 @@ def render(scad, part, out):
     return int(g.group(1)) if g else None
 
 
-@functools.lru_cache(maxsize=None)
+# Bounded (4th review, should-fix 13): maxsize=None retained every parsed
+# mesh for the process lifetime -- unbounded growth over a run that renders
+# 15 parts x several checkers x (2nd/3rd/4th review re-renders). The actual
+# benefit this cache exists for is the 3-4 back-to-back calls checks() (or
+# an assembly-probe driver) makes on the SAME just-rendered path before
+# moving to the next part/pair -- a handful of live entries covers that;
+# nothing needs a stale part's mesh once the run has moved on to the next
+# one. 8 covers the widest realistic overlap (a pair render plus the 2-3
+# per-part meshes referenced alongside it) with headroom to spare.
+@functools.lru_cache(maxsize=8)
 def _tris_cached(stl, st_mtime_ns, st_size):
     """Actual STL parse, memoised on (path, mtime, size) -- see tris()
     below. Materialised as a tuple (not left as a generator) so the same
@@ -81,6 +90,62 @@ def tris(stl):
     miss, not a silent return of the first render's stale geometry."""
     st = os.stat(stl)
     return _tris_cached(stl, st.st_mtime_ns, st.st_size)
+
+
+def components(stl):
+    """Number of connected components in the mesh, by shared-vertex
+    adjacency (4th review, harden-the-harness item 1).
+
+    Genus is a topological invariant of a SINGLE connected solid -- it
+    cannot see a part that renders as two (or more) disjoint solids
+    sharing no material at all, because Euler characteristic is computed
+    the same way whether a part is "one stepped tube" or "a tube plus a
+    loose ring floating in its own bore": both are unions of simple
+    closed surfaces, and nothing about chi or genus counts HOW MANY of
+    them there are. This is exactly finding 1 (3rd->4th review): the
+    chute tube's fin-can spigot rendered as a second, disconnected
+    component entirely inside the tube's own bore, radius 26.6..28.2mm
+    against the tube's 28.4mm ID -- a 0.2mm gap with zero shared
+    geometry -- and every existing check (genus, bore(), measure())
+    passed, because none of them can see "how many pieces".
+
+    Union-find over vertex COORDINATES (rounded to 1e-4mm, well below
+    OpenSCAD's own STL-export precision, to merge floating-point-adjacent
+    copies of what is geometrically the same point): two triangles are in
+    the same component if they share any vertex position. A print that
+    left the slicer as two separate solids is not "connected" by any
+    weaker test that matters here -- the two pieces have no shared
+    material at their nearest approach, only proximity, so vertex-sharing
+    (not edge- or face-adjacency, which would give the identical answer
+    for a manifold mesh at strictly more bookkeeping) is the right and
+    sufficient test."""
+    parent = {}
+
+    def find(v):
+        root = v
+        while parent[root] != root:
+            root = parent[root]
+        while parent[v] != root:
+            parent[v], v = root, parent[v]
+        return root
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    def key(v):
+        return (round(v[0], 4), round(v[1], 4), round(v[2], 4))
+
+    for tri in tris(stl):
+        ks = [key(v) for v in tri]
+        for k in ks:
+            parent.setdefault(k, k)
+        union(ks[0], ks[1])
+        union(ks[1], ks[2])
+    if not parent:
+        return 0
+    return len(set(find(k) for k in parent))
 
 
 def measure(stl, genus=None):

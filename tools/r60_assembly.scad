@@ -112,12 +112,19 @@ module Pair3_B(){ R60_EBayTube(); }
 // Pair 4: access door (part 7) <-> e-bay tube (part 2).
 // R60_Door() is already built directly in the tube's own XY convention
 // (centred on the same axis, covering the same +Y aperture azimuth) --
-// no rotation needed. DOOR_Z_OFFSET=34.0 is verify_rocket60.py's own
-// literal for R60_Door()'s local z=0 (cover base) in the tube's frame
-// (Door_Z0 - R60_Door_Overlap = 40-6, following the 3rd review's
-// R60_EBay_L 160->165 growth), restated here for the same reason that
-// file restates it (rule 4).
-module Pair4_A(){ translate([0,0,34.0]) R60_Door(); }
+// no rotation needed. R60_Door()'s own local z=0 (cover base) lands in
+// the tube's frame at Door_Z0-R60_Door_Overlap, where Door_Z0 is
+// R60_EBayTube()'s own LOCAL aperture-bottom expression -- not a
+// top-level R60Lib.scad constant, so it cannot be referenced live the
+// way R60_EBay_L is in Pairs 0/1/3 above; computed here from the SAME
+// shared constants that module builds it from (this file's include<>
+// gives it live access to those), not a hand-restated literal that can
+// silently go stale the way verify_rocket60.py's own DOOR_Z_OFFSET did
+// across the R60_EBay_L 160->165->177 growths (see that file's rule-4
+// convention for why IT still restates -- a Python file has no `include`
+// to fall back on).
+Door_Z0_ = (R60_EBay_L - R60_Door_Open_H) / 2;
+module Pair4_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
 module Pair4_B(){ R60_EBayTube(); }
 
 // Pair 5: e-bay aft bulkhead's SKIRT (part 5) <-> chute tube (part 3),
@@ -241,6 +248,168 @@ module Pair11_B(){
     translate([0,0,Push-R60_Motor_L[Motor_Class]]) cylinder(d=29.0, h=R60_Motor_L[Motor_Class]);
 }
 
+// ===========================================================================
+// Pair enumeration (4th review, harden-the-harness item 2). Every part
+// (0..14) is listed below with what it physically mates with, so a missing
+// pair is a visible gap in this table, not a silent omission the way
+// finding 2 (13 <-> 8) was: that collision was real (0.0973cm3) and went
+// completely unchecked because nothing in the pre-4th-review matrix ever
+// examined that pair. This is not a re-derivation from first principles of
+// "what could possibly touch" -- it is read off each module's own comment
+// in Rocket60.scad, which already states what it mounts to/mates with.
+//
+//  0  test ring     -- standalone print-fit GAUGE (R60_TestRing()'s own
+//                       module comment), not a flight part. EXCLUDED: mates
+//                       with nothing else in the assembly by design.
+//  1  neck          -- e-bay tube(2) [pair 0]. Nosecone/camera are external
+//                       hardware, not Rocket60.scad modules -- EXCLUDED,
+//                       nothing to render.
+//  2  e-bay tube     -- neck(1)[0], fwd bulkhead(4)[1], aft bulkhead(5)[2],
+//                       Vega sled(6)[3], door(7)[4].
+//  3  chute tube     -- aft bulkhead skirt(5)[5, stroke], carrier(8)[6,
+//                       stroke], fin can(9)[7], tether latch(13)[13, new].
+//  4  fwd bulkhead   -- e-bay tube(2)[1]. Also sits immediately below the
+//                       neck's own skirt (R60_EBayTube()'s Rail_Z1 comment)
+//                       -- EXCLUDED as a direct pair: both are ROUND,
+//                       axis-centred profiles capped by the SAME Z-window
+//                       derivation already asserted in R60_EBayTube() (the
+//                       Rail_Z1 empty/inverted guard) and cross-checked by
+//                       pairs 0/1 each individually clearing the tube; no
+//                       off-axis feature exists on either part that a
+//                       concentric abutment could hide (unlike findings 1/2/
+//                       5, which are ALL off-axis or hidden-behind-a-face).
+//  5  aft bulkhead   -- e-bay tube(2)[2], chute tube(3)[5, stroke], tether
+//                       latch(13)[9], spring carrier(8)[14, new -- both
+//                       bond to this part's SAME aft face].
+//  6  Vega sled      -- e-bay tube(2)[3]. CATS Vega board itself is
+//                       external hardware -- EXCLUDED.
+//  7  access door     -- e-bay tube(2)[4]; the panel-mount switch's own
+//                       physical envelope[16, new -- see the switch-probe
+//                       section below].
+//  8  spring carrier -- chute tube(3)[6, stroke], aft bulkhead(5)[14, new],
+//                       tether latch(13)[12, new -- finding 2].
+//  9  fin can        -- chute tube(3)[7], motor spacer(12)[8]. Motor
+//                       retainer(11) and thrust ring(14) both glue directly
+//                       into this part's own bore ends -- EXCLUDED as
+//                       separate pairs: both are plain concentric
+//                       cylinder-in-bore fits (retainer OD/bolt-circle,
+//                       ring OD) already fully covered by
+//                       verify_rocket60.py's own "retainer OD"/"thrust ring
+//                       fits MMT bore" dimensional checks, with no off-axis
+//                       feature on either part an intersection probe could
+//                       catch that those checks would not. Fin(10) mates
+//                       via a plain prismatic slot -- EXCLUDED for the same
+//                       reason (fincan_slot_width/fincan_slot_length
+//                       already compare the slot's real edge loop against
+//                       the fin's real edge loop mesh-against-mesh; no
+//                       rotation/offset ambiguity exists for a probe to add
+//                       rigor to).
+// 10  fin            -- fin can(9), excluded above.
+// 11  motor retainer -- fin can(9), excluded above; motor(probe)[11].
+// 12  motor spacer   -- fin can/MMT(9)[8]; thrust ring(14), covered by
+//                       pair 10's own flush (Push=0) check.
+// 13  tether latch   -- aft bulkhead(5)[9]; spring carrier(8)[12, new];
+//                       chute tube(3)[13, new] -- discovered while fixing
+//                       finding 2: the SAME off-axis base corners
+//                       (r=28.97mm from the shared axis) that hit the
+//                       carrier's counterbore rim also reach 0.57mm past
+//                       the chute tube's own 28.4mm bore.
+// 14  thrust ring    -- motor+spacer(12)[10, obstruction]; fin can(9),
+//                       excluded above (plain concentric bore fit).
+//
+// Two further checks are NOT part-vs-part pairs at all -- they assert a
+// DECLARED MOVING ELEMENT's required path is not obstructed by any real
+// part (harness item 3), which no static dimension check or the pairs
+// above can express:
+// 15  servo-2-horn/pin-release actuation path vs. tether latch(13) --
+//     finding 5.
+// 16  arming switch's own physical envelope vs. access door(7) -- finding
+//     3, harness item 4 ("model the fitted switch").
+// ===========================================================================
+
+// Pair 12: tether latch (part 13) <-> spring carrier (part 8) -- finding 2.
+// Both mount flush on the SAME e-bay aft bulkhead aft face (see Pair 9's
+// own comment for the latch; R60_SpringCarrier()'s own module comment:
+// "glued to this skirt's aft face" for the carrier) -- i.e. both parts'
+// own local z=0 coincide once assembled. No flip needed for either (both
+// already grow away from that shared mount face in their own +z).
+module Pair12_A(){ translate([0,R60_Tether_Y,0]) R60_TetherLatch(); }
+module Pair12_B(){ R60_SpringCarrier(); }
+
+// Pair 13: tether latch (part 13) <-> chute tube (part 3), along the SAME
+// insertion stroke/stack frame as Pairs 5/6 (see Pair 5's comment). The
+// latch mounts at the SAME location as the carrier's own local z=0 (both
+// glued to the skirt's aft-most tip, stack_z=15) -- so it needs the exact
+// same Ins-65 stroke transform Pair 6 uses for the carrier, not a fixed
+// placement: as the chute tube slides on, the latch (a fixed appendage of
+// the skirt+carrier insert, like the tether lug it was found alongside) can
+// jam against the tube's own wall partway through the stroke even where it
+// clears at full seating, the same failure class finding 1 (3rd review) was.
+module Pair13_A(){ translate([0,R60_Tether_Y,Ins-65]) R60_TetherLatch(); }
+module Pair13_B(){ R60_ChuteTube(); }
+
+// Pair 14: spring carrier (part 8) <-> e-bay aft bulkhead (part 5) --
+// enumeration completeness (harness item 2): both bond to the SAME aft
+// face the latch does (Pairs 9/12 above), so this is the third leg of that
+// same shared-mount-face relationship. Same "plain translate, no flip"
+// frame as Pair 9 (carrier's own +z already grows aft, the same direction
+// the bulkhead's own skirt does).
+module Pair14_A(){ translate([0,0,12+R60_Pin_Skirt_L]) R60_SpringCarrier(); }
+module Pair14_B(){ R60_EBayAftBulkhead(); }
+
+// Pair 15: servo-2-horn/pin-release actuation path vs. tether latch (part
+// 13) -- finding 5, harness item 3 ("for every declared moving element...
+// assert its required path is not obstructed"). R60_EBayAftBulkhead()'s
+// horn slot was extended through its own skirt specifically so servo 2's
+// (unmodelled, see R60_TetherLatch()'s own module comment) actuation
+// linkage can reach this latch -- but the latch's solid 4mm base used to be
+// bolted flat over that exact opening. HornPath is a PROBE-ONLY solid, not
+// one of the 15 real parts: it stands in for "the volume that linkage must
+// be free to occupy", sized/positioned identically to the pass-through
+// R60_TetherLatch() itself now cuts (Base_Pass_W x R60_Horn_W -- see that
+// module's own comment for why this is narrower than the bulkhead's full
+// R60_Horn_L: the two posts, the pin's own load path, cannot be cut
+// through) so a regression in EITHER part's own opening shows up here.
+// Positioned in the aft bulkhead's own frame, spanning from well inside
+// its servo-2 pocket (z=P_D=9, restated) through to past the latch's own
+// pin (bulkhead z=12+R60_Pin_Skirt_L+Base_T+Post_H=27+4+12=43).
+Post_X_ = 9; Post_d_ = 8;
+HornPath_W = 2*(Post_X_ - Post_d_/2);   // 10, matching R60_TetherLatch()'s
+                                          // own Base_Pass_W derivation
+module HornPath(){
+    translate([-HornPath_W/2, R60_Tether_Y-R60_Horn_W/2, 9])
+        cube([HornPath_W, R60_Horn_W, 43-9]);
+}
+module Pair15_A(){ HornPath(); }
+module Pair15_B(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) R60_TetherLatch(); }
+
+// Pair 16: arming switch's own physical envelope vs. access door (part 7)
+// -- finding 3, harness item 4 ("model the fitted switch"). The switch
+// hole R60_EBayTube() cuts is an ABSENCE of material -- intersecting the
+// door against the tube (Pair 4) can only ever see material the tube
+// still HAS, so a void can never register as an obstruction there
+// regardless of how badly the door overlaps it. SwitchProbe is a
+// PROBE-ONLY solid standing in for the switch hardware that actually
+// occupies that hole once assembled: the SAME cylinder R60_EBayTube()
+// itself cuts (same Sw_d, same radial axis) -- the minimal, derived stand-
+// in, not an invented hardware envelope with no sourced spec. SwZ is the
+// hole's own MEASURED Z centre, off the rendered part 2 mesh (the Python
+// driver's own switch_hole_z(), the same "measure the real geometry, don't
+// restate the formula" idiom rail_facing_gap()/measure_facing_y() already
+// use for Pair 3's Facing_Y), not a restated formula prone to the exact
+// R60_Door_Overlap-omission drift that caused finding 3 in the first
+// place.
+SW_D = 12.0;   // R60_EBayTube()'s own Sw_d, restated (rule 4)
+SwZ = 147.5;   // documented fallback for standalone rendering; the driver
+               // always overrides this with a measured value
+module SwitchProbe(){
+    translate([0, R60_Body_OD/2, SwZ])
+        rotate([90,0,0])
+            cylinder(d=SW_D, h=R60_Wall_T*3, center=true);
+}
+module Pair16_A(){ SwitchProbe(); }
+module Pair16_B(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
+
 if (Pair==0) intersection(){ Pair0_A(); Pair0_B(); }
 if (Pair==1) intersection(){ Pair1_A(); Pair1_B(); }
 if (Pair==2) intersection(){ Pair2_A(); Pair2_B(); }
@@ -253,3 +422,8 @@ if (Pair==8) intersection(){ Pair8_A(); Pair8_B(); }
 if (Pair==9) intersection(){ Pair9_A(); Pair9_B(); }
 if (Pair==10) intersection(){ Pair10_A(); Pair10_B(); }
 if (Pair==11) intersection(){ Pair11_A(); Pair11_B(); }
+if (Pair==12) intersection(){ Pair12_A(); Pair12_B(); }
+if (Pair==13) intersection(){ Pair13_A(); Pair13_B(); }
+if (Pair==14) intersection(){ Pair14_A(); Pair14_B(); }
+if (Pair==15) intersection(){ Pair15_A(); Pair15_B(); }
+if (Pair==16) intersection(){ Pair16_A(); Pair16_B(); }

@@ -7,7 +7,7 @@ supposed to produce it.
 """
 import math, os, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, tris
+from scad_verify import REPO, render, measure, bore, volume, tris, components
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
@@ -85,6 +85,12 @@ GENUS[2] = 7
 #   through the lug's material, a genuine 4th handle -- the pin holes and
 #   tube bore are unaffected, different azimuth, no shared geometry).
 #   1 (tube) + 2 (pin holes) + 1 (lug lashing hole) = 4.
+#   RE-CONFIRMED (4th review, critical 1/4): the weld ring bridging the
+#   spigot to the main wall is a solid annular ADDITION (no new void) and
+#   the lug/tab embedding just deepens two ALREADY-solid features into
+#   the wall -- neither changes hole count. Rendered, still `Genus: 4`;
+#   components() (new this round, see that function's own docstring)
+#   changed from 2 to 1 -- the actual defect genus could never see.
 GENUS[3] = 4
 
 #   part 5: e-bay aft bulkhead. Started at 1 (disc + harness-analogue
@@ -161,7 +167,13 @@ GENUS[12] = 1
 #   boundary that collapses two handles into one. RE-CONFIRMED this round
 #   after the Base_L/wall-margin fix (2b): base grew again (36->38.6mm)
 #   but the hole/post topology is unchanged; rendered, still `Genus: 4`.
-GENUS[13] = 4
+#   RE-DERIVED (4th review, critical 2/5): the corner clip (critical 2)
+#   reshapes the outer boundary only -- no new handle, confirmed still
+#   `Genus: 4` with just that change applied. The base pass-through
+#   (critical 5) is a genuine new through-hole (base_pass_w x
+#   R60_Horn_W straight through Base_T, clear of every existing hole):
+#   rendered with both fixes, `Genus: 5`, matching the naive +1.
+GENUS[13] = 5
 
 #   part 14: forward thrust ring (new this round, 3rd review defect 3) =
 #   1 (a plain annulus -- one through-hole, same class as part 12's
@@ -273,10 +285,13 @@ BODY_R           = 30.0     # R60_Body_OD/2 -- tube's true OD, and the
 DOOR_COVER_T     = 2.0      # R60_Door()'s own cover shell thickness
 COVER_OUTER_R    = BODY_R + DOOR_COVER_T   # cover's own outer face
 # R60_Door()'s own z=0 (cover base) lands at tube-frame z = Door_Z0 -
-# R60_Door_Overlap = 40 - 6 = 34.0 once assembled; DOOR_HOLE_Z_TUBE is
-# R60_EBayTube()'s own Door_Hole_Z, in the TUBE's frame.
-DOOR_Z_OFFSET     = 34.0
-DOOR_HOLE_Z_TUBE  = (37.0, 128.0)
+# R60_Door_Overlap once assembled; DOOR_HOLE_Z_TUBE is R60_EBayTube()'s
+# own Door_Hole_Z, in the TUBE's frame. Both derive from Door_Z0/Door_Z1,
+# which move with R60_EBay_L -- restated here at R60_EBay_L=177 (4th
+# review, critical 3): Door_Z0=(177-85)/2=46, Door_Z1=46+85=131, so
+# DOOR_Z_OFFSET=46-6=40.0 and DOOR_HOLE_Z_TUBE=(46-3, 131+3).
+DOOR_Z_OFFSET     = 40.0
+DOOR_HOLE_Z_TUBE  = (43.0, 134.0)
 
 # Vega sled retention rails -- defect 1b (2nd review). Rail_Inner_R is the
 # rails' own exposed, functional radius (see R60_EBayTube()'s Rail_Inner_R
@@ -296,13 +311,16 @@ RAIL_Z_CAP   = 14.0
 # was invisible to every existing OD check.
 BOSS_OD_BAND_HALF = 0.05
 
-# Arming switch Z window -- defect 2d. SW_Z_EXPECT is R60_EBayTube()'s own
-# (Sw_Z0+Sw_Z1)/2 = (134.0+137.0)/2, restated as a literal so the check
-# reads the window's actual measured centre, not the formula that
-# produced it. R60_EBay_L carries 5mm of headroom above the bare
-# minimum (3rd review, defect 2d fix) specifically so this window is a
-# genuine 3mm wide instead of a 0.5mm hair gap.
-SW_Z_EXPECT = 135.5
+# Arming switch Z window -- defect 2d, and 4th review critical 3.
+# SW_Z_EXPECT is R60_EBayTube()'s own (Sw_Z0+Sw_Z1)/2, restated as a
+# literal so the check reads the window's actual measured centre, not
+# the formula that produced it. Sw_Z0 now correctly counts
+# R60_Door_Overlap (the 4th review's own critical fix -- see
+# R60_EBayTube()'s Sw_Z0 comment); at R60_EBay_L=177: Sw_Z0 =
+# 131+6+3+6=146, Sw_Z1 = 177-19-3-6=149, centre 147.5 -- confirmed
+# against the rendered part 2 mesh's own switch-hole edge loop (141.5..
+# 153.5) before use here.
+SW_Z_EXPECT = 147.5
 
 
 def pin_hole_diameter(stl, x_side, z_center, r_expected, half_window=3.0):
@@ -438,6 +456,27 @@ def rail_facing_gap(stl, r_inner, z_at, r_win=0.3, zwin=0.1):
     return facing_pos[0] - facing_neg[0], facing_pos[1]
 
 
+def switch_hole_z(stl, zlo=132.0, zhi=170.0):
+    """Arming-switch hole's own measured Z centre, off part 2's rendered
+    edge loop (a Ø12 hole cut straight through the +Y wall). Factored out
+    of checks()'s own inline scan (4th review, harness item 4) so
+    tools/verify_rocket60_assembly.py's switch-envelope probe (Pair 16,
+    r60_assembly.scad) can position it from the SAME measurement checks()
+    uses, not a second, independently-restated formula -- exactly the
+    defect this file's own rule 4 exists to prevent, and precisely the
+    class of bug that caused finding 3 in the first place (Sw_Z0's
+    formula silently omitting R60_Door_Overlap). zlo/zhi default to a
+    window that excludes the tube's own end caps and the door aperture's
+    edge loop at R60_EBay_L=177; a caller checking a different R60_EBay_L
+    must pass its own window."""
+    zs = [z for tri in tris(stl) for (x, y, z) in tri
+          if abs(x) < 6.0 and y > 29.0 and zlo < z < zhi]
+    if not zs:
+        raise RuntimeError("no switch-hole geometry in z=%.1f..%.1f of %s"
+                            % (zlo, zhi, stl))
+    return (min(zs) + max(zs)) / 2.0
+
+
 def checks(m):
     """Return list of (label, actual, expected, tolerance)."""
     c = []
@@ -464,7 +503,7 @@ def checks(m):
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
-    for p, want_len in ((2, 165.0), (3, 186.0)):
+    for p, want_len in ((2, 177.0), (3, 185.5)):
         if p in m:
             tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
@@ -496,19 +535,24 @@ def checks(m):
         # an ellipse-ish curve spanning roughly Sw_Z+-Sw_d/2 in Z) and
         # checks the MEASURED centre against the stated literal window,
         # catching silent drift even where the render still succeeds. The
-        # z pre-filter (126..164) excludes the tube's own end caps
-        # (z=0/165) and the door aperture's edge loop (z=125.0), which
-        # would otherwise contaminate a naive "nearest to the +Y wall"
-        # search -- confirmed empirically before use here.
-        sw_zs = [z for tri in tris(a(2, "stl")) for (x, y, z) in tri
-                 if abs(x) < 6.0 and y > 29.0 and 126.0 < z < 164.0]
+        # z pre-filter (132..170, 4th review: R60_EBay_L=177 moved both
+        # the switch and the boundaries it must avoid) excludes the
+        # tube's own end caps (z=0/177) and the door aperture's edge loop
+        # (z=131.0), which would otherwise contaminate a naive "nearest
+        # to the +Y wall" search -- confirmed empirically before use here.
+        # Factored into switch_hole_z() (4th review, harness item 4) so
+        # tools/verify_rocket60_assembly.py's switch-envelope probe can
+        # position itself from this SAME measurement.
         # Was `if sw_zs:` -- an empty scan (hole missing, moved outside
         # the pre-filter band, or the wall/hole geometry changed shape)
         # silently skipped this check entirely instead of failing it, the
         # same "quietly absent row" defect as the genus checks above.
         # nan never falls within any tolerance, so an empty scan is now a
         # loud FAIL instead of a check that just never appears.
-        sw_center = (min(sw_zs) + max(sw_zs)) / 2.0 if sw_zs else float("nan")
+        try:
+            sw_center = switch_hole_z(a(2, "stl"))
+        except RuntimeError:
+            sw_center = float("nan")
         c += [("arming switch hole Z centre", sw_center, SW_Z_EXPECT, 0.3)]
 
     if 6 in m:
@@ -850,6 +894,17 @@ def checks(m):
     for p in m:
         c += [("part %d fits %.0fmm Z" % (p, MAX_Z),
                m[p]["height"], min(m[p]["height"], MAX_Z), 0.01)]
+
+    # Connected components, every part (4th review, harden-the-harness
+    # item 1). A part that exports as N disjoint solids is unprintable as
+    # ONE part (finding 1: the chute tube's fin-can spigot, floating
+    # entirely inside the tube's own bore with a 0.2mm gap and zero shared
+    # geometry) -- genus cannot see this (see components()'s own
+    # docstring), so this is a real, independent check, not a restatement
+    # of the genus checks below.
+    for p in m:
+        c += [("part %d connected components" % p,
+               components(m[p]["stl"]), 1, 0)]
 
     # Topology, every part with a recorded expectation. FIXED (defect 3a):
     # a missing genus (render() found no "Genus:" line -- a version
