@@ -334,13 +334,18 @@ module Pair11_B(){
 // and the aligned (+-6,-22) cord holes across the bulkhead/carrier
 // together assert the same thing a standalone probe would. The PIN
 // itself -- the "3mm steel dowel, not printed" that is the tether
-// latch's actual load path (R60_TetherLatch()'s own comment) -- is NOT
-// covered by anything here or in verify_rocket60.py: its own bore
-// (Base_L+2=40.6mm, centred) implies at least that much clear axial
-// travel to insert or withdraw it, and nothing in this file checks
-// whether that travel is actually free once the carrier is bonded on.
-// Flagged, not fixed -- see the task report's "not fixed / out of
-// scope" section.
+// latch's actual load path (R60_TetherLatch()'s own comment) -- is now
+// covered by pairs 17-19 (coordinator override, same review round):
+// PinPath(), the SAME bore R60_TetherLatch() cuts for it, checked
+// against the spring carrier, the aft bulkhead and the chute tube. All
+// three pass (0.0000cm3) -- the pin's own designed travel (+-20.3mm
+// from centre) clears the carrier's own counterbore rim (the binding
+// constraint, r=CB_D/2=25.5mm at the latch's own R60_Tether_Y=13.6mm
+// offset: sqrt(25.5^2-13.6^2)=21.57mm available, 1.27mm of real margin)
+// with real headroom, not a coincidental touch -- proven by mutation:
+// extending PIN_BASE_L by ~3.4mm (38.6->42.0) produces a genuine
+// 0.008cm3 collision against the carrier, confirming this check would
+// actually catch a regression, not pass regardless of the geometry.
 // ===========================================================================
 
 // Pair 12: tether latch (part 13) <-> spring carrier (part 8) -- finding 2.
@@ -426,6 +431,43 @@ module SwitchProbe(){
 module Pair16_A(){ SwitchProbe(); }
 module Pair16_B(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
 
+// Pairs 17-19: tether latch PIN withdrawal path vs. every real part
+// around it once assembled -- coordinator override (same review round).
+// Flagged in this file's own pair-enumeration comment above as
+// unverified; the same "geometry fits but cannot function" failure
+// class the horn-path check (pair 15) already caught, so it gets the
+// same treatment: a probe-only solid, not an invented extra reach, but
+// the SAME cylinder R60_TetherLatch() itself already cuts for the pin
+// bore (Pin_d, Base_L+2, centred at local z=Base_T+Post_H-4) -- the
+// space the design ALREADY provides for the "3mm steel dowel, not
+// printed" that is this latch's actual load path. Restated as literals
+// (rule 4), matching R60_TetherLatch()'s own Pin_d/Base_L/Base_T/Post_H.
+//
+// PinPath() is built in the SAME local frame R60_TetherLatch() itself
+// uses (mount face at local z=0), so it can be dropped into each pair's
+// EXISTING latch transform (Pair9/12/13's own translates) directly,
+// rather than a fourth, independently-derived placement -- if any of
+// those three transforms is ever wrong, the corresponding latch pair
+// (9/12/13) fails right along with the pin-path pair checking the same
+// frame, rather than silently disagreeing with it.
+PIN_D = 3.2;         // R60_TetherLatch()'s own Pin_d (3.0+IDXtra)
+PIN_BASE_L = 38.6;   // R60_TetherLatch()'s own Base_L
+PIN_Z_LOCAL = 12;    // R60_TetherLatch()'s own Base_T+Post_H-4 (4+12-4)
+module PinPath(){
+    translate([0, 0, PIN_Z_LOCAL])
+        rotate([0,90,0])
+            cylinder(d=PIN_D, h=PIN_BASE_L+2, center=true);
+}
+// vs. spring carrier -- same frame as Pair12.
+module Pair17_A(){ translate([0,R60_Tether_Y,0]) PinPath(); }
+module Pair17_B(){ R60_SpringCarrier(); }
+// vs. e-bay aft bulkhead -- same frame as Pair9.
+module Pair18_A(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) PinPath(); }
+module Pair18_B(){ R60_EBayAftBulkhead(); }
+// vs. chute tube, at full seating -- same frame as Pair13 (Ins=80 default).
+module Pair19_A(){ translate([0,R60_Tether_Y,Ins-65]) PinPath(); }
+module Pair19_B(){ R60_ChuteTube(); }
+
 if (Pair==0) intersection(){ Pair0_A(); Pair0_B(); }
 if (Pair==1) intersection(){ Pair1_A(); Pair1_B(); }
 if (Pair==2) intersection(){ Pair2_A(); Pair2_B(); }
@@ -443,3 +485,6 @@ if (Pair==13) intersection(){ Pair13_A(); Pair13_B(); }
 if (Pair==14) intersection(){ Pair14_A(); Pair14_B(); }
 if (Pair==15) intersection(){ Pair15_A(); Pair15_B(); }
 if (Pair==16) intersection(){ Pair16_A(); Pair16_B(); }
+if (Pair==17) intersection(){ Pair17_A(); Pair17_B(); }
+if (Pair==18) intersection(){ Pair18_A(); Pair18_B(); }
+if (Pair==19) intersection(){ Pair19_A(); Pair19_B(); }

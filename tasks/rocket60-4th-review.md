@@ -186,3 +186,89 @@ would need to travel to one side). This may mean the pin cannot be
 withdrawn/re-inserted after the carrier is permanently bonded -- a
 possible one-shot-assembly defect, not confirmed. Flagged in
 `r60_assembly.scad`'s own comment block; no redesign attempted.
+
+---
+
+## Coordinator follow-up (same PR, same day) — full station audit + pin verification
+
+Overriding "report don't fix" for the two stations flagged above, and
+requiring a full audit of every station in `build()`, not just those two.
+
+### Station audit table (mm)
+
+| Item | Old station | Corrected | Delta | Basis |
+|---|---|---|---|---|
+| e-bay fwd bulkhead | 105.0 | 121.0 | +16.0 | sits past the neck skirt's own 19mm depth |
+| access door + switch | 236.0 | 187.5 | −48.5 | aperture symmetric in the tube's frame by construction; old figure was one edge |
+| e-bay aft bulkhead+skirt | 246.0 | 277.5 | +31.5 | fixed last round (should-fix 11), confirmed still correct |
+| spring carrier | 267.0 | 323.5 | +56.5 | fixed last round (should-fix 11), confirmed still correct |
+| CS4323 spring (est.) | 316.0 | 334.2 | +18.2 | bounded between the carrier's diaphragm seat and its own reaction tabs |
+| tether latch + pin | 271.0 | 299.0 | +28.0 | mounts on the same aft-bulkhead face the carrier does |
+| shear pins x2 | 276.0 | 284.0 | +8.0 | matches R60_Pin_Z_FromJoint; 0.5g, immaterial |
+| parachute+cord+hw | 357.0 | 406.0 | +49.0 | packed aft of the spring mechanism's own footprint |
+| fins x3 | 626.5 | 638.5 | +12.0 | true polygon centroid (52.5mm of Cr), not 0.45×Cr |
+| motor retainer | 654.0 | 681.0 | +27.0 | flush with the fin can's aft (nozzle) tip |
+
+Every other item confirmed correct (uniform tubes use their own
+geometric midpoint) or flagged as a documented heuristic with no SCAD
+geometry to derive from (nosecone shell, camera assembly, battery+wiring,
+CATS Vega+sled's own mass distribution, rail buttons).
+
+### Corrected margins (was 1.53/1.34/1.35 cal)
+
+| Motor | Liftoff | CG loaded | Margin | Margin burnout |
+|---|---|---|---|---|
+| G80T-14A | 871 g | 365.5 mm | **1.45 cal — BELOW 1.5 cal target** | 1.78 cal |
+| H182R-14A | 938 g | 376.3 mm | 1.27 cal | 1.75 cal |
+| H135W-14A | 941 g | 375.7 mm | 1.28 cal | 1.60 cal |
+
+**No design change was made to force the G80T margin back above 1.5
+cal**, per explicit instruction — this is now the honestly-derived
+number, reported for the design owner to decide on, not adjusted toward
+the gate. `tools/rocket60_model.py` now exits 1 on this (the margin
+gate's own `bad()` check correctly fires).
+
+### Pin serviceability — verified, clear
+
+Modelled as `PinPath()` in `tools/r60_assembly.scad` (pairs 17-19): the
+SAME cylinder `R60_TetherLatch()` already cuts for the pin bore
+(Pin_d=3.2mm, ±20.3mm from centre), positioned in each of the three
+existing latch transforms (matching pairs 9/12/13's own frames) and
+checked against the spring carrier, the aft bulkhead and the chute tube.
+**All three pass, 0.0000cm³.** The binding constraint is the carrier's
+own counterbore rim (r=25.5mm) against the latch's R60_Tether_Y=13.6mm
+offset: 21.57mm of travel available, the bore's own ±20.3mm design fits
+with 1.27mm of real margin — not a coincidental touch. Proven with a
+mutation test: extending the bore length by ~3.4mm produces a genuine
+0.008cm³ collision against the carrier, confirming the check has real
+discriminating power. This check is now permanent (pairs 17-19 run every
+time `verify_rocket60_assembly.py` does).
+
+### Mass roll-up — measured vs. estimated
+
+Every printed part's mass comes from a MEASURED mesh volume (`STL_VOL`),
+times the shared, unverified `INFILL_EFF=0.78` blended-density
+assumption. The following are flat-gram ESTIMATES with no mesh behind
+them: camera assembly (60g), neck bolts (3g), CATS Vega board (25g,
+distinct from its sled, which is measured), battery+wiring (45g), 2x
+MG90S servos (27g, datasheet), switch hardware (8g), parachute+cord+hw
+(70g), CS4323 spring (25g, already flagged unverified), tether latch pin
+(1g), shear pins (0.5g), rail buttons (4g) — **~269g of 871g liftoff
+mass (31%) resting on unweighed estimates**, not measured volumes.
+Documented in `tools/rocket60_model.py`'s own comment above the `items`
+list.
+
+### Verification
+
+- `tools/rocket60_model.py`: exits 1 (the margin gate correctly fires;
+  this is the honest, expected result, not a regression).
+- `tools/verify_rocket60_assembly.py`: **0/20 pairs failed** (17
+  previous + 3 new pin-path pairs), ~82s.
+- `tools/verify_rocket60.py`, `verify_nosecone.py`, `verify_camnose.py`:
+  unaffected (no SCAD geometry changed this pass — only
+  `rocket60_model.py`'s mass-model math and the assembly harness), all
+  pass.
+- No STL re-export needed (no part geometry changed).
+- Design spec, `R60-PrintSettings.md`, STL README and the PR body
+  updated to the corrected 1.45/1.27/1.28 cal figures, with the
+  below-target G80T margin stated plainly, not softened.

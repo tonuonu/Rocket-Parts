@@ -60,6 +60,15 @@ PAIRS = {
     # (harness item 3) vs. the real part(s) around it.
     15: "servo-2 horn/pin-release path vs tether latch",
     16: "arming switch envelope vs access door",
+    # Coordinator override (same review round): the pin itself -- the
+    # tether latch's actual load path, a 3mm steel dowel requiring clear
+    # axial travel to insert/withdraw -- was flagged unverified with no
+    # harness coverage. Modelled as the SAME bore R60_TetherLatch() cuts
+    # for it (r60_assembly.scad's PinPath()), checked against every real
+    # part around it once assembled.
+    17: "tether latch pin path vs spring carrier",
+    18: "tether latch pin path vs aft bulkhead",
+    19: "tether latch pin path vs chute tube",
 }
 STROKE_PAIRS = (5, 6, 13)
 # Insertion stroke sweep -- 0 (first contact) through 80 (fully seated,
