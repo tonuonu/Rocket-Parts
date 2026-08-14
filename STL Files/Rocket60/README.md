@@ -1,15 +1,12 @@
 # Rocket 60 — printable meshes
 
-Ø60 mm camera rocket, 690 mm overall (684 mm tube/fin-can stack + the motor
-retainer bolted on the outside of the fin can's aft face -- 5th review,
-finding 12), built around the user's own CAD nosecone.
-Generated from `Rocket60.scad`, OpenSCAD 2026.07.09, full render, binary STL.
-Verify with `python3 tools/verify_rocket60.py` — every part is measured from
-its rendered mesh, and mating fits are checked mesh-against-mesh rather than
-against the constants that produced them.
+Ø60 mm camera rocket, 684 mm, built around the user's own CAD nosecone.
+Regenerated from `Rocket60.scad` at branch HEAD after the 9th review round;
+every file below was measured after export and checked against the geometry
+that part is supposed to have.
 
-Print settings, assembly order and the CATS Vega configuration are in
-`R60-PrintSettings.md`.
+Verify with `python3 tools/verify_rocket60.py`, the assembly harness
+(`verify_rocket60_assembly.py`, 33 pairs), and `verify_docs_sync.py`.
 
 ## Print part 0 first, and stop there
 
@@ -17,179 +14,81 @@ Print settings, assembly order and the CATS Vega configuration are in
 |---|---|---|---|---|
 | `00_TestRing.stl` | 0 | 10.00 | 60.00 | 19.9 cm³ |
 
-It gauges three fits on one 10 mm print: the flange against the nosecone base,
-the three M3 holes against the camera's heat-set inserts (Ø37.96 circle at
-52.2°/−52.2°/180° — the asymmetry keys the camera's clocking), and the coupler
-spigot against a body tube. **If the bolt circle or its clocking is wrong,
-nothing downstream is worth filament.**
+It gauges three fits on one 10 mm print: the flange flush on the nosecone
+base, the three M3 holes against the camera's heat-set inserts (Ø37.96
+circle at 52.2° / −52.2° / 180°), and the coupler spigot in a body tube.
+The angles are deliberately not 120° apart — that asymmetry keys the
+camera's clocking.
 
-It is also the scale check. Printed-to-printed fits survive shrinkage because
-both halves shrink alike; printed-to-CAD fits do not. That Ø37.96 circle has to
-line up with inserts in a PCB that does not shrink.
+It is also the scale check. Printed-to-printed fits survive shrinkage
+because both halves shrink alike; printed-to-CAD fits do not, and that bolt
+circle must meet inserts in a PCB that does not shrink.
 
-## Full part list
+## Airframe
 
-| File | Part | Height | Max OD | Vol |
+| File | Part | Height | Max OD | Vol | Material |
+|---|---|---|---|---|---|
+| `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ | PETG |
+| `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ | PETG |
+| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.2 cm³ | PETG |
+| `03_ChuteBayTube.stl` | 3 | 185.50 | 60.00 | 55.6 cm³ | PETG |
+| `04_EBayFwdBulkhead.stl` | 4 | 7.70 | 56.40 | 12.7 cm³ | PETG |
+| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.3 cm³ | PETG |
+| `06_VegaSled.stl` | 6 | 8.00 | 144×44 flat | 23.8 cm³ | PETG |
+| `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 11.3 cm³ | PETG |
+| `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | 52.9 cm³ | PETG |
+| `09_FinCan.stl` | 9 | 228.00 | 60.00 | 114.0 cm³ | **PC** |
+| `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ | PETG, print 3 |
+| `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ | **PC** |
+| `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ | **PC** |
+| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.0 cm³ | PETG |
+| `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ | **PC** |
+
+Airframe total 457.2 cm³. Tallest part 228 mm, inside the 250 mm envelope
+with 22 mm to spare. `NoseCone.stl` is the user's `Nose Cone.STEP`
+converted, not regenerated.
+
+`12_MotorSpacer.stl` is the G80T spacer (`Motor_Class = 0`); set
+`Motor_Class` to 1 or 2 and re-export for the H182R or H135W.
+
+## Ground-test motors
+
+| File | Height | Ballast → loaded | → burnout | Totals |
 |---|---|---|---|---|
-| `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ |
-| `00_TestRing.stl` | 0 | 10.00 | 60.00 | 19.9 cm³ |
-| `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ |
-| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 50.0 cm³ |
-| `03_ChuteBayTube.stl` | 3 | 185.50 | 60.00 | 55.7 cm³ |
-| `04_EBayFwdBulkhead.stl` | 4 | 6.00 | 56.40 | 12.7 cm³ |
-| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.4 cm³ |
-| `06_VegaSled.stl` | 6 | 8.00 | 44×112 flat | 20.0 cm³ |
-| `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 10.4 cm³ |
-| `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | 52.9 cm³ |
-| `09_FinCan.stl` | 9 | 228.00 | 60.00 | 114.0 cm³ |
-| `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ |
-| `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ |
-| `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ |
-| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.0 cm³ |
-| `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ |
+| `MotorDummy_G80T.stl` | 124.00 | 99.6 g | 36.6 g | 128 / 65 g |
+| `MotorDummy_H182R.stl` | 203.00 | 161.7 g | 46.7 g | 207 / 92 g |
+| `MotorDummy_H135W.stl` | 216.00 | 164.0 g | 82.0 g | 212 / 130 g |
 
-Print 3 fins from `10_Fin.stl`. `12_MotorSpacer.stl` is the G80T spacer
-(`Motor_Class = 0`); set `Motor_Class` to 1 or 2 and re-export for the H182R or
-H135W. `NoseCone.stl` is the user's `Nose Cone.STEP` converted, not
-regenerated.
+Loose ballast on purpose: one print covers both mass cases. Burnout is the
+condition deployment actually happens in — 63 g lighter on the G80T — so a
+separation test at loaded mass tests the wrong rocket.
 
-Re-exported after the code-review fix pass: part 2 grew (Vega retention
-rails + door screw bosses, +4.2 cm³), part 5 shrank slightly (wider tether
-notch), part 7 changed from a flush plug to an overlapping retaining cover
-(+5.5 cm³, height 84.30→97.00, OD 60.00→64.00), part 9 shrank slightly
-(shock-cord anchor holes), part 12 grew (99.00→104.00mm, corrected motor-tube
-depth), part 13 grew (hole spacing moved clear of the horn slot,
-16.00mm/30.53 OD→16.00mm/39.40 OD). Re-exported again after the fin
-re-sizing (coordinator decision, group 2 re-target): part 10 grew span
-55→63mm (+2.0 cm³ per fin, root/tip/sweep/thickness unchanged) to fix the
-G80T-14A's static margin — see `R60-PrintSettings.md` §9's fin-sizing
-note and the spec §6 for the full analysis. Parts 6 and 9 also changed
-(Vega sled M3 holes widened 2.9→3.4mm; fin can's fin slot lengthened to
-match — neither changes the part's own extent, only its interior).
+## The access door stands 2 mm proud
 
-Re-exported again after the 2nd code-review fix pass: part 2's door screw
-holes now bore along the wall's true local radial direction instead of a
-flat axis (defect 1a), the Vega retention rails now actually close on the
-sled (defect 1b), and the door bosses no longer poke past the true OD --
-Max OD 60.40→60.00 (defect 2a). Part 8's tether notch now matches the
-skirt channel it must clear (8.00→9.20mm, defect 2c; no change to this
-part's own extent). Part 13 grew again (Base_L 36.00→38.60mm, defect 2b
--- the old wall beyond the mounting holes was 0.30mm, below one extrusion
-width) -- Max OD 39.40→41.78, +0.2 cm³.
+`07_AccessDoor.stl` is Ø64 on a Ø60 airframe: it is an outer cover, not a
+flush panel. That is forced by the 1.6 mm wall — a 2 mm cover cannot be
+rebated into it. Consequence worth knowing: a 2 mm step over 97 mm of length
+adds drag the flight model's Cd₀ = 0.52 does not account for, so predicted
+apogee is slightly optimistic. Not enough to matter for recovery planning;
+enough that it should not be a surprise.
 
-Re-exported again after the 3rd code-review fix pass: part 2 shrank
-(45.7→44.9 cm³) -- the Vega rails' Z window is now derived per-end from
-what actually sits there (the aft bulkhead's disc, the neck skirt/forward
-bulkhead) instead of a flat 5mm margin that overlapped all three (defect
-2). Part 3 grew (180.00→186.00mm, 53.5→55.2 cm³) -- a new Ø56.4 spigot
-onto the fin can, the same concentric-coupler treatment every other
-internal joint already had (should-fix 6). Part 8 shrank (55.1→52.9 cm³)
--- its tether relief channel now runs the carrier's full 65mm length
-instead of 5mm, so the chute tube's tether lug has clearance for the
-whole assembly stroke, not just the seated position (defect 1). Part 12
-shrank (104.00→98.00mm, 17.6→16.6 cm³) to make room for the new part 14.
-**`14_ThrustRing.stl` is new** (defect 3): nothing previously reacted the
-motor's forward thrust reaction -- the aft `11_MotorRetainer.stl` only
-ever resisted aft motion -- so under thrust the motor+spacer stack had
-only a 0.3mm slip fit standing between it and the packed parachute. Glues
-into the MMT's forward opening, flush with the fin can's own tip,
-Ø26.8mm lip catching the motor+spacer stack's forward face.
+## Launch
 
-Re-exported again within the 3rd review's fix pass: part 2 grew again
-(165.00mm, 44.9→46.2 cm³) -- R60_EBay_L grew 160→165 (should-fix 9) so
-the arming-switch Z window is a genuine ~3mm margin instead of a 0.5mm
-hair gap, and its 2 zip-tie slots (per Z station) became 4, straddling
-the sled tangentially at each rail's own azimuth instead of both
-sharing one (defect 11) -- the old pair shared an azimuth 40mm apart
-and never actually crossed the sled, so cinching them provided zero
-retention. Total airframe length 662→667mm.
+1010 rail. The user's Estes Pro Series II rail (1.83 m, two 3-foot sections)
+is 1010-compatible per Estes, so `RailButton(OD=11, Flange_h=2, Slot_w=2.8)`
+from `RailGuide.scad` fits directly.
 
-Re-exported again within the 4th review's fix pass: part 2 grew again
-(165.00→177.00mm, 46.2→50.0 cm³) -- R60_EBay_L grew again (critical 3):
-the 3rd review's own Sw_Z0 fix measured the arming-switch's clearance
-from the door APERTURE's own edge, not from R60_Door()'s actual built
-footprint (a COVER, R60_Door_Overlap=6mm larger than the aperture on
-every side) -- correctly counting that overlap needed 12mm more of
-R60_EBay_L to restore a genuine ~3mm window (the switch was measured
-1.5mm INSIDE the door cover's own footprint at the old length). Part 3
-shrank slightly (186.00→185.50mm, 55.2→55.7 cm³) -- R60_FinCanSpigot_L
-now derives a genuine 0.5mm axial clearance from the fin can's own open
-annulus instead of exactly matching it (should-fix 8, a bare tangency
-that bottomed the joint before the airframe's outer OD faces could close
-flush), while a new internal weld ring (critical 1) bridges the spigot to
-the tube's own wall with real shared material -- the chute tube used to
-export as TWO disconnected solids (the spigot floating entirely inside
-the tube's own bore, a 0.2mm gap with zero shared geometry); genus could
-not see this, only a new connected-component check (`components()` in
-`tools/scad_verify.py`) could. Two tether-lug/spring-tab features
-embedded further into this part's own wall (critical 4) also add a
-little material. Part 13 shrank (3.5→3.0 cm³, height/OD unchanged) --
-its base is now clipped to a radius that clears the spring carrier's own
-counterbore rim AND the chute tube's own bore (critical 2: the base's
-far corners previously reached 0.6-1mm past both), and gained a
-pass-through cut so the base no longer seals the servo-2 horn slot shut
-(critical 5) -- net genus 4→5 (one new through-hole).
+Rail exit on that rail: **G80T 20.9 m/s**, H182R 30.8, H135W 23.8 — all
+comfortably above the ~15 m/s minimum. On a shorter 1.5 m rail the G80T
+gives 18.8 m/s, still acceptable.
 
-Re-exported again after the 5th review's fix pass: the arming switch
-moved off part 2 (e-bay tube) onto part 7 (access door) -- finding 1, the
-switch's own Z window on the tube kept re-breaking (it inverted twice
-across the 3rd/4th reviews) rather than growing the e-bay a third time to
-patch it. Part 2 genus 7→6 (one fewer through-hole); part 7 genus 4→5
-(one more) and volume shrank 10.6→10.4 cm³ (the switch's own hole).
-Part 2's door bosses were also reshaped (finding 2: the boss's own inner
-tip used to reach past the tube's ID into the Vega board's own footprint
--- a real, measured collision the harness had never modelled) -- no
-change to part 2's own genus/volume at this file's precision. Part 13
-(tether latch) volume unchanged at this precision -- its pin bore
-shortened (finding 3: the old bore reached to within 0.15mm of the
-spring carrier's own counterbore rim, not the "1.27mm" previously
-claimed) and a dead, no-op cut was removed (finding 4).
-
-Re-exported again after the 8th review's fix pass: part 6 (Vega sled)
-only -- its rail geometry was mirrored end-for-end (the fwd/aft tips had
-been swapped by a sign error in how the sled's own local Y maps to the
-tube's global Z once assembled), so the nut/washer clearance and the hard
-stop against the forward bulkhead were sized correctly but built at the
-WRONG ends. No dimensional or mass change at this file's own precision
-(same 45.60×133.10×8.00mm envelope, same 23.8g, same genus 5) -- only the
-rail's own axial position within that envelope shifted, 4.8mm toward the
-opposite end at each tip.
-
-Tallest part 228 mm, inside the 250 mm envelope with 22 mm to spare.
-
-## Mass — measured from the exported meshes
-
-Per-part mass now comes from these measured mesh volumes (PETG 1.27 g/cm³,
-PC 1.20 g/cm³ per `R60-PrintSettings.md` sec 3, at a stated 78% effective
-print density), not a round-number estimate — see
-`tools/rocket60_model.py`. About 31% of this mass (~269g) is unweighed
-hardware ESTIMATES rather than measured mesh volumes -- see
-`R60-PrintSettings.md` §8's pre-flight weigh-in step for the itemised
-list. **Liftoff mass on the G80T-14A (the sizing
-motor) is 874 g**, giving **18.8 m/s** off
-a 1.5 m 1010 rail (clears its 15 m/s target -- this, not stability, is
-the G80T's real binding constraint) and **1.46 cal** static
-margin. A full station audit (4th review, coordinator override) found
-the previously-published 1.53 cal (itself already a correction of an
-inflated 1.61 cal) was still short eight more station errors; corrected,
-the true figure is 1.46 cal, which clears the design's actual physical
-minimum (1.0 cal, spec §6.1 -- the earlier 1.5 cal figure was a comfort
-target, not a requirement, and was retired rather than chased with
-further fin growth). See the design spec §6/§6.1 for the full audit
-table and the gate-retirement decision. H182R-14A gives 941 g / 1.28 cal
-/ 27.9 m/s; H135W-14A gives 944 g / 1.29 cal / 21.4 m/s (7th review: the
-Vega sled's retention redesign moved its own station 7.35mm aft,
-shifting all three by a few grams/cal). Full breakdown, all three
-motors, in `tools/rocket60_model.py`'s own output.
-
-**Weigh the parts as they come off the printer** and compare against
-`tools/rocket60_model.py`'s per-part figures before committing to a rail
-length.
+The 3 mm rod is not usable at this mass. The TSP E20-P is excluded: 9.4 m/s
+off the 1.83 m rail, well under the minimum.
 
 ## Verification
 
-Each file above was checked after export: measured height and max OD compared
-against what that part is supposed to be. An earlier export silently wrote
-every part under the *next* part's filename — each STL internally valid, each
-one wrong. Only the dimension cross-check caught it. If you regenerate these,
-re-run that check rather than trusting the loop.
+Every file above was measured after export and checked against what that
+part should be. This matters: an earlier export in this project silently
+wrote every part under the *next* part's filename — each STL internally
+valid, every one wrong — and only the dimension cross-check caught it.
+If you regenerate these, re-run that check rather than trusting the loop.
