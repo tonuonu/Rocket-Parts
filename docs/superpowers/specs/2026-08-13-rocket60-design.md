@@ -397,9 +397,9 @@ current mass source.
 report).** The original model below fed Barrowman the fin's full BURIED
 planform (Cr 90 / Ct 35 / span 55 / sweep 45 mm, all measured at the
 airframe's own centreline) as if all of it were exposed to the airflow.
-It is not: `R60_FinCan()`'s slot is cut from `R60_MMT_OD/2 = 16 mm`
-outward, so the epoxied root bottoms out at r=16mm and only
-r=(D/2=30)..(16+span) is actually exposed — 14 mm of the reported span
+It is not: `R60_FinCan()`'s slot is cut from `R60_MMT_OD/2 = 16.15 mm`
+outward, so the epoxied root bottoms out at r=16.15mm and only
+r=(D/2=30)..(16.15+span) is actually exposed — 13.85 mm of the reported span
 sits buried under the joint and contributes zero normal force. That
 inflated CN(fins) by ~65% (5.78 vs. the corrected figure below at the
 original 55mm span) and put the G80T-14A — the motor actually owned, and
@@ -414,28 +414,28 @@ restores the G80T's margin to 1.5+ cal at a cost of +14 g total
 (+4.7 g/fin) rather than the far larger mass penalty chord growth or a
 second material would have cost.
 
-Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
-35 mm, measured at the body OD, r=30mm — see `tools/rocket60_model.py`'s
+Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
+35.1 mm, measured at the body OD, r=30mm — see `tools/rocket60_model.py`'s
 `exposed_geom()`), 3 fins:
 
-- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.71 at ~493 mm
-- **CP = 452.4 mm** from the nose tip (shifted +11.9 mm from 440.5 last
+- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.73 at ~493 mm
+- **CP = 453.0 mm** from the nose tip (shifted +11.9 mm from 440.5 last
   round: the fin can's own station moves with R60_EBay_L (165->177mm,
   critical 3) and the neck-flange length fix (should-fix 12), and only
   the fin-CN share of total CN moves with them)
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 874 g | 364.9 mm | **1.46 cal** | 344.9 mm | 1.79 cal |
-| H182R-14A | 941 g | 375.7 mm | **1.28 cal** | 346.9 mm | 1.76 cal |
-| H135W-14A | 944 g | 375.1 mm | **1.29 cal** | 356.0 mm | 1.61 cal |
+| G80T-14A | 874 g | 365.3 mm | **1.46 cal** | 345.4 mm | 1.79 cal |
+| H182R-14A | 941 g | 376.1 mm | **1.28 cal** | 347.4 mm | 1.76 cal |
+| H135W-14A | 944 g | 375.5 mm | **1.29 cal** | 356.5 mm | 1.61 cal |
 
 (Re-run after the 6th review's Vega sled retention redesign, finding 1 --
 liftoff mass moved +3-4 g per motor, station/CG moved <1mm at this
 file's own precision; margins moved +0.01 cal across the board. See §5's
 own table comment for the per-part volume breakdown.)
 
-**The G80T-14A sizing case corrected from 1.53 cal to 1.45 cal.** (Full
+**The G80T-14A sizing case corrected from 1.53 cal to 1.46 cal.** (Full
 station audit, coordinator override, same round as should-fix 11.) The
 previously-published 1.53 cal itself was only PARTIALLY corrected --
 should-fix 11 fixed the two largest station bugs (aft bulkhead+skirt,
@@ -522,8 +522,8 @@ threatens here, and the model's own liftoff figure carries real
 uncertainty until the assembled rocket is weighed.
 
 **Fin flutter:** exposed-panel AR 0.87, λ 0.45, t/c 0.071, G ≈ 0.5 GPa for
-printed PETG → **Vf ≈ 959 m/s**, 4.6× the G80T's ~131 m/s Vmax and 4.9×
-the H135W's ~195 m/s, and 1.53× the required 3× floor against the
+printed PETG → **Vf ≈ 955 m/s**, 4.6× the G80T's ~131 m/s Vmax and 4.9×
+the H135W's ~195 m/s, and 1.52× the required 3× floor against the
 fastest case (H182R-14A, ~210 m/s Vmax → 629 m/s floor). Vf dropped from
 the (incorrectly-computed, buried-root) original ~850 m/s claim, but the
 low aspect ratio this planform is built around still buys a comfortable

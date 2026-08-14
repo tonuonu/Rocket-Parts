@@ -45,11 +45,11 @@ tether latch this section used to say had "no STL":
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins were
 originally sized for a 1.5 cal static-margin target at liftoff, but a
 full station audit (coordinator override, 4th review) found the TRUE
-margin is **1.47 cal**, not the 1.53 cal (itself already a correction of
+margin is **1.46 cal**, not the 1.53 cal (itself already a correction of
 an inflated 1.61 cal) previously published here. The 1.5 cal figure was
 never a physical requirement — it was retired as the gate and replaced
 with the actual physical minimum, **1.0 cal** (standard high-power
-practice's accepted 1.0–2.0 cal band); 1.47 cal clears that with real
+practice's accepted 1.0–2.0 cal band); 1.46 cal clears that with real
 room and is accepted, not merely tolerated. See spec §6.1 for the full
 reasoning and station-audit table. Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with

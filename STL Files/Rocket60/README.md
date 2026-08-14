@@ -145,6 +145,16 @@ shortened (finding 3: the old bore reached to within 0.15mm of the
 spring carrier's own counterbore rim, not the "1.27mm" previously
 claimed) and a dead, no-op cut was removed (finding 4).
 
+Re-exported again after the 8th review's fix pass: part 6 (Vega sled)
+only -- its rail geometry was mirrored end-for-end (the fwd/aft tips had
+been swapped by a sign error in how the sled's own local Y maps to the
+tube's global Z once assembled), so the nut/washer clearance and the hard
+stop against the forward bulkhead were sized correctly but built at the
+WRONG ends. No dimensional or mass change at this file's own precision
+(same 45.60×133.10×8.00mm envelope, same 23.8g, same genus 5) -- only the
+rail's own axial position within that envelope shifted, 4.8mm toward the
+opposite end at each tip.
+
 Tallest part 228 mm, inside the 250 mm envelope with 22 mm to spare.
 
 ## Mass — measured from the exported meshes
@@ -158,11 +168,11 @@ hardware ESTIMATES rather than measured mesh volumes -- see
 list. **Liftoff mass on the G80T-14A (the sizing
 motor) is 874 g**, giving **18.8 m/s** off
 a 1.5 m 1010 rail (clears its 15 m/s target -- this, not stability, is
-the G80T's real binding constraint) and **1.47 cal** static
+the G80T's real binding constraint) and **1.46 cal** static
 margin. A full station audit (4th review, coordinator override) found
 the previously-published 1.53 cal (itself already a correction of an
 inflated 1.61 cal) was still short eight more station errors; corrected,
-the true figure is 1.47 cal, which clears the design's actual physical
+the true figure is 1.46 cal, which clears the design's actual physical
 minimum (1.0 cal, spec §6.1 -- the earlier 1.5 cal figure was a comfort
 target, not a requirement, and was retired rather than chased with
 further fin growth). See the design spec §6/§6.1 for the full audit
