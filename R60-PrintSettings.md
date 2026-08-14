@@ -276,20 +276,28 @@ Build order for what exists today:
    above) before anything else.
 2. Mount the CATS Vega on `06_VegaSled.stl` on M3 standoffs — antenna side
    faces **radially outward**, nothing between it and the airframe wall
-   (spec §7.1). Slide the sled lengthwise into `02_EBayTube.stl`'s
-   retention rails (either end of the tube) before installing the
-   bulkheads, then cinch it down with 2 zip ties through the tube's
-   zip-tie slots.
+   (spec §7.1). The sled itself bolts to both e-bay bulkheads (6th
+   review, finding 1 — retired the rail/zip-tie scheme, which failed
+   three review rounds running), 2× M3 into ruthex inserts per end, so
+   its own installation is now part of step 5 below, not a separate
+   in-tube slide.
 3. Install both MG90S servos in `05_EBayAftBulkhead.stl`'s upright
-   pockets, shafts along the rocket axis (spec §3.2 P4). Screw
+   pockets, shafts along the rocket axis (spec §3.2). Screw
    `13_TetherLatch.stl` to the bulkhead's aft face (2× M3 into ruthex
    inserts) so servo 2's horn can reach it.
 4. Anchor the shock cord to the aft bulkhead. Do this before closing the
    e-bay — it is not accessible afterward.
-5. Assemble the e-bay: `04_EBayFwdBulkhead.stl` forward, Vega sled and
-   `05_EBayAftBulkhead.stl` aft, inside `02_EBayTube.stl`. Route the
-   camera harness down through the neck's open centre into the e-bay
-   (spec §3.1 invariant 2: no wire crosses the separation joint).
+5. Assemble the e-bay inside `02_EBayTube.stl`: seat `05_EBayAftBulkhead.
+   stl` at the aft opening and bolt the Vega sled's aft foot to it (2× M3
+   into ruthex inserts, reachable from the tube's still-open forward
+   end); feed the sled's forward foot up to `04_EBayFwdBulkhead.stl`'s
+   own boss and bolt that end too, then seat the forward bulkhead. Both
+   the sled's radial position and its clocking (antenna outward) are
+   fixed by these 4 holes, not by resting against anything — check the
+   antenna orientation before driving the last screw, it cannot be
+   corrected once both ends are bolted. Route the camera harness down
+   through the neck's open centre into the e-bay (spec §3.1 invariant 2:
+   no wire crosses the separation joint).
 6. Bolt `01_Neck.stl` to the camera assembly with 3× M3×10 SHCS into the
    heat-set inserts (5.0 mm grip, 5.0 mm thread engagement — does not
    bottom out, spec §2.1), then to the nosecone base and e-bay tube.
