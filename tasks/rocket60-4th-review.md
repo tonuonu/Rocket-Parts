@@ -272,3 +272,51 @@ list.
 - Design spec, `R60-PrintSettings.md`, STL README and the PR body
   updated to the corrected 1.45/1.27/1.28 cal figures, with the
   below-target G80T margin stated plainly, not softened.
+
+---
+
+## Coordinator ruling: stability gate retired at 1.5 cal, set to 1.0 cal
+
+**Ruling (2026-08-14):** accept 1.45 cal on the G80T. 1.5 cal was the
+coordinator's own earlier comfort target, never a physical requirement;
+the accepted high-power band is 1.0-2.0 cal with 1.0 the minimum.
+Buying back 0.05 cal would cost fin area or nose ballast on the exact
+flight where rail exit, not stability, is the binding constraint --
+a bad trade for a number that was invented, not derived.
+
+- `tools/rocket60_model.py`: `MIN_MARGIN_CAL = 1.0` replaces the
+  hardcoded `1.5` in the gate check, with the full reasoning (not just
+  the number) recorded in-line, dated. The gate now exits 0 and prints
+  "clears the 1.0 cal minimum" instead of a FAIL flag.
+- Design spec: new §6.1 records the ruling verbatim (reasoning +
+  decision + date), corrects an undercount in the audit text ("six more
+  errors" -> the correct eight), and fixes two stale apogee mentions
+  (627m -> 624m, both predating even the 4th review's own R60_EBay_L
+  growth) found while re-checking every figure the audit moved.
+- `R60-PrintSettings.md`: motors/fin-sizing sections reframed from
+  "below target" to "1.0 cal minimum, accepted"; new §8 pre-flight step
+  (weigh the assembled rocket, compare to the model's 871g, itemising
+  every flat-gram hardware estimate -- ~269g/31% of liftoff mass) since
+  rail exit, not stability, is what mass actually threatens here.
+- STL README: mass/margin summary reframed the same way, cross-
+  references the new pre-flight step.
+
+### Final numbers (unchanged from the station-audit pass -- this round
+only changed the gate threshold and documentation, no geometry, no mass
+model math)
+
+| Motor | Liftoff | Margin | Margin burnout | Apogee | Rail exit |
+|---|---|---|---|---|---|
+| G80T-14A | 871 g | 1.45 cal | 1.78 cal | 624 m | 18.9 m/s |
+| H182R-14A | 938 g | 1.27 cal | 1.75 cal | 982 m | 27.9 m/s |
+| H135W-14A | 941 g | 1.28 cal | 1.60 cal | 1031 m | -- |
+
+### Verification
+
+- `tools/rocket60_model.py`: exits **0** (gate now correctly passes at
+  the physical 1.0 cal minimum).
+- `tools/verify_rocket60.py`: 0 failed.
+- `tools/verify_rocket60_assembly.py`: 0/20 pairs failed, re-run in full
+  (~82s) to confirm no regression from the doc/model-only changes this
+  pass.
+- No SCAD geometry changed; no STL re-export needed.

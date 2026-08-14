@@ -175,7 +175,7 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
 | 0 | — | Launch | 1010 rail, 1.5 m, exit 18.9 m/s |
-| 10.9 s | 627 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
+| 10.9 s | 624 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
 | — | 627→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
@@ -407,17 +407,17 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 | H182R-14A | 938 g | 376.3 mm | **1.27 cal** | 347.5 mm | 1.75 cal |
 | H135W-14A | 941 g | 375.7 mm | **1.28 cal** | 356.6 mm | 1.60 cal |
 
-**⚠ The G80T-14A sizing case is BELOW the 1.5 cal target: 1.45 cal, not
-1.53 cal.** (Full station audit, coordinator override, same round as
-should-fix 11.) The previously-published 1.53 cal itself was only
-PARTIALLY corrected -- should-fix 11 fixed the two largest station bugs
-(aft bulkhead+skirt, spring carrier) but left the rest of `build()`'s
-station list un-audited, on the "report don't fix" convention this
-review otherwise follows. The coordinator overrode that for the two
-remaining flagged items (tether latch, CS4323 spring) and ordered a full
-item-by-item audit of every station against the assembled geometry. It
-found six more errors, ALL biased the same direction as the first two
-(understating how far aft the mass actually sits):
+**The G80T-14A sizing case corrected from 1.53 cal to 1.45 cal.** (Full
+station audit, coordinator override, same round as should-fix 11.) The
+previously-published 1.53 cal itself was only PARTIALLY corrected --
+should-fix 11 fixed the two largest station bugs (aft bulkhead+skirt,
+spring carrier) but left the rest of `build()`'s station list un-audited,
+on the "report don't fix" convention this review otherwise follows. The
+coordinator overrode that for the two remaining flagged items (tether
+latch, CS4323 spring) and ordered a full item-by-item audit of every
+station against the assembled geometry. It found eight more errors, ALL
+biased the same direction as the first two (understating how far aft the
+mass actually sits):
 
 | Item | Old station | Corrected | Delta | Basis |
 |---|---|---|---|---|
@@ -437,25 +437,60 @@ correct (uniform-tube items use their own geometric midpoint; a few
 loose/external-hardware items -- nosecone shell, camera, battery+wiring,
 CATS Vega+sled, rail buttons -- have no SCAD geometry to derive a more
 precise station from and are kept as documented heuristics). **This is
-now the TRUE margin, not a margin grown by an uncaught bug, and it is
-below the 1.5 cal gate.** Per explicit instruction, no design change
-(fin growth, mass removal, etc.) was made to force it back above 1.5 --
-that is a design decision for whoever owns the gate, not something to
-engineer backwards into. H182R-14A and H135W-14A land at 1.27-1.28 cal —
-still comfortably above 1.0 cal and needing no ballast, though nose
-ballast is standard practice if either H's margin is ever wanted higher.
-Margin *increases* through the burn on every configuration (burnout
-G80T margin is 1.78 cal).
+now the TRUE margin, not a margin grown by an uncaught bug.** No design
+change (fin growth, mass removal, etc.) was made to reach any particular
+number -- see "1.5 target, 1.45 accepted" below for what happened to the
+gate once this figure was known. H182R-14A and H135W-14A land at
+1.27-1.28 cal — still comfortably above 1.0 cal and needing no ballast,
+though nose ballast is standard practice if either H's margin is ever
+wanted higher. Margin *increases* through the burn on every
+configuration (burnout G80T margin is 1.78 cal).
 
-**Both mass and stability are now binding on the G80T** (this was
-written as "mass, not stability" before the station audit above; no
-longer accurate -- stability now misses its own gate). Liftoff mass
+### 6.1 Stability gate: 1.5 cal target retired, 1.0 cal minimum accepted
+
+Recorded here, not applied quietly, per explicit instruction.
+
+**Ruling (coordinator, 2026-08-14):** the stability gate in
+`tools/rocket60_model.py` is **1.0 cal**, not 1.5 cal. The reasoning:
+
+- 1.5 cal was the coordinator's own EARLIER target, picked as
+  "comfortable" during the group-2 fin re-target that grew span
+  55→63mm. It was never a physical requirement — nothing in the design
+  spec, the airframe geometry or flight mechanics demanded 1.5
+  specifically.
+- The accepted static-margin band in high-power rocketry is 1.0–2.0
+  cal, with **1.0 cal the physical minimum**. G80T (1.45 cal), H182R
+  (1.27 cal) and H135W (1.28 cal) all clear it with real room, not a
+  hairline.
+- Buying back the missing 0.05 cal on the G80T would cost fin area or
+  nose ballast — i.e. mass, on the exact flight where **rail exit**
+  (18.9 m/s off a 1.5 m rail, ~4 m/s above the 15 m/s minimum) is
+  already the binding constraint, not stability. That is a bad trade
+  for a target number that was never physical to begin with.
+
+**This is not moving a goalpost to make a failing check pass.** The
+check that used to compare against 1.5 cal now compares against 1.0
+cal, the actual physical requirement, and the reasoning above is on the
+record at the point the decision was made — `tools/rocket60_model.py`'s
+own `MIN_MARGIN_CAL` constant carries the same comment. 1.45 cal on the
+G80T is accepted, not merely tolerated: it is roughly 45% above the
+physical minimum, in a rocket where the real limiting factor is mass
+(rail exit), not stability.
+
+**Both mass and rail exit remain the G80T's binding constraint, not
+stability** (stability now clears its own, physical gate with room).
+Liftoff mass
 grew from the original 805g estimate through several necessary
 corrections (measured-mesh part masses, the missing spring/tether-latch
 hardware, +14g of fin, and now the R60_EBay_L growth) to **871 g**. At
 that mass the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably
 above the ~15 m/s minimum despite the added fin span. A 1.5 m rail is
-adequate for the G80T. The H182R is unaffected (27.9 m/s).
+adequate for the G80T. The H182R is unaffected (27.9 m/s). Roughly 31%
+of that 871g liftoff mass is unweighed hardware ESTIMATES, not measured
+mesh volumes — see `R60-PrintSettings.md`'s own pre-flight weigh-in
+step, added for exactly this reason: rail exit is what mass actually
+threatens here, and the model's own liftoff figure carries real
+uncertainty until the assembled rocket is weighed.
 
 **Fin flutter:** exposed-panel AR 0.87, λ 0.45, t/c 0.071, G ≈ 0.5 GPa for
 printed PETG → **Vf ≈ 959 m/s**, 4.6× the G80T's ~131 m/s Vmax and 4.9×
@@ -588,4 +623,4 @@ and rail exit would be unstable.
 8. Confirm `enable_telemetry` is `true` and the ground station shows GNSS fix **before**
    the rocket leaves your hands. The firmware default is `false`.
 9. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
-   Compare logged apogee to the 627 m prediction and correct Cd₀ before flying the H.
+   Compare logged apogee to the 624 m prediction and correct Cd₀ before flying the H.

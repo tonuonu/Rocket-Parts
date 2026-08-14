@@ -43,15 +43,17 @@ tether latch this section used to say had "no STL":
   plus the fixed `NoseCone.stl` — exists as a mesh and is covered below.
 
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins were
-sized for a **1.5 cal** static-margin target at liftoff, but a full
-station audit (coordinator override, 4th review) found the TRUE margin
-is **1.45 cal — below the 1.5 cal target**, not the 1.53 cal (itself
-already a correction of an inflated 1.61 cal) previously published here.
-No design change was made to force it back above 1.5 cal; see spec §6
-for the full station-audit table and the open decision this leaves.
-Airframe is sized for
+originally sized for a 1.5 cal static-margin target at liftoff, but a
+full station audit (coordinator override, 4th review) found the TRUE
+margin is **1.45 cal**, not the 1.53 cal (itself already a correction of
+an inflated 1.61 cal) previously published here. The 1.5 cal figure was
+never a physical requirement — it was retired as the gate and replaced
+with the actual physical minimum, **1.0 cal** (standard high-power
+practice's accepted 1.0–2.0 cal band); 1.45 cal clears that with real
+room and is accepted, not merely tolerated. See spec §6.1 for the full
+reasoning and station-audit table. Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
-no reprint (spec §1.1, §5); both give **1.2+ cal** on this fin size (§9).
+no reprint (spec §1.1, §5); both clear the same 1.0 cal minimum (§9).
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -381,18 +383,43 @@ Copied from spec §11, with one adaptation flagged below.
 4. Bench-test the full Vega sequence on the ground: arm → apogee servo →
    tether servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
-6. Confirm rail exit on a 1.5 m rail before committing to a shorter one.
-7. **Confirm the arming switch can actually be reached and thrown with the
+6. **Weigh the fully assembled rocket and compare against
+   `tools/rocket60_model.py`'s own liftoff-mass figure (871 g, G80T
+   config) before committing to a rail length.** Rail exit is what mass
+   actually threatens on this rocket (18.9 m/s off a 1.5 m rail against a
+   ~15 m/s minimum, spec §6.1) — NOT stability, which now clears its own
+   1.0 cal minimum with real room (spec §6.1). Roughly 269 g of the
+   modelled 871 g (31%) is flat-gram hardware ESTIMATES, not measured
+   mesh volumes, so the real liftoff mass could differ meaningfully from
+   871 g:
+   - camera assembly (60 g), 2× MG90S servos (27 g, datasheet),
+     parachute+cord+hardware (70 g), battery+wiring (45 g), CATS Vega
+     board (25 g — its sled IS a measured mesh volume, the board itself
+     is not), CS4323 spring (25 g, already flagged unverified — spec
+     §4.2 item A11), switch hardware (8 g), rail buttons (4 g), neck
+     bolts (3 g), tether latch pin (1 g), shear pins (0.5 g).
+   - Every PRINTED part's own mass IS a measured mesh volume (STL_VOL in
+     `tools/rocket60_model.py`) — but scaled by a single blended
+     infill/print-density figure (`INFILL_EFF=0.78`) that is itself a
+     stated, unverified assumption applied across every PETG part alike,
+     not per-part infill actually measured off a scale (§3's own
+     infill % differs 25–62% per part).
+   - If the weighed rocket comes in meaningfully over 871 g, re-check
+     rail exit against the ~15 m/s minimum before flying — a shorter or
+     lower-thrust rail exit is the actual failure mode a heavier-than-
+     modelled rocket produces, not a stability problem.
+7. Confirm rail exit on a 1.5 m rail before committing to a shorter one.
+8. **Confirm the arming switch can actually be reached and thrown with the
    rocket vertical on the rail.** The Vega calibrates once, automatically,
    as soon as it detects no motion after boot — it must not be powered up
    before the rocket is vertical on the rail, and disarming afterward is
    only possible by powering off (spec §7.1, §11 item 7).
-8. Confirm `enable_telemetry` is `true` and the ground station shows a
+9. Confirm `enable_telemetry` is `true` and the ground station shows a
    GNSS fix **before** the rocket leaves your hands. The firmware default
    is `false`.
-9. First flight on the G80T-14A, single objective: recover the airframe
-   and read the Vega log. Compare logged apogee to the 627 m prediction
-   and correct Cd₀ before flying the H.
+10. First flight on the G80T-14A, single objective: recover the airframe
+    and read the Vega log. Compare logged apogee to the 624 m prediction
+    and correct Cd₀ before flying the H.
 
 ---
 
@@ -412,19 +439,23 @@ Copied from spec §11, with one adaptation flagged below.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
   `tools/rocket60_model.py`, not built by any printable part.
 
-**Fin sizing (open — below target).** The original Barrowman analysis counted the
+**Fin sizing (resolved — 1.0 cal minimum, not 1.5 cal target).** The original Barrowman analysis counted the
 fin's full 55mm span as exposed to the airflow, when 14mm of it
 (`R60_Body_OD/2 - R60_MMT_OD/2`) actually sits buried under the epoxied
 joint inside the fin can. Fed the correct exposed geometry, the as-shipped
 fin gave the G80T-14A — the motor actually owned, and the sizing case —
 only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
-`(exposed span/D)²`) targeting 1.5 cal on the G80T. A full station audit
+`(exposed span/D)²`) originally targeting 1.5 cal on the G80T. A full station audit
 (coordinator override, 4th review, spec §6) found the TRUE margin is
-**1.45 cal — below the 1.5 cal target**, not the 1.53 cal previously
+**1.45 cal**, not the 1.53 cal previously
 published here (itself already a correction of an inflated 1.61 cal).
-No further span growth was made to force it back above 1.5 cal — that is
-a design decision for whoever owns the gate. H182R-14A gives 1.27 cal and H135W-14A gives 1.28 cal on the
+The 1.5 cal target was retired rather than chased with further span
+growth (spec §6.1): it was never a physical requirement, only this
+project's own earlier comfort target, and buying back 0.05 cal would
+cost mass on the exact G80T flight where rail exit, not stability, is
+the binding constraint. The gate is now the real physical minimum,
+**1.0 cal**, and 1.45 cal clears it with genuine room. H182R-14A gives 1.27 cal and H135W-14A gives 1.28 cal on the
 same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from
