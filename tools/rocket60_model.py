@@ -34,14 +34,30 @@ WALL= 1.6            # airframe wall
 # lengthening. This model was of a rocket that no longer exists.
 # L_EBAY grew again, 160->165 (3rd review, defect 2d/9): R60_EBay_L now
 # carries 5mm of headroom above the bare minimum so the arming-switch Z
-# window is a genuine ~3mm margin instead of a 0.5mm hair gap.
+# window is a genuine ~3mm margin instead of a 0.5mm hair gap. Grew AGAIN,
+# 165->177 (4th review, critical 3): that 3rd-review derivation measured
+# the switch's clearance from the door APERTURE's own edge, not from
+# R60_Door()'s actual built footprint (a COVER, R60_Door_Overlap=6mm
+# larger than the aperture on every side) -- correctly counting that
+# overlap needs 12mm more of R60_EBay_L to restore the same ~3mm window
+# the 3rd review intended. See R60Lib.scad's own R60_EBay_L comment for
+# the closed-form derivation.
 L_NOSE = 94.0
-L_EBAY = 165.0
+# L_NECK_FLANGE (4th review, should-fix 12): the neck (part 1)'s own
+# Flange_T=5mm sits externally, between the nosecone's own base and the
+# e-bay tube's forward rim -- its 19mm skirt telescopes INSIDE L_EBAY
+# (already counted there) and adds no further length, but the flange
+# itself is real, additional airframe length TOTAL used to omit entirely.
+# Physical stack: 94 (nose) + 5 (flange) + 177 (e-bay) + 180 (chute) + 228
+# (fin can) = 684mm -- this is that other 5mm.
+L_NECK_FLANGE = 5.0
+L_EBAY = 177.0
 L_CHUTE= 180.0
 L_FINCAN=228.0
-TOTAL  = L_NOSE+L_EBAY+L_CHUTE+L_FINCAN
+TOTAL  = L_NOSE+L_NECK_FLANGE+L_EBAY+L_CHUTE+L_FINCAN
 
-S_EBAY = L_NOSE
+S_EBAY = L_NOSE+L_NECK_FLANGE   # e-bay tube's own forward rim, past the
+                                 # neck's flange (see L_NECK_FLANGE above)
 S_CHUTE= S_EBAY+L_EBAY
 S_FIN  = S_CHUTE+L_CHUTE
 
@@ -64,12 +80,30 @@ S_FIN  = S_CHUTE+L_CHUTE
 # (should-fix 9/11: R60_EBay_L 160->165 adds tube wall and lengthens the
 # Vega rails; the zip-tie redesign from 2 slots to 4 removes a little
 # back, net +1.3 cm3) -- re-measured off the freshly re-exported mesh.
+#
+# Re-measured AGAIN this round (4th review): [2] grew 46.2->50.0
+# (R60_EBay_L 165->177, critical 3, adds tube wall + rail length); [3]
+# grew 55.2->55.7 (critical 1's weld ring net of critical 4's shorter
+# spigot -- R60_FinCanSpigot_L 6.0->5.5, should-fix 8); [13] shrank
+# 3.5->3.0 (critical 2's corner clip + critical 5's base pass-through
+# remove more material than the clip's own small chamfer adds back).
 NOSECONE_VOL = 29.4                 # NoseCone.stl
-STL_VOL = {1: 16.2, 2: 46.2, 3: 55.2, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
-           8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.5, 14: 0.6}
+STL_VOL = {1: 16.2, 2: 50.0, 3: 55.7, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
+           8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.0, 14: 0.6}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
                         # stops this much short of MMT_L, see build()
+
+# Aft bulkhead skirt / spring carrier stations (4th review, should-fix
+# 11) -- restated literals (rule 4) matching R60Lib.scad's
+# R60_AftBulk_T/R60_Pin_Skirt_L and R60_SpringCarrier()'s own L=65, used
+# below to derive both items' stations from where their geometry actually
+# sits once assembled (r60_assembly.scad's own Pair 5/6 comments derive
+# the SAME "stack" frame these come from), not a hand-picked offset from
+# S_CHUTE.
+AFTBULK_T  = 12.0    # R60_AftBulk_T -- disc thickness
+PIN_SKIRT_L = 15.0   # R60_Pin_Skirt_L -- skirt engagement past the disc
+CARRIER_L  = 65.0    # R60_SpringCarrier()'s own L
 
 def petg(vol_cm3, infill=INFILL_EFF):
     return vol_cm3 * RHO_PETG * infill
@@ -146,7 +180,20 @@ def build(motor):
      ('e-bay fwd bulkhead',    petg(STL_VOL[4]),         S_EBAY+6),
      # 2x MG90S at ~13.4g each (datasheet), mounted upright in the aft
      # bulkhead per its module comment.
-     ('e-bay aft bulkhead + 2 servos', petg(STL_VOL[5])+27.0, S_EBAY+L_EBAY-13),
+     #
+     # Station (4th review, should-fix 11): this whole part (STL_VOL[5])
+     # is the disc (12mm) PLUS the skirt (15mm) that projects AFT of the
+     # e-bay tube's own cut end into the chute bay -- see
+     # R60_EBayAftBulkhead()'s own module comment. Once assembled the
+     # disc's forward face sits at S_CHUTE-AFTBULK_T (247mm) and the
+     # skirt's aft tip at S_CHUTE+PIN_SKIRT_L (274mm) -- see
+     # r60_assembly.scad's Pair 5 comment for the same "stack" frame this
+     # is read off. Was S_EBAY+L_EBAY-13=246, 14mm forward of this part's
+     # own geometric midpoint (260.5) -- a real, if second-order, CG error
+     # (S_EBAY+L_EBAY is the e-bay tube's OWN aft rim/S_CHUTE, and -13 was
+     # never derived from where the skirt actually ends up).
+     ('e-bay aft bulkhead + 2 servos', petg(STL_VOL[5])+27.0,
+      S_CHUTE + (PIN_SKIRT_L - AFTBULK_T) / 2),
      ('access door + switch',  petg(STL_VOL[7]) + 8.0,   S_EBAY+L_EBAY-40),
      ('chute bay tube',        petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
      ('parachute+cord+hw',     70.0,                     S_CHUTE+L_CHUTE*0.45),
@@ -155,7 +202,18 @@ def build(motor):
      # anywhere in the repo (R60Lib.scad's own R60_Pin_d comment); 25g is
      # a stated, UNVERIFIED estimate for a ~44mm OD / 200mm free-length
      # compression spring, not a measurement -- bench-weigh the real part.
-     ('spring carrier',        petg(STL_VOL[8]),         S_CHUTE+8),
+     #
+     # Station (4th review, should-fix 11): the carrier occupies "stack"
+     # z=PIN_SKIRT_L..PIN_SKIRT_L+CARRIER_L (15..80) in the SAME frame
+     # r60_assembly.scad's Pair 6 comment derives -- once fully seated
+     # that maps 1:1 onto the chute tube's own frame, so its absolute
+     # span is S_CHUTE+15 (274mm) to S_CHUTE+80 (339mm), midpoint 306.5.
+     # Was S_CHUTE+8=267, off by 39.5mm -- a real CG error, not a rounding
+     # one: S_CHUTE+8 was never derived from the carrier's own geometry at
+     # all (it reads like a leftover guess from before the skirt/stack
+     # frame existed).
+     ('spring carrier',        petg(STL_VOL[8]),
+      S_CHUTE + PIN_SKIRT_L + CARRIER_L / 2),
      ('CS4323 spring (est., unverified)', 25.0,          S_CHUTE+40),
      # Tether latch (part 13) -- also missing entirely before this fix.
      ('tether latch + pin',    petg(STL_VOL[13]) + 1.0,  S_EBAY+L_EBAY-5),
@@ -177,8 +235,15 @@ def build(motor):
      ('rail buttons x2',       4.0,                      TOTAL-60),
      ('motor spacer (PC)',     spacer_g,                 TOTAL-mlen-spacer_len/2),
      # Forward thrust ring (part 14) -- new this round (defect 3). Flush
-     # with the fin can's own forward tip, TOTAL-THRUST_RING_T/2.
-     ('thrust ring (PC)',      pc(STL_VOL[14]),          TOTAL-THRUST_RING_T/2),
+     # with the fin can's own forward tip -- S_FIN+THRUST_RING_T/2, NOT
+     # TOTAL-THRUST_RING_T/2 (4th review, should-fix 10): TOTAL is the
+     # AFT-most station (nose to nozzle), which is where the motor
+     # retainer/rail buttons/motor itself correctly anchor from below, but
+     # this ring glues into the MMT's FORWARD opening -- R60_ThrustRing()'s
+     # own module comment -- near the fin can's own forward tip (S_FIN),
+     # not the nozzle end. The old formula put it 3mm from the nozzle
+     # instead of ~442mm forward of it.
+     ('thrust ring (PC)',      pc(STL_VOL[14]),          S_FIN+THRUST_RING_T/2),
      ('MOTOR '+motor,          mtot,                     TOTAL-mlen/2),
     ]
     m  = sum(i[1] for i in items)

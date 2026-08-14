@@ -35,10 +35,32 @@ R60_Body_ID    = R60_Body_OD - 2*R60_Wall_T;   // 56.8
 // interference fit here.
 R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
 
-R60_EBay_L   = 165;   // fits Vega 100 + upright MG90S 29 + slack, +5mm
-                       // over the minimum so the arming-switch Z window
-                       // (Rocket60.scad) gets a genuine ~3mm margin on
-                       // both sides instead of a 0.5mm hair gap
+// R60_EBay_L (4th review, critical 3): grew again, 165->177. The 3rd
+// review grew this 160->165 to give the arming-switch Z window "a
+// genuine ~3mm margin on both sides" -- but that derivation (see
+// R60_EBayTube()'s Sw_Z0, below) measured clearance from the door
+// APERTURE's own top edge (Door_Z1), not from R60_Door()'s actual built
+// footprint, which overlaps R60_Door_Overlap=6mm PAST the aperture on
+// every side (it is a COVER, not a flush plug -- see R60_Door()'s own
+// module comment). So the real clearance was 6mm less than intended:
+// at L=165 the switch hole's own near edge landed 1.5mm INSIDE the
+// door cover's own footprint (measured: cover z=34..131, switch
+// z=129.50..131.00, 16.3mm^3 overlap) -- a hair-gap bug reintroduced by
+// the very fix that thought it had closed the 3rd review's 0.5mm-window
+// defect. Window width W (Sw_Z_max-Sw_Z_min, correctly counting
+// R60_Door_Overlap this time) = 0.5*R60_EBay_L - 85.5; solving W=3 (the
+// SAME ~3mm target the 3rd review intended) for the correctly-derived
+// formula gives L=177 -- restated here as a literal because R60Lib.scad
+// cannot reference R60_Door_Open_H/R60_Neck_Skirt_L/R60_Door_Overlap in
+// a closed form without becoming circular; R60_EBayTube()'s own assert
+// is the load-bearing guard, this comment only documents where 177 came
+// from. See tools/verify_rocket60.py's SW_Z_EXPECT for the same
+// derivation restated as a check.
+R60_EBay_L   = 177;   // fits Vega 100 + upright MG90S 29 + slack, +17mm
+                       // over the bare minimum so the arming-switch Z
+                       // window is a genuine ~3mm margin on both sides
+                       // of the door COVER's real footprint (not just
+                       // the aperture) and of the neck skirt
 R60_Chute_L  = 180;   // spring mechanism 80 + 24in main 100
 R60_FinCan_L = 228;
 
@@ -51,12 +73,23 @@ R60_FinCan_L = 228;
 // 662mm airframe. Built onto the chute tube's own aft end, PAST its
 // existing R60_Chute_L (not into R60_FinCan() -- that part's own forward
 // annulus is already open and unmodified, so nothing there needs to
-// change; see R60_ChuteTube()'s own comment for why 6mm and not
-// R60_Pin_Skirt_L=15 like the other skirts -- the fin can's forward
-// centring ring sits only R60_FinCan_L-6mm from the tip, so 6mm is what
-// is actually free to receive a spigot in the outer annulus there
-// without colliding with it).
-R60_FinCanSpigot_L = 6;
+// change).
+//
+// R60_FinCan_FwdOpen_L (4th review, should-fix 8): the fin can's own
+// forward centring ring sits this far from the tube's own forward tip
+// (R60_FinCan()'s ring-Z loop), so this is exactly how much open annulus
+// is actually free to receive a spigot there. Shared, not restated,
+// so the two can never independently drift the way they did before this
+// fix: R60_FinCanSpigot_L used to be a SECOND, independently-typed "6"
+// that happened to equal this figure exactly -- a bare tangency, zero
+// axial clearance, so the spigot bottomed on the ring before the
+// airframe's own outer OD faces could close flush (the review's own
+// pair-7 probe read 0cm3 for this reason: not a clear fit, a touching
+// one). R60_FinCanSpigot_Clear states the axial clearance explicitly,
+// same "derived minimum, not hand-matched" idiom as R60_Tether_Clear.
+R60_FinCan_FwdOpen_L   = 6;
+R60_FinCanSpigot_Clear = 0.5;   // stated axial print-tolerance clearance
+R60_FinCanSpigot_L = R60_FinCan_FwdOpen_L - R60_FinCanSpigot_Clear;   // 5.5
 
 // Neck skirt length -- shared with R60_EBayTube() so the arming switch
 // hole can be positioned clear of it by construction instead of a
@@ -241,10 +274,34 @@ R60_Tether_Clear = 0.6;   // stated per-side clearance: the notch is cut
 // both mounting inserts inside the horn slot (only ~2.5mm^2 of a 12.6mm^2
 // bore was solid).
 R60_Horn_L            = 24;    // servo 2 horn slot length, X
+R60_Horn_W            = 9;     // servo 2 horn slot width, Y -- shared for
+                                // the same reason R60_Horn_L is: 4th
+                                // review, critical 5, needs it to size the
+                                // pass-through R60_TetherLatch() now cuts
+                                // through its own base (see that module's
+                                // comment) so it never again matches the
+                                // bulkhead's own slot width by coincidence
 R60_TetherInsert_d    = 4.0;   // ruthex RX-M3x5.7 hole, tether latch mount
 R60_Tether_Wall_Min   = 2.0;   // min solid wall around the insert hole,
                                 // clear of the horn slot void
 R60_TetherLatch_HoleX = R60_Horn_L/2 + R60_TetherInsert_d/2 + R60_Tether_Wall_Min;  // 16
+
+// Spring carrier (part 8) counterbore diameter -- shared with
+// R60_TetherLatch() (4th review, critical 2) so the latch can clip its
+// own base to a radius that is guaranteed to stay inside it, DERIVED,
+// rather than the two silently drifting the way R60_TetherLug_*/
+// R60_Tether_Clear were introduced to prevent for the tether notch. Was
+// a second, local-only `CB_D=51` inside R60_SpringCarrier() with nothing
+// else deriving from it -- fine while the latch was assumed to fit
+// inside it whole, which the module comment claimed ("the posts and pin
+// recess into that counterbore") but never actually checked for the
+// latch's own rectangular BASE, offset R60_Tether_Y off the carrier's
+// axis so servo 2 can reach it. A round counterbore centred ON that axis
+// can never fully clear an off-axis rectangle no matter how large --
+// the base's own far corners (r=28.97mm from the carrier's axis) sit
+// PAST the carrier's own OD (28.2mm), so growing CB_D cannot be the fix;
+// R60_TetherLatch()'s own module comment explains the clip this drives.
+R60_SpringCarrier_CB_D = 51;
 
 // ============================================
 // FINS

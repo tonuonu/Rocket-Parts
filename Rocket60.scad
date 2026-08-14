@@ -127,19 +127,28 @@ module R60_EBayTube(){
     // nut, which also could not be tightened through the door as the
     // comment below requires.
     Sw_Margin = 3;   // clear of both the door top and the skirt start
-    Sw_Z0 = Door_Z1 + Sw_Margin + Sw_d/2;
+    // Sw_Z0 (4th review, critical 3): must clear the door COVER's real
+    // footprint, not the aperture's own edge (Door_Z1) -- R60_Door() is a
+    // COVER that overlaps R60_Door_Overlap PAST the aperture on every
+    // side (see that module's comment), so the cover's own top edge sits
+    // at Door_Z1+R60_Door_Overlap, 6mm higher than the aperture alone.
+    // Omitting that overlap here was the 4th review's own critical
+    // finding: at the old R60_EBay_L=165 the switch hole's near edge
+    // landed 1.5mm INSIDE the cover's footprint (measured: cover
+    // z=34..131, switch z=129.5..131.0) despite Sw_Margin=3 -- the
+    // "margin" was being measured against a boundary 6mm short of where
+    // the cover actually ends. R60_EBay_L (R60Lib.scad) carries enough
+    // headroom above the bare minimum that, with this term included, the
+    // window below is a genuine ~3mm on both sides again -- see that
+    // constant's own comment for the closed-form derivation.
+    Sw_Z0 = Door_Z1 + R60_Door_Overlap + Sw_Margin + Sw_d/2;
     Sw_Z1 = R60_EBay_L - R60_Neck_Skirt_L - Sw_Margin - Sw_d/2;
-    // Defect 2d (3rd review): this window used to be only Sw_Z1-Sw_Z0 wide
-    // (0.5mm, when R60_EBay_L was 160) -- a hair gap that made the switch
-    // barrel's fit a coin flip against any rounding. R60_EBay_L carries
-    // 5mm of headroom above the bare minimum specifically so this window
-    // (which gets 2.5mm of every 5mm added to EBay_L, per the formulas
-    // above) is a genuine ~3mm on both sides instead. (Sw_Z0+Sw_Z1)/2
-    // below returns a number regardless of sign, so if a future change to
-    // R60_Door_Open_H/R60_Neck_Skirt_L/R60_EBay_L ever inverts the window
-    // (Sw_Z1 < Sw_Z0), the render still succeeds and the switch silently
-    // lands back inside the neck skirt. Assert instead of letting that
-    // pass silently.
+    // (Sw_Z0+Sw_Z1)/2 below returns a number regardless of sign, so if a
+    // future change to R60_Door_Open_H/R60_Door_Overlap/R60_Neck_Skirt_L/
+    // R60_EBay_L ever inverts the window (Sw_Z1 < Sw_Z0), the render
+    // still succeeds and the switch silently lands back inside the door
+    // cover or the neck skirt. Assert instead of letting that pass
+    // silently.
     assert(Sw_Z1 > Sw_Z0,
         str("R60_EBayTube: arming switch Z window is empty/inverted (Sw_Z0=",
             Sw_Z0, " Sw_Z1=", Sw_Z1,
@@ -289,11 +298,21 @@ module R60_EBayTube(){
     // above), i.e. right where the sled's two captured edges are. A tie
     // threaded in one hole crosses OVER the sled's exposed outer face to
     // exit the other, and cinching it now genuinely sandwiches the plate
-    // against both rails. Each hole's radial reach (R60_Body_ID/2-1 out
-    // through R60_Wall_T*3, unchanged from the pre-fix slot) only opens
-    // the OUTER ~2.2mm of that rail's own 5.6mm radial depth (24.0..29.6)
-    // -- the rail's inner, sled-facing capture surface stays solid; only
-    // a small pass-through nearer the OD is cut.
+    // against both rails. Each hole's radial reach (4th review, should-
+    // fix 9: this paragraph used to claim it "only opens the OUTER
+    // ~2.2mm... the rail's inner, sled-facing capture surface stays
+    // solid" -- a stale, REJECTED design this code no longer builds. An
+    // outer-only cut leaves the rail's inner face standing alone across
+    // the gap as a thin free-hanging bridge -- still a valid manifold,
+    // but genus jumped 5->11 for 2 new holes instead of the expected
+    // 5->7, and a bridge that thin is also a real overhang for the
+    // printer, confirmed on an interim render before this was corrected)
+    // starts at the rail's own INNER face (Tie_X0=Rail_Inner_R-Overlap,
+    // below) and runs clear through to 2mm past the true OD
+    // (Tie_Depth=R60_Body_OD/2-Rail_Inner_R+2+Overlap) -- the rail's
+    // FULL radial cross-section is cut locally, not just its outer
+    // portion, which is what actually returns the expected +1 genus per
+    // hole on the rendered mesh.
     Tie_Z = [R60_EBay_L/2 - 20, R60_EBay_L/2 + 20];
     difference(){
         union(){
@@ -430,9 +449,74 @@ module R60_ChuteTube(){
     // report: a first draft let the two drift 0.8mm into interference).
     Tie_W = R60_TetherLug_W; Tie_D = R60_TetherLug_D;
     Tie_H = R60_TetherLug_H; Tie_Z = R60_TetherLug_Z;
+    // Wall_Fuse_R (4th review, critical 4): radial reach PAST the tube's
+    // own ID a printed feature must have to actually weld into the wall
+    // instead of merely touching it tangent. Same idiom/value as
+    // R60_EBayTube()'s Rail_Overlap_R / Door_Boss_Reach_R (both 1.2mm
+    // past R60_Body_ID/2, leaving the same 0.4mm of skin short of the
+    // true OD) -- applied here to the spring reaction tabs and the
+    // tether tie-off lug below, which both used to stop EXACTLY at
+    // R60_Body_ID/2 (tangent, not embedded): measured weld cross-section
+    // ~0.78mm^2/feature, indistinguishable from a meshing artifact, not a
+    // real structural bond. Reacting 130N (the spring's own stated
+    // target, R60Lib.scad's R60_Pin_d comment) across the 3 embedded tabs
+    // now gives 3 * (Tab_W * Wall_Fuse_R) = 3*8*1.2 = 28.8mm^2, 4.5MPa --
+    // comfortably below printed PETG's typical strength (order 30MPa+)
+    // with real margin, not the 57MPa the tangent geometry worked out to.
+    // No equivalent load figure exists in this repo for the lug's own
+    // ~25s tumbling load (R60Lib.scad's own R60_Tether_Y comment notes
+    // this), so its fix is the same embedding treatment without a
+    // matching stress claim -- 8*1.2=9.6mm^2 of real weld area either
+    // way, not the same near-zero tangent contact.
+    Wall_Fuse_R = 1.2;
     difference(){
         union(){
             R60_Tube(R60_Chute_L);
+            // Weld ring (4th review, critical 1): bridges the main wall
+            // (r=R60_Body_ID/2..R60_Body_OD/2 = 28.4..30.0) to the aft
+            // spigot's own OD/ID (26.6..28.2, below) with real shared
+            // material. The spigot's OD is DELIBERATELY smaller than
+            // this tube's own bore -- it has to slip inside the fin
+            // can's matching 56.8mm ID, same 0.4mm-clearance convention
+            // as every internal joint in this design -- so a plain step
+            // straight from the wall to the spigot leaves a 0.2mm
+            // radial gap with ZERO shared geometry between them: two
+            // disconnected solids (confirmed:
+            // tools/scad_verify.py's components() read 2 for this part,
+            // not 1, before this fix -- genus could not see it, see that
+            // function's own docstring). Built INSIDE the tube's own
+            // existing R60_Chute_L (the last Weld_L mm of it), not as
+            // added length, so it cannot itself reach into the fin can's
+            // bore; its ID (matching the spigot's own ID, 53.2mm)
+            // leaves the full working bore open for the shock cord/
+            // tether cord/spring assembly that already routes through
+            // this tube well forward of this joint -- nothing needs
+            // more than that 53.2mm clear centre here.
+            //
+            // Height is Weld_L EXACTLY, ending flush at z=R60_Chute_L, not
+            // Weld_L+Overlap: this ring sits INSIDE the main tube's own
+            // z=0..R60_Chute_L span (R60_Tube(R60_Chute_L) already has
+            // material there), so it needs no axial overlap fudge to fuse
+            // with it -- unlike the spigot boundary below, which is a real
+            // part-to-part butt joint once assembled and needs its own
+            // Overlap on ITS OWN translate (already there). A first draft
+            // gave this ring the same "+Overlap, starts at -Overlap"
+            // idiom used for genuine boundary joints elsewhere in this
+            // file, and the ring's own OUTER radius (R60_Body_OD, matching
+            // the full wall) then poked 0.05mm PAST z=R60_Chute_L into
+            // where the fin can's own forward tip sits once assembled --
+            // caught on the rendered assembly,
+            // tools/verify_rocket60_assembly.py pair 7 (0.0147cm3 at
+            // z=180.00..180.05, dmax=60mm -- the tube's full OD, not the
+            // spigot's narrower one) -- a real, if tiny, second-order
+            // defect this fix itself introduced.
+            Weld_L = 2;
+            translate([0,0,R60_Chute_L-Weld_L])
+                difference(){
+                    cylinder(d=R60_Body_OD, h=Weld_L);
+                    translate([0,0,-Overlap])
+                        cylinder(d=R60_Coupler_OD-2*R60_Wall_T, h=Weld_L+Overlap*2);
+                }
             // Aft spigot (3rd review, should-fix 6), ADDITIONAL length
             // past R60_Chute_L (same "spigot adds to the part's own
             // printed height, not carved from within a fixed total"
@@ -457,15 +541,21 @@ module R60_ChuteTube(){
             // parameters, not a hand-built difference().
             translate([0,0,R60_Chute_L-Overlap])
                 R60_Tube(R60_FinCanSpigot_L+Overlap, od=R60_Coupler_OD, wall=R60_Wall_T);
-            // Spring reaction tabs, inward from the tube wall.
+            // Spring reaction tabs, inward from the tube wall, embedded
+            // Wall_Fuse_R past the ID into the wall itself (see that
+            // constant's comment) instead of stopping tangent to it.
             for (i=[0:nStopTabs-1])
                 rotate([0,0,i*360/nStopTabs])
                     translate([-Tab_W/2, Stop_ID/2, Stop_Z])
-                        cube([Tab_W, R60_Body_ID/2-Stop_ID/2, Stop_T]);
+                        cube([Tab_W, R60_Body_ID/2+Wall_Fuse_R-Stop_ID/2, Stop_T]);
             // Tether tie-off lug, +Y, well clear of the +-X pin holes and
-            // the aft-most stop tabs.
+            // the aft-most stop tabs -- embedded Wall_Fuse_R past the ID
+            // into the wall (see that constant's comment); Tie_D itself
+            // is unchanged (it still governs how far the lug reaches
+            // INWARD, which is what R60_EBayAftBulkhead()'s relief notch
+            // derives its own clearance from).
             translate([-Tie_W/2, R60_Body_ID/2-Tie_D, Tie_Z])
-                cube([Tie_W, Tie_D, Tie_H]);
+                cube([Tie_W, Tie_D+Wall_Fuse_R, Tie_H]);
         }
         // Shear pin holes, +-X (matching R60_EBayAftBulkhead()'s skirt
         // pins), straight through the tube wall -- same idiom as the
@@ -546,7 +636,9 @@ module R60_EBayAftBulkhead(){
     P_W       = 12.2 + IDXtra;
     P_D       = 9;               // pocket depth; leaves 3mm of aft material
     Shaft_d   = 12;              // servo 1 output -> spring carrier ball-lock
-    Horn_W    = 9;               // servo 2 horn slot
+    Horn_W    = R60_Horn_W;      // servo 2 horn slot -- shared with
+                                   // R60_TetherLatch()'s own base
+                                   // pass-through (4th review, critical 5)
     Horn_L    = R60_Horn_L;
     S_Off     = 5.5;             // MG90S shaft offset from body centre
     S2_Y      = 13.6;            // 1.2mm pocket wall (3 perimeters @ 0.4mm nozzle)
@@ -831,7 +923,11 @@ module R60_SpringCarrier(){
     Bore    = R60_Spring_OD + 0.5;  // 44.80 -- clears the CS4323's 44.30mm OD
     L       = 65;                   // + the skirt's 15mm = 80mm, the
                                      // "SpringThing2" figure sourced above
-    CB_D      = 51;                 // tether latch (part 13) clearance --
+    CB_D      = R60_SpringCarrier_CB_D;  // 51 -- tether latch (part 13)
+                                     // clearance -- shared (4th review,
+                                     // critical 2) so the latch's own base
+                                     // clip is derived from the SAME
+                                     // number, not a second copy
     CB_Depth  = 17;                 // latch height 16mm + 1mm margin
     Dia_Z   = CB_Depth + 3;         // diaphragm recessed from the step
     Dia_T   = 3;
@@ -991,7 +1087,14 @@ module R60_FinCan(){
     // both the MMT and the fin slots here), through the FORWARD ring
     // only, at -Y -- clear of all 3 fin slots (0/120/240deg) and solidly
     // inside the ring's own annulus (MMT_OD/2=16.15 .. Body_ID/2=28.4).
-    FwdRing_Z = R60_FinCan_L - Ring_T - 6;
+    //
+    // R60_FinCan_FwdOpen_L (4th review, should-fix 8), not a bare local
+    // "6": shared with R60Lib.scad's R60_FinCanSpigot_L so the chute
+    // tube's own spigot is derived from exactly how much open annulus
+    // this ring actually leaves forward of it, with a stated clearance,
+    // instead of a second independently-typed "6" that happened to match
+    // it exactly (a bare tangency -- see R60_FinCanSpigot_L's comment).
+    FwdRing_Z = R60_FinCan_L - Ring_T - R60_FinCan_FwdOpen_L;
     Cord_d    = 5;
     Cord_R    = 22.5;
     difference(){
@@ -1004,7 +1107,7 @@ module R60_FinCan(){
                     cylinder(d=R60_MMT_ID, h=R60_FinCan_L+Overlap*2);
             }
             // Centering rings: aft, mid, forward.
-            for (z=[6, R60_FinCan_L/2, R60_FinCan_L-Ring_T-6])
+            for (z=[6, R60_FinCan_L/2, FwdRing_Z])
                 translate([0,0,z]) difference(){
                     cylinder(d=R60_Body_ID, h=Ring_T);
                     translate([0,0,-Overlap])
@@ -1188,6 +1291,18 @@ module R60_ThrustRing(){
 // channel/notch in R60_EBayAftBulkhead()'s skirt and R60_SpringCarrier()'s
 // counterbore rim, all at the same R60_Tether_Az. See those modules'
 // comments.
+// The actuation linkage that reaches from servo 2's horn (mounted well
+// forward, in R60_EBayAftBulkhead()'s own servo pocket) through the
+// bulkhead's horn slot and the pass-through this module cuts through its
+// own base, to the pin/loop mechanism above, is a COMPANION PIECE not
+// modelled as its own part in this task -- same treatment, and for the
+// same reason, as R60_SpringCarrier()'s own ball-lock plunger/lock-disk
+// (see that module's comment): a rotating horn arm cannot reach the pin
+// directly, so a pushrod/cam/bellcrank of some kind is needed, and
+// designing that mechanism is out of this task's scope. What IS in scope,
+// and was the 4th review's own critical finding 5, is that this module's
+// geometry must not itself make that (unmodelled) linkage's path
+// physically impossible -- see Base_Pass_W/Base_Pass_H below.
 module R60_TetherLatch(){
     // Base_L (defect 2b): the old "2mm edge margin" was hole-CENTRE-to-
     // edge, not wall thickness. With a Ø3.4 mounting hole (radius 1.7)
@@ -1205,28 +1320,89 @@ module R60_TetherLatch(){
     Base_W = 16; Base_T = 4;
     Pin_d  = 3.0 + IDXtra;
     Post_H = 12;
-    difference(){
-        union(){
-            translate([-Base_L/2,-Base_W/2,0]) cube([Base_L,Base_W,Base_T]);
-            for (x=[-9, 9])
-                translate([x,0,Base_T-Overlap]) cylinder(d=8, h=Post_H+Overlap);
+    Post_X = 9; Post_d = 8;
+    // Clip radius (4th review, critical 2): this module's own base is
+    // mounted OFF-AXIS -- offset R60_Tether_Y from the carrier/chute-tube
+    // axis it shares the aft bulkhead's mount face with, so servo 2's
+    // horn (also at R60_Tether_Y) can reach it -- but its rectangular
+    // footprint was never clipped to account for that offset. The base's
+    // own far corners sit r=28.97mm from that axis (measured), past BOTH
+    // R60_SpringCarrier()'s counterbore rim (r=CB_D/2=25.5..OD/2=28.2,
+    // solid there) it is bonded flush against, AND the chute tube's own
+    // bore (r=28.4) it must fit inside once assembled -- a real,
+    // measured 0.0973cm^3 collision with the carrier alone. Growing
+    // R60_SpringCarrier_CB_D cannot fix this: no round counterbore
+    // centred ON that axis can clear an off-axis rectangle without
+    // itself exceeding the carrier's own 56.4mm OD. Clip this module's
+    // OWN geometry instead, to a circle centred on that axis (local
+    // y=-R60_Tether_Y from here) -- R60_Tether_Clear inside
+    // R60_SpringCarrier_CB_D/2, the same stated per-side clearance
+    // R60_ChuteTube()'s tether lug already uses against its own mating
+    // notch. Survivors, all measured against this radius: the mounting
+    // holes (global r=21.0mm) keep 2.2mm of wall past their own edge
+    // (>=Mount_Wall_Min); the base's front edge (local y=0, closest to
+    // the axis) is untouched (clip reaches x=+-20.9 there, past the
+    // base's own +-19.3); only the two far corners (toward local
+    // +Base_W/2, farthest from the axis) are clipped -- the posts
+    // (r<=20.3 from this axis) are nowhere near the clip boundary either
+    // way, matching the module comment this replaces ("true for the
+    // posts, never checked for the base").
+    Clip_R = R60_SpringCarrier_CB_D/2 - R60_Tether_Clear;
+    // Base pass-through (4th review, critical 5): the horn slot
+    // (R60_EBayAftBulkhead()) was extended through the bulkhead's own
+    // skirt specifically so servo 2 could reach this latch, but this
+    // module's base is a solid Base_T slab bolted flat over that
+    // opening, with its only cuts (the pin bore, the loop slot) sitting
+    // ABOVE Base_T in the posts -- the horn slot's own void dead-ends
+    // against solid material here, same failure class the horn slot
+    // itself was already fixed for at R60_EBayAftBulkhead()'s skirt (see
+    // that module's comment). Local (0,0) already coincides with the
+    // horn slot's own global centre (both sit at R60_Tether_Y, by
+    // construction), so no offset is needed here, only a size.
+    // Base_Pass_W cannot be the bulkhead's full R60_Horn_L (24mm): the
+    // two posts (Post_X=+-9, radius Post_d/2=4) sit almost entirely
+    // inside that width and are the pin's own load path (Post_H=12mm
+    // cantilevers reacting the tether release load into this base) --
+    // cutting through their own base would undermine exactly the
+    // structural weld finding 4 (this same review) fixes elsewhere.
+    // Base_Pass_W is instead the clear gap BETWEEN the two posts,
+    // derived from their own placement, not a hand-picked number: still
+    // a real, unobstructed opening for whatever unmodelled linkage
+    // reaches up between them (see the module-level companion-piece note
+    // above), just narrower than the bulkhead's own slot. Height matches
+    // R60_Horn_W directly (shared, R60Lib.scad) rather than a second,
+    // independently-typed width.
+    Base_Pass_W = 2*(Post_X - Post_d/2);   // 10
+    intersection(){
+        difference(){
+            union(){
+                translate([-Base_L/2,-Base_W/2,0]) cube([Base_L,Base_W,Base_T]);
+                for (x=[-Post_X, Post_X])
+                    translate([x,0,Base_T-Overlap]) cylinder(d=Post_d, h=Post_H+Overlap);
+            }
+            // Pin bore through both posts. The pin IS the load path - it is a
+            // 3mm steel dowel, not printed.
+            translate([0,0,Base_T+Post_H-4]) rotate([0,90,0])
+                cylinder(d=Pin_d, h=Base_L+2, center=true);
+            // Slot the tether loop sits in, under the pin.
+            translate([0,0,Base_T+Post_H-4])
+                cube([10, Base_W+2, 9], center=true);
+            // Mounting holes into the e-bay aft bulkhead. Ø3.4, M3 clearance
+            // -- was Ø2.9 (tap-drill size, task report: the screw would
+            // thread the latch instead of clamping it), matching the M3
+            // clearance convention used everywhere else in this file
+            // (R60_Cam_Bolt_d, R60_MotorRetainer()'s Bolt_d, ...). X spacing
+            // is R60_TetherLatch_HoleX (R60Lib.scad), matching
+            // R60_EBayAftBulkhead()'s insert holes exactly.
+            for (x=[-R60_TetherLatch_HoleX, R60_TetherLatch_HoleX])
+                translate([x,0,-Overlap]) cylinder(d=Mount_Hole_d, h=Base_T+Overlap*2);
+            // Base pass-through -- see Base_Pass_W's own comment above.
+            translate([-Base_Pass_W/2, -R60_Horn_W/2, -Overlap])
+                cube([Base_Pass_W, R60_Horn_W, Base_T+Overlap*2]);
         }
-        // Pin bore through both posts. The pin IS the load path - it is a
-        // 3mm steel dowel, not printed.
-        translate([0,0,Base_T+Post_H-4]) rotate([0,90,0])
-            cylinder(d=Pin_d, h=Base_L+2, center=true);
-        // Slot the tether loop sits in, under the pin.
-        translate([0,0,Base_T+Post_H-4])
-            cube([10, Base_W+2, 9], center=true);
-        // Mounting holes into the e-bay aft bulkhead. Ø3.4, M3 clearance
-        // -- was Ø2.9 (tap-drill size, task report: the screw would
-        // thread the latch instead of clamping it), matching the M3
-        // clearance convention used everywhere else in this file
-        // (R60_Cam_Bolt_d, R60_MotorRetainer()'s Bolt_d, ...). X spacing
-        // is R60_TetherLatch_HoleX (R60Lib.scad), matching
-        // R60_EBayAftBulkhead()'s insert holes exactly.
-        for (x=[-R60_TetherLatch_HoleX, R60_TetherLatch_HoleX])
-            translate([x,0,-Overlap]) cylinder(d=Mount_Hole_d, h=Base_T+Overlap*2);
+        // Corner clip -- see Clip_R's own comment above.
+        translate([0,-R60_Tether_Y,-Overlap])
+            cylinder(r=Clip_R, h=Base_T+Post_H+Overlap*2);
     }
 } // R60_TetherLatch
 
