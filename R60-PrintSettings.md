@@ -10,10 +10,10 @@
 
 ## Status — read this before printing anything
 
-**Updated after a code-review fix pass.** All 14 printable parts (test ring
-through tether latch) plus the fixed `NoseCone.stl` now exist as meshes and
-are covered below, including the separation mechanism and the tether latch
-this section used to say had "no STL":
+**Updated after a code-review fix pass.** All 15 printable parts (test ring
+through the forward thrust ring) plus the fixed `NoseCone.stl` now exist as
+meshes and are covered below, including the separation mechanism and the
+tether latch this section used to say had "no STL":
 
 - The primary separation path (spec §4.2) is `08_SpringCarrier.stl`: servo 1
   releases a ball-lock, freeing a CS4323 spring that shears 2 nylon pins
@@ -28,16 +28,22 @@ this section used to say had "no STL":
   system flight-ready until those two companion pieces exist and are built.
 - `13_TetherLatch.stl` — releases the main at 150 m, mounts to
   `05_EBayAftBulkhead.stl`'s aft face — now exists.
+- `14_ThrustRing.stl` — new. Glues into the MMT's forward opening,
+  flush with the fin can's own tip, and reacts the motor's FORWARD
+  thrust reaction, which `11_MotorRetainer.stl` alone cannot: that
+  retainer only resists motion out the aft end. Without this ring the
+  motor+spacer stack had only a 0.3mm slip fit standing between it and
+  the packed parachute during the whole burn.
 - `09_FinCan.stl` and `11_MotorRetainer.stl` fasten together with 3× M3 into
   ruthex heat-set inserts (`Rocket60.scad`'s "screws to the fin can" intent
   is now built, not sand-fit).
 - Everything else listed in `STL Files/Rocket60/README.md` — test ring,
   neck, e-bay tube, chute bay tube, both e-bay bulkheads, Vega sled, access
-  door, fin can, fins, motor retainer, motor spacer, plus the fixed
-  `NoseCone.stl` — exists as a mesh and is covered below.
+  door, fin can, fins, motor retainer, motor spacer, forward thrust ring,
+  plus the fixed `NoseCone.stl` — exists as a mesh and is covered below.
 
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins are
-sized to give it **1.62 cal** static margin at liftoff. Airframe is sized for
+sized to give it **1.61 cal** static margin at liftoff. Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
 no reprint (spec §1.1, §5); both give **1.4+ cal** on this fin size (§9).
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
@@ -109,7 +115,7 @@ the test ring — do not proceed on a part you haven't measured.
 | Zone | Material | Why |
 |---|---|---|
 | Nosecone → neck → e-bay → chute bay | **PETG** | Airframe and e-bay; per spec §8, "no carbon-filled filament anywhere from the neck to the chute bay" |
-| Fin can, its integrated centering rings, motor retainer, motor spacer | **PC** (polycarbonate) | These sit against or next to the motor |
+| Fin can, its integrated centering rings, motor retainer, motor spacer, forward thrust ring | **PC** (polycarbonate) | These sit against or next to the motor |
 | Fins ×3 | **PETG** | See note below — deliberately *not* moved to PC |
 
 **No carbon-filled filament anywhere from the neck to the chute bay.** The
@@ -187,7 +193,8 @@ this document, not a design-spec number — and the reasoning is given.
 | 9 | Fin can (incl. 3 integrated centering rings + MMT) | **PC** | 4 (outer 1.6 mm wall and 1.5 mm MMT wall both print fully solid at 4 loops of a 0.4 mm nozzle — see note) | 70% gyroid **[from `L2-PrintSettings.md` PC fin-can precedent]** — governs only the three ~12 mm-wide integrated ring bands, not the thin tube/MMT walls | 0.12 mm **[from L2 precedent]** | Vertical, aft (retainer) end down | **Yes, 5 mm** — PC warps; large footprint helps (per `L2-PrintSettings.md`) |
 | 10 | Fin (×3) | PETG | — (solid from flat print, no wall-loop concept) | **62% (§8, literal)** — pattern not specified by spec; gyroid assumed **[practice default: pattern only]** | 0.2 mm (§8) | Flat, oriented so layer lines run spanwise (§8, literal) | No |
 | 11 | Motor retainer | **PC** | 4+ **[from `MotorAdapter29.scad` PC print-settings precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Flat, 6 mm disc — print flat, either face down (unlike the adapter's own tall geometry, this part has no long axis to stand on) | Recommended (same precedent) |
-| 12 | Motor spacer | **PC** | 4+ **[same `MotorAdapter29` precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Vertical, as a tube (104 mm for the G80T; re-export for `Motor_Class=1`/`2` for the H182R/H135W — 25/12 mm) | Recommended (same precedent) |
+| 12 | Motor spacer | **PC** | 4+ **[same `MotorAdapter29` precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Vertical, as a tube (98 mm for the G80T; re-export for `Motor_Class=1`/`2` for the H182R/H135W — 19/6 mm; stops short of part 14, not the full MMT) | Recommended (same precedent) |
+| 14 | Forward thrust ring | **PC** | 4+ **[same `MotorAdapter29` precedent]** | Solid — 6 mm thick, 1.05 mm lip, no interior to fill | 0.2 mm **[same precedent]** | Flat, either face down — a 6 mm annulus, no long axis | Recommended (same precedent) |
 | 13 | Tether latch | PETG | 4 (§8) | 40–50% **[practice default]** — small part, carries a cyclic tumbling load per §8 item 3, not just a static pull | 0.2 mm (§8) | Flat, base down, posts up — the horizontal Ø3.2 mm pin bore through each post is small enough to bridge cleanly without support at this layer height | No — small footprint and flat base |
 
 **Why the fin can gets 4 wall loops, not L2's 6.** `L2-PrintSettings.md`'s
@@ -225,7 +232,7 @@ Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 usable at this mass**; at this length a 3 mm rod would whip badly and rail
 exit would be unstable (spec §9).
 
-At the as-built liftoff mass (868 g on the G80T, from
+At the as-built liftoff mass (867 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
 note) the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably clear of
 the ~15 m/s minimum needed for the fins to stabilize the vehicle (spec
@@ -289,15 +296,21 @@ Build order for what exists today:
    — see Status.**
 9. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
    `11_MotorRetainer.stl` to the fin can aft end (3× M3 into ruthex
-   inserts). Install `12_MotorSpacer.stl` for the G80T (re-export for
-   `Motor_Class=1`/`2` for the H182R/H135W).
+   inserts). Glue `14_ThrustRing.stl` into the MMT's forward opening,
+   flush with the fin can's own forward tip — do this before the next
+   step, it is not reachable once the chute bay tube is bonded on.
+   Nothing else reacts the motor's forward thrust: the aft retainer
+   only resists motion out the back. Install `12_MotorSpacer.stl` for
+   the G80T (re-export for `Motor_Class=1`/`2` for the H182R/H135W).
 10. Slide `03_ChuteBayTube.stl` forward over `05_EBayAftBulkhead.stl`'s
     aft skirt until the two shear-pin holes line up, and drive in the 2
     nylon 2-56 pins — this is the joint the ejection-charge backup shears
     (spec §4.2). Do not glue it; it must stay serviceable. Tie the tether
     off through the tube's forward-rim lug (part of the same tube) to
     `13_TetherLatch.stl`'s pin. Bond the chute bay tube to the fin can's
-    forward end.
+    forward end — its own aft end carries a Ø56.4 spigot that inserts
+    into the fin can's forward opening, so this is a located, concentric
+    joint, not a bare butt bond.
 
 ---
 
@@ -372,7 +385,7 @@ Copied from spec §11, with one adaptation flagged below.
    GNSS fix **before** the rocket leaves your hands. The firmware default
    is `false`.
 9. First flight on the G80T-14A, single objective: recover the airframe
-   and read the Vega log. Compare logged apogee to the 615 m prediction
+   and read the Vega log. Compare logged apogee to the 627 m prediction
    and correct Cd₀ before flying the H.
 
 ---
@@ -400,8 +413,8 @@ joint inside the fin can. Fed the correct exposed geometry, the as-shipped
 fin gave the G80T-14A — the motor actually owned, and the sizing case —
 only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
-`(exposed span/D)²`) to bring the G80T to **1.62 cal**. H182R-14A gives
-1.43 cal and H135W-14A gives 1.44 cal on the same fins — both comfortably
+`(exposed span/D)²`) to bring the G80T to **1.61 cal**. H182R-14A gives
+1.42 cal and H135W-14A gives 1.43 cal on the same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from
 the fins growing (959 m/s vs. the original claim of ~850 m/s against the
