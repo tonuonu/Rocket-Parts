@@ -72,6 +72,16 @@ adds drag the flight model's Cd₀ = 0.52 does not account for, so predicted
 apogee is slightly optimistic. Not enough to matter for recovery planning;
 enough that it should not be a surprise.
 
+## Flight figures
+
+Kept here so `tools/verify_docs_sync.py` can gate them against the model.
+
+| Motor | Liftoff | Margin | Rail exit (1.5 m) |
+|---|---|---|---|
+| G80T-14A | 874 g | 1.46 cal | 18.8 m/s |
+| H182R-14A | 941 g | 1.28 cal | — |
+| H135W-14A | 944 g | 1.29 cal | — |
+
 ## Launch
 
 1010 rail. The user's Estes Pro Series II rail (1.83 m, two 3-foot sections)
