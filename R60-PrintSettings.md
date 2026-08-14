@@ -43,9 +43,11 @@ tether latch this section used to say had "no STL":
   plus the fixed `NoseCone.stl` — exists as a mesh and is covered below.
 
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor — fins are
-sized to give it **1.61 cal** static margin at liftoff. Airframe is sized for
+sized to give it **1.53 cal** static margin at liftoff (4th review,
+should-fix 11: this used to read 1.61 cal, inflated by two uncorrected
+station bugs — see spec §6). Airframe is sized for
 a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
-no reprint (spec §1.1, §5); both give **1.4+ cal** on this fin size (§9).
+no reprint (spec §1.1, §5); both give **1.3+ cal** on this fin size (§9).
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -232,11 +234,11 @@ Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 usable at this mass**; at this length a 3 mm rod would whip badly and rail
 exit would be unstable (spec §9).
 
-At the as-built liftoff mass (867 g on the G80T, from
+At the as-built liftoff mass (871 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
 note) the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably clear of
 the ~15 m/s minimum needed for the fins to stabilize the vehicle (spec
-§5, §6) despite the fin-span growth. The H182R is unaffected (28.0 m/s off
+§5, §6) despite the fin-span growth. The H182R is unaffected (27.9 m/s off
 1.5 m). A 1.5 m rail is adequate for the G80T; confirm actual rail exit
 before committing to anything shorter (spec §11 item 6).
 
@@ -413,13 +415,16 @@ joint inside the fin can. Fed the correct exposed geometry, the as-shipped
 fin gave the G80T-14A — the motor actually owned, and the sizing case —
 only 1.05 cal at liftoff. Span was grown 55→63mm (root/tip/sweep/thickness
 unchanged: span is the most mass-efficient lever, since `CN` scales with
-`(exposed span/D)²`) to bring the G80T to **1.61 cal**. H182R-14A gives
-1.42 cal and H135W-14A gives 1.43 cal on the same fins — both comfortably
+`(exposed span/D)²`) to bring the G80T to **1.53 cal** (4th review,
+should-fix 11 corrected two station bugs that had inflated this to a
+reported 1.61 cal — see spec §6 for the derivation; the true margin is
+1.53 cal). H182R-14A gives 1.34 cal and H135W-14A gives 1.35 cal on the
+same fins — both comfortably
 above 1.0 cal, no ballast needed, though nose ballast is standard practice
 if either H's margin is ever wanted higher. Flutter velocity dropped from
 the fins growing (959 m/s vs. the original claim of ~850 m/s against the
-WRONG, buried-root geometry) but stays 1.52× the required 3× floor against
-the fastest motor (H182R-14A, 210 m/s Vmax → 631 m/s floor). Rail exit on
+WRONG, buried-root geometry) but stays 1.53× the required 3× floor against
+the fastest motor (H182R-14A, 210 m/s Vmax → 629 m/s floor). Rail exit on
 the G80T on a 1.5 m rail is 18.9 m/s, still comfortably above the ~15 m/s
 minimum despite the added fin mass (+4.7g/fin, +14.0g total) and the mass
 corrections in §9's own history. See `tools/rocket60_model.py`'s own

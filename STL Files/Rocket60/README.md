@@ -1,6 +1,6 @@
 # Rocket 60 — printable meshes
 
-Ø60 mm camera rocket, 667 mm, built around the user's own CAD nosecone.
+Ø60 mm camera rocket, 684 mm, built around the user's own CAD nosecone.
 Generated from `Rocket60.scad`, OpenSCAD 2026.07.09, full render, binary STL.
 Verify with `python3 tools/verify_rocket60.py` — every part is measured from
 its rendered mesh, and mating fits are checked mesh-against-mesh rather than
@@ -32,8 +32,8 @@ line up with inserts in a PCB that does not shrink.
 | `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ |
 | `00_TestRing.stl` | 0 | 10.00 | 60.00 | 19.9 cm³ |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ |
-| `02_EBayTube.stl` | 2 | 165.00 | 60.00 | 46.2 cm³ |
-| `03_ChuteBayTube.stl` | 3 | 186.00 | 60.00 | 55.2 cm³ |
+| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 50.0 cm³ |
+| `03_ChuteBayTube.stl` | 3 | 185.50 | 60.00 | 55.7 cm³ |
 | `04_EBayFwdBulkhead.stl` | 4 | 6.00 | 56.40 | 12.7 cm³ |
 | `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.4 cm³ |
 | `06_VegaSled.stl` | 6 | 8.00 | 44×112 flat | 20.0 cm³ |
@@ -43,7 +43,7 @@ line up with inserts in a PCB that does not shrink.
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ |
 | `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ |
-| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.5 cm³ |
+| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.0 cm³ |
 | `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ |
 
 Print 3 fins from `10_Fin.stl`. `12_MotorSpacer.stl` is the G80T spacer
@@ -102,6 +102,32 @@ sharing one (defect 11) -- the old pair shared an azimuth 40mm apart
 and never actually crossed the sled, so cinching them provided zero
 retention. Total airframe length 662→667mm.
 
+Re-exported again within the 4th review's fix pass: part 2 grew again
+(165.00→177.00mm, 46.2→50.0 cm³) -- R60_EBay_L grew again (critical 3):
+the 3rd review's own Sw_Z0 fix measured the arming-switch's clearance
+from the door APERTURE's own edge, not from R60_Door()'s actual built
+footprint (a COVER, R60_Door_Overlap=6mm larger than the aperture on
+every side) -- correctly counting that overlap needed 12mm more of
+R60_EBay_L to restore a genuine ~3mm window (the switch was measured
+1.5mm INSIDE the door cover's own footprint at the old length). Part 3
+shrank slightly (186.00→185.50mm, 55.2→55.7 cm³) -- R60_FinCanSpigot_L
+now derives a genuine 0.5mm axial clearance from the fin can's own open
+annulus instead of exactly matching it (should-fix 8, a bare tangency
+that bottomed the joint before the airframe's outer OD faces could close
+flush), while a new internal weld ring (critical 1) bridges the spigot to
+the tube's own wall with real shared material -- the chute tube used to
+export as TWO disconnected solids (the spigot floating entirely inside
+the tube's own bore, a 0.2mm gap with zero shared geometry); genus could
+not see this, only a new connected-component check (`components()` in
+`tools/scad_verify.py`) could. Two tether-lug/spring-tab features
+embedded further into this part's own wall (critical 4) also add a
+little material. Part 13 shrank (3.5→3.0 cm³, height/OD unchanged) --
+its base is now clipped to a radius that clears the spring carrier's own
+counterbore rim AND the chute tube's own bore (critical 2: the base's
+far corners previously reached 0.6-1mm past both), and gained a
+pass-through cut so the base no longer seals the servo-2 horn slot shut
+(critical 5) -- net genus 4→5 (one new through-hole).
+
 Tallest part 228 mm, inside the 250 mm envelope with 22 mm to spare.
 
 ## Mass — measured from the exported meshes
@@ -110,10 +136,12 @@ Per-part mass now comes from these measured mesh volumes (PETG 1.27 g/cm³,
 PC 1.20 g/cm³ per `R60-PrintSettings.md` sec 3, at a stated 78% effective
 print density), not a round-number estimate — see
 `tools/rocket60_model.py`. **Liftoff mass on the G80T-14A (the sizing
-motor) is 867 g**, giving **1.61 cal** static margin and **18.9 m/s** off
-a 1.5 m 1010 rail — both clear their targets (1.5 cal, 15 m/s) with
-margin, despite the fin-span growth (+14 g total) needed to reach them.
-H182R-14A gives 934 g / 1.42 cal / 28.0 m/s; H135W-14A gives 937 g / 1.43
+motor) is 871 g**, giving **1.53 cal** static margin and **18.9 m/s** off
+a 1.5 m 1010 rail — both clear their targets (1.5 cal, 15 m/s), though the
+stability margin now clears by only 0.03 cal (4th review, should-fix 11:
+the previously-reported 1.61 cal was inflated by two station bugs --
+see the design spec §6 for the derivation). H182R-14A gives 938 g / 1.34
+cal / 27.9 m/s; H135W-14A gives 941 g / 1.35
 cal. Full breakdown, all three motors, in `tools/rocket60_model.py`'s own
 output.
 

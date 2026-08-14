@@ -107,24 +107,31 @@ That gives **5.0 mm of grip** under the head and **5.0 mm of thread engagement**
 station 0 ┌────────────┐
           │  NOSECONE  │  94 mm   fixed part; camera inside, flush at base
       94  ├────────────┤
-          │   NECK     │          3× M3 axial into camera carrier, Ø37.96 BC
-          │   E-BAY    │ 165 mm   CATS Vega, battery, 2× servo, access door
-     259  ╞════════════╡ ◄─────────  SEPARATION JOINT (2x shear pin + spring release, sec 4.2)
+          │   NECK     │   5 mm   3× M3 axial into camera carrier, Ø37.96 BC (flange only --
+          │            │          the 19mm skirt telescopes inside the e-bay tube below)
+      99  ├────────────┤
+          │   E-BAY    │ 177 mm   CATS Vega, battery, 2× servo, access door
+     276  ╞════════════╡ ◄─────────  SEPARATION JOINT (2x shear pin + spring release, sec 4.2)
           │ CHUTE BAY  │ 180 mm   spring mechanism 80 + 24 in main 100
-     439  ├────────────┤
+     456  ├────────────┤
           │  FIN CAN   │ 228 mm   Ø29 mm MMT (228 mm), 3 fins, retainer + fwd thrust ring
-     667  └────────────┘
+     684  └────────────┘
 ```
 
-Total length **667 mm**, OD **60.0 mm**, **L/D 11.1**.
+Total length **684 mm**, OD **60.0 mm**, **L/D 11.4**.
 
-The e-bay is 165 mm, not the 130 mm first specified. Two upright MG90S servos plus the
+The e-bay is 177 mm, not the 130 mm first specified. Two upright MG90S servos plus the
 100 mm Vega need 129 mm of interior and 130 mm of tube only yields 112 mm once the
 bulkheads are subtracted. Lengthening was chosen over thinner packaging because it also
 improves stability: margin rises from 1.48 to 1.55 cal loaded, and Mach falls only 0.01.
 Grew a further 5 mm (160->165, 3rd review, should-fix 9) so the arming-switch Z window
 between the door aperture and the neck skirt is a genuine ~3 mm margin on both sides
-instead of a 0.5 mm hair gap.
+instead of a 0.5 mm hair gap. Grew another 12 mm (165->177, 4th review, critical 3): that
+3rd-review fix measured the switch's clearance from the door APERTURE's own edge, not from
+`R60_Door()`'s actual built footprint (a COVER 6 mm larger than the aperture on every
+side) -- correctly counting that overlap needed 12 mm more to restore the same ~3 mm
+window. Total airframe length also now counts the neck's own 5 mm flange explicitly
+(previously omitted -- see §5's mass-budget note).
 
 The fin can is 228 mm because the longest 29 mm H DMS (H135W, **216 mm**) has to fit — the
 H182R is 203 mm and the G80T only 124 mm.
@@ -291,20 +298,24 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 867 g | 9.1 | **15.4 m/s** | 132 m/s | **0.39** | 627 m | 10.9 s |
-| **H182R-14A** (29 mm DMS) | 934 g | 19.9 | 22.6 m/s | 210 m/s | **0.62** | 983 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 937 g | 12.6 | 17.3 m/s | 195 m/s | **0.58** | 1033 m | 13.2 s |
+| **G80T-14A** (owned) | 871 g | 9.1 | **15.3 m/s** | 131 m/s | **0.39** | 624 m | 10.9 s |
+| **H182R-14A** (29 mm DMS) | 938 g | 19.8 | 22.7 m/s | 210 m/s | **0.62** | 982 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 941 g | 12.6 | 17.3 m/s | 195 m/s | **0.57** | 1031 m | 13.2 s |
 
-(Figures from `tools/rocket60_model.py`'s own output, run after the 3rd
+(Figures from `tools/rocket60_model.py`'s own output, run after the 4th
 review's fixes -- see §6 below for the matching stability table. Liftoff
-mass moved ~2 g from the previous pass here: part 14, the new forward
-thrust ring, adds ~0.6 g but the Vega-rail and spring-carrier fixes
-remove slightly more material than that from parts 2/8, and the spacer
-shortened for part 14's own space in part 12 -- see
-`tools/rocket60_model.py`'s STL_VOL comment for the full breakdown. Moved
-~1 g further, this pass (should-fix 9/11): R60_EBay_L grew 160->165 mm
-for the arming-switch Z window, and the zip-tie slots went from 2 to 4 --
-net +1.3 cm³ on part 2, re-measured off the re-exported mesh.)
+mass moved ~4 g from the 3rd-review pass: R60_EBay_L grew 165->177 mm
+(critical 3, +12 mm of tube wall and rail length on part 2), the tether
+latch's corner clip and base pass-through (criticals 2/5) remove a little
+material from part 13, and the chute tube's weld ring (critical 1) adds a
+little to part 3 -- see `tools/rocket60_model.py`'s STL_VOL comment for
+the full breakdown. TOTAL also now counts the neck's own 5 mm flange
+(should-fix 12, previously omitted entirely), and the e-bay aft
+bulkhead/spring carrier/thrust ring stations were corrected to where
+their geometry actually sits once assembled (should-fix 10/11) --
+together these moved CG ~3.7 mm forward before the E-bay length growth
+partially offset it; net effect on the G80T's own stability margin is in
+§6.)
 
 Motor data, all from thrustcurve.org:
 
@@ -319,9 +330,12 @@ Motor data, all from thrustcurve.org:
 what any 29 mm motor can do. If a higher Mach number ever becomes the priority it needs a
 different, smaller-diameter rocket, not a change to this one.
 
-**The fin can (228 mm) and MMT (223 mm) are sized for the longest H, not the G80T.**
-That is the whole point of the H-ready choice: the G80T flies now on a 99 mm spacer, and
-either H drops in later with no new printed parts.
+**The fin can (228 mm) and MMT (228 mm) are sized for the longest H, not the G80T.**
+(4th review, should-fix 14: this used to say "MMT 223 mm" and "99 mm spacer" -- both
+superseded when `R60_MMT_L` was fixed to derive from `R60_FinCan_L` instead of a second,
+independently-typed 223 that let the motor slam 5 mm aft on ejection; see R60Lib.scad's own
+`R60_MMT_L` comment.) That is the whole point of the H-ready choice: the G80T flies now on
+a 98 mm spacer, and either H drops in later with no new printed parts.
 
 ### 5.1 Mass budget (G80T configuration, PETG at 1.27 g/cm³)
 
@@ -382,36 +396,49 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 `exposed_geom()`), 3 fins:
 
 - CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.71 at ~493 mm
-- **CP = 440.5 mm** from the nose tip (shifted +3.5 mm from 437.0 this
-  pass: the fin can's own station moves with R60_EBay_L, and only the
-  fin-CN share of total CN moves with it)
+- **CP = 452.4 mm** from the nose tip (shifted +11.9 mm from 440.5 this
+  pass: the fin can's own station moves with R60_EBay_L (165->177mm,
+  critical 3) and the neck-flange length fix (should-fix 12), and only
+  the fin-CN share of total CN moves with them)
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 867 g | 344.1 mm | **1.61 cal** | 323.7 mm | 1.95 cal |
-| H182R-14A | 934 g | 355.3 mm | **1.42 cal** | 325.8 mm | 1.91 cal |
-| H135W-14A | 937 g | 354.7 mm | **1.43 cal** | 335.1 mm | 1.76 cal |
+| G80T-14A | 871 g | 360.8 mm | **1.53 cal** | 340.4 mm | 1.87 cal |
+| H182R-14A | 938 g | 371.9 mm | **1.34 cal** | 342.5 mm | 1.83 cal |
+| H135W-14A | 941 g | 371.3 mm | **1.35 cal** | 351.8 mm | 1.68 cal |
 
 **The G80T-14A is the sizing case** (it is the motor actually owned; the H
-motors are a future purchase) at **1.61 cal**, clearing the 1.5 cal
-target with room to spare. H182R-14A and H135W-14A land at 1.42-1.43 cal
-— reported, not optimised for, per the coordinator's explicit
-instruction: this is comfortably above 1.0 cal and needs no ballast, though
-nose ballast is standard practice if either H's margin is ever wanted
-higher. Margin *increases* through the burn on every configuration.
+motors are a future purchase) at **1.53 cal**, clearing the 1.5 cal
+target -- but with much less room to spare than the previously reported
+1.61 cal. **4th review, should-fix 11:** that 1.61 cal figure was
+inflated by two station bugs -- the e-bay aft bulkhead+skirt assembly's
+CG was placed 14 mm forward of where its own geometry (disc+skirt,
+247..274 mm) actually sits, and the spring carrier's 39.5 mm forward of
+its own (274..339 mm) -- pulling reported CG ~3.7 mm forward, ~+0.06 cal
+of margin that was never real. Correcting both, together with the
+R60_EBay_L 165->177 mm growth (critical 3) that also moves CP aft, nets
+out to the 1.53 cal above: the TRUE margin, not a margin grown by an
+uncaught bug. **This is now within 0.03 cal of the 1.5 cal gate** — the
+next design change that adds aft mass or removes fin span must re-run
+`tools/rocket60_model.py` before flying, not assume the old 1.61 cal
+headroom still exists. H182R-14A and H135W-14A land at 1.34-1.35 cal —
+reported, not optimised for, per the coordinator's explicit instruction:
+this is comfortably above 1.0 cal and needs no ballast, though nose
+ballast is standard practice if either H's margin is ever wanted higher.
+Margin *increases* through the burn on every configuration.
 
 **Mass is the G80T's binding constraint, not stability.** Liftoff mass
 grew from the original 805g estimate through several necessary
 corrections (measured-mesh part masses, the missing spring/tether-latch
-hardware, and now +14g of fin) to **867 g**. At that mass the rocket
-leaves a 1.5 m rail at **18.9 m/s**, comfortably above the ~15 m/s
-minimum despite the added fin span. A 1.5 m rail is adequate for the
-G80T. The H182R is unaffected (28.0 m/s).
+hardware, +14g of fin, and now the R60_EBay_L growth) to **871 g**. At
+that mass the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably
+above the ~15 m/s minimum despite the added fin span. A 1.5 m rail is
+adequate for the G80T. The H182R is unaffected (27.9 m/s).
 
 **Fin flutter:** exposed-panel AR 0.87, λ 0.45, t/c 0.071, G ≈ 0.5 GPa for
-printed PETG → **Vf ≈ 959 m/s**, 4.6× the G80T's ~132 m/s Vmax and 4.6×
-the H135W's ~195 m/s, and 1.52× the required 3× floor against the
-fastest case (H182R-14A, ~210 m/s Vmax → 631 m/s floor). Vf dropped from
+printed PETG → **Vf ≈ 959 m/s**, 4.6× the G80T's ~131 m/s Vmax and 4.9×
+the H135W's ~195 m/s, and 1.53× the required 3× floor against the
+fastest case (H182R-14A, ~210 m/s Vmax → 629 m/s floor). Vf dropped from
 the (incorrectly-computed, buried-root) original ~850 m/s claim, but the
 low aspect ratio this planform is built around still buys a comfortable
 margin at the new span. Do not make the fins thinner, or grow the span
