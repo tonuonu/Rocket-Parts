@@ -225,7 +225,7 @@ Two rail buttons via `RailButton(OD=11, Flange_h=2, Slot_w=2.8)` from
 usable at this mass**; at this length a 3 mm rod would whip badly and rail
 exit would be unstable (spec §9).
 
-At the as-built liftoff mass (867 g on the G80T, from
+At the as-built liftoff mass (868 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
 note) the rocket leaves a 1.5 m rail at **18.9 m/s**, comfortably clear of
 the ~15 m/s minimum needed for the fins to stabilize the vehicle (spec
