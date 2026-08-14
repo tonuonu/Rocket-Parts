@@ -170,3 +170,19 @@ outside the review's own scope:
 Neither materially changes the sizing-case margin (0.03 cal headroom is
 tight, but a ~4-5g item moving ~20-30mm shifts CG well under 0.1mm) —
 flagged for a future pass, not fixed here.
+
+**Tether latch pin serviceability (harness item 3's "pin", unverified).**
+Harness item 3 names three moving elements -- "servo horn, pin, cord".
+This round covers the horn (pair 15) and the cord path is already
+covered by existing lug/notch checks + the full-stroke pairs 6/13 (see
+`r60_assembly.scad`'s own enumeration comment). The PIN itself -- the
+"3mm steel dowel, not printed" that is the tether latch's actual load
+path -- is not checked by anything: its own bore
+(`Base_L+2=40.6mm`, centred) implies at least that much clear axial
+travel to insert or withdraw it, and nothing here confirms that travel
+is actually free once the spring carrier is bonded on around it (the
+carrier's own counterbore, r=25.5mm, is far short of the ~20mm+ the pin
+would need to travel to one side). This may mean the pin cannot be
+withdrawn/re-inserted after the carrier is permanently bonded -- a
+possible one-shot-assembly defect, not confirmed. Flagged in
+`r60_assembly.scad`'s own comment block; no redesign attempted.

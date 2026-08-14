@@ -325,6 +325,22 @@ module Pair11_B(){
 //     finding 5.
 // 16  arming switch's own physical envelope vs. access door(7) -- finding
 //     3, harness item 4 ("model the fitted switch").
+//
+// Harness item 3 names three moving elements: "servo horn, pin, cord".
+// The CORD path (chute tube lug -> aft bulkhead notch -> carrier notch)
+// IS covered, just not by a dedicated pair: the lug/notch mesh-vs-mesh
+// clearance checks in verify_rocket60.py, the full-stroke pairs 6/13
+// (which sweep the exact geometry the cord's own channel runs through),
+// and the aligned (+-6,-22) cord holes across the bulkhead/carrier
+// together assert the same thing a standalone probe would. The PIN
+// itself -- the "3mm steel dowel, not printed" that is the tether
+// latch's actual load path (R60_TetherLatch()'s own comment) -- is NOT
+// covered by anything here or in verify_rocket60.py: its own bore
+// (Base_L+2=40.6mm, centred) implies at least that much clear axial
+// travel to insert or withdraw it, and nothing in this file checks
+// whether that travel is actually free once the carrier is bonded on.
+// Flagged, not fixed -- see the task report's "not fixed / out of
+// scope" section.
 // ===========================================================================
 
 // Pair 12: tether latch (part 13) <-> spring carrier (part 8) -- finding 2.
