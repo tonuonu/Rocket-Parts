@@ -118,7 +118,11 @@ station 0 ┌────────────┐
      684  └────────────┘
 ```
 
-Total length **684 mm**, OD **60.0 mm**, **L/D 11.4**.
+Tube/fin-can stack **684 mm** as diagrammed. Overall airframe length **690 mm**
+(5th review, finding 12): the motor retainer bolts to the OUTSIDE of the fin can's aft
+face, not flush within its printed length, adding a further 6 mm past the 684 mm
+stack above — see `tools/rocket60_model.py`'s own OVERALL_LEN. OD **60.0 mm**,
+**L/D 11.5**.
 
 The e-bay is 177 mm, not the 130 mm first specified. Two upright MG90S servos plus the
 100 mm Vega need 129 mm of interior and 130 mm of tube only yields 112 mm once the
@@ -132,6 +136,14 @@ instead of a 0.5 mm hair gap. Grew another 12 mm (165->177, 4th review, critical
 side) -- correctly counting that overlap needed 12 mm more to restore the same ~3 mm
 window. Total airframe length also now counts the neck's own 5 mm flange explicitly
 (previously omitted -- see §5's mass-budget note).
+
+That switch-window derivation is now HISTORY, not the current design (5th review, finding
+1): the arming switch has moved off the tube wall entirely, onto the access door itself
+(`R60_Door()`), which sidesteps the window it kept re-breaking (it inverted twice --
+3rd review's own fix, then again at the current `R60_EBay_L`) rather than growing the
+e-bay a third time to patch it. `R60_EBay_L` stays 177 mm -- it is not shrunk back down --
+but is no longer switch-derived; its remaining justification is fitting the Vega 100 +
+upright MG90S 29 + slack.
 
 The fin can is 228 mm because the longest 29 mm H DMS (H135W, **216 mm**) has to fit — the
 H182R is 203 mm and the G80T only 124 mm.
@@ -175,7 +187,7 @@ New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
 | 0 | — | Launch | 1010 rail, 1.5 m, exit 18.9 m/s |
-| 10.9 s | 624 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
+| 10.9 s | 625 m | Apogee separation | Vega servo 1 releases the spring; >130 N shears 2 nylon pins. **Backup:** G80T ejection charge, delay ~11 s, shears the same pins. |
 | — | 627→150 m | Tumble descent | Sections held ~50 mm apart by a servo-latched tether; chute stays packed. ~23 m/s, 25 s, drift ~124 m |
 | — | 150 m | Main release | Vega servo 2 releases the tether; sections separate fully, 24 in main is drawn out |
 | — | 150→0 m | Descent | 6.9 m/s, 22 s, drift ~109 m |
@@ -298,9 +310,9 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | Rail exit | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 871 g | 9.1 | **15.3 m/s** | 131 m/s | **0.39** | 624 m | 10.9 s |
-| **H182R-14A** (29 mm DMS) | 938 g | 19.8 | 22.7 m/s | 210 m/s | **0.62** | 982 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 941 g | 12.6 | 17.3 m/s | 195 m/s | **0.57** | 1031 m | 13.2 s |
+| **G80T-14A** (owned) | 871 g | 9.1 | **15.3 m/s** | 131 m/s | **0.39** | 625 m | 10.9 s |
+| **H182R-14A** (29 mm DMS) | 937 g | 19.8 | 22.7 m/s | 210 m/s | **0.62** | 982 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 940 g | 12.6 | 17.3 m/s | 195 m/s | **0.57** | 1031 m | 13.2 s |
 
 (Figures from `tools/rocket60_model.py`'s own output, run after the 4th
 review's fixes -- see §6 below for the matching stability table. Liftoff
@@ -315,7 +327,11 @@ bulkhead/spring carrier/thrust ring stations were corrected to where
 their geometry actually sits once assembled (should-fix 10/11) --
 together these moved CG ~3.7 mm forward before the E-bay length growth
 partially offset it; net effect on the G80T's own stability margin is in
-§6.)
+§6. Re-run after the 5th review's fixes: H182R-14A/H135W-14A liftoff mass
+each dropped 1 g (938->937, 941->940 -- the arming switch's own hole,
+finding 1, shrank part 7's measured volume by ~0.2 cm3); apogee moved
++1 m (624->625) for the same reason. G80T-14A and every margin figure
+below are unchanged at this file's own precision.)
 
 Motor data, all from thrustcurve.org:
 
@@ -403,9 +419,9 @@ Barrowman on the EXPOSED fin panel (root 77.8 / tip 35 / span 49 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 871 g | 365.5 mm | **1.45 cal** | 345.5 mm | 1.78 cal |
-| H182R-14A | 938 g | 376.3 mm | **1.27 cal** | 347.5 mm | 1.75 cal |
-| H135W-14A | 941 g | 375.7 mm | **1.28 cal** | 356.6 mm | 1.60 cal |
+| G80T-14A | 871 g | 365.6 mm | **1.45 cal** | 345.6 mm | 1.78 cal |
+| H182R-14A | 937 g | 376.4 mm | **1.27 cal** | 347.6 mm | 1.75 cal |
+| H135W-14A | 940 g | 375.8 mm | **1.28 cal** | 356.7 mm | 1.60 cal |
 
 **The G80T-14A sizing case corrected from 1.53 cal to 1.45 cal.** (Full
 station audit, coordinator override, same round as should-fix 11.) The
@@ -623,4 +639,4 @@ and rail exit would be unstable.
 8. Confirm `enable_telemetry` is `true` and the ground station shows GNSS fix **before**
    the rocket leaves your hands. The firmware default is `false`.
 9. First flight on the G80T-14A, single objective: recover the airframe and read the Vega log.
-   Compare logged apogee to the 624 m prediction and correct Cd₀ before flying the H.
+   Compare logged apogee to the 625 m prediction and correct Cd₀ before flying the H.

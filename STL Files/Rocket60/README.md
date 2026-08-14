@@ -1,6 +1,8 @@
 # Rocket 60 — printable meshes
 
-Ø60 mm camera rocket, 684 mm, built around the user's own CAD nosecone.
+Ø60 mm camera rocket, 690 mm overall (684 mm tube/fin-can stack + the motor
+retainer bolted on the outside of the fin can's aft face -- 5th review,
+finding 12), built around the user's own CAD nosecone.
 Generated from `Rocket60.scad`, OpenSCAD 2026.07.09, full render, binary STL.
 Verify with `python3 tools/verify_rocket60.py` — every part is measured from
 its rendered mesh, and mating fits are checked mesh-against-mesh rather than
@@ -37,7 +39,7 @@ line up with inserts in a PCB that does not shrink.
 | `04_EBayFwdBulkhead.stl` | 4 | 6.00 | 56.40 | 12.7 cm³ |
 | `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.4 cm³ |
 | `06_VegaSled.stl` | 6 | 8.00 | 44×112 flat | 20.0 cm³ |
-| `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 10.6 cm³ |
+| `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 10.4 cm³ |
 | `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | 52.9 cm³ |
 | `09_FinCan.stl` | 9 | 228.00 | 60.00 | 114.0 cm³ |
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ |
@@ -128,6 +130,21 @@ far corners previously reached 0.6-1mm past both), and gained a
 pass-through cut so the base no longer seals the servo-2 horn slot shut
 (critical 5) -- net genus 4→5 (one new through-hole).
 
+Re-exported again after the 5th review's fix pass: the arming switch
+moved off part 2 (e-bay tube) onto part 7 (access door) -- finding 1, the
+switch's own Z window on the tube kept re-breaking (it inverted twice
+across the 3rd/4th reviews) rather than growing the e-bay a third time to
+patch it. Part 2 genus 7→6 (one fewer through-hole); part 7 genus 4→5
+(one more) and volume shrank 10.6→10.4 cm³ (the switch's own hole).
+Part 2's door bosses were also reshaped (finding 2: the boss's own inner
+tip used to reach past the tube's ID into the Vega board's own footprint
+-- a real, measured collision the harness had never modelled) -- no
+change to part 2's own genus/volume at this file's precision. Part 13
+(tether latch) volume unchanged at this precision -- its pin bore
+shortened (finding 3: the old bore reached to within 0.15mm of the
+spring carrier's own counterbore rim, not the "1.27mm" previously
+claimed) and a dead, no-op cut was removed (finding 4).
+
 Tallest part 228 mm, inside the 250 mm envelope with 22 mm to spare.
 
 ## Mass — measured from the exported meshes
@@ -150,10 +167,11 @@ minimum (1.0 cal, spec §6.1 -- the earlier 1.5 cal figure was a comfort
 target, not a requirement, and was retired rather than chased with
 further fin growth). See the design spec §6/§6.1 for the full audit
 table and the gate-retirement decision. H182R-14A gives
-938 g / 1.27
-cal / 27.9 m/s; H135W-14A gives 941 g / 1.28
-cal. Full breakdown, all three motors, in `tools/rocket60_model.py`'s own
-output.
+937 g / 1.27
+cal / 27.9 m/s; H135W-14A gives 940 g / 1.28
+cal (5th review: both dropped 1g from a re-export -- the arming switch's
+own hole, finding 1, shrank the access door's measured volume). Full
+breakdown, all three motors, in `tools/rocket60_model.py`'s own output.
 
 **Weigh the parts as they come off the printer** and compare against
 `tools/rocket60_model.py`'s per-part figures before committing to a rail

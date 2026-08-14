@@ -418,7 +418,7 @@ Copied from spec §11, with one adaptation flagged below.
    GNSS fix **before** the rocket leaves your hands. The firmware default
    is `false`.
 10. First flight on the G80T-14A, single objective: recover the airframe
-    and read the Vega log. Compare logged apogee to the 624 m prediction
+    and read the Vega log. Compare logged apogee to the 625 m prediction
     and correct Cd₀ before flying the H.
 
 ---
