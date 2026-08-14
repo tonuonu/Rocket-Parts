@@ -179,10 +179,19 @@ def measure(stl, genus=None):
             "zmin": zs[0], "zmax": zs[1], "height": zs[1] - zs[0]}
 
 
-@functools.lru_cache(maxsize=None)
+@functools.lru_cache(maxsize=8)
 def _bore_cached(stl, st_mtime_ns, st_size, zlo, zhi):
     """Actual bore() body, memoised on (path, mtime, size, band) -- see
-    bore() below for why mtime/size are part of the key, not just path."""
+    bore() below for why mtime/size are part of the key, not just path.
+
+    Bounded to 8 (5th review, finding 10), matching _tris_cached's own
+    policy just above -- maxsize=None was left unbounded here for the
+    same reason _tris_cached was bounded (defect 12/13, 4th review): a
+    verify run re-renders every part several times across
+    checks()/assembly probes, and an unbounded cache keeps every
+    (path, band) result live for the whole process instead of just the
+    handful of live overlapping calls any one part's checks actually
+    make."""
     rmin, rmax = None, 0.0
     for tri in tris(stl):
         for (x, y, z) in tri:

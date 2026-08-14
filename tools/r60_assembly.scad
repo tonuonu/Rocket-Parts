@@ -27,7 +27,7 @@
 //   independent statement of where the carrier ends once assembled, and
 //   is the cross-check that this frame is built correctly.
 // -D Facing_Y=nn (mm) is the Vega sled's measured rail-contact Y
-//   (Pair 3 only) -- MEASURED off part 2's own rendered rails by the
+//   (Pairs 3 and 21) -- MEASURED off part 2's own rendered rails by the
 //   Python driver (rail_facing_gap() in verify_rocket60.py), not a
 //   formula restated here, per this repo's own rule 4.
 //
@@ -265,7 +265,11 @@ module Pair11_B(){
 //                       hardware, not Rocket60.scad modules -- EXCLUDED,
 //                       nothing to render.
 //  2  e-bay tube     -- neck(1)[0], fwd bulkhead(4)[1], aft bulkhead(5)[2],
-//                       Vega sled(6)[3], door(7)[4].
+//                       Vega sled(6)[3], door(7)[4]; the fitted arming
+//                       switch's own envelope[16, new -- finding 1, the
+//                       switch now lives in the door, part 7, and reaches
+//                       INTO this tube once installed] and the Vega
+//                       board's own envelope[21, new -- finding 2].
 //  3  chute tube     -- aft bulkhead skirt(5)[5, stroke], carrier(8)[6,
 //                       stroke], fin can(9)[7], tether latch(13)[13, new].
 //  4  fwd bulkhead   -- e-bay tube(2)[1]. Also sits immediately below the
@@ -281,11 +285,18 @@ module Pair11_B(){
 //  5  aft bulkhead   -- e-bay tube(2)[2], chute tube(3)[5, stroke], tether
 //                       latch(13)[9], spring carrier(8)[14, new -- both
 //                       bond to this part's SAME aft face].
-//  6  Vega sled      -- e-bay tube(2)[3]. CATS Vega board itself is
-//                       external hardware -- EXCLUDED.
-//  7  access door     -- e-bay tube(2)[4]; the panel-mount switch's own
-//                       physical envelope[16, new -- see the switch-probe
-//                       section below].
+//  6  Vega sled      -- e-bay tube(2)[3]; the fitted arming switch's own
+//                       envelope[20, new -- finding 1]. CATS Vega board
+//                       itself is external hardware, not a rendered part
+//                       -- but its envelope IS probed (BoardProbe, pair
+//                       21) against part 2, since Pair 3 above only ever
+//                       modelled this sled, never the board that mounts
+//                       on top of it (finding 2).
+//  7  access door     -- e-bay tube(2)[4]. The panel-mount switch is now
+//                       CUT INTO this part (finding 1) rather than a hole
+//                       in the tube -- see pairs 16/20 (switch envelope
+//                       vs. tube/sled) below; a switch-vs-its-own-host-
+//                       door pair would be tautological.
 //  8  spring carrier -- chute tube(3)[6, stroke], aft bulkhead(5)[14, new],
 //                       tether latch(13)[12, new -- finding 2].
 //  9  fin can        -- chute tube(3)[7], motor spacer(12)[8]. Motor
@@ -317,14 +328,25 @@ module Pair11_B(){
 // 14  thrust ring    -- motor+spacer(12)[10, obstruction]; fin can(9),
 //                       excluded above (plain concentric bore fit).
 //
-// Two further checks are NOT part-vs-part pairs at all -- they assert a
-// DECLARED MOVING ELEMENT's required path is not obstructed by any real
-// part (harness item 3), which no static dimension check or the pairs
-// above can express:
+// Two further checks (15, 17-19) are NOT part-vs-part pairs at all -- they
+// assert a DECLARED MOVING ELEMENT's required path is not obstructed by
+// any real part (harness item 3), which no static dimension check or the
+// pairs above can express. Pairs 16/20/21 ARE part-vs-part (the switch
+// and board are now real, if unmodelled-in-detail, hardware appendages of
+// real parts, not abstract paths), but are grouped here since they arose
+// from the same "model what's actually there, not what a dimension check
+// alone can see" instruction:
 // 15  servo-2-horn/pin-release actuation path vs. tether latch(13) --
 //     finding 5.
-// 16  arming switch's own physical envelope vs. access door(7) -- finding
-//     3, harness item 4 ("model the fitted switch").
+// 16  fitted arming switch's own envelope (in the door, part 7) vs. e-bay
+//     tube(2) -- finding 1, harness item 4 ("model the fitted switch").
+// 20  same switch envelope vs. Vega sled(6) -- another part it could
+//     reach once installed.
+// 21  Vega BOARD's own envelope (not modelled by Pair 3's sled-only probe)
+//     vs. e-bay tube(2) -- finding 2.
+// 22  same switch envelope vs. the Vega BOARD's own envelope (pair 21's
+//     BoardProbe) -- the board's own Z span overlaps the door's aperture
+//     by construction, so this is a real reach, not a hypothetical one.
 //
 // Harness item 3 names three moving elements: "servo horn, pin, cord".
 // The CORD path (chute tube lug -> aft bulkhead notch -> carrier notch)
@@ -338,14 +360,22 @@ module Pair11_B(){
 // covered by pairs 17-19 (coordinator override, same review round):
 // PinPath(), the SAME bore R60_TetherLatch() cuts for it, checked
 // against the spring carrier, the aft bulkhead and the chute tube. All
-// three pass (0.0000cm3) -- the pin's own designed travel (+-20.3mm
-// from centre) clears the carrier's own counterbore rim (the binding
-// constraint, r=CB_D/2=25.5mm at the latch's own R60_Tether_Y=13.6mm
-// offset: sqrt(25.5^2-13.6^2)=21.57mm available, 1.27mm of real margin)
-// with real headroom, not a coincidental touch -- proven by mutation:
-// extending PIN_BASE_L by ~3.4mm (38.6->42.0) produces a genuine
-// 0.008cm3 collision against the carrier, confirming this check would
-// actually catch a regression, not pass regardless of the geometry.
+// three pass (0.0000cm3). Corrected (5th review, finding 3): the pin's
+// own designed travel clears the carrier's own counterbore rim (the
+// binding constraint, r=CB_D/2=25.5mm) with real headroom, but the
+// PREVIOUS claim above ("1.27mm of real margin") only checked the pin's
+// CENTRELINE against the rim -- sqrt(25.5^2-13.6^2)=21.57mm -- ignoring
+// the pin's own 1.6mm radius, which offsets its farthest point to
+// R60_Tether_Y+Pin_d/2=15.2mm. Correctly counted,
+// sqrt(25.5^2-15.2^2)=20.47mm was available, and the old PIN_BASE_L+2
+// reach (half-length 20.3mm) had only 0.15mm of real margin -- confirmed
+// by mutation, first contact between half-reach 20.45 and 20.6mm, not the
+// "+3.4mm" the old claim implied (that mutation probed ~20x past the real
+// threshold). PIN_REACH is now derived from the pin's actual functional
+// withdrawal need (clear both posts + a stated grip allowance) capped
+// with a stated 1.5mm minimum clearance to the rim -- see
+// R60_TetherLatch()'s own Pin_Reach comment (Rocket60.scad) for the
+// derivation this file restates below.
 // ===========================================================================
 
 // Pair 12: tether latch (part 13) <-> spring carrier (part 8) -- finding 2.
@@ -404,32 +434,76 @@ module HornPath(){
 module Pair15_A(){ HornPath(); }
 module Pair15_B(){ translate([0,R60_Tether_Y,12+R60_Pin_Skirt_L]) R60_TetherLatch(); }
 
-// Pair 16: arming switch's own physical envelope vs. access door (part 7)
-// -- finding 3, harness item 4 ("model the fitted switch"). The switch
-// hole R60_EBayTube() cuts is an ABSENCE of material -- intersecting the
-// door against the tube (Pair 4) can only ever see material the tube
-// still HAS, so a void can never register as an obstruction there
-// regardless of how badly the door overlaps it. SwitchProbe is a
-// PROBE-ONLY solid standing in for the switch hardware that actually
-// occupies that hole once assembled: the SAME cylinder R60_EBayTube()
-// itself cuts (same Sw_d, same radial axis) -- the minimal, derived stand-
-// in, not an invented hardware envelope with no sourced spec. SwZ is the
-// hole's own MEASURED Z centre, off the rendered part 2 mesh (the Python
-// driver's own switch_hole_z(), the same "measure the real geometry, don't
-// restate the formula" idiom rail_facing_gap()/measure_facing_y() already
-// use for Pair 3's Facing_Y), not a restated formula prone to the exact
-// R60_Door_Overlap-omission drift that caused finding 3 in the first
-// place.
-SW_D = 12.0;   // R60_EBayTube()'s own Sw_d, restated (rule 4)
-SwZ = 147.5;   // documented fallback for standalone rendering; the driver
-               // always overrides this with a measured value
+// Pairs 16/20/22: arming switch's own physical envelope (5th review,
+// finding 1: now fitted IN the access door, part 7, not the tube) vs.
+// every part it could reach once installed -- harness item 4 ("model the
+// fitted switch"), extended per finding 1's own instruction ("add an
+// assembly-probe pair for the fitted switch against every part it could
+// reach") now that the switch is a real appendage of a real part rather
+// than a hole in one. Checking it against the door it is CUT INTO would
+// prove nothing (a probe built from the same cut it stands in for is
+// tautologically clear); the parts/hardware actually reachable from the
+// door's own crown position, aimed inward into the open bore, are the
+// e-bay tube itself (whatever is NOT open aperture there -- the door
+// bosses, the tube wall either side of the opening), the Vega sled on the
+// far (-Y) wall, and the Vega BOARD (Pair 22, using the SAME BoardProbe
+// Pair 21 uses below) -- the board's own Z span (its full R60_Vega_L,
+// centred the same as the sled) overlaps the door's own aperture Z range
+// by construction, so a switch reaching far enough inward can hit the
+// board even though it clears the thin sled itself (Pair 20) with room to
+// spare; this was caught DURING this fix, not assumed clear (a first
+// draft's SW_REACH=15 read a genuine 0.538cm^3 collision against
+// BoardProbe before SW_REACH was derived against it below).
+//
+// SwitchProbe is a PROBE-ONLY solid standing in for the installed switch
+// hardware: SW_D matches R60_Door()'s own Sw_d exactly (rule 4); SW_REACH
+// is DERIVED (not a free hand-picked number) as the largest reach that
+// still clears the board's own inner face (R60_Vega_Board_Inner_Y,
+// R60Lib.scad) by a stated minimum -- no datasheet exists for the actual
+// switch part, so "as deep as the installation allows, not deeper" is the
+// honest envelope, same "unmodelled companion hardware" treatment as
+// R60_SpringCarrier()'s plunger/lock ring. Built directly in the DOOR's
+// own local frame (matching R60_Door()'s own Sw_X/Sw_Z exactly), so it
+// drops into the SAME Pair4/Pair16-style door-placement transform below.
+SW_D = 12.0;        // R60_Door()'s own Sw_d, restated (rule 4)
+SW_REACH_Clear = 2.0;   // stated minimum clearance to the board's own face
+SW_REACH = R60_Body_OD/2 - R60_Vega_Board_Inner_Y - SW_REACH_Clear;  // ~8.24
+SW_X = 0;           // R60_Door()'s own Sw_X -- the cover's own crown
+SW_Z = R60_Door_Overlap + R60_Door_Open_H/2;   // R60_Door()'s own Sw_Z, 48.5
 module SwitchProbe(){
-    translate([0, R60_Body_OD/2, SwZ])
+    translate([0, R60_Body_OD/2, SW_Z])
         rotate([90,0,0])
-            cylinder(d=SW_D, h=R60_Wall_T*3, center=true);
+            cylinder(d=SW_D, h=SW_REACH);
 }
-module Pair16_A(){ SwitchProbe(); }
-module Pair16_B(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
+module Pair16_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
+module Pair16_B(){ R60_EBayTube(); }
+module Pair20_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
+module Pair20_B(){ R60_VegaSled(); }
+
+// Pair 21: Vega BOARD's own envelope (5th review, finding 2) vs. e-bay
+// tube (part 7's door bosses live in part 2, R60_EBayTube()). Pair 3
+// above only ever modelled the SLED (part 6) -- the real collision
+// finding 2 found was between the door bosses and the BOARD, which sits
+// on TOP of the sled and was never rendered anywhere in this harness.
+// BoardProbe is a PROBE-ONLY solid: the board's own footprint
+// (R60_Vega_L x R60_Vega_W x R60_Vega_H, no mounting/standoff detail --
+// none of that is load-bearing for a clearance check), positioned the
+// SAME way Pair 3 positions the sled (Facing_Y, the rails' own measured
+// contact surface) plus the stack height (sled T+Standoff_h+Vega_H) that
+// sits between the rails and the board's own inner face.
+module BoardProbe(){
+    translate([0, Facing_Y + (R60_Vega_Sled_T+R60_Vega_Standoff_h), R60_EBay_L/2])
+        rotate([-90,0,0])
+            translate([-R60_Vega_W/2, -R60_Vega_L/2, 0])
+                cube([R60_Vega_W, R60_Vega_L, R60_Vega_H]);
+}
+module Pair21_A(){ BoardProbe(); }
+module Pair21_B(){ R60_EBayTube(); }
+// Pair 22: fitted arming switch envelope vs. the Vega BOARD itself --
+// see the Pairs 16/20/22 comment above for why this is a real, not
+// hypothetical, risk despite the board not being a printed part.
+module Pair22_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) SwitchProbe(); }
+module Pair22_B(){ BoardProbe(); }
 
 // Pairs 17-19: tether latch PIN withdrawal path vs. every real part
 // around it once assembled -- coordinator override (same review round).
@@ -451,12 +525,16 @@ module Pair16_B(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
 // (9/12/13) fails right along with the pin-path pair checking the same
 // frame, rather than silently disagreeing with it.
 PIN_D = 3.2;         // R60_TetherLatch()'s own Pin_d (3.0+IDXtra)
-PIN_BASE_L = 38.6;   // R60_TetherLatch()'s own Base_L
+PIN_REACH = 17.0;    // R60_TetherLatch()'s own Pin_Reach (Post_X+Post_d/2+
+                       // Pin_Reach_Grip = 9+4+4) -- was PIN_BASE_L+2 (the
+                       // latch's own full base width, half-reach 20.3mm),
+                       // the latch's own functional need, not its base
+                       // width (5th review, finding 3)
 PIN_Z_LOCAL = 12;    // R60_TetherLatch()'s own Base_T+Post_H-4 (4+12-4)
 module PinPath(){
     translate([0, 0, PIN_Z_LOCAL])
         rotate([0,90,0])
-            cylinder(d=PIN_D, h=PIN_BASE_L+2, center=true);
+            cylinder(d=PIN_D, h=2*PIN_REACH, center=true);
 }
 // vs. spring carrier -- same frame as Pair12.
 module Pair17_A(){ translate([0,R60_Tether_Y,0]) PinPath(); }
@@ -488,3 +566,6 @@ if (Pair==16) intersection(){ Pair16_A(); Pair16_B(); }
 if (Pair==17) intersection(){ Pair17_A(); Pair17_B(); }
 if (Pair==18) intersection(){ Pair18_A(); Pair18_B(); }
 if (Pair==19) intersection(){ Pair19_A(); Pair19_B(); }
+if (Pair==20) intersection(){ Pair20_A(); Pair20_B(); }
+if (Pair==21) intersection(){ Pair21_A(); Pair21_B(); }
+if (Pair==22) intersection(){ Pair22_A(); Pair22_B(); }

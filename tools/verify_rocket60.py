@@ -73,8 +73,11 @@ GENUS = {0: 4, 1: 4, 4: 1, 6: 3}
 #   handle per hole from that leftover bridge, not a modelling error;
 #   redesigned to cut the rail's full cross-section locally instead (see
 #   R60_EBayTube()'s own Tie_X0/Tie_Depth comment), which returned the
-#   count to the expected +1-per-hole.
-GENUS[2] = 7
+#   count to the expected +1-per-hole. RE-DERIVED again (5th review,
+#   finding 1): the arming switch hole moved off this tube entirely, onto
+#   the access door (R60_Door()'s own module comment) -- one fewer
+#   through-hole here, 7-1=6; rendered, `Genus: 6`.
+GENUS[2] = 6
 
 #   part 3: chute bay tube. Started at 1 (plain tube), then 3 after the 2
 #   shear pin holes were added (rendered `Genus: 3`, confirmed on a thin
@@ -109,7 +112,11 @@ GENUS[5] = 4
 #   part 7: curved door cover. 4 bolt holes = 4. Unchanged across the
 #   defect 1a azimuth fix -- that fix repositions each hole's AXIS, not
 #   its count or through/blind nature; re-rendered, still `Genus: 4`.
-GENUS[7] = 4
+#   RE-DERIVED (5th review, finding 1): the arming switch moved onto this
+#   cover from the e-bay tube -- one more clean through-hole (same
+#   through-the-shell-only cut as the 4 bolt holes), 4+1=5; rendered,
+#   `Genus: 5`.
+GENUS[7] = 5
 
 #   part 8: spring carrier. First rendered without the forward counterbore
 #   or shock-cord channels (Genus: 1, a single spring-bore passage with
@@ -202,6 +209,22 @@ BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
 # (32/29.3), so one band yields both measurements: bore() returns
 # (min_dia, max_dia) = (MMT bore, fin can OD).
 FINCAN_BAND = (-0.01, 0.5)
+
+# Chute-tube-to-fin-can spigot joint (5th review, finding 9) -- the only
+# internal coupler joint with no measured mesh-against-mesh clearance
+# check before this. Part 9's own forward tip (z=R60_FinCan_L=228) is the
+# ONLY Z where the fin can's OWN body ID (28.4) is isolable from the MMT
+# that runs the fin can's full length underneath it -- confirmed
+# empirically: at z~228 the ONLY 4 radii present are {14.65, 16.15 (MMT
+# bore/OD), 28.4, 30.0 (body ID/OD)}, so bore_annulus()'s r_lo=20 cleanly
+# keeps just the body pair (a plain bore() call would read the MMT's
+# 29.3mm bore as the "min", not the body's own 56.8mm ID). Part 3's own
+# spigot tip (z=185.5, its own measured height) is likewise the only Z
+# where the spigot's own {26.6, 28.2} pair stands alone, clear of the
+# weld-ring transition just below it (z=178..180).
+FINCAN_SPIGOT_BAND  = (227.5, 228.01)   # part 9: fin can's forward-open bore
+FINCAN_SPIGOT_R_LO  = 20.0               # excludes the MMT (r<=16.15)
+CHUTE_SPIGOT_BAND   = (184.5, 185.51)   # part 3: spigot's own tip
 # Slot Z-extent inside R60_FinCan() is Slot_Z=8-IDXtra .. Slot_Z+Slot_L=
 # 7.8..98.2 (not exposed as R60Lib constants; IDXtra=0.2 is the length
 # clearance added at each end, so the slot is 90.4mm for a 90mm root). The
@@ -311,16 +334,18 @@ RAIL_Z_CAP   = 14.0
 # was invisible to every existing OD check.
 BOSS_OD_BAND_HALF = 0.05
 
-# Arming switch Z window -- defect 2d, and 4th review critical 3.
-# SW_Z_EXPECT is R60_EBayTube()'s own (Sw_Z0+Sw_Z1)/2, restated as a
-# literal so the check reads the window's actual measured centre, not
-# the formula that produced it. Sw_Z0 now correctly counts
-# R60_Door_Overlap (the 4th review's own critical fix -- see
-# R60_EBayTube()'s Sw_Z0 comment); at R60_EBay_L=177: Sw_Z0 =
-# 131+6+3+6=146, Sw_Z1 = 177-19-3-6=149, centre 147.5 -- confirmed
-# against the rendered part 2 mesh's own switch-hole edge loop (141.5..
-# 153.5) before use here.
-SW_Z_EXPECT = 147.5
+# Arming switch position -- 5th review, finding 1: MOVED off the tube
+# wall onto the access door (part 7). The old defect-2d/4th-review-
+# critical-3 Z WINDOW (Sw_Z0/Sw_Z1 on the tube, forever squeezed between
+# the door cover's footprint and the neck skirt, and which inverted twice)
+# no longer exists -- the switch's position on the door is now a fixed
+# LOCAL constant (R60_Door()'s own Sw_X/Sw_Z), independent of R60_EBay_L,
+# the neck skirt or the forward bulkhead. DOOR_SW_X_EXPECT/DOOR_SW_Z_EXPECT
+# are that module's own Sw_X/Sw_Z, restated as literals (rule 4) --
+# confirmed against the rendered part 7 mesh's own switch-hole edge loop
+# (x=-6.0..6.0, z=42.5..54.5) before use here.
+DOOR_SW_X_EXPECT = 0.0
+DOOR_SW_Z_EXPECT = 48.5   # R60_Door_Overlap + R60_Door_Open_H/2 = 6+42.5
 
 
 def pin_hole_diameter(stl, x_side, z_center, r_expected, half_window=3.0):
@@ -456,25 +481,82 @@ def rail_facing_gap(stl, r_inner, z_at, r_win=0.3, zwin=0.1):
     return facing_pos[0] - facing_neg[0], facing_pos[1]
 
 
-def switch_hole_z(stl, zlo=132.0, zhi=170.0):
-    """Arming-switch hole's own measured Z centre, off part 2's rendered
-    edge loop (a Ø12 hole cut straight through the +Y wall). Factored out
-    of checks()'s own inline scan (4th review, harness item 4) so
-    tools/verify_rocket60_assembly.py's switch-envelope probe (Pair 16,
-    r60_assembly.scad) can position it from the SAME measurement checks()
-    uses, not a second, independently-restated formula -- exactly the
-    defect this file's own rule 4 exists to prevent, and precisely the
-    class of bug that caused finding 3 in the first place (Sw_Z0's
-    formula silently omitting R60_Door_Overlap). zlo/zhi default to a
-    window that excludes the tube's own end caps and the door aperture's
-    edge loop at R60_EBay_L=177; a caller checking a different R60_EBay_L
-    must pass its own window."""
-    zs = [z for tri in tris(stl) for (x, y, z) in tri
-          if abs(x) < 6.0 and y > 29.0 and zlo < z < zhi]
-    if not zs:
-        raise RuntimeError("no switch-hole geometry in z=%.1f..%.1f of %s"
-                            % (zlo, zhi, stl))
-    return (min(zs) + max(zs)) / 2.0
+def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
+    """Arming-switch hole's own measured (X centre, Z centre), off part 7
+    (door cover)'s rendered edge loop (a Ø12 hole cut through the cover's
+    own T=2mm shell at its crown, x=0). 5th review, finding 1: this used
+    to scan part 2 (the switch lived on the tube wall); the switch has
+    since moved to the door, and its position there is a fixed LOCAL
+    constant, no longer a derived Z window squeezed against the door
+    cover's own footprint and the neck skirt. Factored out of checks()'s
+    own inline scan, same reasoning as the old switch_hole_z() it
+    replaces, so tools/verify_rocket60_assembly.py's switch-envelope
+    probes (r60_assembly.scad) could reuse this measurement too if a
+    future round needs it -- they do not currently (the door position has
+    no complex derivation left to keep in sync, so they use the SAME fixed
+    literal directly). xhalf/zlo/zhi default to a window that isolates the
+    switch hole from the door's 4 corner bolt holes (x=+-21) and its own
+    top/bottom edges (z=0/97) -- confirmed empirically (x=-6.0..6.0,
+    z=42.5..54.5) before use here."""
+    pts = [(x, z) for tri in tris(stl) for (x, y, z) in tri
+           if abs(x) < xhalf and y > 29.0 and zlo < z < zhi]
+    if not pts:
+        raise RuntimeError("no switch-hole geometry near the door's crown of %s"
+                            % stl)
+    xs = [p[0] for p in pts]
+    zs = [p[1] for p in pts]
+    return (min(xs) + max(xs)) / 2.0, (min(zs) + max(zs)) / 2.0
+
+
+def bore_annulus(stl, zlo, zhi, r_lo):
+    """Like scad_verify.bore(), but ignores vertices with radius < r_lo
+    (5th review, finding 9). bore() returns the GLOBAL min/max radius in a
+    Z band -- fine for a plain tube, but R60_FinCan() runs its MMT the
+    part's FULL length concentric with the body wall, so a plain bore()
+    call at the fin can's forward-open annulus would read the MMT's own
+    bore/OD (14.65/16.15mm) as the min/max, not the body's own ID/OD
+    (28.4/30.0mm) -- the surface actually mating with the chute tube's
+    spigot. r_lo excludes the MMT's own radius range; see
+    FINCAN_SPIGOT_BAND/FINCAN_SPIGOT_R_LO's own comment for the
+    empirical confirmation this isolates the right pair."""
+    rmin, rmax = None, 0.0
+    for tri in tris(stl):
+        for (x, y, z) in tri:
+            if zlo <= z <= zhi:
+                r = math.hypot(x, y)
+                if r >= r_lo:
+                    rmin = r if rmin is None else min(rmin, r)
+                    rmax = max(rmax, r)
+    if rmin is None:
+        raise RuntimeError("no geometry with r>=%.2f in Z band %.2f..%.2f of %s"
+                            % (r_lo, zlo, zhi, stl))
+    return 2.0 * rmin, 2.0 * rmax
+
+
+def safe(fn, *args, nvals=1, **kwargs):
+    """Call fn(*args, **kwargs); a RuntimeError becomes nan(s) of the same
+    shape, not a crash (5th review, finding 6). Every scanner checks()
+    calls reads geometry off a rendered mesh and can raise RuntimeError on
+    missing/moved features (bore() in scad_verify.py; rail_facing_gap(),
+    hole_azimuth_at_r(), hole_max_reach(), pin_hole_diameter(),
+    xy_extent_in_window(), fincan_slot_width/length(), door_switch_hole()
+    in this file) -- only switch_hole_z() (now door_switch_hole()) was
+    ever wrapped before this fix. Every OTHER call sat bare in checks(),
+    so a single missing/moved feature raised straight out of checks(),
+    aborting the WHOLE run with a traceback before any check printed --
+    the identical "one bad row kills the whole report" failure class the
+    genus loop and the arming-switch check were already fixed for.
+    nvals controls how many nan values are returned, matching how many
+    the call site unpacks (bore() and rail_facing_gap() return 2;
+    xy_extent_in_window() returns 4; everything else returns 1) -- nan
+    compares false against every tolerance (same convention as a missing
+    genus), so a failure here is a loud FAIL on just the checks that
+    needed this measurement, not a silent skip or a crash."""
+    try:
+        return fn(*args, **kwargs)
+    except RuntimeError:
+        nan = float("nan")
+        return nan if nvals == 1 else (nan,) * nvals
 
 
 def checks(m):
@@ -483,35 +565,35 @@ def checks(m):
     a = lambda p, k: m[p][k]
 
     if 0 in m:
-        _, flange_od = bore(a(0, "stl"), *TESTRING_FLANGE_BAND)
-        _, spigot_od = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
+        _, flange_od = safe(bore, a(0, "stl"), *TESTRING_FLANGE_BAND, nvals=2)
+        _, spigot_od = safe(bore, a(0, "stl"), *TESTRING_SPIGOT_BAND, nvals=2)
         c += [("test ring flange OD vs nosecone base", flange_od, 59.98, 0.15),
               ("test ring coupler OD", spigot_od, 56.40, 0.15),
               ("test ring height", a(0, "height"), 10.0, 0.1),
               ("test ring zmin", a(0, "zmin"), 0.0, 0.05)]
 
     if 1 in m:
-        _, flange_od = bore(a(1, "stl"), *NECK_FLANGE_BAND)
-        _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+        _, flange_od = safe(bore, a(1, "stl"), *NECK_FLANGE_BAND, nvals=2)
+        _, skirt_od = safe(bore, a(1, "stl"), *NECK_SKIRT_BAND, nvals=2)
         c += [("neck flange OD vs nosecone base", flange_od, 59.98, 0.15),
               ("neck height", a(1, "height"), 24.0, 0.1),
               ("neck zmin", a(1, "zmin"), 0.0, 0.05)]
         # Skirt must actually enter a body tube: measured skirt OD against
         # the measured test-ring coupler OD, never against R60_Coupler_OD.
         if 0 in m:
-            _, ring_spigot = bore(a(0, "stl"), *TESTRING_SPIGOT_BAND)
+            _, ring_spigot = safe(bore, a(0, "stl"), *TESTRING_SPIGOT_BAND, nvals=2)
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
     for p, want_len in ((2, 177.0), (3, 185.5)):
         if p in m:
-            tube_id, tube_od = bore(a(p, "stl"), *TUBE_BAND)
+            tube_id, tube_od = safe(bore, a(p, "stl"), *TUBE_BAND, nvals=2)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
                   ("part %d OD" % p, tube_od, 60.0, 0.1),
                   ("part %d bore" % p, tube_id, 56.8, 0.1)]
             # A tube that will not accept the neck skirt is useless.
             if 1 in m:
-                _, skirt_od = bore(a(1, "stl"), *NECK_SKIRT_BAND)
+                _, skirt_od = safe(bore, a(1, "stl"), *NECK_SKIRT_BAND, nvals=2)
                 c += [("part %d bore clears neck skirt" % p,
                        tube_id - skirt_od, 0.4, 0.15)]
 
@@ -522,38 +604,10 @@ def checks(m):
         # tube's own 60.00, pre-fix) was invisible to the plain "part 2 OD"
         # check above. Measured at each boss Z station directly.
         for z_boss in DOOR_HOLE_Z_TUBE:
-            _, boss_od = bore(a(2, "stl"), z_boss - BOSS_OD_BAND_HALF,
-                               z_boss + BOSS_OD_BAND_HALF)
+            _, boss_od = safe(bore, a(2, "stl"), z_boss - BOSS_OD_BAND_HALF,
+                              z_boss + BOSS_OD_BAND_HALF, nvals=2)
             c += [("part 2 OD at door boss station (z=%.1f)" % z_boss,
                    boss_od, 60.0, 0.1)]
-
-        # Arming switch Z -- defect 2d: nothing measured this before.
-        # R60_EBayTube()'s own assert (added this round) is the load-
-        # bearing guard against Sw_Z0/Sw_Z1 inverting outright; this reads
-        # the switch hole's own Z-span directly off its rendered edge loop
-        # (a Ø12 hole cut straight through the +Y wall, so its boundary is
-        # an ellipse-ish curve spanning roughly Sw_Z+-Sw_d/2 in Z) and
-        # checks the MEASURED centre against the stated literal window,
-        # catching silent drift even where the render still succeeds. The
-        # z pre-filter (132..170, 4th review: R60_EBay_L=177 moved both
-        # the switch and the boundaries it must avoid) excludes the
-        # tube's own end caps (z=0/177) and the door aperture's edge loop
-        # (z=131.0), which would otherwise contaminate a naive "nearest
-        # to the +Y wall" search -- confirmed empirically before use here.
-        # Factored into switch_hole_z() (4th review, harness item 4) so
-        # tools/verify_rocket60_assembly.py's switch-envelope probe can
-        # position itself from this SAME measurement.
-        # Was `if sw_zs:` -- an empty scan (hole missing, moved outside
-        # the pre-filter band, or the wall/hole geometry changed shape)
-        # silently skipped this check entirely instead of failing it, the
-        # same "quietly absent row" defect as the genus checks above.
-        # nan never falls within any tolerance, so an empty scan is now a
-        # loud FAIL instead of a check that just never appears.
-        try:
-            sw_center = switch_hole_z(a(2, "stl"))
-        except RuntimeError:
-            sw_center = float("nan")
-        c += [("arming switch hole Z centre", sw_center, SW_Z_EXPECT, 0.3)]
 
     if 6 in m:
         c += [("sled length", a(6, "ymax") - a(6, "ymin"), 112.0, 0.2),
@@ -569,7 +623,7 @@ def checks(m):
             # the pre-fix rails measured a 35.65mm gap against a 44.0mm
             # sled and passed every existing check, because none of them
             # looked at the rails at all.
-            gap, facing_y = rail_facing_gap(a(2, "stl"), RAIL_INNER_R, RAIL_Z_CAP)
+            gap, facing_y = safe(rail_facing_gap, a(2, "stl"), RAIL_INNER_R, RAIL_Z_CAP, nvals=2)
             sled_w = a(6, "xmax") - a(6, "xmin")
             c += [("vega rails capture gap vs measured sled width",
                    gap - sled_w, 0.4, 0.3)]
@@ -585,7 +639,7 @@ def checks(m):
             # not 17.96mm), overstating available depth by ~8.7mm. Uses
             # the SAME measured facing_y from the rail-capture check
             # above rather than a second, independently-derived formula.
-            tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+            tube_id, _ = safe(bore, a(2, "stl"), *TUBE_BAND, nvals=2)
             tube_r = tube_id / 2.0
             avail = tube_r + abs(facing_y)
             # stack: T+Standoff_h (a(6,"height")=8, MEASURED off part 6's
@@ -631,6 +685,23 @@ def checks(m):
                DOOR_OPEN_H + 2 * DOOR_OVERLAP, 0.15),
               ("door cover chord width", a(7, "xmax") - a(7, "xmin"),
                DOOR_OPEN_W + 2 * DOOR_OVERLAP, 0.15)]
+
+        # Arming switch position -- 5th review, finding 1: nothing checked
+        # this on the door before (it did not live there); this reads the
+        # switch hole's own measured (X, Z) centre directly off its
+        # rendered edge loop and checks it against the door's own stated
+        # local position, catching silent drift even where the render
+        # still succeeds. An empty scan (hole missing or moved outside the
+        # pre-filter window) is a loud FAIL (nan against any tolerance),
+        # not a silently-skipped row -- same convention as every other
+        # try/except RuntimeError -> nan in this file.
+        try:
+            sw_x, sw_z = door_switch_hole(a(7, "stl"))
+        except RuntimeError:
+            sw_x, sw_z = float("nan"), float("nan")
+        c += [("door switch hole X centre", sw_x, DOOR_SW_X_EXPECT, 0.3),
+              ("door switch hole Z centre", sw_z, DOOR_SW_Z_EXPECT, 0.3)]
+
         # Retention: the cover must be LARGER than the aperture it covers
         # on every side (defect 1d's actual fix -- a plug smaller than its
         # own hole cannot be retained no matter what else is added).
@@ -658,11 +729,10 @@ def checks(m):
                 ty = math.sqrt(BODY_R ** 2 - tx ** 2)
                 target_az = math.degrees(math.atan2(ty, tx))
                 for z_tube in DOOR_HOLE_Z_TUBE:
-                    tube_az = hole_azimuth_at_r(a(2, "stl"), tx, ty, z_tube,
-                                                 BODY_R)
-                    door_az = hole_azimuth_at_r(a(7, "stl"), tx, ty,
-                                                 z_tube - DOOR_Z_OFFSET,
-                                                 COVER_OUTER_R)
+                    tube_az = safe(hole_azimuth_at_r, a(2, "stl"), tx, ty,
+                                   z_tube, BODY_R)
+                    door_az = safe(hole_azimuth_at_r, a(7, "stl"), tx, ty,
+                                   z_tube - DOOR_Z_OFFSET, COVER_OUTER_R)
                     c += [("tube boss axis azimuth (x=%+.0f z=%.1f)"
                            % (tx, z_tube), tube_az, target_az, 1.0),
                           ("door hole axis azimuth (x=%+.0f z=%.1f)"
@@ -673,11 +743,11 @@ def checks(m):
     # see R60_EBayAftBulkhead()'s module comment.
     for p, want_h in ((4, 6.0), (5, 27.0)):
         if p in m:
-            _, bulk_od = bore(a(p, "stl"), *BULK_BAND)
+            _, bulk_od = safe(bore, a(p, "stl"), *BULK_BAND, nvals=2)
             c += [("part %d height" % p, a(p, "height"), want_h, 0.1)]
             # Must drop into a tube bore, measured against the real tube.
             if 2 in m:
-                tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
+                tube_id, _ = safe(bore, a(2, "stl"), *TUBE_BAND, nvals=2)
                 c += [("part %d fits e-bay bore" % p,
                        tube_id - bulk_od, 0.4, 0.15)]
 
@@ -688,12 +758,12 @@ def checks(m):
     # off-target, fails here rather than in the report.
     if 3 in m:
         for x_side in (1, -1):
-            d = pin_hole_diameter(a(3, "stl"), x_side, PIN_Z_CHUTE, PIN_R_CHUTE)
+            d = safe(pin_hole_diameter, a(3, "stl"), x_side, PIN_Z_CHUTE, PIN_R_CHUTE)
             c += [("chute tube shear pin dia (x=%+d side)" % x_side,
                    d, PIN_D, 0.3)]
     if 5 in m:
         for x_side in (1, -1):
-            d = pin_hole_diameter(a(5, "stl"), x_side, PIN_Z_SKIRT, PIN_R_SKIRT)
+            d = safe(pin_hole_diameter, a(5, "stl"), x_side, PIN_Z_SKIRT, PIN_R_SKIRT)
             c += [("aft bulkhead skirt shear pin dia (x=%+d side)" % x_side,
                    d, PIN_D, 0.3)]
 
@@ -703,10 +773,10 @@ def checks(m):
         # only once mated -- is invisible to any single-part measurement
         # above, which is exactly why it shipped once already.
         if 3 in m:
-            lug_xmin, lug_xmax, lug_ymin, _ = xy_extent_in_window(
-                a(3, "stl"), *TETHER_LUG_XZ)
-            notch_xmin, notch_xmax, notch_ymin, _ = xy_extent_in_window(
-                a(5, "stl"), *TETHER_NOTCH_XZ, ylo=TETHER_NOTCH_YLO)
+            lug_xmin, lug_xmax, lug_ymin, _ = safe(xy_extent_in_window,
+                a(3, "stl"), *TETHER_LUG_XZ, nvals=4)
+            notch_xmin, notch_xmax, notch_ymin, _ = safe(xy_extent_in_window,
+                a(5, "stl"), *TETHER_NOTCH_XZ, ylo=TETHER_NOTCH_YLO, nvals=4)
             # Radial: the notch's back wall (smaller y) must sit farther
             # in than the lug's own tip (larger y) -- a POSITIVE gap.
             c += [("tether lug clears skirt notch (radius)",
@@ -735,11 +805,16 @@ def checks(m):
         # margin before the search circle would itself reach into the
         # horn slot's own void and read a false-positive large "reach"
         # (one stray tessellation vertex from a spurious FAIL, not a real
-        # defect). Widened to 5.0 (~1mm of real margin), still comfortably
-        # bigger than the insert hole's own Ø4 (radius 2.0) edge loop.
+        # defect). NARROWED to 5.0 (5th review, finding 13: this comment
+        # used to say "widened", the wrong direction for the 6.0->5.0
+        # change it describes -- a reader trusting "widened" would push it
+        # back up and reintroduce the 0.02mm near-miss), giving ~1mm of
+        # real margin (6.02-5.0) before the search circle reaches the horn
+        # slot's own void, while still comfortably bigger than the insert
+        # hole's own Ø4 (radius 2.0) edge loop.
         for x_side in (1, -1):
-            reach = hole_max_reach(a(5, "stl"), x_side * insert_x,
-                                    R60_TETHER_Y, total_h, search_r=5.0)
+            reach = safe(hole_max_reach, a(5, "stl"), x_side * insert_x,
+                         R60_TETHER_Y, total_h, search_r=5.0)
             c += [("tether insert hole fully surrounded (x=%+d side)"
                    % x_side, reach, insert_r, 0.3)]
 
@@ -752,22 +827,22 @@ def checks(m):
     # regression: the old (broken) value misses by 0.6-0.85mm, well
     # outside it.
     if 3 in m:
-        tab_inner_r, _ = bore(a(3, "stl"), *STOPTAB_BAND)
+        tab_inner_r, _ = safe(bore, a(3, "stl"), *STOPTAB_BAND, nvals=2)
         tab_inner_r /= 2.0
         c += [("spring tab overlaps spring OD (radial)",
                SPRING_OD / 2.0 - tab_inner_r, 2.0, 1.3)]
 
     if 8 in m:
-        _, carrier_od = bore(a(8, "stl"), *SHEARPIN_BAND)
-        carrier_bore, _ = bore(a(8, "stl"), *CARRIER_STEP_BAND)
+        _, carrier_od = safe(bore, a(8, "stl"), *SHEARPIN_BAND, nvals=2)
+        carrier_bore, _ = safe(bore, a(8, "stl"), *CARRIER_STEP_BAND, nvals=2)
         c += [("spring carrier OD", carrier_od, 56.40, 0.15),
               ("spring carrier bore takes CS4323", carrier_bore, 44.80, 0.30)]
         if 3 in m:
-            tube_id, _ = bore(a(3, "stl"), *TUBE_BAND)
+            tube_id, _ = safe(bore, a(3, "stl"), *TUBE_BAND, nvals=2)
             c += [("carrier clears chute bore", tube_id - carrier_od, 0.4, 0.15)]
 
     if 9 in m:
-        mmt_id, can_od = bore(a(9, "stl"), *FINCAN_BAND)
+        mmt_id, can_od = safe(bore, a(9, "stl"), *FINCAN_BAND, nvals=2)
         # (defect 3e: "fin can fits 250mm Z" used to be emitted here too,
         # hardcoded to 250.0 -- a duplicate of the generic "part %d fits
         # %.0fmm Z" loop below, which already covers every part
@@ -776,6 +851,21 @@ def checks(m):
         c += [("fin can length", a(9, "height"), 228.0, 0.2),
               ("fin can OD", can_od, 60.0, 0.1),
               ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15)]
+
+        # Chute-tube-to-fin-can spigot (5th review, finding 9) -- the only
+        # internal coupler joint that had no measured clearance check.
+        # Mesh-against-mesh, same 0.4+-0.15mm convention as every other
+        # internal spigot-into-bore joint in this file (e.g. "part %d bore
+        # clears neck skirt" above): the fin can's own forward-open bore
+        # (its body ID, isolated from the full-length MMT by
+        # bore_annulus()) measured against the chute tube's own spigot OD.
+        if 3 in m:
+            fincan_bore, _ = safe(bore_annulus, a(9, "stl"),
+                                   *FINCAN_SPIGOT_BAND, FINCAN_SPIGOT_R_LO,
+                                   nvals=2)
+            _, spigot_od = safe(bore, a(3, "stl"), *CHUTE_SPIGOT_BAND, nvals=2)
+            c += [("chute tube spigot clears fin can forward bore",
+                   fincan_bore - spigot_od, 0.4, 0.15)]
     if 10 in m:
         # Span (3rd review, should-fix 7): nothing checked this before --
         # root chord and thickness were, but the dimension the flutter/
@@ -799,7 +889,7 @@ def checks(m):
         # -- it treats a Z-band as one (bore, OD) pair about the axis, not
         # a Y-extent -- so read the slot's actual edge-loop vertices and
         # compare the fin can's real slot to the fin's real thickness.
-        slot_w = fincan_slot_width(a(9, "stl"))
+        slot_w = safe(fincan_slot_width, a(9, "stl"))
         c += [("fin slot width fits fin thickness",
                slot_w - a(10, "height"), 0.2, 0.1)]
         # Length clearance added after a coordinator review: the original
@@ -807,7 +897,7 @@ def checks(m):
         # clearance over 90mm -- not assemblable). Same mesh-against-mesh
         # method as the width check: fin root chord read from part 10's own
         # STL, slot length read from part 9's, no shared inputs.
-        slot_l = fincan_slot_length(a(9, "stl"))
+        slot_l = safe(fincan_slot_length, a(9, "stl"))
         fin_chord = a(10, "xmax") - a(10, "xmin")
         c += [("fin slot length fits fin root chord",
                slot_l - fin_chord, 0.4, 0.1)]
@@ -836,7 +926,7 @@ def checks(m):
         else:
             c += [("G80T spacer length", a(12, "height"), 98.0, 0.1)]
     if 11 in m:
-        _, ret_od = bore(a(11, "stl"), *RETAINER_BAND)
+        _, ret_od = safe(bore, a(11, "stl"), *RETAINER_BAND, nvals=2)
         c += [("retainer OD", ret_od, 60.0, 0.1)]
 
     if 14 in m:
@@ -848,15 +938,15 @@ def checks(m):
         # clear, simulated overtravel shows real solid contact in BOTH
         # directions). This is the ordinary per-part geometry check every
         # other part gets, not a substitute for that proof.
-        ring_bore, ring_od = bore(a(14, "stl"), *THRUST_RING_BAND)
+        ring_bore, ring_od = safe(bore, a(14, "stl"), *THRUST_RING_BAND, nvals=2)
         c += [("thrust ring height", a(14, "height"), 6.0, 0.1),
               ("thrust ring OD", ring_od, 28.9, 0.1),
               ("thrust ring bore", ring_bore, 26.8, 0.1)]
         if 9 in m:
-            mmt_id, _ = bore(a(9, "stl"), *FINCAN_BAND)
+            mmt_id, _ = safe(bore, a(9, "stl"), *FINCAN_BAND, nvals=2)
             c += [("thrust ring fits MMT bore", mmt_id - ring_od, 0.4, 0.15)]
         if 12 in m:
-            _, spacer_od = bore(a(12, "stl"), *THRUST_RING_BAND)
+            _, spacer_od = safe(bore, a(12, "stl"), *THRUST_RING_BAND, nvals=2)
             # Dimensional half of the obstruction proof: the ring's own
             # bore must be genuinely smaller than the spacer's own OD, or
             # there is no lip for anything to catch on regardless of what

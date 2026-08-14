@@ -31,10 +31,29 @@ SCAD = os.path.join(REPO, "tools", "r60_assembly.scad")
 # solid (OpenSCAD: "Current top level object is empty", no output file at
 # all) -- there is no meshing/triangulation noise to tolerate the way
 # there can be for two independently-rendered, non-intersected meshes.
-# 0.001 cm3 (1 mm3) is generous headroom above that while still catching
-# every defect this file has found so far by 1-2 orders of magnitude
-# (0.0211-0.42 cm3).
-EPS_CM3 = 0.001
+#
+# Re-derived (5th review, finding 3): the old 0.001 cm3 (1 mm3) was sized
+# against this file's LARGEST defects (0.0211-0.42 cm3) and never checked
+# against its SMALLEST feature. Measured by mutation on the tether-latch
+# pin path (PIN_D=3.2mm) -- the smallest-diameter feature any pair here
+# checks -- pushing PIN_REACH past its true safe ceiling (20.47mm) by a
+# stated depth gives:
+#   depth 0.13mm -> 0.0000173 cm3      depth 0.58mm -> 0.000749 cm3
+#   depth 0.23mm -> 0.0000728 cm3      depth 0.63mm -> 0.000920 cm3
+#   depth 0.53mm -> 0.000599  cm3      depth 0.68mm -> 0.001110 cm3
+# i.e. the OLD 0.001 cm3 threshold went blind to as much as ~0.68mm of
+# REAL geometric overlap on a Ø3.2mm feature -- confirming finding 3's own
+# "~0.7mm of genuine interference" claim to within 0.02mm. A Ø3 dowel that
+# must be inserted and withdrawn cares about tenths of a millimetre, not
+# two-thirds of one. 0.00001 cm3 (1e-5, one hundredth of a mm3) sits just
+# below the smallest measured real defect above (0.0000173 cm3 at 0.13mm
+# depth) -- comfortably resolves anything on the order of a tenth of a
+# millimetre on this feature class, while every genuinely clear pair in
+# this file (including the pin-path pairs themselves, post-fix) still
+# renders literally "Current top level object is empty" -- an exact CGAL
+# zero, not a small positive number -- so there is no meshing-noise floor
+# this threshold risks tripping over.
+EPS_CM3 = 0.00001
 
 PAIRS = {
     0: "neck vs e-bay tube",
@@ -59,7 +78,11 @@ PAIRS = {
     # Not part-vs-part -- a declared MOVING ELEMENT's required path
     # (harness item 3) vs. the real part(s) around it.
     15: "servo-2 horn/pin-release path vs tether latch",
-    16: "arming switch envelope vs access door",
+    # 5th review, finding 1: the arming switch now lives IN the access
+    # door (part 7), not as a hole in the tube -- checking it against its
+    # own host door would be tautological, so these check it against every
+    # part it could actually reach once installed.
+    16: "fitted arming switch envelope vs e-bay tube",
     # Coordinator override (same review round): the pin itself -- the
     # tether latch's actual load path, a 3mm steel dowel requiring clear
     # axial travel to insert/withdraw -- was flagged unverified with no
@@ -69,6 +92,20 @@ PAIRS = {
     17: "tether latch pin path vs spring carrier",
     18: "tether latch pin path vs aft bulkhead",
     19: "tether latch pin path vs chute tube",
+    # 5th review, finding 1 (continued): the switch's other reachable part.
+    20: "fitted arming switch envelope vs Vega sled",
+    # 5th review, finding 2: pair 3 only ever modelled the SLED -- the
+    # real collision was between the door bosses and the Vega BOARD
+    # sitting on top of it, which nothing in this harness had ever
+    # rendered.
+    21: "Vega board envelope vs e-bay tube (door bosses)",
+    # Discovered fixing finding 1: the board's own Z span overlaps the
+    # door aperture by construction, so the switch's own installed
+    # hardware can reach the board even where it clears the thin sled
+    # (pair 20) -- a real risk, not a hypothetical one (caught during this
+    # fix: an initial SW_REACH assumption read a genuine 0.538cm3
+    # collision here before SW_REACH was derived against it).
+    22: "fitted arming switch envelope vs Vega board",
 }
 STROKE_PAIRS = (5, 6, 13)
 # Insertion stroke sweep -- 0 (first contact) through 80 (fully seated,
@@ -103,46 +140,76 @@ OBSTRUCTION_PAIRS = (10, 11)
 OVERTRAVEL_MM = 2.0
 OBSTRUCT_MIN_CM3 = 0.01
 
+# Pairs that need the Vega sled's own measured rail-contact Y (Pair 3, the
+# sled itself; Pairs 21/22, which both build/consume the board envelope
+# off the same rail contact -- see r60_assembly.scad's BoardProbe()).
+FACING_Y_PAIRS = (3, 21, 22)
 
-def render_probe(pair, ins, out, facing_y=None, push=0.0, sw_z=None):
+
+def render_probe(pair, ins, out, facing_y=None, push=0.0):
     """Render one assembly-probe pair to ASCII STL. Returns the measured
     intersection volume in cm3 -- 0.0 for a genuinely empty intersection
     (OpenSCAD's own "Current top level object is empty", the expected
     result for a clean mating fit), not an error: a per-part render
     failing empty (scad_verify.render()'s convention) means something
     went wrong, but an assembly PROBE failing empty means the fit is
-    clean, which is the good outcome, not a bug."""
+    clean, which is the good outcome, not a bug.
+
+    Asserts the render actually BUILT something otherwise (5th review,
+    finding 5): this used to return 0.0 (PASS) both for a genuinely empty
+    top-level object AND for a missing/too-short output file with no
+    "empty" message at all -- the second case is exactly what
+    OpenSCAD's warn-and-no-op on an undefined variable produces (this
+    file's own header comment documents the historical instance: a
+    silently-ignored `translate([0,0,undef])` that used to make Pair 10
+    compare against an untransformed part). A pair added to PAIRS but
+    never wired into the dispatch `if` chain at the bottom of
+    r60_assembly.scad, or a future variant of that undefined-variable
+    warning, would render nothing, print no "ERROR:", and still read "OK
+    0.0000 cm3" forever under the old logic. Any WARNING that indicates a
+    broken transform (undefined variable, failed unit conversion) is now
+    treated the same as a hard error, and a missing/short output file
+    that was NOT accompanied by the genuine "empty" message raises
+    instead of silently passing -- matching scad_verify.render()'s own
+    convention for per-part renders."""
     env = dict(os.environ, OPENSCADPATH=REPO)
     args = [OPENSCAD, "--export-format", "asciistl", "-o", out,
             "-D", "Pair=%d" % pair]
     if pair in STROKE_PAIRS:
         args += ["-D", "Ins=%d" % ins]
-    if pair == 3:
+    if pair in FACING_Y_PAIRS:
         args += ["-D", "Facing_Y=%.4f" % facing_y]
     if pair in OBSTRUCTION_PAIRS:
         args += ["-D", "Push=%.3f" % push]
-    if pair == 16:
-        args += ["-D", "SwZ=%.4f" % sw_z]
     args += [SCAD]
     r = subprocess.run(args, capture_output=True, text=True, env=env,
                         timeout=900)
     err = r.stdout + r.stderr
+    # A genuinely empty top-level object is the EXPECTED result for a
+    # clean mating fit, checked first: OpenSCAD exits non-zero for it too
+    # (there is no geometry to export), which would otherwise be
+    # indistinguishable from a real failure below.
     if "Current top level object is empty" in err:
         return 0.0
     if (r.returncode != 0 or "ERROR:" in err.upper()
             or "Can't find include file" in err
-            or "Ignoring unknown module" in err):
+            or "Ignoring unknown module" in err
+            or "Ignoring unknown variable" in err
+            or "Unable to convert" in err):
         raise RuntimeError("render of pair %d (Ins=%s) failed:\n%s"
                             % (pair, ins, err[-2000:]))
     if not os.path.exists(out) or os.path.getsize(out) < 10:
-        return 0.0
+        raise RuntimeError(
+            "render of pair %d (Ins=%s) produced no usable output and did "
+            "not report an empty top-level object either:\n%s"
+            % (pair, ins, err[-2000:]))
     return volume(out)
 
 
 def measure_facing_y(tmp):
     """Vega sled's rail-contact Y, measured off part 2's own rendered
     rails -- reuses verify_rocket60.py's rail_facing_gap()/RAIL_INNER_R/
-    RAIL_Z_CAP so Pair 3's placement is derived from the SAME mesh
+    RAIL_Z_CAP so Pairs 3/21's placement is derived from the SAME mesh
     measurement that file's own sled-fit check uses, not a second,
     independently-typed number (rule 4)."""
     out = os.path.join(tmp, "ebaytube_for_facing_y.stl")
@@ -151,51 +218,28 @@ def measure_facing_y(tmp):
     return facing_y
 
 
-def measure_switch_z(tmp):
-    """Arming switch hole's own measured Z centre, off part 2's rendered
-    mesh -- reuses verify_rocket60.py's switch_hole_z() so Pair 16's
-    switch-envelope probe is derived from the SAME mesh measurement that
-    file's own arming-switch-Z check uses, not a second, independently-
-    typed number (rule 4), and specifically not the kind of restated-
-    formula drift (Sw_Z0 silently omitting R60_Door_Overlap) that caused
-    finding 3 in the first place."""
-    out = os.path.join(tmp, "ebaytube_for_switch_z.stl")
-    vr60.render(vr60.SCAD, 2, out)
-    return vr60.switch_hole_z(out)
-
-
 def main(argv):
     pairs = [int(x) for x in argv[1:]] or sorted(PAIRS)
     tmp = tempfile.mkdtemp(prefix="r60asm-")
     bad = 0
 
-    # 4th review, harness item 6: measure_facing_y()/measure_switch_z()
-    # both call render() (scad_verify.py), which raises RuntimeError or
+    # 4th review, harness item 6: measure_facing_y() calls render()
+    # (scad_verify.py), which raises RuntimeError or
     # subprocess.TimeoutExpired on a failed/slow render -- every OTHER
     # render call in this file (render_probe(), below) is already guarded
-    # for exactly that; these two were not, so a failed part-2 render used
+    # for exactly that; this one was not, so a failed part-2 render used
     # to kill the WHOLE run with a raw traceback instead of a clean FAIL
     # on just the pair(s) that needed the measurement. A failure here now
-    # drops only that pair from the run.
+    # drops only the affected pairs from the run.
     facing_y = None
-    if 3 in pairs:
+    if any(p in pairs for p in FACING_Y_PAIRS):
         try:
             facing_y = measure_facing_y(tmp)
             print("measured Vega sled rail-contact Y = %.3fmm\n" % facing_y)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
-            print("FAIL  pair 3 setup (measure_facing_y): %s" % e)
-            bad += 1
-            pairs = [p for p in pairs if p != 3]
-
-    sw_z = None
-    if 16 in pairs:
-        try:
-            sw_z = measure_switch_z(tmp)
-            print("measured arming switch hole Z centre = %.3fmm\n" % sw_z)
-        except (RuntimeError, subprocess.TimeoutExpired) as e:
-            print("FAIL  pair 16 setup (measure_switch_z): %s" % e)
-            bad += 1
-            pairs = [p for p in pairs if p != 16]
+            print("FAIL  facing-y setup (measure_facing_y): %s" % e)
+            bad += len([p for p in pairs if p in FACING_Y_PAIRS])
+            pairs = [p for p in pairs if p not in FACING_Y_PAIRS]
 
     for p in pairs:
         name = PAIRS.get(p, "?")
@@ -239,7 +283,7 @@ def main(argv):
         else:
             out = os.path.join(tmp, "pair%d.stl" % p)
             try:
-                vol = render_probe(p, None, out, facing_y=facing_y, sw_z=sw_z)
+                vol = render_probe(p, None, out, facing_y=facing_y)
             except (RuntimeError, subprocess.TimeoutExpired) as e:
                 print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
                 bad += 1

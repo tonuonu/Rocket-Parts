@@ -87,8 +87,16 @@ S_FIN  = S_CHUTE+L_CHUTE
 # spigot -- R60_FinCanSpigot_L 6.0->5.5, should-fix 8); [13] shrank
 # 3.5->3.0 (critical 2's corner clip + critical 5's base pass-through
 # remove more material than the clip's own small chamfer adds back).
+#
+# Re-measured AGAIN this round (5th review): [7] shrank 10.6->10.4 (the
+# arming switch's own Ø12 hole, finding 1 -- now cut through this part's
+# shell instead of the tube's); [2], [8], [13] moved <0.03 cm3 (finding
+# 1's switch-hole removal from part 2, finding 2's shallower door boss,
+# finding 3's shorter pin bore, finding 4's dead-cut removal) -- inside
+# this file's own 0.1 cm3 rounding, so their published figures are
+# unchanged.
 NOSECONE_VOL = 29.4                 # NoseCone.stl
-STL_VOL = {1: 16.2, 2: 50.0, 3: 55.7, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.6,
+STL_VOL = {1: 16.2, 2: 50.0, 3: 55.7, 4: 12.7, 5: 54.4, 6: 20.0, 7: 10.4,
            8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.0, 14: 0.6}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
@@ -123,6 +131,18 @@ CB_DEPTH     = 17.0   # R60_SpringCarrier()'s own CB_Depth
 DIA_T        = 3.0    # R60_SpringCarrier()'s own Dia_T
 RETAINER_T   = 6.0    # R60_MotorRetainer()'s own T (=part 11's own
                         # measured height, 6.00mm)
+
+# True overall airframe length (5th review, finding 12): TOTAL itself
+# stays the "nose to fin can's own boundary" reference every OTHER
+# station below is correctly anchored to (rail buttons, motor spacer,
+# motor -- all genuinely internal to the fin can's own envelope, unmoved
+# by what bolts onto its outside) -- only the motor retainer's own
+# station (see build(), below) needed correcting to TOTAL+RETAINER_T/2.
+# OVERALL_LEN is the airframe's true physical envelope INCLUDING that
+# externally-bolted retainer -- 690mm, not the 684mm TOTAL alone reports
+# (previously published, wrongly, as the airframe's overall length in
+# both the spec and STL README).
+OVERALL_LEN = TOTAL + RETAINER_T
 
 
 def polygon_centroid(pts):
@@ -396,12 +416,27 @@ def build(motor):
      # round fraction of its root chord for a swept, tapered planform.
      ('fins x3 (62% infill)',  NFIN*STL_VOL[10]*RHO_PETG*0.62,
                                                           S_finLE+FIN_CENTROID_X),
-     # Station audit: R60_MotorRetainer() is a flat RETAINER_T=6mm disc
-     # flush with the very aft (nozzle) end of the fin can -- span
-     # TOTAL-RETAINER_T..TOTAL, midpoint TOTAL-RETAINER_T/2. Old
-     # TOTAL-30=654 was 27mm forward of that with no geometry behind the
-     # "30".
-     ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL-RETAINER_T/2),
+     # Station audit corrected AGAIN (5th review, finding 12): the
+     # station above (TOTAL-RETAINER_T/2, span TOTAL-RETAINER_T..TOTAL)
+     # treated the retainer as sitting INSIDE the fin can's own last 6mm,
+     # flush with its nozzle end -- but R60_MotorRetainer() bolts to the
+     # OUTSIDE of that face instead (r60_assembly.scad's Pair 11: the
+     # retainer's own local z=0, its INNER motor-facing side, meets the
+     # fin can's aft tip, and its solid material -- z=0..T -- grows AWAY
+     # from the motor, i.e. AFT of that tip, not back into the fin can).
+     # So its true span is TOTAL..TOTAL+RETAINER_T, midpoint
+     # TOTAL+RETAINER_T/2 -- confirmed three independent ways: reading
+     # R60_MotorRetainer() itself, R60_FinCan()'s own local-to-vehicle Z
+     # mapping (r60_assembly.scad Pair 7's mirror), and Pair 11's own
+     # motor-stand-in placement (the motor sits at NEGATIVE local z in the
+     # retainer's frame, i.e. forward of it, confirming the retainer's own
+     # +z points aft). The airframe's TRUE overall length is therefore
+     # TOTAL+RETAINER_T = 690mm, not the 684mm TOTAL alone reports (see
+     # OVERALL_LEN below) -- the spec and STL README both published 684mm
+     # and are corrected alongside this. Old TOTAL-30=654 (pre-audit) was
+     # 33mm short of the now-correct 687, not 27mm short of the
+     # intermediate (also wrong) 681 this replaces.
+     ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL+RETAINER_T/2),
      # No SCAD backing (RailButton() mounting position is not modelled
      # in Rocket60.scad) -- kept as the existing estimate, reasonably
      # within the fin can's own aft-biased span where rail buttons are
@@ -454,7 +489,9 @@ def flutter_Vf():
 
 CP, CN, CNf = barrowman()
 Vf, AR_exp, lam_exp, tc_exp = flutter_Vf()
-print(f"Airframe: OD {D} mm, wall {WALL} mm, total length {TOTAL:.0f} mm  (L/D {TOTAL/D:.1f})")
+print(f"Airframe: OD {D} mm, wall {WALL} mm, overall length {OVERALL_LEN:.0f} mm "
+      f"(L/D {OVERALL_LEN/D:.1f}) -- {TOTAL:.0f} mm of tube/fin-can + "
+      f"{RETAINER_T:.0f} mm motor retainer bolted on the outside")
 print(f"Fins: root {Cr:.0f}/tip {Ct:.0f}/span {span:.0f}/sweep {sweep:.0f}mm planform "
       f"-> exposed root {Cr_exp:.1f}/tip {Ct_exp:.1f}/span {span_exp:.1f}/sweep {sweep_exp:.1f}mm "
       f"(AR {AR_exp:.2f}, t/c {tc_exp:.3f})")
@@ -486,14 +523,20 @@ print(f"{'motor':<12}{'liftoff g':>10}{'CG mm':>8}{'margin':>8}{'burnout g':>11}
 for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen = build(mo)
     margin = (CP-cg)/D
-    if mo == 'G80T-14A':
+    if mo == 'TSP E20-P':
+        # Excluded from the design already (spec sec 1.1) -- reported for
+        # visibility but does not gate the regression.
+        flag = ""
+    else:
+        # 5th review, finding 7: this used to call bad() only for G80T --
+        # H182R-14A and H135W-14A got a printed warning string but no
+        # gate, so a real margin regression on either would still exit 0.
+        # Both are motors this design actually flies on (the fin can is
+        # 228mm specifically so the H135W fits without a reprint), not
+        # hypothetical configurations -- gate all three the same way.
         bad(margin >= MIN_MARGIN_CAL)
         flag = ("  <-- BELOW %.1f cal MINIMUM" % MIN_MARGIN_CAL if margin < MIN_MARGIN_CAL
                 else "  (clears the %.1f cal minimum)" % MIN_MARGIN_CAL)
-    elif mo in ('H182R-14A', 'H135W-14A'):
-        flag = "  <-- below 1.0 cal, needs nose ballast" if margin < 1.0 else ""
-    else:
-        flag = ""
     print(f"{mo:<12}{m:>10.0f}{cg:>8.1f}{margin:>8.2f}{mb:>11.0f}{cgb:>8.1f}{(CP-cgb)/D:>9.2f}{flag}")
 print()
 items,m,cg,*_ = build('G80T-14A')
@@ -548,7 +591,12 @@ for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     print(f"{mo:<12}{m:>10.0f}{avgN/(m/1000*9.81):>6.1f}{vrail:>11.1f}{vmax:>10.0f}{Mmax:>7.2f}{hap:>10.0f}{tap:>9.1f}")
 print()
 print("Rail exit speed off a 1.5 m 1010 rail:")
-for mo in ('G80T-14A','H182R-14A','TSP E20-P'):
+# H135W-14A added (5th review, finding 8): omitted entirely before this --
+# it is the lowest-average-thrust AND heaviest of the three motors this
+# design actually flies on, so the one most likely to fail this exact
+# constraint, not a motor safe to leave unchecked by inference from the
+# other two.
+for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen=build(mo)
     c=curve_scaled(SHAPE,Ns,burn); A=math.pi*(D/2000.0)**2
     dt=0.0005;t=0;v=0;h=0;mm=m/1000.0;mdot=(mprop/1000.0)/burn
