@@ -35,32 +35,18 @@ R60_Body_ID    = R60_Body_OD - 2*R60_Wall_T;   // 56.8
 // interference fit here.
 R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
 
-// R60_EBay_L (4th review, critical 3): grew again, 165->177. The 3rd
-// review grew this 160->165 to give the arming-switch Z window "a
-// genuine ~3mm margin on both sides" -- but that derivation (see
-// R60_EBayTube()'s Sw_Z0, below) measured clearance from the door
-// APERTURE's own top edge (Door_Z1), not from R60_Door()'s actual built
-// footprint, which overlaps R60_Door_Overlap=6mm PAST the aperture on
-// every side (it is a COVER, not a flush plug -- see R60_Door()'s own
-// module comment). So the real clearance was 6mm less than intended:
-// at L=165 the switch hole's own near edge landed 1.5mm INSIDE the
-// door cover's own footprint (measured: cover z=34..131, switch
-// z=129.50..131.00, 16.3mm^3 overlap) -- a hair-gap bug reintroduced by
-// the very fix that thought it had closed the 3rd review's 0.5mm-window
-// defect. Window width W (Sw_Z_max-Sw_Z_min, correctly counting
-// R60_Door_Overlap this time) = 0.5*R60_EBay_L - 85.5; solving W=3 (the
-// SAME ~3mm target the 3rd review intended) for the correctly-derived
-// formula gives L=177 -- restated here as a literal because R60Lib.scad
-// cannot reference R60_Door_Open_H/R60_Neck_Skirt_L/R60_Door_Overlap in
-// a closed form without becoming circular; R60_EBayTube()'s own assert
-// is the load-bearing guard, this comment only documents where 177 came
-// from. See tools/verify_rocket60.py's SW_Z_EXPECT for the same
-// derivation restated as a check.
-R60_EBay_L   = 177;   // fits Vega 100 + upright MG90S 29 + slack, +17mm
-                       // over the bare minimum so the arming-switch Z
-                       // window is a genuine ~3mm margin on both sides
-                       // of the door COVER's real footprint (not just
-                       // the aperture) and of the neck skirt
+// R60_EBay_L history (superseded -- 5th review, finding 1): this used to
+// be derived from the arming switch's own Z window on the TUBE wall (grew
+// 160->165->177 across the 3rd/4th reviews chasing that window's margin).
+// The switch has since moved onto the access door (R60_Door()'s own
+// module comment) and no longer has a Z window on this tube at all -- the
+// 177 figure is kept AS IS ("do not grow the e-bay" -- 5th review) but is
+// no longer switch-derived; its remaining justification is the one below
+// (Vega 100 + upright MG90S 29 + slack). If this ever needs re-deriving
+// from scratch, do not reintroduce a switch-clearance term here -- the
+// switch's own placement is now entirely local to R60_Door() and cannot
+// invert this tube's length again.
+R60_EBay_L   = 177;   // fits Vega 100 + upright MG90S 29 + slack
 R60_Chute_L  = 180;   // spring mechanism 80 + 24in main 100
 R60_FinCan_L = 228;
 
@@ -173,6 +159,28 @@ R60_Vega_RailGap = R60_Vega_Sled_W + 2*IDXtra;   // inner-to-inner rail
 R60_Vega_RailW   = 3;     // rail width, X
 R60_Vega_RailH   = R60_Vega_Sled_T + 2*IDXtra;    // radial height, clears
                                                     // the sled's thickness
+
+// Vega board worst-case radial reach into the e-bay bore, installed (5th
+// review, finding 2). NOMINAL closed form of the SAME quantity
+// tools/verify_rocket60.py's own CLEAR_EXPECT check measures off the
+// rendered mesh (facing_y + the sled/standoff/board stack, then the
+// board's own half-width for the corner) -- restated here so
+// R60_EBayTube()'s door-boss geometry can be derived against it directly
+// (rule 4) instead of reaching into the bore by an amount nobody ever
+// checked against the board. That was finding 2's actual bug: the
+// boss's inner tip reached r=25 -- inside this corner's own ~25.7mm --
+// and the assembly harness's own Pair 3 only ever modelled the sled,
+// never the board sitting on top of it, so nothing caught it.
+R60_Vega_Facing_Y_Nom   = -9.24;  // matches verify_rocket60.py's own
+                                    // FACING_Y_EXPECT -- no closed form
+                                    // exists for this (it falls out of
+                                    // R60_EBayTube()'s own Rail_HalfAng
+                                    // a*sinH-b*cosH solve), so it is
+                                    // restated as a literal here exactly
+                                    // as that file already does
+R60_Vega_Board_Stack    = R60_Vega_Sled_T + R60_Vega_Standoff_h + R60_Vega_H;   // 29
+R60_Vega_Board_Inner_Y  = R60_Vega_Facing_Y_Nom + R60_Vega_Board_Stack;         // 19.76
+R60_Vega_Board_Corner_R = sqrt(pow(R60_Vega_W/2, 2) + pow(R60_Vega_Board_Inner_Y, 2)); // ~25.74
 
 // ============================================
 // MOTOR
@@ -319,13 +327,19 @@ R60_SpringCarrier_CB_D = 51;
 // so growing span buys far more CP shift per gram added than growing
 // chord -- see tools/rocket60_model.py's own sweep for the chord-only
 // and Ct-trim alternatives that were rejected for costing more mass at
-// the same margin). 63mm clears 1.5 cal on the G80T with margin to
-// spare (1.61 cal) while flutter velocity -- a function of exposed AR,
-// which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s; 63->0.869
-// ->959; 70->0.982->802 -- growing span 18% raised AR 18% and CUT Vf
-// 21%, the opposite of a free lever) -- still stays comfortably above 3x
-// the fastest flight speed on any motor at 63mm. This is a real cost,
-// not a margin grown for free: do not read this as licence to keep
+// the same margin). 63mm clears the design's real physical minimum --
+// 1.0 cal, standard high-power practice's accepted 1.0-2.0 cal band --
+// with genuine room: 1.45 cal at liftoff on the G80T (5th review,
+// finding 11: this comment used to cite a 1.5 cal target, since retired
+// as never having been a physical requirement, and a 1.61 cal figure,
+// itself twice corrected downward by a full station audit -- see spec
+// section 6.1 for the ruling and tools/rocket60_model.py's own
+// MIN_MARGIN_CAL for the current gate). Flutter velocity -- a function of
+// exposed AR, which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s;
+// 63->0.869->959; 70->0.982->802 -- growing span 18% raised AR 18% and
+// CUT Vf 21%, the opposite of a free lever) -- still stays comfortably
+// above 3x the fastest flight speed on any motor at 63mm. This is a real
+// cost, not a margin grown for free: do not read this as licence to keep
 // growing span for stability headroom without re-checking Vf each time
 // (R60_Fin()'s own module comment already says this; restated here so
 // this comment does not contradict it) -- see

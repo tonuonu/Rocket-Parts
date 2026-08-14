@@ -108,52 +108,15 @@ module R60_Neck(){
     }
 } // R60_Neck
 
-// E-bay tube with the access opening and the arming switch hole.
+// E-bay tube with the access opening.
 //
-// The switch is NOT optional and NOT interchangeable with the door: the
-// CATS manual requires the board be powered up only once the rocket is
-// vertical on the pad, and disarming afterwards is only possible by
-// powering off. So it must be reachable on the rail.
+// The arming switch itself does NOT live on this tube any more (5th
+// review, finding 1) -- see R60_Door()'s own module comment for where it
+// went and why. This module only cuts the door's own aperture and the 4
+// screw bosses that retain it.
 module R60_EBayTube(){
-    Sw_d = 12;   // panel-mount toggle
     Door_Z0 = (R60_EBay_L - R60_Door_Open_H)/2;   // aperture bottom
     Door_Z1 = Door_Z0 + R60_Door_Open_H;          // aperture top
-    // Arming switch Z, centred in the gap between the door's top edge and
-    // the neck's skirt (which fills the tube's own top R60_Neck_Skirt_L
-    // mm) -- DERIVED, not hand-picked, so it stays clear of both mating
-    // parts even if EBay_L/door/skirt sizes change again. Was hardcoded at
-    // EBay_L-18=142 (task report): that landed inside the skirt's
-    // z=141..160 span, fouling the switch barrel and its inside retaining
-    // nut, which also could not be tightened through the door as the
-    // comment below requires.
-    Sw_Margin = 3;   // clear of both the door top and the skirt start
-    // Sw_Z0 (4th review, critical 3): must clear the door COVER's real
-    // footprint, not the aperture's own edge (Door_Z1) -- R60_Door() is a
-    // COVER that overlaps R60_Door_Overlap PAST the aperture on every
-    // side (see that module's comment), so the cover's own top edge sits
-    // at Door_Z1+R60_Door_Overlap, 6mm higher than the aperture alone.
-    // Omitting that overlap here was the 4th review's own critical
-    // finding: at the old R60_EBay_L=165 the switch hole's near edge
-    // landed 1.5mm INSIDE the cover's footprint (measured: cover
-    // z=34..131, switch z=129.5..131.0) despite Sw_Margin=3 -- the
-    // "margin" was being measured against a boundary 6mm short of where
-    // the cover actually ends. R60_EBay_L (R60Lib.scad) carries enough
-    // headroom above the bare minimum that, with this term included, the
-    // window below is a genuine ~3mm on both sides again -- see that
-    // constant's own comment for the closed-form derivation.
-    Sw_Z0 = Door_Z1 + R60_Door_Overlap + Sw_Margin + Sw_d/2;
-    Sw_Z1 = R60_EBay_L - R60_Neck_Skirt_L - Sw_Margin - Sw_d/2;
-    // (Sw_Z0+Sw_Z1)/2 below returns a number regardless of sign, so if a
-    // future change to R60_Door_Open_H/R60_Door_Overlap/R60_Neck_Skirt_L/
-    // R60_EBay_L ever inverts the window (Sw_Z1 < Sw_Z0), the render
-    // still succeeds and the switch silently lands back inside the door
-    // cover or the neck skirt. Assert instead of letting that pass
-    // silently.
-    assert(Sw_Z1 > Sw_Z0,
-        str("R60_EBayTube: arming switch Z window is empty/inverted (Sw_Z0=",
-            Sw_Z0, " Sw_Z1=", Sw_Z1,
-            ") -- door/skirt/e-bay length no longer leaves the switch clear of both"));
-    Sw_Z  = (Sw_Z0 + Sw_Z1)/2;
     // Door boss positions -- R60_Door_Hole_Clear outside the aperture's
     // own edge on every side, matching R60_Door()'s own hole layout
     // exactly (both derived from the SAME R60Lib.scad constants) so the 4
@@ -186,7 +149,33 @@ module R60_EBayTube(){
     // already-solid material -- same margin idiom as the Vega rails'
     // Rail_Overlap_R below.
     Door_Boss_d = 6;
-    Door_Boss_h = 5;
+    // Door_Boss_h (5th review, finding 2): defect 2a (above) only bounded
+    // the boss's OUTER cap (Door_Boss_Reach_R, below); its INNER tip
+    // (R60_Body_OD/2-Door_Boss_h) was never checked against anything
+    // actually inside the bore. At the old Door_Boss_h=5 that tip reached
+    // r=25 -- 3.4mm past the tube's own ID (28.4) and INSIDE the Vega
+    // board's own worst-case corner reach (R60_Vega_Board_Corner_R,
+    // R60Lib.scad, ~25.74mm) -- a real, measured 0.0075cm^3 collision in 4
+    // disjoint components at the Z stations where the board and the door
+    // bosses overlap (z=40.36..136.64), invisible to the old harness
+    // because Pair 3 (r60_assembly.scad) only ever modelled the sled, not
+    // the board on top of it (fixed alongside this with a new
+    // board-envelope pair). Door_Boss_h is now DERIVED so the inner tip
+    // can never reach past a stated clearance beyond the board's own
+    // corner, whatever that corner measures as -- asserted, not just
+    // computed, so a future change to the Vega stack that erodes this
+    // margin fails loudly instead of silently reopening the collision.
+    Door_Boss_Clear = 1.5;   // stated margin beyond the board's own corner
+    Door_Boss_MinInner_R = R60_Vega_Board_Corner_R + Door_Boss_Clear;  // ~27.24
+    Door_Boss_h = R60_Body_OD/2 - Door_Boss_MinInner_R;   // ~2.76 -- shallower
+                                   // than the old 5mm; the pilot hole this
+                                   // drives (Door_Pilot_Depth, below) is
+                                   // correspondingly shallower too, a real
+                                   // trade against the collision it fixes,
+                                   // not a free one
+    assert(Door_Boss_h > 0.5,
+        str("R60_EBayTube: door boss has no usable material once clipped ",
+            "clear of the Vega board (Door_Boss_h=", Door_Boss_h, ")"));
     Door_Boss_Reach_R = R60_Body_ID/2 + 1.2;   // fuses into the
                                                  // already-solid wall, well
                                                  // short of the OD (30.20mm
@@ -195,7 +184,20 @@ module R60_EBayTube(){
     Door_Pilot_d = 2.0;  // self-tap pilot, M2.5 into PETG
     Door_Pilot_Depth = Door_Boss_h - 1.0;  // blind -- leaves 1mm backing
                                              // before the boss's own inward
-                                             // limit
+                                             // limit. Shallower than before
+                                             // (~1.76mm, was 4mm) because
+                                             // Door_Boss_h had to shrink to
+                                             // clear the board -- adequate
+                                             // for a self-tap M2.5 into a
+                                             // light, non-structural access
+                                             // panel; if that ever proves
+                                             // insufficient in practice, the
+                                             // fix is a heat-set insert
+                                             // mounted IN THE DOOR COVER
+                                             // (T=2mm, same idiom as the
+                                             // switch hole there now), not
+                                             // growing this boss back into
+                                             // the bore.
     // Boss azimuth: Door_Hole_X=21mm on a 30mm-radius tube is a real
     // angular offset (~44deg from straight +Y), not a small correction --
     // a boss built by simply offsetting X at a flat Y does not point along
@@ -354,17 +356,6 @@ module R60_EBayTube(){
                 translate([R60_Body_OD/2-Door_Pilot_Depth, 0, z])
                     rotate([0,90,0])
                         cylinder(d=Door_Pilot_d, h=Door_Pilot_Depth+Overlap, $fn=32);
-        // Panel-mount arming switch, +Y, above the door aperture.
-        //
-        // Same side as the door on purpose: the retaining nut is tightened from
-        // inside, and the door is the only hand access into the bore. A switch on
-        // the opposite wall could not be fitted without cutting a second opening.
-        //
-        // Cuts ONE wall. A full-diameter cylinder on the axis would punch through
-        // both and leave an open hole in the far side of the airframe.
-        translate([0, R60_Body_OD/2, Sw_Z])
-            rotate([90, 0, 0])
-                cylinder(d=Sw_d, h=R60_Wall_T*3, center=true);
         // Zip-tie slots -- see the module comment above (defect 11): one
         // pair per Z station, straddling the sled tangentially at each
         // rail's own azimuth instead of both sharing 270deg.
@@ -765,9 +756,10 @@ module R60_VegaSled(){
     }
 } // R60_VegaSled
 
-// Curved door COVER, 4x M2.5. Overlaps the tube's opening (cut in
-// R60_EBayTube()) on all 4 sides and rests against the tube's own outer
-// surface -- a real ledge, not a loose plug.
+// Curved door COVER, 4x M2.5, and the panel-mount arming switch (5th
+// review, finding 1). Overlaps the tube's opening (cut in R60_EBayTube())
+// on all 4 sides and rests against the tube's own outer surface -- a real
+// ledge, not a loose plug.
 //
 // RETENTION (task report): this used to be a flush PLUG, 0.35mm smaller
 // than the opening on every side and matching the wall's own thickness --
@@ -779,6 +771,29 @@ module R60_VegaSled(){
 // (R60_Door_Overlap) so it always rests on solid tube material regardless
 // of print tolerance, with 4 screws landing R60_Door_Hole_Clear outside
 // the opening's own edge -- into real material, not the open aperture.
+//
+// ARMING SWITCH (5th review, finding 1) -- moved here from the tube wall.
+// The switch's own Z window there (Sw_Z0/Sw_Z1, R60_EBayTube()) had to
+// clear BOTH this cover's real footprint (Door_Z1+R60_Door_Overlap) AND
+// the neck skirt above it (R60_EBay_L-R60_Neck_Skirt_L) -- a window that
+// had already inverted once (4th review, critical 3) and, correctly
+// counting the forward bulkhead too (which the window never did),
+// inverts again at the CURRENT R60_EBay_L: the corrected Sw_Z1 comes out
+// at 143, below Sw_Z0=146, and closing that gap by growing the e-bay
+// again would need R60_EBay_L>=183 -- patching the same defect class a
+// third time by growing the tube instead of fixing the placement. The
+// door is the better home regardless of that number: it is removable
+// with its own wiring attached, and the CATS manual's actual requirement
+// (board armed only once the rocket is vertical on the pad) is satisfied
+// by a switch on the door just as directly as one on the tube wall -- a
+// barrel through the tube wall has to thread between the door aperture,
+// the neck skirt and the forward bulkhead, which is what has now failed
+// twice. Centred in the APERTURE itself (not the overlap frame) so there
+// is open bore behind it once assembled, not solid tube wall, giving the
+// retaining nut and wiring somewhere to actually go. Local x=0
+// (Hole_Az(0)=90deg) is the cover's own crown, farthest from both pairs
+// of screw bosses -- see tools/r60_assembly.scad's new switch-envelope
+// pairs for the proof this clears everything it could reach once fitted.
 module R60_Door(){
     Cover_W = R60_Door_Open_W + 2*R60_Door_Overlap;
     Cover_H = R60_Door_Open_H + 2*R60_Door_Overlap;
@@ -801,6 +816,9 @@ module R60_Door(){
     // same "rotate for azimuth, then translate along local +X = radial"
     // idiom R60_EBayTube() already uses correctly for its bosses.
     function Hole_Az(x) = acos(x/(R60_Body_OD/2));
+    Sw_d = 12;   // panel-mount toggle -- matches R60_EBayTube()'s old Sw_d
+    Sw_X = 0;    // the cover's own crown
+    Sw_Z = R60_Door_Overlap + R60_Door_Open_H/2;   // aperture's own centre
     difference(){
         intersection(){
             difference(){
@@ -822,6 +840,13 @@ module R60_Door(){
                 translate([R60_Body_OD/2-Overlap, 0, z])
                     rotate([0,90,0])
                         cylinder(d=2.7, h=T+2*Overlap, $fn=32);
+        // Arming switch -- see the module comment above. Same "rotate for
+        // azimuth, then bore along local radial +X through the shell
+        // only" idiom as the screw holes above.
+        rotate([0,0,Hole_Az(Sw_X)])
+            translate([R60_Body_OD/2-Overlap, 0, Sw_Z])
+                rotate([0,90,0])
+                    cylinder(d=Sw_d, h=T+2*Overlap, $fn=32);
     }
 } // R60_Door
 
@@ -1028,10 +1053,19 @@ module R60_SpringCarrier(){
         // once this is corrected too). Match R60_EBayAftBulkhead()'s own
         // Tether_Notch_MinR formula instead of a value that only worked
         // for one specific Z range.
+        // Top plane (5th review, finding 14): was L+Overlap, giving a top
+        // face at -Overlap+(L+Overlap)=L exactly -- EXACTLY coincident
+        // with this part's own top face at z=L, against this file's own
+        // "+Overlap*2" idiom used everywhere else specifically to avoid a
+        // degenerate boolean at a shared plane (GENUS[8] has zero
+        // tolerance for the kind of spurious handle a coincident-face
+        // boolean can produce). Nothing else occupies z>L in this module,
+        // so reaching Overlap past it is a pure no-op on the printed
+        // geometry, same as every other genuine boundary cut in this file.
         Notch_W = R60_TetherLug_W + 2*R60_Tether_Clear;
         Notch_MinR = R60_Body_ID/2 - R60_TetherLug_D - R60_Tether_Clear;
         translate([-Notch_W/2, Notch_MinR, -Overlap])
-            cube([Notch_W, OD/2-Notch_MinR+1, L+Overlap]);
+            cube([Notch_W, OD/2-Notch_MinR+1, L+Overlap*2]);
         // Ball pockets: radial slots through the wall so a ball can travel
         // from fully engaged (inner) to retracted (outer), same hull-of-
         // two-spheres pattern as SpringThingBooster.scad's
@@ -1382,11 +1416,66 @@ module R60_TetherLatch(){
             }
             // Pin bore through both posts. The pin IS the load path - it is a
             // 3mm steel dowel, not printed.
+            //
+            // Reach (5th review, finding 3): this used to run the latch's
+            // own full base width (Base_L+2, half-reach 20.3mm) regardless
+            // of what that is actually clear of. The binding constraint is
+            // the spring carrier's own counterbore rim
+            // (R60_SpringCarrier_CB_D/2=25.5mm) the pin travels inside once
+            // assembled (r60_assembly.scad pairs 17-19) -- and the true
+            // available reach there is set by the PIN'S OWN RADIUS too, not
+            // just its centreline: the farthest point on the pin is offset
+            // R60_Tether_Y+Pin_d/2 off the carrier's axis (at the end cap's
+            // own tangent), not just R60_Tether_Y. The old comment's
+            // "1.27mm of real margin" came from
+            // sqrt((CB_D/2)^2-Tether_Y^2)-20.3 -- the centreline-only
+            // figure; correctly counting the pin's own radius, the real
+            // number is sqrt((CB_D/2)^2-(Tether_Y+Pin_d/2)^2)-20.3 =
+            // 0.15mm, inside print tolerance for a Ø3 dowel that has to be
+            // inserted and withdrawn (confirmed on the rendered mesh: first
+            // contact between half-reach 20.45 and 20.6mm, not the +3.4mm
+            // the old "mutation-tested" claim implied -- that mutation
+            // probed ~20x past the real threshold).
+            //
+            // Withdrawal only ever needs to clear both posts
+            // (Post_X+Post_d/2=13mm) plus a stated hand-grip allowance --
+            // nowhere near that ceiling -- so Pin_Reach is capped there
+            // explicitly, with a stated real clearance to the rim, instead
+            // of reaching for the old bore's full width. That means this
+            // bore no longer breaks through the base's own outer edge
+            // (Pin_Reach=17 < Base_L/2=19.3) -- a BLIND channel, which is
+            // fine: nothing in this module's scope requires the printed
+            // bore itself to reach open air at the base's edge, only that
+            // it give the pin (separate steel hardware) a straight,
+            // adequately long channel to travel in. Asserted so a future
+            // change to R60_Tether_Y/R60_SpringCarrier_CB_D/Pin_d that eats
+            // this margin fails loudly instead of silently reopening the
+            // same 0.15mm gap.
+            Pin_Reach_Grip = 4;    // hand-grip/actuation allowance past the post
+            Pin_Reach = Post_X + Post_d/2 + Pin_Reach_Grip;   // 17
+            Pin_Reach_MaxSafe = sqrt(pow(R60_SpringCarrier_CB_D/2, 2)
+                                     - pow(R60_Tether_Y + Pin_d/2, 2));  // ~20.47
+            Pin_Reach_Clear = 1.5;  // stated minimum real clearance to the rim
+            assert(Pin_Reach + Pin_Reach_Clear <= Pin_Reach_MaxSafe,
+                str("R60_TetherLatch: pin withdrawal reach has no safe margin ",
+                    "left against the spring carrier's counterbore rim (need=",
+                    Pin_Reach + Pin_Reach_Clear, " maxsafe=", Pin_Reach_MaxSafe, ")"));
             translate([0,0,Base_T+Post_H-4]) rotate([0,90,0])
-                cylinder(d=Pin_d, h=Base_L+2, center=true);
-            // Slot the tether loop sits in, under the pin.
-            translate([0,0,Base_T+Post_H-4])
-                cube([10, Base_W+2, 9], center=true);
+                cylinder(d=Pin_d, h=2*Pin_Reach, center=true);
+            // Loop channel (5th review, finding 4): the gap BETWEEN the two
+            // posts (x=-5..5, the SAME span Base_Pass_W below derives) is
+            // already open above the base slab (z>=Base_T) BY CONSTRUCTION
+            // -- the posts sit at x=+-Post_X with radius Post_d/2=4, so
+            // nothing spans x=-5..5 there in the first place. A cube used
+            // to be cut here claiming to open "the slot the tether loop
+            // sits in", but its footprint (x=-5..5, z=7.5..16.5) was
+            // exactly tangent to the posts' own inner faces (x=+-5) and
+            // started above the base's own top face (z=4) -- removing
+            // material that was never there, a no-op cut (confirmed:
+            // Base_Pass_W = 2*(Post_X-Post_d/2) is the SAME 10 by
+            // construction). The gap between the posts IS the loop's
+            // channel; the posts' inner faces are what retain it
+            // laterally. No separate cut is needed.
             // Mounting holes into the e-bay aft bulkhead. Ø3.4, M3 clearance
             // -- was Ø2.9 (tap-drill size, task report: the screw would
             // thread the latch instead of clamping it), matching the M3
