@@ -122,7 +122,11 @@ THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
 # S_CHUTE.
 AFTBULK_T  = 12.0    # R60_AftBulk_T -- disc thickness
 PIN_SKIRT_L = 15.0   # R60_Pin_Skirt_L -- skirt engagement past the disc
-CARRIER_L  = 65.0    # R60_SpringCarrier()'s own L
+CARRIER_L  = 65.0    # R60Lib.scad's R60_SpringCarrier_L (8th review,
+                       # finding 4b -- promoted from a bare local L=65
+                       # inside R60_SpringCarrier() to a shared constant
+                       # also read by R60_ChuteTube()'s own Stop_Z; this
+                       # restatement now names what it restates)
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own
@@ -219,17 +223,21 @@ FIN_CENTROID_X, _, _ = polygon_centroid(
     [(0, 0), (Cr, 0), (sweep + Ct, span), (sweep, span)])
 
 # FIXED (defect 2b): Barrowman needs the EXPOSED fin panel, not the full
-# fin. R60_FinCan() cuts the fin slot from R60_MMT_OD/2=16mm outward, so
-# the epoxied root bottoms out at r=16mm and only r=(D/2)..(16+span) is
-# actually exposed to the airflow -- the buried 14mm (D/2 - 16) between
-# the MMT and the body OD contributes zero normal force. Feeding Barrowman
+# fin. R60_FinCan() cuts the fin slot from R60_MMT_OD/2=16.15mm outward, so
+# the epoxied root bottoms out at r=16.15mm and only r=(D/2)..(16.15+span)
+# is actually exposed to the airflow -- the buried 13.85mm (D/2 - 16.15)
+# between the MMT and the body OD contributes zero normal force. Feeding Barrowman
 # the full buried root chord (90mm) overstated CN_fins by ~65% (5.78 vs.
 # the corrected ~3.5 at the original 55mm span) and pulled CP aft of where
 # it actually sits. Everything below is derived from the fin's OWN
 # planform (R60_Fin()'s polygon: root (0,0)-(Cr,0), tip
 # (sweep,span)-(sweep+Ct,span)), not a second independently-guessed set
 # of numbers.
-MMT_r = 16.0                 # R60_MMT_OD/2
+MMT_r = 16.15                # R60_MMT_OD/2 (8th review, finding 4a: this
+                               # was restated as 16.0 -- R60_MMT_OD is
+                               # R60_MMT_ID+3.0 = 32.3, not 32.0, so the
+                               # true half is 16.15; the buried root/
+                               # span_exp this feeds were off by 0.15mm)
 buried = D/2 - MMT_r         # 14mm of the fin's own span sits inside the can
 span_exp = span - buried
 def _LE(y): return sweep * y / span            # leading-edge X at span station y
@@ -336,7 +344,17 @@ def build(motor):
      # itself was never updated when the retention mechanism changed.
      # No SCAD backing for the board's own mass distribution beyond
      # centring on the sled's own station.
-     ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_EBAY+VEGA_AXIAL_CENTER),
+     # Station sign fix (8th review, finding 2): VEGA_AXIAL_CENTER is in
+     # the e-bay TUBE's own frame, z=0 at the AFT rim (R60Lib.scad's
+     # R60_Vega_Window_Z0=R60_AftBulk_T comment) -- the SAME frame the
+     # 'e-bay fwd bulkhead' item below states the conversion for:
+     # global = S_CHUTE - local_z. This item used S_EBAY+VEGA_AXIAL_CENTER
+     # (a FORWARD-rim-referenced frame this constant was never built in),
+     # landing at 180.15 instead of the correct 276-81.15=194.85 -- 14.7mm
+     # too far forward, moving CG 0.84mm forward of true and breaking this
+     # audit's own advertised invariant that every correction moves CG
+     # AFT (this is the one that silently moved it forward).
+     ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_CHUTE-VEGA_AXIAL_CENTER),
      # No SCAD backing (loose hardware, no specific mounting geometry) --
      # kept at the e-bay tube's own midpoint, the best available estimate.
      ('battery + wiring',      45.0,                     S_EBAY+L_EBAY/2),
@@ -636,9 +654,15 @@ def fly(m0_g, prop_g, Ns, burn, cd0=0.52):
     return vmax,Mmax,h,t,rail
 print()
 print(f"{'motor':<12}{'liftoff g':>10}{'T/W':>6}{'v@1m rail':>11}{'Vmax m/s':>10}{'Mach':>7}{'apogee m':>10}{'t_apo s':>9}")
+# vmaxes captured here (8th review, finding 5) so the flutter block below
+# doesn't re-run build()+fly() for the same 3 motors a second time --
+# fly() integrates a full trajectory to apogee at dt=0.001s, not cheap,
+# and this loop already computes vmax for every motor it prints.
+vmaxes = {}
 for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
     items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen=build(mo)
     vmax,Mmax,hap,tap,vrail=fly(m,mprop,Ns,burn)
+    vmaxes[mo] = vmax
     print(f"{mo:<12}{m:>10.0f}{avgN/(m/1000*9.81):>6.1f}{vrail:>11.1f}{vmax:>10.0f}{Mmax:>7.2f}{hap:>10.0f}{tap:>9.1f}")
 print()
 print("Rail exit speed off a 1.5 m 1010 rail:")
@@ -686,14 +710,16 @@ for mo in ('G80T-14A','H182R-14A','H135W-14A','TSP E20-P'):
 # ---------------- flutter margin, all three motors ----------------
 # Group 2 re-target's 3rd requirement: flutter velocity >= 3x the FASTEST
 # flight speed across all three motors (not just the sizing motor).
+#
+# 8th review, finding 5 (performance): used to re-run build()+fly() for
+# these same 3 motors a second time, discarding the vmax the T/W loop
+# above already computed 50 lines earlier -- build() ran ~15 times and
+# fly() 7 times per run across 4 configurations for no reason but this
+# redundant loop. Reuses vmaxes (captured above) instead.
 print()
 print("Flutter margin (target: Vf >= 3x fastest Vmax across all motors):")
-vmaxes = {}
-for mo in ('G80T-14A','H182R-14A','H135W-14A'):
-    items,m,cg,mb,cgb,Ns,mprop,avgN,burn,mlen=build(mo)
-    vmax,Mmax,hap,tap,vrail=fly(m,mprop,Ns,burn)
-    vmaxes[mo] = vmax
-fastest_mo = max(vmaxes, key=vmaxes.get)
+FLUTTER_MOTORS = ('G80T-14A','H182R-14A','H135W-14A')
+fastest_mo = max(FLUTTER_MOTORS, key=vmaxes.get)
 fastest_v = vmaxes[fastest_mo]
 print(f"   Fastest: {fastest_mo} at {fastest_v:.0f} m/s -> 3x = {3*fastest_v:.0f} m/s")
 print(f"   Vf = {Vf:.0f} m/s  ({bad(Vf >= 3*fastest_v)}, "

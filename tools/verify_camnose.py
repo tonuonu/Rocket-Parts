@@ -47,8 +47,40 @@ NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
          4:"top slice", 5:"spacer front", 6:"spacer rear"}
 
 
+def clearance_shortfall(value, floor):
+    """max(0.0, floor - value), but nan-safe -- the same fix as
+    scad_verify.overshoot(), mirrored for a MINIMUM (clearance must be >=
+    floor) instead of a maximum (height must be <= limit). 0 for anything
+    that clears the floor, the actual shortfall otherwise (8th review,
+    finding 3c: this REPLACES `max(c, MIN_CLEAR)` as the check's own
+    "expected" value, which derived the target FROM the measurement itself
+    -- always exactly equal to `c` whenever it cleared MIN_CLEAR, so a
+    comfortably-fitting nosecone printed a self-comparing "0.31 expected
+    0.31" that could never fail regardless of how the clearance moved).
+    +inf for a nan `value` (scad_verify's own nan-as-failure convention):
+    a bare `max(0.0, floor - nan)` would silently read as a 0mm shortfall
+    -- nan comparisons are always False, so Python's max() keeps its first
+    argument -- exactly the same silent-pass shape overshoot()'s own
+    docstring documents for the maximum-side check."""
+    if math.isnan(value):
+        return float("inf")
+    return max(0.0, floor - value)
+
+
 def camera_clearance(stls):
-    """Worst radial clearance between the camera envelope and the real bore."""
+    """Worst radial clearance between the camera envelope and the real bore.
+
+    (8th review, finding 3c) 1e9 is a running-MINIMUM sentinel ONLY --
+    every real candidate clearance is far below it, so `c < worst[0]`
+    always replaces it on the first station actually measured. It must
+    never escape as the RETURNED "worst" value: if every single station is
+    skipped (unmeasurable geometry, an empty `stls`, or every station
+    landing in the lens hole), the loop body never runs and the old code
+    returned the raw (1e9, None) sentinel as if 1e9mm were a genuine
+    clearance reading -- printing "CAMERA CLEARANCE (worst, Nonemm behind
+    lens) 1000000000.000 expected 1000000000.000" and PASSING. A nosecone
+    whose clearance was never actually measured must fail loudly instead,
+    same nan-as-failure convention as scad_verify's measure()/overshoot()."""
     worst = (1e9, None)
     for b, r in CAM_ENVELOPE:
         z = APEX - b
@@ -66,6 +98,8 @@ def camera_clearance(stls):
         c = inner / 2.0 - r
         if c < worst[0]:
             worst = (c, b)
+    if worst[1] is None:
+        return (float("nan"), None)
     return worst
 
 
@@ -101,8 +135,21 @@ def main(argv):
         checks += [("middle zmin", m[3]["zmin"], CUT1_Z, 0.2)]
     if 4 in m:
         checks += [("tip height (lens-hole rim)", m[4]["zmax"], RIM_Z, 0.2)]
-        lo, _ = bore(stls[4], APEX - 3.0, APEX - 0.2)
-        checks += [("lens hole dia", lo, LENS_D, 0.2)]
+        # (8th review, finding 3d) this bare bore() used to re-introduce
+        # the exact whole-run abort the render-failure try/except above
+        # was written to eliminate: bore() raises RuntimeError whenever
+        # the lens-hole edge loop leaves its stated Z band (e.g. the tip's
+        # own geometry regresses just enough that this scan window no
+        # longer straddles a real hole edge) -- precisely the regression
+        # this check exists to catch, and the run used to die on an
+        # uncaught traceback with none of the OTHER checks below ever
+        # printed. Same counted-FAIL-and-continue idiom as that block.
+        try:
+            lo, _ = bore(stls[4], APEX - 3.0, APEX - 0.2)
+            checks += [("lens hole dia", lo, LENS_D, 0.2)]
+        except RuntimeError as e:
+            print("FAIL  lens hole bore scan (part 4)\n%s" % e)
+            bad += 1
     if 2 in m and 3 in m:
         checks += [("joint 1 overlap", m[2]["zmax"] - m[3]["zmin"], 7.0, 0.2)]
     if 3 in m and 4 in m:
@@ -139,8 +186,9 @@ def main(argv):
                        g if g is not None else float("nan"), GENUS[p], 0)]
     if {2, 3, 4} <= set(m):
         c, at = camera_clearance(stls)
-        checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at,
-                    c, max(c, MIN_CLEAR), 0.001)]
+        at_label = at if at is not None else "no station measured, "
+        checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at_label,
+                    clearance_shortfall(c, MIN_CLEAR), 0.0, 0.001)]
     print()
     for label, actual, expected, tol in checks:
         ok = abs(actual - expected) <= tol

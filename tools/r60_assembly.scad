@@ -559,7 +559,7 @@ SW_X = 0;           // R60_Door()'s own Sw_X -- the cover's own crown
 SW_Z = R60_Door_Overlap + R60_Door_Open_H/2;   // R60_Door()'s own Sw_Z, 48.5
 module SwitchProbe(){
     translate([SW_X, R60_Body_OD/2, SW_Z])
-        rotate([90,0,0])
+        rotate([-90,0,0])
             cylinder(d=SW_D, h=SW_REACH);
 }
 
@@ -692,13 +692,23 @@ module FastenerSweep(Shank_d, Head_d, Travel, Engage){
 // now against the rail instead of the retired foot pad. Renders EMPTY
 // only because the rail's hole is now bored its FULL length -- there is
 // no axial position along it the retired design's own hole skipped.
+// 8th review, finding 1: Y0/Y1 now read R60Lib.scad's own
+// R60_Vega_Rail_FwdTip_Y/AftTip_Y directly instead of re-deriving
+// RailFwd_L/RailAft_L against this module's own L -- that independent
+// re-derivation was the SAME swapped arithmetic R60_VegaSled() itself had,
+// so this probe silently agreed with the sled's own mistake instead of
+// catching it. Origin sits RodInsert_h BEFORE the fwd tip (inside the fwd
+// bulkhead's own insert, where the rod's fixed end actually threads in)
+// and Engage reaches the rail's full length plus that insert engagement,
+// ending exactly at the aft tip (the nut's own bearing face).
 module RodSweep_Sled(){
-    L = R60_Vega_L + 12;
-    RailFwd_L = (R60_Vega_Window_Z1 - R60_Vega_Rail_FwdClear) - (R60_Vega_AxialCenter + L/2);
-    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
-    Y0 = -L/2 - RailAft_L;   // rail's own aft tip -- rod enters here
-    Y1 = L/2 + RailFwd_L;    // rail's own fwd tip -- rod continues past
-                               // this into the fwd bulkhead's own insert
+    Y0 = R60_Vega_Rail_FwdTip_Y - R60_Vega_RodInsert_h;   // rod's fixed
+                                                             // end, inside
+                                                             // the fwd
+                                                             // insert
+    Engage = R60_Vega_Rail_L + R60_Vega_RodInsert_h;   // reaches to the
+                                                          // aft tip (nut
+                                                          // face)
     for (s=[-1,1])
         translate([s*R60_Vega_Rail_X, Y0, R60_Vega_Rail_Z_Local])
             rotate([-90,0,0])
@@ -709,7 +719,7 @@ module RodSweep_Sled(){
                 // aft nut) is checked separately below (Pair 26), since
                 // IT does have its own wider envelope.
                 FastenerSweep(Shank_d=R60_Vega_Rail_d, Head_d=R60_Vega_Rail_d,
-                               Travel=0, Engage=(Y1-Y0)+R60_Vega_RodInsert_h);
+                               Travel=0, Engage=Engage);
 }
 module Pair25_A(){ RodSweep_Sled(); }
 module Pair25_B(){ R60_VegaSled(); }
@@ -741,13 +751,24 @@ module Pair26_B(){
 // (well aft of the rail) to the seated position.
 NUT_HEAD_D = 7.5;
 NUT_TRAVEL = 15.0;
+// 8th review, finding 1: Y0 now reads R60Lib.scad's own
+// R60_Vega_Rail_AftTip_Y directly (the nut's real seated position, local
+// +Y = aft) instead of re-deriving RailAft_L against this module's own L
+// -- the same independently-retyped, swapped arithmetic R60_VegaSled()
+// itself had. Also flips rotate([-90,0,0]) -> rotate([90,0,0]): the sign
+// controls which direction FastenerSweep's own head corridor (its
+// "approach from open space" reach, -Travel..0) points once mapped into
+// the sled's local Y -- with the OLD sign the head swept INTO the rail
+// (y in [Y0-Travel, Y0], overlapping real material -- confirmed by mutation
+// test, a real 0.9461cm3 collision against the now-correctly-positioned
+// rail); with rotate([90,0,0]) it sweeps y in [Y0, Y0+Travel], the
+// genuinely open bench space AFT of the rail's own tip, matching how a
+// nut is actually driven onto the rod's free end.
 module NutSweep_Sled(){
-    L = R60_Vega_L + 12;
-    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
-    Y0 = -L/2 - RailAft_L;   // rail's own aft tip = nut's seated position
+    Y0 = R60_Vega_Rail_AftTip_Y;   // rail's own aft tip = nut's seated position
     for (s=[-1,1])
         translate([s*R60_Vega_Rail_X, Y0, R60_Vega_Rail_Z_Local])
-            rotate([-90,0,0])
+            rotate([90,0,0])
                 FastenerSweep(Shank_d=R60_Vega_Rail_d, Head_d=NUT_HEAD_D,
                                Travel=NUT_TRAVEL, Engage=0);
 }

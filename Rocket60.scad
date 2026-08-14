@@ -300,11 +300,15 @@ module R60_EBayTube(){
 // from this lug back to the latch (part 13) once assembled.
 module R60_ChuteTube(){
     Pin_Z      = R60_Pin_Z_FromJoint;
-    Stop_Z     = R60_Pin_Skirt_L + 65;   // skirt(15) + carrier(65) = the
-                                          // "80mm end to lock balls" figure
-                                          // the investigation sourced from
+    Stop_Z     = R60_Pin_Skirt_L + R60_SpringCarrier_L;   // skirt(15) +
+                                          // carrier(65) = the "80mm end to
+                                          // lock balls" figure the
+                                          // investigation sourced from
                                           // SpringThing2.scad for this
-                                          // spring/mechanism class
+                                          // spring/mechanism class (8th
+                                          // review, finding 4b: carrier
+                                          // length now shared, not a
+                                          // third independent "65")
     Stop_T     = 3;
     // Tab inner radius: was 46 ("clears the carrier's own 44.8mm spring
     // bore"), which cleared the WRONG thing -- the carrier's bore never
@@ -712,15 +716,18 @@ module R60_VegaSled(){
     Hole_d = R60_Vega_BoardHole_d;
 
     // Rail geometry -- see R60Lib.scad's own comments for each shared
-    // constant's derivation. RailFwd_L/RailAft_L (how far the rail
-    // reaches past the plate's own +-L/2, at EACH end independently --
-    // the two end clearances differ, see R60_Vega_Rail_AftClear's own
-    // comment) are the one quantity computed HERE rather than in
-    // R60Lib.scad, since they depend on this module's own L: DERIVED from
-    // the real axial gap between the two bulkhead mounting faces, not a
-    // free constant, so they grow/shrink automatically with R60_EBay_L or
-    // either bulkhead's thickness instead of silently falling short (or
-    // overlapping) the next time either changes.
+    // constant's derivation. Rail_Y0/Rail_Y1 (8th review, finding 1) are
+    // now READ DIRECTLY from R60Lib.scad's own R60_Vega_Rail_FwdTip_Y/
+    // AftTip_Y -- NOT recomputed here from RailFwd_L/RailAft_L against
+    // this module's own L, which is what let the two ends get swapped:
+    // that local computation matched VegaSledPlaced()'s local-Y-to-
+    // global-Z sign (local +Y = AFT, see R60Lib.scad's own comment on
+    // these constants) at only one of the two call sites that mattered,
+    // while r60_assembly.scad's RodSweep_Sled()/NutSweep_Sled() each
+    // re-typed the SAME swapped arithmetic independently -- three
+    // triplicated copies of one mistake all agreeing with each other.
+    // Reading the shared constants here means every consumer now derives
+    // from the one place the fwd/aft mapping is actually stated.
     Rail_X = R60_Vega_Rail_X;
     Rail_d = R60_Vega_Rail_d;
     Rail_WZ = R60_Vega_Rail_WZ;         // local Z (=radial once
@@ -735,16 +742,18 @@ module R60_VegaSled(){
                                           // was unreachable (see the
                                           // module comment above)
     Rail_Z_Local = R60_Vega_Rail_Z_Local;
-    RailFwd_L = (R60_Vega_Window_Z1 - R60_Vega_Rail_FwdClear) - (R60_Vega_AxialCenter + L/2);
-    RailAft_L = (R60_Vega_AxialCenter - L/2) - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
-    assert(RailFwd_L > 5 && RailAft_L > 5,
+    Rail_Y0 = R60_Vega_Rail_FwdTip_Y;   // local -Y = fwd -- hard stop
+                                          // against the fwd bulkhead boss
+    Rail_Y1 = R60_Vega_Rail_AftTip_Y;   // local +Y = aft -- nut face
+    RailFwd_Reach = -L/2 - Rail_Y0;     // how far the rail extends past
+                                          // the plate's own fwd edge
+    RailAft_Reach = Rail_Y1 - L/2;      // how far the rail extends past
+                                          // the plate's own aft edge
+    assert(RailFwd_Reach > 5 && RailAft_Reach > 5,
         str("R60_VegaSled: rail too short to be a rigid mounting rail ",
-            "(RailFwd_L=", RailFwd_L, ", RailAft_L=", RailAft_L, ") -- ",
+            "(RailFwd_Reach=", RailFwd_Reach, ", RailAft_Reach=", RailAft_Reach, ") -- ",
             "e-bay length/skirt/bulkhead sizes no longer leave room for ",
             "the bridge"));
-    Rail_Y0 = -L/2 - RailAft_L;   // rail's own aft-most tip (nut face)
-    Rail_Y1 = L/2 + RailFwd_L;    // rail's own forward-most tip (hard
-                                    // stop against the fwd bulkhead boss)
 
     difference(){
         union(){
@@ -998,8 +1007,11 @@ module R60_SpringCarrier(){
                                     // tube's 56.8mm bore, same convention
                                     // as every internal part in this repo
     Bore    = R60_Spring_OD + 0.5;  // 44.80 -- clears the CS4323's 44.30mm OD
-    L       = 65;                   // + the skirt's 15mm = 80mm, the
-                                     // "SpringThing2" figure sourced above
+    L       = R60_SpringCarrier_L;  // 65 -- + the skirt's 15mm = 80mm,
+                                     // the "SpringThing2" figure sourced
+                                     // above; shared (8th review, finding
+                                     // 4b) with R60_ChuteTube()'s own
+                                     // Stop_Z, not a second local literal
     CB_D      = R60_SpringCarrier_CB_D;  // 51 -- tether latch (part 13)
                                      // clearance -- shared (4th review,
                                      // critical 2) so the latch's own base

@@ -377,6 +377,17 @@ RAIL_X = 17.9
 RAIL_HOLE_SEARCH_R = 2.4     # > Rail_d/2=1.7, < the rail's own edge
 FWD_INSERT_SEARCH_R = 2.6    # > RodInsert_d/2=2.0, < the boss edge
 
+# R60Lib.scad's own R60_Vega_Rail_FwdTip_Y/AftTip_Y (8th review, finding
+# 1), restated (rule 4): the rail's two tip positions in the sled's own
+# local Y frame, local -Y = fwd (hard stop against the fwd bulkhead's
+# rod-boss face), local +Y = aft (nut+washer bearing face) -- see that
+# constant's own R60Lib.scad comment for the full local-Y-to-global-Z
+# derivation. Checked directly against the sled's own measured ymin/ymax
+# below (not just their DIFFERENCE, which is the "sled length" check
+# above and cannot tell a swapped-ends sled from a correct one).
+RAIL_FWDTIP_Y = -68.95
+RAIL_AFTTIP_Y = 64.15
+
 
 def vega_facing_y():
     """R60_Vega_Facing_Y_Nom (R60Lib.scad), restated as the SAME closed
@@ -702,8 +713,24 @@ def checks(m):
         # rule 4: R60Lib.scad's R60_Vega_Window_Z1(150.3) -
         # R60_Vega_Window_Z0(12) - R60_Vega_Rail_FwdClear(0.2) -
         # R60_Vega_Rail_AftClear(5.0) = 133.1mm (R60_Vega_Rail_L).
+        #
+        # 8th review, finding 1: this SPAN check cannot discriminate a
+        # swapped-ends sled from a correct one -- ymax-ymin is invariant
+        # under swapping which end gets which clearance budget (FwdClear
+        # + AftClear sums to the same 133.1mm either way), which is
+        # exactly how the 7th-review sled shipped with its rail ends
+        # reversed and still read "sled length 133.1, OK" here. The two
+        # ABSOLUTE tip positions below (RAIL_FWDTIP_Y/RAIL_AFTTIP_Y) DO
+        # move under the swap: the pre-fix sled measured ymin=-64.15/
+        # ymax=+68.95 (RailAft_L/RailFwd_L applied to the wrong ends),
+        # 4.8mm off the correct -68.95/+64.15 at BOTH ends (the FwdClear/
+        # AftClear difference) -- well outside this check's own 0.2mm
+        # tolerance, so this is the pair of checks that actually catches
+        # the swap the span check above cannot.
         c += [("sled length", a(6, "ymax") - a(6, "ymin"), 133.1, 0.2),
-              ("sled width", a(6, "xmax") - a(6, "xmin"), 45.6, 0.2)]
+              ("sled width", a(6, "xmax") - a(6, "xmin"), 45.6, 0.2),
+              ("sled fwd rail tip (local ymin)", a(6, "ymin"), RAIL_FWDTIP_Y, 0.2),
+              ("sled aft rail tip (local ymax)", a(6, "ymax"), RAIL_AFTTIP_Y, 0.2)]
 
         if 2 in m:
             # Sled's own back corners clear the e-bay bore -- cross-

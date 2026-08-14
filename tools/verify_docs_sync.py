@@ -26,6 +26,14 @@ MODEL = os.path.join(REPO, "tools", "rocket60_model.py")
 DOCS = [
     os.path.join(REPO, "R60-PrintSettings.md"),
     os.path.join(REPO, "STL Files", "Rocket60", "README.md"),
+    # 8th review, finding 3b: the design spec was the FOURTH doc that
+    # publishes these same model figures (it carries the sec 6.1 stability
+    # ruling the whole design turns on) and the one this gate never
+    # covered -- it was already stale on the branch that added this very
+    # check, exempt from the check whose own docstring calls staleness
+    # "the fourth occurrence of this defect class".
+    os.path.join(REPO, "docs", "superpowers", "specs",
+                  "2026-08-13-rocket60-design.md"),
 ]
 
 _bad = 0
@@ -71,11 +79,33 @@ def model_numbers(out):
             margin_tbl, re.M):
         nums[m.group(1)] = {"liftoff_g": int(m.group(2)),
                              "margin_cal": float(m.group(3))}
+    # (8th review, finding 3a) the model's rail-exit line has THREE shapes,
+    # not one: a clean exit ("16.2 m/s   (OK)"), a genuine-but-slow exit
+    # ("12.1 m/s   (FAIL - want >15 m/s)"), or a burnout that never left
+    # the rail at all ("BURNOUT ON RAIL -- ... burnout velocity was 12.1
+    # m/s at 1.20 m   (FAIL)"). The old regex only matched the first shape
+    # -- for either of the other two, rail_exit_ms was silently never set
+    # for that motor, and this function returned cleanly; the crash
+    # happened later, in main()'s own g80t["rail_exit_ms"] lookup, as an
+    # unrelated bare KeyError instead of the loud, actionable RuntimeError
+    # this file's own sanity guard exists to raise. Both extra shapes are
+    # now parsed too (a FAIL/EXCLUDED status is still a real velocity
+    # reading; a burnout's own "never reached the rail-exit height" is
+    # reported via its OWN separate rail_burnout flag, not silently
+    # coerced into looking like a normal exit).
     rail_tbl = section(out, "Rail exit speed", "\n\n")
     for m in re.finditer(
-            r"^\s*(G80T-14A|H182R-14A|H135W-14A)\s+([\d.]+) m/s\s+\(OK\)",
+            r"^\s*(G80T-14A|H182R-14A|H135W-14A)\s+([\d.]+) m/s\s+"
+            r"\((?:OK|FAIL[^)]*|EXCLUDED[^)]*)\)",
             rail_tbl, re.M):
         nums.setdefault(m.group(1), {})["rail_exit_ms"] = float(m.group(2))
+    for m in re.finditer(
+            r"^\s*(G80T-14A|H182R-14A|H135W-14A)\s+BURNOUT ON RAIL.*?"
+            r"burnout velocity was ([\d.]+) m/s",
+            rail_tbl, re.M):
+        d = nums.setdefault(m.group(1), {})
+        d["rail_exit_ms"] = float(m.group(2))
+        d["rail_burnout"] = True
     return nums
 
 
@@ -88,8 +118,15 @@ def doc_has(path, *needles):
 def main():
     out = run_model()
     nums = model_numbers(out)
+    # (8th review, finding 3a) rail_exit_ms is now required here too -- it
+    # used to be validated nowhere, so a genuine parse gap (this model
+    # output growing a FOURTH rail-exit shape neither regex above
+    # recognises) surfaced 40 lines further down as a bare KeyError on
+    # g80t["rail_exit_ms"], not this loud, actionable RuntimeError. Every
+    # future parse gap in ANY of the three fields now fails the same way.
     for mo in ("G80T-14A", "H182R-14A", "H135W-14A"):
-        if mo not in nums or "liftoff_g" not in nums[mo] or "margin_cal" not in nums[mo]:
+        if (mo not in nums or "liftoff_g" not in nums[mo]
+                or "margin_cal" not in nums[mo] or "rail_exit_ms" not in nums[mo]):
             raise RuntimeError("could not parse %s out of rocket60_model.py's "
                                 "own output -- its print format changed; "
                                 "update model_numbers()'s own regex" % mo)
@@ -119,6 +156,13 @@ def main():
              (grams(g80t), cal(g80t), "%.1f m/s" % g80t["rail_exit_ms"])),
             ("H182R-14A liftoff/margin", (grams(h182r), cal(h182r))),
             ("H135W-14A liftoff/margin", (grams(h135w), cal(h135w))),
+        ],
+        # 8th review, finding 3b.
+        "docs/superpowers/specs/2026-08-13-rocket60-design.md": [
+            ("G80T-14A liftoff/margin/rail-exit",
+             (grams(g80t), cal(g80t), "%.1f m/s" % g80t["rail_exit_ms"])),
+            ("H182R-14A margin", (cal(h182r),)),
+            ("H135W-14A margin", (cal(h135w),)),
         ],
     }
 

@@ -334,15 +334,44 @@ R60_Vega_Rail_Y = R60_Vega_Facing_Y_Nom + R60_Vega_Rail_Z_Local;
 // reaching any of it.
 R60_Vega_RodPocket_Depth = 8.0;
 
-// Rail length (7th review): the FULL axial reach, both ends together --
-// matches the retired design's own "L+2*Foot_L=window, minus 2 clearance
-// gaps" shape, just with the two clearances now independently stated
-// (Rail_FwdClear at the hard stop, the much larger Rail_AftClear for the
-// nut/washer stack) rather than one shared "Foot_Clear". Individual
-// fwd/aft reach past the board-carrying plate's own +-L/2 is computed in
-// R60_VegaSled() itself (it already knows its own L there).
-R60_Vega_Rail_L = R60_Vega_Window_Z1 - R60_Vega_Window_Z0
-                  - R60_Vega_Rail_FwdClear - R60_Vega_Rail_AftClear;
+// Rail tip positions (8th review, finding 1 -- REPLACES a triplicated,
+// end-swapped RailFwd_L/RailAft_L/Rail_Y0/Rail_Y1 computation that used to
+// be independently re-typed in R60_VegaSled() (Rocket60.scad),
+// RodSweep_Sled() and NutSweep_Sled() (both r60_assembly.scad). Single
+// source of truth for where each rail tip actually lands, in the sled's
+// OWN local Y frame (R60_VegaSled()'s local Y=0 is R60_Vega_AxialCenter
+// once placed).
+//
+// VegaSledPlaced() (r60_assembly.scad) is
+// `translate([0,Facing_Y_Nom,AxialCenter]) rotate([-90,0,0])
+// R60_VegaSled()` -- rotate([-90,0,0]) maps local (x,y,z) to (x,z,-y), so
+// **global_z = AxialCenter - local_y**: local +Y is AFT (toward
+// R60_Vega_Window_Z0, the smaller-z aft bulkhead face), local -Y is FWD
+// (toward R60_Vega_Window_Z1, the larger-z fwd bulkhead boss face) -- the
+// OPPOSITE of the naive "+Y sounds forward" reading the triplicated code
+// got wrong at all three sites simultaneously (which is exactly why
+// nobody caught it: the sled's own bore and both probes agreed with each
+// other, all three independently re-deriving the same inverted mapping).
+//
+// Inverting global_z=AxialCenter-local_y for each tip's own target global
+// z gives local_y = AxialCenter - target_z, independent of the sled
+// plate's own length L (the L/2 offsets that appear in a "reach past the
+// plate" formulation cancel exactly -- confirmed both algebraically and
+// against the review's own reported numbers: AxialCenter=81.15,
+// Window_Z1=150.3, FwdClear=0.2 -> FwdTip_Y=-68.95; Window_Z0=12,
+// AftClear=5.0 -> AftTip_Y=+64.15).
+R60_Vega_Rail_FwdTip_Y = R60_Vega_AxialCenter
+                         - (R60_Vega_Window_Z1 - R60_Vega_Rail_FwdClear);
+                          // ~-68.95 -- local -Y, hard stop against the fwd
+                          // bulkhead's own rod-boss face
+R60_Vega_Rail_AftTip_Y = R60_Vega_AxialCenter
+                         - (R60_Vega_Window_Z0 + R60_Vega_Rail_AftClear);
+                          // ~+64.15 -- local +Y, nut+washer bearing face
+// Rail length: the FULL axial reach, both ends together -- DERIVED from
+// the two tip positions above (not a third, independent restatement of
+// the same window/clearance arithmetic), so it can never silently drift
+// from what the tips themselves say.
+R60_Vega_Rail_L = R60_Vega_Rail_AftTip_Y - R60_Vega_Rail_FwdTip_Y;
 
 // Vega board worst-case radial reach into the e-bay bore, installed (5th
 // review, finding 2). NOMINAL closed form of the SAME quantity
@@ -398,14 +427,24 @@ R60_ThrustRing_T = 6;
 // ============================================
 // SPRING SEPARATION JOINT (spec 4.2 -- supersedes the cam-ramped bayonet)
 // ============================================
-// CS4323 compression spring dimensions, as documented in the repo's
-// SpringThingBooster.scad/SpringEndsLib.scad family (ST_DSpring_OD/ID,
-// ST_DSpring_CBL/FL) and restated here since Rocket60.scad does not
-// `use<>` those files -- see R60_SpringCarrier()'s module comment for why.
+// CS4323 compression spring OD, as documented in the repo's
+// SpringThingBooster.scad/SpringEndsLib.scad family (ST_DSpring_OD) and
+// restated here since Rocket60.scad does not `use<>` those files -- see
+// R60_SpringCarrier()'s module comment for why.
+//
+// 8th review, finding 4c: R60_Spring_ID/FL/CBL (ST_DSpring_ID/CBL/FL's own
+// restatements) used to live here too, defined and never read by anything
+// -- only OD sizes the carrier's bore. R60_SpringCarrier()'s own module
+// comment asserts a cocked-spring-room figure ("~35mm remaining, down
+// from ~55mm") in prose, but that claim was never actually computed from
+// ID/FL/CBL (the carrier's own plunger/lock-ring, which the spring's aft
+// end bears against, is explicitly NOT modelled -- see that module's own
+// "deliberately incomplete" comment -- so the room available to a COCKED
+// spring cannot be derived from this file's geometry at all). Deleted
+// rather than left implying a verification that does not exist; the
+// prose estimate is unchanged, still flagged under spec A11 as physically
+// unverified.
 R60_Spring_OD  = 44.30;
-R60_Spring_ID  = 40.50;
-R60_Spring_FL  = 200;    // free length
-R60_Spring_CBL = 22;     // coil-bound length
 
 // Shear pins bridge the REAL separable airframe joint -- chute bay tube
 // (part 3) into the e-bay aft bulkhead's skirt (part 5) -- not the spring
@@ -496,6 +535,16 @@ R60_TetherLatch_HoleX = R60_Horn_L/2 + R60_TetherInsert_d/2 + R60_Tether_Wall_Mi
 // PAST the carrier's own OD (28.2mm), so growing CB_D cannot be the fix;
 // R60_TetherLatch()'s own module comment explains the clip this drives.
 R60_SpringCarrier_CB_D = 51;
+
+// Spring carrier (part 8) overall length -- shared (8th review, finding
+// 4b) so R60_ChuteTube()'s own Stop_Z (the spring reaction tabs' station,
+// which has to sit flush with where the carrier ACTUALLY ends for the
+// spring to load them with no free travel) and tools/rocket60_model.py's
+// restated CARRIER_L both derive from -- or, for the Python file, name --
+// the SAME number as the module that actually builds it, instead of three
+// independent copies of "65" that only stay equal by nobody having
+// touched any of them yet.
+R60_SpringCarrier_L = 65;
 
 // ============================================
 // FINS
