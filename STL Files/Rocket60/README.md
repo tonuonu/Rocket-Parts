@@ -32,7 +32,7 @@ line up with inserts in a PCB that does not shrink.
 | `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ |
 | `00_TestRing.stl` | 0 | 10.00 | 60.00 | 19.9 cm³ |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ |
-| `02_EBayTube.stl` | 2 | 160.00 | 60.40 | 45.7 cm³ |
+| `02_EBayTube.stl` | 2 | 160.00 | 60.00 | 45.7 cm³ |
 | `03_ChuteBayTube.stl` | 3 | 180.00 | 60.00 | 53.5 cm³ |
 | `04_EBayFwdBulkhead.stl` | 4 | 6.00 | 56.40 | 12.7 cm³ |
 | `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.4 cm³ |
@@ -43,7 +43,7 @@ line up with inserts in a PCB that does not shrink.
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ |
 | `12_MotorSpacer.stl` | 12 | 104.00 | 29.00 | 17.6 cm³ |
-| `13_TetherLatch.stl` | 13 | 16.00 | 39.40 | 3.3 cm³ |
+| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.5 cm³ |
 
 Print 3 fins from `10_Fin.stl`. `12_MotorSpacer.stl` is the G80T spacer
 (`Motor_Class = 0`); set `Motor_Class` to 1 or 2 and re-export for the H182R or
@@ -64,6 +64,16 @@ note and the spec §6 for the full analysis. Parts 6 and 9 also changed
 (Vega sled M3 holes widened 2.9→3.4mm; fin can's fin slot lengthened to
 match — neither changes the part's own extent, only its interior).
 
+Re-exported again after the 2nd code-review fix pass: part 2's door screw
+holes now bore along the wall's true local radial direction instead of a
+flat axis (defect 1a), the Vega retention rails now actually close on the
+sled (defect 1b), and the door bosses no longer poke past the true OD --
+Max OD 60.40→60.00 (defect 2a). Part 8's tether notch now matches the
+skirt channel it must clear (8.00→9.20mm, defect 2c; no change to this
+part's own extent). Part 13 grew again (Base_L 36.00→38.60mm, defect 2b
+-- the old wall beyond the mounting holes was 0.30mm, below one extrusion
+width) -- Max OD 39.40→41.78, +0.2 cm³.
+
 Tallest part 228 mm, inside the 250 mm envelope with 22 mm to spare.
 
 ## Mass — measured from the exported meshes
@@ -72,7 +82,7 @@ Per-part mass now comes from these measured mesh volumes (PETG 1.27 g/cm³,
 PC 1.20 g/cm³ per `R60-PrintSettings.md` sec 3, at a stated 78% effective
 print density), not a round-number estimate — see
 `tools/rocket60_model.py`. **Liftoff mass on the G80T-14A (the sizing
-motor) is 867 g**, giving **1.62 cal** static margin and **18.9 m/s** off
+motor) is 868 g**, giving **1.62 cal** static margin and **18.9 m/s** off
 a 1.5 m 1010 rail — both clear their targets (1.5 cal, 15 m/s) with
 margin, despite the fin-span growth (+14 g total) needed to reach them.
 H182R-14A gives 934 g / 1.43 cal / 28.0 m/s; H135W-14A gives 937 g / 1.44

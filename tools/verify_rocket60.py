@@ -28,23 +28,20 @@ DOOR_HOLE_CLEAR = 3.0
 
 # Expected genus per part (topological invariant, immune to the
 # "bit-identical bounding box, wrong interior" failure mode: a solid is
-# genus 0, each through-hole/handle adds 1).
-#   part 0: open-centre ring (1) + 3 bolt holes (3) = 4
-#   part 1: open-centre spider (1) + 3 bolt holes (3) = 4
-#   parts 2,3: plain tube = 1 (part 3's original value -- superseded below,
-#   after the shear pin holes were added)
-#   part 4: disc + harness bore (1) = 1
-#   part 5 (upright-servo redesign): disc + 4 through-passages = 4. Confirmed
-#   by rendered top/bottom faces and the OpenSCAD Genus statistic: servo 1's
-#   offset pocket (z=0..9) connects to the centred Ø12 shaft bore (z=8.95..12)
-#   into one passage; servo 2's pocket connects to its horn slot the same
-#   way into a second passage; the two Ø5 cord holes are clean, isolated
-#   through-holes each. 4 distinct openings visible on both faces, matching
-#   Genus: 4 from `openscad --export-format asciistl` stderr.
-#   part 6: flat sled, 3 standoff bores (3) = 3
-#   part 2 CHANGES: tube (1) + door opening (1) + switch hole (1) = 3
-#   part 7: curved panel, 4 bolt holes (4) = 4
-GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
+# genus 0, each through-hole/handle adds 1). Each part's FINAL genus is
+# assigned to GENUS[p] exactly once below -- defect 3e: this used to be
+# five layers of silent reassignment (GENUS[9] set to 4 then overwritten
+# to 6 113 lines later, GENUS[13] set to 2 then 4, etc.), so a part's
+# actually-checked value was nowhere near its own definition. The
+# derivation history -- why a value changed across rounds, what confirmed
+# it on the rendered mesh each time -- is kept as comments, in order,
+# ending at the one real assignment.
+#
+# part 0: open-centre ring (1) + 3 bolt holes (3) = 4
+# part 1: open-centre spider (1) + 3 bolt holes (3) = 4
+# part 4: disc + harness bore (1) = 1
+# part 6: flat sled, 3 standoff bores (3) = 3
+GENUS = {0: 4, 1: 4, 4: 1, 6: 3}
 #   part 10 is DELIBERATELY not in GENUS: it renders as a convex PolySet
 #   (OpenSCAD reports "Convex: yes", no "Genus:" line at all -- flat
 #   2D-extruded stock, no holes), and that is true every time, not an
@@ -54,133 +51,103 @@ GENUS = {0: 4, 1: 4, 2: 3, 3: 1, 4: 1, 5: 4, 6: 3, 7: 4}
 #   it back with a loud-failure check would just be a permanent, never-
 #   fixable FAIL for a part that was never wrong. See main()/checks()'s
 #   genus loop for the defect 3a fix itself.
-#   part 9: fin can, RE-DERIVED after adding the retainer bolt bosses (was
-#   4 before the bosses too, but re-checked rather than carried forward, per
-#   instruction). Rendered first (OpenSCAD stderr: `Genus: 4`, unchanged),
-#   then visually re-confirmed via fresh top/bottom/isometric PNG renders:
-#   top face (forward end) shows only the plain MMT-bore ring, no boss
-#   holes visible there at all; bottom face (aft end) shows that same ring
-#   PLUS 3 small dots at the bolt circle -- present on one face, absent
-#   from the other, confirming the boss inserts are blind pockets, not
-#   through-holes, so they add zero handles. The MMT bore (open top-to-
-#   bottom, confirmed by the identical hole on both end faces) and the 3
-#   fin slots (confirmed as real through-windows previously) are unchanged
-#   by this edit. 1 (MMT bore) + 3 (fin slots) + 0 (3 blind boss inserts)
-#   = 4.
-GENUS[9] = 4
-#   part 11: retainer, RE-DERIVED after adding the 3 bolt clearance holes
-#   (was 1 before them). Rendered first (OpenSCAD stderr: `Genus: 4`), then
-#   visually confirmed via top/bottom/isometric PNG renders: unlike part
-#   9's blind bosses, all 3 bolt holes appear as see-through openings on
-#   BOTH the top and bottom face at matching positions -- genuine through-
-#   holes, not blind pockets. 1 (centre bore) + 3 (through bolt holes) = 4.
-GENUS[11] = 4
-#   part 12: spacer tube = 1 (unchanged, not touched by this round)
-GENUS[12] = 1
-#   part 3: chute bay tube, RE-DERIVED after adding the 2 shear pin holes
-#   (was 1, a plain tube). Rendered first (OpenSCAD stderr: `Genus: 3`),
-#   then visually confirmed on a thin Z-band section slice at the pin
-#   holes' Z (diag, not part of the deliverable): the wall segment at each
-#   +-X hole location is split into two disconnected pieces by a clean
-#   gap spanning the FULL wall thickness (both the bore-side and OD-side
-#   faces are cut), confirming each is a genuine through-hole, not a
-#   surface scratch or blind mark. 1 (tube) + 2 (through pin holes) = 3.
-#   RE-DERIVED AGAIN (Task 8) after adding the tether tie-off lug + its
-#   lashing hole (Genus: 4). Visually confirmed on a thin X-slice through
-#   the lug (diag): the hole is a clean opening straight through the
-#   lug's material, a genuine 4th handle, not a blind mark -- the pin
-#   holes and tube bore are unaffected (different azimuth, no shared
-#   geometry). 1 (tube) + 2 (pin holes) + 1 (lug lashing hole) = 4.
-GENUS[3] = 4
-#   part 5: e-bay aft bulkhead, RE-CONFIRMED after adding the aft skirt +
-#   2 shear pin holes (stayed 4, same as the prior upright-servo design --
-#   NOT carried forward blindly, re-rendered and re-checked because the
-#   geometry changed even though the number didn't). Rendered (OpenSCAD
-#   stderr: `Genus: 4`), then visually confirmed on a sliced side-profile
-#   diagnostic: the 2 new pin holes are blind (do not reach the shaft
-#   bore, the horn slot, or each other), so they add zero handles, same
-#   as part 9's blind boss inserts. This render also CAUGHT a real defect
-#   before this value was recorded: the first skirt draft left servo 2's
-#   horn slot dead-ending under the new solid skirt material (observed
-#   genus 3, not 4, on that draft) -- fixed by extending the horn slot cut
-#   through the skirt to the new aft face, same treatment as the shaft
-#   bore already had; re-rendering then gave 4 back. Servo 1's pocket+
-#   shaft (1) + servo 2's pocket+horn, now reaching the aft face (1) + 2
-#   cord holes, also extended through the skirt (2) = 4.
-GENUS[5] = 4
-#   part 8: spring carrier. First rendered without the forward counterbore
-#   or shock-cord channels (Genus: 1, matching a single spring-bore
-#   passage with blind ball pockets, same reasoning as below). Adding the
-#   counterbore + 2 cord channels (Task 7 fix, see module comment) changed
-#   this to Genus: 3, RE-DERIVED rather than assumed: a horizontal slice
-#   through the diaphragm (z~21.5, diag, not part of the deliverable)
-#   shows 3 SEPARATE round breaches through it -- the Ø8 driveshaft hole
-#   and the 2 Ø5 cord holes -- each independently connecting "forward of
-#   diaphragm" to "aft of diaphragm", so each is its own handle: 1 (main
-#   bore/driveshaft passage) + 2 (the 2 cord passages, each breaching the
-#   diaphragm separately from the driveshaft hole) = 3. A second slice
-#   through the bore/ball-pocket region confirms the 3 ball pockets stay
-#   enclosed/blind (do not breach the OD) and clear of the 2 cord grooves
-#   -- this render also CAUGHT a rotation-math defect first: a first
-#   draft placed a ball pocket azimuth 90deg off from its intended
-#   position (forgot the pocket's own pre-rotation offset), landing it
-#   inside the cord-groove sector (observed as a merged shape on the same
-#   slice, still genus 3 -- the defect was in ball placement, not count);
-#   fixed by correcting the rotate angle, re-rendered, re-confirmed clear.
-GENUS[8] = 3
-#   part 13: tether latch. Per the brief, NOT predicted -- rendered first
-#   (OpenSCAD stderr: `Genus: 2`). A base-slice diagnostic confirms both
-#   M3 mounting holes are clean through-holes (open circles in a mid-base
-#   slice). A front-on diagnostic (sighting straight down the pin bore's
-#   own axis) confirms the pin bore is a real hole cut into a post's
-#   material, and an isolated single-post reproduction (post + pin bore,
-#   no base holes, no second post, no slot -- diag, not part of the
-#   deliverable) independently renders Genus: 1, confirming that hole
-#   is a genuine through-tunnel on its own. So every intended feature
-#   (2 mount holes, pin bore through the posts, loop slot) is confirmed
-#   real, not missing or blind -- BUT the full assembly's genus (2) is
-#   LOWER than a naive per-feature sum (2 mount holes + 2 post-tunnels =
-#   4 expected). Isolating combinations pins this to how they combine on
-#   a shared base, not a broken feature: base+2 mount holes alone = 2;
-#   1 post+bore alone = 1; 1 post+bore+2 mount holes together = 2 (not
-#   3); both posts+bore alone (no mount holes at all) = 2; the real part
-#   (everything) = 2. Genus does not simply sum across independently-
-#   verified through-features once they share a base with other holes --
-#   a real topological property of this connect-sum, reproduced
-#   consistently across five isolated variants, not a rendering fluke or
-#   a missing cut. Recording the observed value per the brief's
-#   instruction to measure, not predict.
-GENUS[13] = 2
-#   part 13 RE-DERIVED (defect 1b/1h fix): mounting holes moved from +-11mm
-#   to +-R60_TetherLatch_HoleX (16mm, clear of the horn-slot void) and
-#   widened Base_L to fit; the merging behaviour documented above (2, not
-#   the naive-sum 4) was specific to the OLD hole placement sharing
-#   boundary geometry with the posts. Rendered post-fix (OpenSCAD stderr:
-#   `Genus: 4`) -- now matches the naive per-feature sum (2 mount holes +
-#   2 post/pin-bore tunnels), confirmed on the same base-slice /
-#   front-on-post diagnostics as above: both mount holes are still clean
-#   through-holes, the pin bore is still a genuine tunnel through each
-#   post, and with the mount holes now well clear of the posts (moved from
-#   +-11 to +-16, vs. posts at +-9) they no longer share a boundary that
-#   collapses two handles into one.
-GENUS[13] = 4
-#   part 2 RE-DERIVED (defect 1d/1g fix): 2 zip-tie slots added (Vega sled
-#   retention) on top of the door opening (1) + switch hole (1) + tube (1)
-#   already counted in GENUS[2]=3 above. Rendered (OpenSCAD stderr:
-#   `Genus: 5`), confirmed each zip-tie slot is a clean through-cut (both
-#   the OD-side and ID-side faces are cut, same "full wall thickness gap"
-#   check as part 3's shear pins) -- the retention rails themselves are
-#   ADDED material (no new voids) and the door screw bosses/pilot holes
-#   are blind (open at one face only, same "adds zero handles" reasoning
-#   as part 9's boss inserts below), so neither changes the count.
+
+#   part 2: e-bay tube. Started at 3 (tube(1) + door opening(1) + switch
+#   hole(1)). RE-DERIVED (defect 1d/1g fix) after 2 zip-tie slots were
+#   added (Vega sled retention): rendered `Genus: 5`, confirmed each
+#   zip-tie slot is a clean through-cut (both the OD-side and ID-side
+#   faces are cut, same "full wall thickness gap" check as part 3's shear
+#   pins) -- the retention rails themselves are ADDED material (no new
+#   voids) and the door screw bosses/pilot holes are blind (open at one
+#   face only), so neither changes the count. RE-CONFIRMED this round
+#   after the door-boss-reach fix (2a) and the rail-angle fix (1b) --
+#   neither changes hole COUNT, only position/reach; re-rendered, still
+#   `Genus: 5`.
 GENUS[2] = 5
-#   part 9 RE-DERIVED (defect 1j fix): 2 shock-cord anchor holes added
-#   through the forward centring ring on top of GENUS[9]=4 above (1 MMT
-#   bore + 3 fin slots). Rendered (OpenSCAD stderr: `Genus: 6`), confirmed
-#   each cord hole is a genuine through-hole (isolated on a Z-band probe
-#   at the forward ring, distinct circular edge loops at r~20..25mm,
-#   clear of the MMT bore and all 3 fin slots).
+
+#   part 3: chute bay tube. Started at 1 (plain tube), then 3 after the 2
+#   shear pin holes were added (rendered `Genus: 3`, confirmed on a thin
+#   Z-band section slice at the pin holes' Z: each is a clean full-wall
+#   through-cut, not a blind mark). RE-DERIVED AGAIN (Task 8) after adding
+#   the tether tie-off lug + its lashing hole (`Genus: 4`, confirmed on a
+#   thin X-slice through the lug: the hole is a clean opening straight
+#   through the lug's material, a genuine 4th handle -- the pin holes and
+#   tube bore are unaffected, different azimuth, no shared geometry).
+#   1 (tube) + 2 (pin holes) + 1 (lug lashing hole) = 4.
+GENUS[3] = 4
+
+#   part 5: e-bay aft bulkhead. Started at 1 (disc + harness-analogue
+#   bore), grew through the upright-servo redesign; RE-CONFIRMED at 4
+#   after adding the aft skirt + 2 shear pin holes (rendered `Genus: 4`; a
+#   sliced side-profile diagnostic confirms the 2 new pin holes are blind
+#   -- add zero handles). This render also CAUGHT a real defect first:
+#   the first skirt draft left servo 2's horn slot dead-ending under the
+#   new solid skirt material (observed genus 3, not 4) -- fixed by
+#   extending the horn slot cut through the skirt to the new aft face,
+#   same treatment the shaft bore already had; re-rendering then gave 4
+#   back. Servo 1's pocket+shaft (1) + servo 2's pocket+horn, reaching the
+#   aft face (1) + 2 cord holes, also extended through the skirt (2) = 4.
+GENUS[5] = 4
+
+#   part 7: curved door cover. 4 bolt holes = 4. Unchanged across the
+#   defect 1a azimuth fix -- that fix repositions each hole's AXIS, not
+#   its count or through/blind nature; re-rendered, still `Genus: 4`.
+GENUS[7] = 4
+
+#   part 8: spring carrier. First rendered without the forward counterbore
+#   or shock-cord channels (Genus: 1, a single spring-bore passage with
+#   blind ball pockets). Adding the counterbore + 2 cord channels (Task 7
+#   fix) changed this to Genus: 3, RE-DERIVED rather than assumed: a
+#   horizontal slice through the diaphragm (z~21.5) shows 3 SEPARATE round
+#   breaches through it -- the Ø8 driveshaft hole and the 2 Ø5 cord holes
+#   -- each independently connecting "forward of diaphragm" to "aft of
+#   diaphragm": 1 (main bore/driveshaft passage) + 2 (cord passages) = 3.
+#   A second slice confirms the 3 ball pockets stay enclosed/blind and
+#   clear of the 2 cord grooves -- this render also CAUGHT a
+#   rotation-math defect first: a first draft placed a ball pocket
+#   azimuth 90deg off (forgot the pocket's own pre-rotation offset),
+#   landing it inside the cord-groove sector (still genus 3 -- the defect
+#   was in ball placement, not count); fixed by correcting the rotate
+#   angle. RE-CONFIRMED this round after the notch-width fix (2c,
+#   Rocket60.scad's R60_SpringCarrier()): the notch is wider (8->9.2mm)
+#   but still a single blind-from-the-side cut through the OD-to-CB_D rim
+#   annulus, no new through-passage; rendered, still `Genus: 3`.
+GENUS[8] = 3
+
+#   part 9: fin can. Rendered 4 (1 MMT bore + 3 fin slots) after the
+#   retainer bolt bosses were added (confirmed blind via top/bottom/
+#   isometric renders: bosses visible on the aft face only, not the
+#   forward face). RE-DERIVED (defect 1j fix) after 2 shock-cord anchor
+#   holes were added through the forward centring ring: rendered
+#   `Genus: 6`, confirmed each cord hole is a genuine through-hole
+#   (isolated on a Z-band probe at the forward ring, distinct circular
+#   edge loops at r~20..25mm, clear of the MMT bore and all 3 fin slots).
 GENUS[9] = 6
+
+#   part 11: retainer. 1 (centre bore) + 3 (through bolt clearance holes,
+#   confirmed genuine through-openings on BOTH top and bottom faces, not
+#   part 9's blind boss pattern) = 4.
+GENUS[11] = 4
+
+#   part 12: spacer tube = 1 (unchanged, not touched by this round).
+GENUS[12] = 1
+
+#   part 13: tether latch. FIRST rendered (pre-fix, +-11mm hole spacing)
+#   at Genus: 2 -- lower than the naive per-feature sum (2 mount holes + 2
+#   post-tunnels = 4) because that hole placement shared boundary geometry
+#   with the posts, collapsing two handles into one (five isolated
+#   variants reproduced this consistently -- not a rendering fluke).
+#   RE-DERIVED (defect 1b/1h fix) after the mounting holes moved to
+#   +-R60_TetherLatch_HoleX (16mm, clear of the horn-slot void) and
+#   Base_L widened to fit: rendered `Genus: 4`, now matching the naive
+#   per-feature sum, confirmed on the same base-slice/front-on-post
+#   diagnostics (both mount holes still clean through-holes, pin bore
+#   still a genuine tunnel through each post) -- with the mount holes well
+#   clear of the posts (+-16 vs. posts at +-9) they no longer share a
+#   boundary that collapses two handles into one. RE-CONFIRMED this round
+#   after the Base_L/wall-margin fix (2b): base grew again (36->38.6mm)
+#   but the hole/post topology is unchanged; rendered, still `Genus: 4`.
+GENUS[13] = 4
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -270,6 +237,43 @@ STOPTAB_BAND = (79.99, 80.5)   # straddles the tabs' own base edge loop (z=80)
 
 R60_TETHER_Y = 13.6   # = R60_Tether_Y (R60Lib.scad)
 
+# --- this round's fixes (PR #23, 2nd review) --------------------------
+
+# Door screw axis vs. tube boss axis -- defect 1a (2nd review). Both are
+# restated as literals per this file's rule 4 convention, matching
+# R60Lib.scad's R60_Body_OD/R60_Door_Open_W/R60_Door_Hole_Clear and
+# R60_EBayTube()/R60_Door()'s own Door_Z0/Door_Overlap/T.
+DOOR_HOLE_X_AXIS = 21.0     # R60_Door_Open_W/2 + R60_Door_Hole_Clear
+BODY_R           = 30.0     # R60_Body_OD/2 -- tube's true OD, and the
+                              # radius the door boss's flush face sits at
+DOOR_COVER_T     = 2.0      # R60_Door()'s own cover shell thickness
+COVER_OUTER_R    = BODY_R + DOOR_COVER_T   # cover's own outer face
+# R60_Door()'s own z=0 (cover base) lands at tube-frame z = Door_Z0 -
+# R60_Door_Overlap = 37.5 - 6 = 31.5 once assembled; DOOR_HOLE_Z_TUBE is
+# R60_EBayTube()'s own Door_Hole_Z, in the TUBE's frame.
+DOOR_Z_OFFSET     = 31.5
+DOOR_HOLE_Z_TUBE  = (34.5, 125.5)
+
+# Vega sled retention rails -- defect 1b (2nd review). Rail_Inner_R is the
+# rails' own exposed, functional radius (see R60_EBayTube()'s Rail_Inner_R
+# comment) -- NOT the tube ID, which is what the pre-fix formula used.
+RAIL_INNER_R = 24.0    # R60_Body_ID/2 - R60_Vega_RailH (28.4 - 4.4)
+RAIL_Z_CAP   = 5.0     # Rail_Margin -- the rail's own start-cap Z, where
+                         # its cross-section (and so its facing corners)
+                         # are exposed as an edge loop
+
+# Door boss OD stations -- defect 2a. TUBE_BAND only reads the tube's
+# plain base face (z~0); the door bosses sit at DOOR_HOLE_Z_TUBE, which
+# TUBE_BAND never touches, so a boss protruding past the true OD there
+# was invisible to every existing OD check.
+BOSS_OD_BAND_HALF = 0.05
+
+# Arming switch Z window -- defect 2d. SW_Z_EXPECT is R60_EBayTube()'s own
+# (Sw_Z0+Sw_Z1)/2 = (131.5+132.0)/2, restated as a literal so the check
+# reads the window's actual measured centre, not the formula that
+# produced it.
+SW_Z_EXPECT = 131.75
+
 
 def pin_hole_diameter(stl, x_side, z_center, r_expected, half_window=3.0):
     """Diameter of a small radial shear-pin hole, read from the STL's own
@@ -355,6 +359,55 @@ def hole_max_reach(stl, cx, cy, z_at, search_r, zwin=0.5):
     return max(ds)
 
 
+def hole_azimuth_at_r(stl, cx, cy, z_at, r_target, search_r=4.0, zwin=2.0,
+                       r_win=0.15):
+    """Mean azimuth (deg, atan2(y,x)) of vertices near (cx, cy) at Z-plane
+    z_at whose own distance from the Z axis is within r_win of r_target --
+    isolates a hole's edge loop specifically where it breaches a given
+    cylindrical face (a boss's flush face, a cover's outer surface),
+    rather than averaging in vertices from a different radius entirely.
+    Used to confirm two mating parts' screw axes are genuinely on the same
+    radial line (defect 1a): a hole bored along a flat axis instead of the
+    wall's true local radial direction reads a materially different
+    azimuth from its mating part's hole at the SAME nominal (x, z), even
+    though both were built from the identical Hole_X."""
+    azs = [math.degrees(math.atan2(y, x)) for tri in _tris(stl)
+           for (x, y, z) in tri
+           if abs(z - z_at) <= zwin and math.hypot(x - cx, y - cy) <= search_r
+           and abs(math.hypot(x, y) - r_target) <= r_win]
+    if not azs:
+        raise RuntimeError(
+            "no geometry near (%.2f,%.2f) r=%.1f z=%.1f of %s"
+            % (cx, cy, r_target, z_at, stl))
+    return sum(azs) / len(azs)
+
+
+def rail_facing_gap(stl, r_inner, z_at, r_win=0.3, zwin=0.1):
+    """Measured tangential gap between the Vega-sled retention rails'
+    FACING (toward each other) corners, and that corner's own Y depth,
+    read from the rails' own rendered geometry at their innermost exposed
+    radius (r_inner) -- not computed from the angle that was supposed to
+    produce it (defect 1b). Each rail's cross-section at r_inner has two
+    corners, offset +-RailW/2 tangentially from its own centreline; for
+    both rails sitting in the -Y hemisphere the corner facing the OTHER
+    rail (the one that actually bounds the capture gap) is always the one
+    with the more negative y -- true for both a too-narrow (pre-fix) and a
+    properly-spread rail, confirmed against the rendered mesh of each."""
+    xs_pos, xs_neg = [], []
+    for tri in _tris(stl):
+        for (x, y, z) in tri:
+            if (y < 0 and abs(z - z_at) <= zwin
+                    and abs(math.hypot(x, y) - r_inner) <= r_win):
+                (xs_pos if x > 0 else xs_neg).append((x, y))
+    if not xs_pos or not xs_neg:
+        raise RuntimeError(
+            "rail corners not found near r=%.2f z=%.2f of %s"
+            % (r_inner, z_at, stl))
+    facing_pos = min(xs_pos, key=lambda p: p[1])   # most negative y = facing
+    facing_neg = min(xs_neg, key=lambda p: p[1])
+    return facing_pos[0] - facing_neg[0], facing_pos[1]
+
+
 def checks(m):
     """Return list of (label, actual, expected, tolerance)."""
     c = []
@@ -393,26 +446,71 @@ def checks(m):
                 c += [("part %d bore clears neck skirt" % p,
                        tube_id - skirt_od, 0.4, 0.15)]
 
+    if 2 in m:
+        # Door boss OD stations -- defect 2a. TUBE_BAND (z~0) never sees
+        # the door bosses, which sit at DOOR_HOLE_Z_TUBE -- a boss
+        # protruding past the true OD there (measured dmax 60.40 vs the
+        # tube's own 60.00, pre-fix) was invisible to the plain "part 2 OD"
+        # check above. Measured at each boss Z station directly.
+        for z_boss in DOOR_HOLE_Z_TUBE:
+            _, boss_od = bore(a(2, "stl"), z_boss - BOSS_OD_BAND_HALF,
+                               z_boss + BOSS_OD_BAND_HALF)
+            c += [("part 2 OD at door boss station (z=%.1f)" % z_boss,
+                   boss_od, 60.0, 0.1)]
+
+        # Arming switch Z -- defect 2d: nothing measured this before.
+        # R60_EBayTube()'s own assert (added this round) is the load-
+        # bearing guard against Sw_Z0/Sw_Z1 inverting outright; this reads
+        # the switch hole's own Z-span directly off its rendered edge loop
+        # (a Ø12 hole cut straight through the +Y wall, so its boundary is
+        # an ellipse-ish curve spanning roughly Sw_Z+-Sw_d/2 in Z) and
+        # checks the MEASURED centre against the stated literal window,
+        # catching silent drift even where the render still succeeds. The
+        # z pre-filter (123..159) excludes the tube's own end caps
+        # (z=0/160) and the door aperture's edge loop (z=122.5), which
+        # would otherwise contaminate a naive "nearest to the +Y wall"
+        # search -- confirmed empirically before use here.
+        sw_zs = [z for tri in _tris(a(2, "stl")) for (x, y, z) in tri
+                 if abs(x) < 6.0 and y > 29.0 and 123.0 < z < 159.0]
+        if sw_zs:
+            sw_center = (min(sw_zs) + max(sw_zs)) / 2.0
+            c += [("arming switch hole Z centre", sw_center, SW_Z_EXPECT, 0.3)]
+
     if 6 in m:
         c += [("sled length", a(6, "ymax") - a(6, "ymin"), 112.0, 0.2),
               ("sled width", a(6, "xmax") - a(6, "xmin"), 44.0, 0.2)]
-        # The board must physically fit the tube bore lying on the sled.
-        # FIXED (defect 1g): the sled sits as a flat CHORD against the
-        # tube's round ID (both long edges touch it, captured by
-        # R60_EBayTube()'s retention rails -- see that module's comment),
-        # not centred through the axis, so the naive "subtract from the
-        # full bore diameter" comparison used before ignored how far off
-        # axis that chord actually sits. Available depth is measured from
-        # the chord line (tube_r - chord_dist BELOW the axis, so tube_r +
-        # chord_dist across to the far wall) rather than the raw diameter.
+
         if 2 in m:
+            # Rails actually capture the sled -- defect 1b (2nd review),
+            # checked mesh against mesh: the gap MEASURED between the two
+            # rails' own facing corners (rail_facing_gap(), on part 2's
+            # rendered geometry) must be at least as wide as the sled's
+            # own MEASURED width (part 6), not merely both existing.
+            # Nothing covered the rails themselves before this check --
+            # the pre-fix rails measured a 35.65mm gap against a 44.0mm
+            # sled and passed every existing check, because none of them
+            # looked at the rails at all.
+            gap, facing_y = rail_facing_gap(a(2, "stl"), RAIL_INNER_R, RAIL_Z_CAP)
+            sled_w = a(6, "xmax") - a(6, "xmin")
+            c += [("vega rails capture gap vs measured sled width",
+                   gap - sled_w, 0.4, 0.3)]
+
+            # The board must physically fit the tube bore lying on the
+            # sled. FIXED (defect 1g, prior round): the sled sits as a
+            # flat plate against the rails, not centred through the axis.
+            # FIXED AGAIN (defect 1b corollary, this round): the prior
+            # formula (chord_dist = sqrt(tube_r**2-(sled_w/2)**2) = 17.96)
+            # assumed the sled's edges rest against the tube ID itself --
+            # they do not, they rest against the RAILS, which (once
+            # correctly captured) sit at facing_y (~9.24mm from the axis,
+            # not 17.96mm), overstating available depth by ~8.7mm. Uses
+            # the SAME measured facing_y from the rail-capture check
+            # above rather than a second, independently-derived formula.
             tube_id, _ = bore(a(2, "stl"), *TUBE_BAND)
             tube_r = tube_id / 2.0
-            sled_w = a(6, "xmax") - a(6, "xmin")
-            chord_dist = math.sqrt(max(0.0, tube_r ** 2 - (sled_w / 2.0) ** 2))
-            avail = tube_r + chord_dist
+            avail = tube_r + abs(facing_y)
             stack = a(6, "height") + 21.0    # sled + Vega envelope
-            c += [("sled + Vega clears e-bay bore (chord-corrected)",
+            c += [("sled + Vega clears e-bay bore (rail-corrected)",
                    avail - stack, 15.0, 10.0)]
 
     if 7 in m:
@@ -436,6 +534,32 @@ def checks(m):
                    door_h - DOOR_OPEN_H, 2 * DOOR_OVERLAP, 0.3),
                   ("door cover overlaps aperture width",
                    door_w - DOOR_OPEN_W, 2 * DOOR_OVERLAP, 0.3)]
+
+            # Screw axis actually passes through both parts -- defect 1a
+            # (2nd review). A screw hole bored along the wall's true local
+            # radial direction has the SAME azimuth at every radius; the
+            # pre-fix R60_Door() bored along flat global Y instead, which
+            # only agreed with the tube boss's azimuth at r=R60_Body_OD/2
+            # and diverged further out (measured ~1.6deg/1.3mm of solid
+            # cover material in the way at the cover's own outer face).
+            # Checked mesh against mesh: the tube boss's own flush-face
+            # azimuth (part 2) vs. the door cover's own outer-face azimuth
+            # (part 7), both read directly off their rendered geometry, not
+            # from the parameter that was supposed to align them.
+            for x_side in (1, -1):
+                tx = x_side * DOOR_HOLE_X_AXIS
+                ty = math.sqrt(BODY_R ** 2 - tx ** 2)
+                target_az = math.degrees(math.atan2(ty, tx))
+                for z_tube in DOOR_HOLE_Z_TUBE:
+                    tube_az = hole_azimuth_at_r(a(2, "stl"), tx, ty, z_tube,
+                                                 BODY_R)
+                    door_az = hole_azimuth_at_r(a(7, "stl"), tx, ty,
+                                                 z_tube - DOOR_Z_OFFSET,
+                                                 COVER_OUTER_R)
+                    c += [("tube boss axis azimuth (x=%+.0f z=%.1f)"
+                           % (tx, z_tube), tube_az, target_az, 1.0),
+                          ("door hole axis azimuth (x=%+.0f z=%.1f)"
+                           % (tx, z_tube), door_az, target_az, 1.0)]
 
     # Part 5's height grew from a plain 12mm disc to 12 + a 15mm aft skirt
     # (SKIRT_T + 15 = 27) that carries the shear pins into the real joint --
@@ -497,9 +621,18 @@ def checks(m):
         insert_x = 16.0
         insert_r = 2.0
         total_h = 27.0
+        # search_r (defect 3e): the horn slot's nearest corner to the
+        # insert hole centre is R60_Horn_L/2=12 in X and Horn_W/2=4.5 in Y
+        # from (R60_TetherLatch_HoleX, R60_Tether_Y) = (16, 13.6), i.e.
+        # hypot(4, 4.5) = 6.02mm away -- search_r=6.0 left only 0.02mm of
+        # margin before the search circle would itself reach into the
+        # horn slot's own void and read a false-positive large "reach"
+        # (one stray tessellation vertex from a spurious FAIL, not a real
+        # defect). Widened to 5.0 (~1mm of real margin), still comfortably
+        # bigger than the insert hole's own Ø4 (radius 2.0) edge loop.
         for x_side in (1, -1):
             reach = hole_max_reach(a(5, "stl"), x_side * insert_x,
-                                    R60_TETHER_Y, total_h, search_r=6.0)
+                                    R60_TETHER_Y, total_h, search_r=5.0)
             c += [("tether insert hole fully surrounded (x=%+d side)"
                    % x_side, reach, insert_r, 0.3)]
 
@@ -528,10 +661,14 @@ def checks(m):
 
     if 9 in m:
         mmt_id, can_od = bore(a(9, "stl"), *FINCAN_BAND)
+        # (defect 3e: "fin can fits 250mm Z" used to be emitted here too,
+        # hardcoded to 250.0 -- a duplicate of the generic "part %d fits
+        # %.0fmm Z" loop below, which already covers every part
+        # (including 9) off the single MAX_Z constant. Removed rather than
+        # kept in sync twice.)
         c += [("fin can length", a(9, "height"), 228.0, 0.2),
               ("fin can OD", can_od, 60.0, 0.1),
-              ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15),
-              ("fin can fits 250mm Z", a(9, "height"), min(a(9, "height"), 250.0), 0.01)]
+              ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15)]
     if 10 in m:
         c += [("fin root chord", a(10, "xmax") - a(10, "xmin"), 90.0, 0.2),
               ("fin thickness", a(10, "zmax") - a(10, "zmin"), 4.0, 0.1)]
@@ -581,9 +718,26 @@ def checks(m):
         # new +-R60_TetherLatch_HoleX spacing (was 26mm/+-11mm, landing the
         # inserts in the horn slot's void); hole diameter is checked
         # against part 5's insert holes below, not restated here.
-        c += [("latch base length", a(13, "xmax") - a(13, "xmin"), 36.0, 0.2),
+        # FIXED AGAIN (defect 2b): base length grew again, from
+        # 2*(R60_TetherLatch_HoleX+2) [a hole-CENTRE-to-edge margin] to
+        # 2*(R60_TetherLatch_HoleX + Mount_Hole_d/2 + Mount_Wall_Min) [a
+        # real edge-of-hole-to-edge-of-part wall] -- 16+1.7+1.6=19.3 each
+        # side, 38.6 total; restated here as a literal per this file's
+        # convention, matching R60_TetherLatch()'s own derivation.
+        c += [("latch base length", a(13, "xmax") - a(13, "xmin"), 38.6, 0.2),
               ("latch height", a(13, "height"), 16.0, 0.2),
               ("latch zmin", a(13, "zmin"), 0.0, 0.05)]
+        # Wall beyond the mounting hole's own edge (defect 2b): must clear
+        # a stated print-safe minimum, not just a hole-centre margin.
+        # Measured directly off the rendered mesh at the hole's own Z band
+        # (the base is a plain slab 0..Base_T, so a low band reads its
+        # full X extent) rather than re-deriving the same arithmetic the
+        # SCAD file already got wrong once.
+        base_xmax = a(13, "xmax")
+        insert_x_latch = 16.0    # R60_TetherLatch_HoleX
+        mount_hole_r = 1.7       # Mount_Hole_d/2
+        c += [("latch wall beyond mounting hole edge",
+               base_xmax - (insert_x_latch + mount_hole_r), 1.6, 0.2)]
 
     # Build volume, every part.
     for p in m:
