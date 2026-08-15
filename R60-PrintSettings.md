@@ -62,6 +62,17 @@ ring through the spring centering ring mount, part 25) plus the fixed
   **unchanged by this task** (nine prior review rounds hardened them;
   this transplant does not touch them).
 
+**Open finding, owner decision needed before you print the cage.**
+`tools/verify_rocket60_assembly.py` and `tools/rocket60_model.py` both
+exit 1 right now, and by design: fixing the hub's orientation (above)
+also fixed its length, and the corrected petal cage needs 12.2mm more
+axial room than `03_DeploymentBayTube.stl` currently gives it (257.7mm
+needed vs 240mm built) — see §9 "Known gaps" for the numbers and the
+same decision's tie to the packing-volume shortfall below. Until
+`R60_Chute_L` (or the cage) changes, **do not print
+`03_DeploymentBayTube.stl` or the petal cage (parts 8/13/24)** —
+everything else in this document is unaffected and safe to print now.
+
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor. The
 petal-deployment transplant grew the deployment bay (180→240mm) and
 moved the fin can (and CP) 60mm further aft; re-run, the G80T's static

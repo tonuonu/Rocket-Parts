@@ -10,7 +10,17 @@ after export and checked against the geometry that part is supposed to
 have.
 
 Verify with `python3 tools/verify_rocket60.py`, the assembly harness
-(`verify_rocket60_assembly.py`, 23 pairs), and `verify_docs_sync.py`.
+(`verify_rocket60_assembly.py`, 28 pairs incl. the deployment-bay closure
+check), and `verify_docs_sync.py`. **The assembly harness and
+`tools/rocket60_model.py` currently exit 1 by design**: both report the
+same honest, already-documented finding that the corrected (right-way-
+round) petal cage is 12.2 mm longer than the deployment bay tube fits --
+see "Known gaps" in `R60-PrintSettings.md` and spec sec 4.1. That is an
+owner decision (lengthen `03_DeploymentBayTube.stl` / `R60_Chute_L`, or
+shrink the cage), not a broken build; do not print `03_DeploymentBayTube.stl`
+or the petal cage (parts 8/13/24) until it's made, since it is a one-line
+constant on either side of the same decision the packing-volume options
+below also turn on.
 
 ## Print part 0 first, and stop there
 
