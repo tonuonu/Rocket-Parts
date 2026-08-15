@@ -61,6 +61,7 @@ use<SpringEndsLib.scad>
 //      directly -- not bolted to part 8, see its own module comment)
 // 24 = Petal spring holder (print 3x -- the hinge: bolts to each petal,
 //      axle rides in part 8's pivot socket, spring-preloaded open)
+// 25 = Spring centering ring mount (seats the CS4323, bolts to part 16)
 Render_Part = 0;
 
 // 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
@@ -1235,20 +1236,15 @@ module R60_ReleaseLockingPin(){
                      GuidePoint=false);
 } // R60_ReleaseLockingPin
 
-// NOTE: CableReleaseBBMicro.scad's own CRBBm_CenteringRingMount() is
-// NOT instantiated here -- rendered and inspected this session, its
-// internal Spring_OD/Spring_ID are hardcoded to SE_Spring3670_OD()/_ID()
-// (a DIFFERENT, smaller spring than our CS4323) and are not exposed as
-// module parameters at all, unlike CableReleaseBBMini.scad's own version
-// (which Rocket6551.scad calls with Spring_OD=SE_Spring_CS4323_OD()) --
-// this is scaffolding left over for whichever design last used
-// CableReleaseBBMicro.scad, not a part that fits our spring. Printing it
-// as-is would ship a spring pocket sized for the wrong hardware. Dropped
-// rather than forced: the CS4323 (OD 44.30) has ~4.5mm of radial slack
-// inside the deployment bay tube's own ~53.2mm bore regardless (self-
-// centering enough for a straight-line compression spring); a dedicated
-// centering ring is a real should-fix, not a blocking one -- flagged in
-// R60-PrintSettings.md's known-gaps section, not silently dropped.
+// R60_CenteringRingMount() (part 25, below the release hardware block
+// per the parts-list numbering) now gives the CS4323 the real seat this
+// used to punt on -- see that module's own comment for the fix and the
+// mesh-measured evidence (R60_ReleaseActivator()'s own module comment)
+// it answers. "~4.5mm of self-centering radial slack" was never a
+// substitute for a seat: it says the spring will not wander sideways, it
+// says nothing about what its own axial preload rests on, which was the
+// real defect (the activator's 1.2mm spokes/servo braces, pad to
+// apogee).
 
 // Forward spring end (part 23). The moving piston: captive on the
 // locking pin (part 22) until the servo releases it, then driven forward
@@ -1327,6 +1323,62 @@ module R60_PSH_Placed(j=0){
             R60_PetalSpringHolder();
 } // R60_PSH_Placed
 
+// Spring centering ring mount (part 25). Fix 4: gives the CS4323 a real
+// seat -- mesh-measured this session, the release stack's own rotating
+// parts (lock ring r=17.5, trigger post/magnet bracket r~=19.1) sit well
+// inside the spring's own r=20.25 bore, so with NOTHING seating it the
+// spring's full preload rested on the activator's own 1.2mm spokes/servo
+// braces from pad to apogee, a coil running ~1.1mm from the rotating
+// trigger post -- see R60_ReleaseActivator()'s own module comment for the
+// mesh-measured evidence this fix answers.
+//
+// CableReleaseBBMicro.scad's own CRBBm_CenteringRingMount() used to
+// hardcode a different, smaller spring (SE_Spring3670) with no override
+// -- fixed there (this task, additive-only: Spring_OD/Spring_ID are now
+// real parameters, mirroring CableReleaseBBMini.scad's own signature,
+// which Rocket6551.scad calls with Spring_OD=SE_Spring_CS4323_OD()) so
+// it can be instantiated here for the CS4323 instead of forced or
+// dropped.
+//
+// Verified mesh-against-mesh, not asserted: the spring cavity's own
+// inner wall (z=4..6 band, this part's rendered mesh) measures
+// Ø44.29 -- SE_Spring_CS4323_OD()=44.30 -- so the spring seats on this
+// part's own step, not float. Below the spring (z=0..3.4 band) the ONLY
+// opening is the Ø30 lock-pin guide -- everything else is this part's
+// own solid disc, the fence that keeps the spring's coils out of the
+// rotating lock-ring/trigger-post/magnet-bracket's own r<=19.1
+// envelope below it.
+//
+// Bolts to CRBBm_TopRetainer() (part 16) via its own
+// CRBBm_MountingBoltPattern -- same joint class as parts 16/17/19/20/23
+// (R60_ReleaseTopRetainer() etc.'s own module comments), so it gets the
+// same end-for-end rotate([180,0,0]) for its own standalone/print
+// rendering here. Where it sits RELATIVE to the rest of the release
+// stack (mirroring the donor's own ShowCableRelease() offset,
+// translate([0,0,TopRetainerFlange_t+8.7]) off the SCR stack's own
+// reference face, restated at this design's own TopRetainerFlange_t=4 --
+// R60_ReleaseTopRetainer()'s own Flange_t=4 argument -- giving 12.7mm) is
+// tools/r60_assembly.scad's own job, same convention as every other
+// assembly-relative offset in this file (Pair 33's own translate(46), not
+// baked into R60_ReleaseActivator() itself).
+module R60_CenteringRingMount(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
+    // nRopes=6, not 0: CRBBm_CenteringRingMount()'s own "Spokes" loop
+    // (the ONLY structural connection between the outer body-centering
+    // ring and the inner spring-seat/lock-pin-guide hub) shares this
+    // SAME loop variable with the "Ropes" cut -- nRopes=0 does not just
+    // drop the (here, unneeded) retention-cord holes, it deletes the
+    // spokes too, silently splitting this part into 3 disconnected
+    // pieces (confirmed: tools/verify_rocket60.py's own connected-
+    // components check, `components()`==3 at nRopes=0, ==1 at nRopes=6).
+    // The resulting rope holes are unused but harmless -- this repo's
+    // own shock cord routes bulkhead -> piston -> hub (R60_Petals()'s
+    // module comment), not through this mount.
+    rotate([180,0,0])
+        CRBBm_CenteringRingMount(OD=R60_Coupler_OD, nRopes=6,
+            Spring_OD=R60_Spring_OD, Spring_ID=R60_Spring_ID);
+} // R60_CenteringRingMount
+
 // ============================================
 // DISPATCH
 // ============================================
@@ -1355,3 +1407,4 @@ if (Render_Part==21) R60_ReleaseExtensionRod();
 if (Render_Part==22) R60_ReleaseLockingPin();
 if (Render_Part==23) R60_FwdSpringEnd();
 if (Render_Part==24) R60_PetalSpringHolder();
+if (Render_Part==25) R60_CenteringRingMount();

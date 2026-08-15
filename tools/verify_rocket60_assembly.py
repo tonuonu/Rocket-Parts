@@ -141,6 +141,7 @@ PAIRS = {
     35: "petal hub vs petals (upside-down-hub fix)",
     36: "petal spring holder (hinge) vs petal hub",
     37: "petal spring holder vs petals (bolted face)",
+    38: "spring centering ring mount vs release top retainer",
 }
 STROKE_PAIRS = (5,)
 # Insertion stroke sweep -- 0 (first contact) through 15 (fully seated,

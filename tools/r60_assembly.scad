@@ -385,6 +385,20 @@ module Pair36_B(){ R60_PetalHub(); }
 module Pair37_A(){ translate([0,0,9.5]) R60_Petals(); }
 module Pair37_B(){ R60_PSH_Placed(0); }
 
+// Pair 38: spring centering ring mount (part 25) <-> release top
+// retainer (part 16) -- 11th review, fix 4 (CS4323 seat,
+// tasks/lessons.md). The mount bolts to the retainer via
+// CRBBm_MountingBoltPattern (both parts' own shared donor joint,
+// CableReleaseBBMicro.scad); offset -12.7 restates the donor's own
+// relative placement for this joint (Rocket6551.scad ShowCableRelease():
+// translate([0,0,TopRetainerFlange_t+8.7]) off the SCR stack's own
+// z=0 reference, at this design's own TopRetainerFlange_t=4 -> 12.7mm)
+// -- sign found by direct render (the OTHER sign gives a real 0.1435cm3
+// collision at the bolt-boss region; this one renders empty and leaves
+// the two parts ~1.2mm apart, consistent with a bolted-not-flush joint).
+module Pair38_A(){ translate([0,0,-12.7]) R60_CenteringRingMount(); }
+module Pair38_B(){ R60_ReleaseTopRetainer(); }
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
@@ -982,7 +996,7 @@ module Pair32_B(){ R60_VegaSled(); }
 // transplant, see tasks/lessons.md) -- removed from this list too, not
 // just their own `if` dispatch line below, per this comment's own rule.
 KNOWN_PAIRS = [0,1,2,3,4,5,7,8,10,11,21,22,23,24,
-               25,26,27,28,29,30,32,33,34,35,36,37];
+               25,26,27,28,29,30,32,33,34,35,36,37,38];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -1014,3 +1028,4 @@ if (Pair==34) intersection(){ Pair34_A(); Pair34_B(); }
 if (Pair==35) intersection(){ Pair35_A(); Pair35_B(); }
 if (Pair==36) intersection(){ Pair36_A(); Pair36_B(); }
 if (Pair==37) intersection(){ Pair37_A(); Pair37_B(); }
+if (Pair==38) intersection(){ Pair38_A(); Pair38_B(); }

@@ -19,7 +19,8 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "deployment bay tube",
          17: "release lock ring", 18: "release outer bearing retainer",
          19: "release trigger post", 20: "release magnet bracket",
          21: "release extension rod", 22: "release locking pin",
-         23: "forward spring end", 24: "petal spring holder"}
+         23: "forward spring end", 24: "petal spring holder",
+         25: "spring centering ring mount"}
 
 # Door aperture (R60_EBayTube()) / cover (R60_Door()) -- defect 1d fix.
 # R60_Door() used to be a flush plug 2*DOOR_GAP smaller than the aperture
@@ -222,6 +223,21 @@ GENUS[23] = 7    # forward spring end
 #   measured off the rendered mesh, same treatment as parts 8/13/15-23
 #   above. Rendered `Genus: 3`.
 GENUS[24] = 3    # petal spring holder
+
+#   part 25: spring centering ring mount (11th review, fix 4 -- gives the
+#   CS4323 a real seat, see R60_CenteringRingMount()'s own module
+#   comment). `use<>`-instantiated from CableReleaseBBMicro.scad's own
+#   CRBBm_CenteringRingMount(), parameterised for the CS4323 -- library
+#   geometry, measured off the rendered mesh, same treatment as every
+#   other use<>'d part above. RE-DERIVED (same session): nRopes=0 first
+#   read Genus 4 but `components()`==3 -- nRopes also controls this
+#   part's own structural spokes, not just the (unneeded) rope holes,
+#   and 0 deleted both, splitting the part into 3 disconnected pieces
+#   (caught by this file's own connected-components check). nRopes=6
+#   restores the spokes (rope holes unused but harmless -- see
+#   R60_CenteringRingMount()'s own module comment); re-rendered,
+#   `Genus: 22`, `components()`==1.
+GENUS[25] = 22   # spring centering ring mount
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 

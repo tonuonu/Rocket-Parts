@@ -1220,10 +1220,21 @@ module CRBBm_ServoMount38(OD=ULine38Body_ID-IDXtra){
 // translate([0,0,22]) ShowCableReleaseBBMicro();
 
 
-module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
+// Spring_OD/Spring_ID (11th review, Rocket 60 fix 4): added as real
+// parameters, mirroring CableReleaseBBMini.scad's own
+// CRBBm_CenteringRingMount() signature (which Rocket6551.scad calls with
+// Spring_OD=SE_Spring_CS4323_OD()) -- THIS file's copy used to hardcode
+// SE_Spring3670_OD()/_ID() with no way to override them at all (confirmed
+// this session: rendered and inspected, the spring pocket was sized for
+// a different, smaller spring than any caller in this repo that actually
+// wants BBMicro's own family). Defaults are unchanged (still
+// SE_Spring3670_*()) so this is additive-only -- no existing caller
+// (there are none in this repo yet) sees a behaviour change.
+module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6,
+			Spring_OD=SE_Spring3670_OD(), Spring_ID=SE_Spring3670_ID()){
 	Rope_d=3;
-	
-	
+
+
 	Spring_Z=3.5;
 	Thickness=6;
 	Wall_t=1.2;
@@ -1231,8 +1242,6 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
 	myFn=floor(OD)*3;
 	CRBBm_Bolt_a=-12+30;
 	Rope_Y=OD/2-Rope_d/2-Wall_t-0.5;
-	Spring_OD=SE_Spring3670_OD();
-	Spring_ID=SE_Spring3670_ID();
 	Boss_t=2;
 	
 	difference(){
