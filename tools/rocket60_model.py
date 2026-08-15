@@ -677,9 +677,18 @@ def build(motor):
      # AFTER R60Lib.scad's own R60_RailButton_Fwd_Z/_Aft_Z were defined --
      # this comment used to claim "position is not modelled" when it now
      # is. Lumped station is the mean of the two real button stations
-     # (R60Lib.scad, restated per rule 4: Fwd_Z=242, Aft_Z=630) -- 436,
-     # 248mm forward of the stale TOTAL-60 guess.
-     ('rail buttons x2',       4.0,                      (242.0+630.0)/2),
+     # (R60Lib.scad, restated per rule 4: Fwd_Z=242, Aft_Z=665). Aft_Z
+     # RE-restated (coordinator fix, this session): the aft button
+     # rebased from a stale 630 (typed against an old S_FIN=516) to a
+     # derived 665 (the real mid-ring position at the current S_FIN=551)
+     # -- this literal is the one place that stale number could have kept
+     # living on even after R60Lib.scad's own constant was fixed, since
+     # Python restatements do not read the .scad source automatically.
+     # Station moves 436->453.5; CG effect is 4g*17.5mm/~941g total =
+     # ~0.07mm, unmeasurable at this model's own 0.1mm reporting
+     # precision (confirmed: rocket60_model.py's own printed CG figures
+     # are identical before/after this specific fix).
+     ('rail buttons x2',       4.0,                      (242.0+665.0)/2),
      ('motor spacer (PC)',     spacer_g,                 TOTAL-mlen-spacer_len/2),
      # Forward thrust ring (part 14) -- new this round (defect 3). Flush
      # with the fin can's own forward tip -- S_FIN+THRUST_RING_T/2, NOT

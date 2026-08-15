@@ -31,10 +31,12 @@ matching holes) — 0 screws, not 3. **§1 and §3 below are counted from the co
 either header — order from this table, not from opening the `.scad` files and reading
 their own comments.**
 
-**Update (2026-08-15, coordinator-authorised fixes):** three items previously reported
-here as defects, not fixed, are now fixed in geometry (§1's part-25 screw length, §4's
-forward rail-button boss, and §9's spring-seat clearance) — see each section for the
-mutation-tested proof. The aft rail button remains an open item — see §4.
+**Update (2026-08-15, coordinator-authorised fixes, two rounds):** every item
+previously reported here as a defect, not fixed, is now fixed in geometry — §1's
+part-25 screw length, §4's forward AND aft rail-button bosses (the aft one rebased
+from a stale 630mm station onto its real, now-derived 665mm position, ring-backed),
+and §9's spring-seat clearance. See each section for the mutation-tested proof; §4
+also covers the confirmed-unchanged rail-exit consequence of the aft station move.
 
 ---
 
@@ -147,44 +149,49 @@ remainder may be inside the hub's own mating boss, not traced here).
 | M3 clearance (Ø3.4) + ruthex RX-M3×5.7 insert | 6mm retainer plate + up to 5mm engagement (of a 6.7mm insert) ⇒ **M3×12** recommended (11mm minimum) | 3 + 3 | Motor retainer (part 11) → fin can (part 9) aft face |
 | M2.5 self-tapping screw | 2.0mm cover shell (clearance) + 6.0mm pilot engagement = **M2.5×8**, self-tapped into PETG, not an insert | 4 | Access door (part 7) → e-bay tube boss |
 | Panel-mount toggle switch, 12mm hole | — | 1 | Arming switch, cut into the door itself; rated for full battery current (CATS manual §4.3.4) |
-| RailButton (printed, `RailGuide.scad`) | — | 2 | 1010-rail buttons, `OD=11, Flange_h=2, Slot_w=2.8`, at Az=180°, Fwd_Z=242mm / Aft_Z=630mm |
-| M3 machine screw + ruthex RX-M3×5.7 insert | **FORWARD button only** — 2.0mm button flange + up to 5mm engagement (of a 6.7mm insert) ⇒ **M3×8**, 0.7mm margin, does not bottom | 1 + 1 | Forward rail button (part 2, e-bay tube) — new boss, fixed this session |
-| **Aft rail button fastener — still a geometry gap, still not fixed** | — | — | See note below |
+| RailButton (printed, `RailGuide.scad`) | — | 2 | 1010-rail buttons, `OD=11, Flange_h=2, Slot_w=2.8`, at Az=180°. Fwd_Z=242mm (part 2), Aft_Z=665mm (part 9) — **both now derived constants, not literals** |
+| M3 machine screw + ruthex RX-M3×5.7 insert | **Forward** — 2.0mm button flange + up to 5mm engagement (of a 6.7mm insert) ⇒ **M3×8**, 0.7mm margin, does not bottom | 1 + 1 | Forward rail button (part 2, e-bay tube) |
+| M3 machine screw + ruthex RX-M3×5.7 insert | **Aft** — same button/insert geometry as forward ⇒ **M3×8** also, 0.7mm margin, does not bottom | 1 + 1 | Aft rail button (part 9, fin can), on the mid centring ring |
 
-**Forward rail button (Az=180°, Fwd_Z=242mm, on part 2/e-bay tube) — FIXED.** Neither
-`R60_FinCan()` nor `R60_EBayTube()` cut a matching hole or boss for either button
-before this session — a button screw went straight into a plain 1.6mm wall and would
-have pulled through. `R60_EBayTube()` now carries a ruthex-boss, same idiom as every
-other insert in this design (local wall thickening inward, flush with the true OD,
-Ø4.0×6.7mm blind pocket, 0.7mm backing — thinner than this design's usual 1.0mm
-because this exact station's own radial budget is tighter against the Vega board's own
-worst-case corner clearance; caught by a new `assert()`, not by eye, on the first
-attempt at the usual 1.0mm). `tools/verify_rocket60.py` gates it with two new,
-mutation-tested checks (OD stays true at the boss station; the boss's own material
-reaches its calculated tip radius, 45.2mm read vs 56.8mm plain-wall — removing the
-boss addition drops the reading to 56.8mm AND regresses genus 5→6, both fail).
+**Both rail buttons — FIXED this session, both stations now derived, not literals.**
+Neither `R60_FinCan()` nor `R60_EBayTube()` cut a matching hole or boss for either
+button before this session — a button screw went straight into a plain 1.6mm wall and
+would have pulled through.
+
+- **Forward (part 2, e-bay tube, Fwd_Z=242mm).** Ruthex boss, same idiom as every
+  other insert in this design (local wall thickening inward, flush with the true OD,
+  Ø4.0×6.7mm blind pocket), **0.7mm backing** — thinner than this design's usual
+  1.0mm because this exact station's own radial budget is tighter against the Vega
+  board's own worst-case corner clearance; caught by a new `assert()`, not by eye, on
+  the first attempt at the usual 1.0mm. `tools/verify_rocket60.py` gates it with two
+  mutation-tested checks (OD stays true at the boss station; the boss's own material
+  reaches its calculated tip radius, 45.2mm — removing the boss drops the reading to
+  56.8mm AND regresses genus 5→6, both fail).
+- **Aft (part 9, fin can, Aft_Z=665mm) — rebased from a stale 630mm.** That literal was
+  typed against `S_FIN`=516 (516+228/2=630 exactly); `S_FIN` is now 551 (the
+  deployment-bay tube's own growth, 12th review), so the real mid-ring position moved
+  to 551+114=665 and 630 quietly stopped landing on the ring — found only because
+  fixing the forward button prompted checking what was actually at the aft station.
+  **`R60_RailButton_Aft_Z` is now `S_FIN_restated + R60_FinCan_L/2` (R60Lib.scad) —
+  derived, not typed, so it cannot go stale the same way again** (the first pattern in
+  `tasks/lessons.md`). Boss is **backed by the mid centring ring, not plain wall** —
+  the full **1.0mm backing** convention applies here (no Vega-board-style clearance
+  ceiling exists anywhere near the fin can), boss reach 7.7mm, tip at r=22.3mm
+  (mesh-measured **exactly** 44.6mm diameter across the boss's own full footprint,
+  matching the constants exactly). **Clears the MMT with 6.15mm of real margin**
+  (r=22.3 boss tip vs r=16.15 MMT OD, `assert()`-gated at ≥3.0mm and confirmed against
+  the rendered mesh, not just the constants) and **cannot physically reach the motor
+  spacer's own travel** regardless of margin — the spacer lives inside the MMT's own
+  ID (r=14.5), with the MMT's own 1.65mm tube wall sitting between it and the boss's
+  entire annulus. Azimuth 180° clears all three fin slots (0°/120°/240°) by
+  construction and by render (genus unchanged at 6, no collision topology).
+  `tools/verify_rocket60.py` gates it with the same mutation-tested check pair as the
+  forward button (removing the boss drops the tip reading from 44.6mm to 46.6mm AND
+  regresses genus 6→7, both fail).
+
 `RailButton()` itself (`RailGuide.scad`) is a plain disc with a Ø4.6mm through-bore and
-no threaded feature of its own — loose but workable clearance for the M3 screw.
-
-**Aft rail button (nominally Az=180°, Aft_Z=630mm, on part 9/fin can) — NOT fixed,
-flagged for a decision, not resolved unilaterally.** Two independent problems, found
-while fixing the forward button:
-1. **No boss exists here either** — same defect class as the forward button.
-2. **The 630mm station is now stale, not just unbossed.** Its own comment
-   ("at the mid centring ring, `S_FIN+L_FINCAN/2`") was computed when `S_FIN`=516
-   (516+228/2=630 exactly). `S_FIN` is now 551 (the deployment-bay tube's own growth,
-   12th review) — the real mid ring sits at 551+114=**665mm**, not 630. **630mm today
-   lands 35mm forward of the ring it was meant to sit on, on plain unbacked wall** —
-   the exact pull-through risk this fix exists to close, compounded.
-
-Fixing this means editing `09_FinCan.stl` — a part marked "UNCHANGED by this task"
-through nine-plus review rounds and treated everywhere in this repo (spec, print
-settings) as hardened/stable. **This was not fixed here because the owner may already
-have this part printed**, and there are two live options once it's confirmed safe to
-touch: rebase the boss on the real 665mm ring position (restores the original
-"backed by a ring" intent) or keep 630mm and add local reinforcement without the ring
-(a plain boss, weaker but no station change). This needs an explicit answer, not an
-assumption — see the task reply.
+no threaded feature of its own — loose but workable clearance for the M3 screw, both
+stations.
 
 ---
 
@@ -193,9 +200,10 @@ assumption — see the task reply.
 | Location | Qty | Note |
 |---|---|---|
 | E-bay fwd bulkhead (part 4), Vega rod anchors | 2 | |
-| Fin can (part 9) aft face, motor retainer bolts | 3 | Pre-exists this task, part 9 unchanged |
-| E-bay tube (part 2), forward rail button | 1 | New this session — fix 2 |
-| **Total (excluding the aft rail button, still open)** | **6** | Camera's own 3 inserts are pre-installed in the purchased assembly, not sourced by the owner. Add 1 more once the aft rail button's own fix is resolved (§4). |
+| Fin can (part 9) aft face, motor retainer bolts | 3 | Pre-exists this task |
+| E-bay tube (part 2), forward rail button | 1 | New this session |
+| Fin can (part 9), aft rail button, mid centring ring | 1 | New this session — rebased from a stale station, see §4 |
+| **Total** | **7** | Camera's own 3 inserts are pre-installed in the purchased assembly, not sourced by the owner |
 
 ---
 
@@ -350,9 +358,9 @@ doesn't surprise a future reader.
 
 ## 10. Summary counts
 
-- **Distinct hardware line items** (excluding printed parts and consumables): 25
-  (release mechanism 10, petal deployment 2, our airframe hardware 13 — +1 for the
-  forward rail button's own new M3+insert line).
+- **Distinct hardware line items** (excluding printed parts and consumables): 26
+  (release mechanism 10, petal deployment 2, our airframe hardware 14 — +1 each for
+  the forward and aft rail buttons' own new M3+insert lines).
 - **Fasteners by type and length**:
   - **#4-40**: 3× 1/2in BHCS + 4× 1/4in BHCS (verified exact) + 3× 3/8in SHCS
     (release stack, per header) + **3× 3/8in (9.525mm) BHCS, ~2.3mm engagement,
@@ -362,9 +370,10 @@ doesn't surprise a future reader.
     activator, stated in source) = **3**.
   - **M3**: 3× M3×10 (neck → camera) + 2× M3×152.8mm all-thread (Vega sled rails,
     echoed exact) + 3× M3×~16 (Vega board → standoffs, derived, verify against real
-    board) + 3× M3×12 (motor retainer → fin can, derived) + **1× M3×8 (forward rail
-    button → its own new insert, resolved this session)** = **12**, plus 2× M3 nut +
-    2× M3 washer (sled aft retention) + 3× M3 nut (Vega board) = **7** nuts/washers.
+    board) + 3× M3×12 (motor retainer → fin can, derived) + **2× M3×8 (forward AND
+    aft rail buttons → their own new inserts, both resolved this session)** = **13**,
+    plus 2× M3 nut + 2× M3 washer (sled aft retention) + 3× M3 nut (Vega board) =
+    **7** nuts/washers.
   - **M2.5**: 4× M2.5×8 (door, derived, self-tapping).
 - **Catalog spring dimensions vs our seat**: piston clears (unchanged, confirmed safe
   as-is); **centering-ring-mount seat — FIXED this session**: real clearance in both
@@ -376,9 +385,16 @@ doesn't surprise a future reader.
   force) was never estimated at all.
 - **Imperial vs metric**: buy imperial for the release mechanism (Accu, one order,
   alongside the metric hardware already in this design) — do not convert the model.
-- **Rail buttons**: forward (part 2) fixed this session — real boss, real insert,
-  mutation-tested checks. **Aft (part 9/fin can) still open** — no boss AND the
-  630mm station itself is stale (the real mid-ring position moved to 665mm when
-  `S_FIN` grew); fixing it means editing a part marked unchanged/hardened across
-  9+ review rounds, which the owner may already have printed — flagged for an
-  explicit decision, not resolved unilaterally.
+- **Rail buttons — BOTH FIXED this session**: forward (part 2) has a real boss/insert
+  at Fwd_Z=242mm (0.7mm backing, Vega-board-limited); aft (part 9) rebased from a
+  stale 630mm literal onto the real, now-derived mid-ring position (665mm), with a
+  ring-backed boss (1.0mm backing, MMT-clearance-checked at 6.15mm margin). Both
+  stations are DERIVED constants now (`R60Lib.scad`), not literals — cannot go stale
+  the same way again. Both boss/insert pairs are mutation-tested in
+  `tools/verify_rocket60.py`. Rail-exit speed is UNCHANGED (confirmed by re-running
+  the model: the exit-velocity integration is a pure point-mass sim over rail length,
+  thrust and vehicle mass — it never read button position; G80T still 20.0 m/s against
+  the 15 m/s floor). The button-station change to the mass model's own CG-placement
+  entry moves CG by ~0.07mm, unmeasurable at this model's own reporting precision —
+  fixed anyway (a stale literal in `tools/rocket60_model.py`'s own mass table, found
+  while re-verifying this).

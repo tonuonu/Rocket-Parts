@@ -322,11 +322,15 @@ exit before flying (spec §11 item 6).
 **Axial station (task 7, previously unspecified; 10th review: forward
 button station corrected — it used to be measured against the wrong Z
 frame, see `R60Lib.scad`'s own `R60_RailButton_Fwd_Z` comment):**
-azimuth 180°, aft button at Z=630mm (fin can, forward of the fins, at
-the mid centring ring), forward button at Z=242mm (e-bay tube, clear of
-the door cover's own aft edge with a stated margin) —
+azimuth 180°, aft button at Z=665mm (fin can, ON the mid centring
+ring — coordinator fix, this session: rebased from a stale 630mm, typed
+against an S_FIN that has since grown; see R60-BOM.md for the reinforced-
+boss/insert fix that came with it), forward button at Z=242mm (e-bay
+tube, clear of the door cover's own aft edge with a stated margin) —
 R60Lib.scad's `R60_RailButton_Aft_Z`/`R60_RailButton_Fwd_Z`/
-`R60_RailButton_Az`. Keeps the G80T's own liftoff CG (401.8mm) between
+`R60_RailButton_Az`, both now DERIVED from the tube-length constants
+they depend on, not literals -- the aft station cannot drift stale again
+the same way. Keeps the G80T's own liftoff CG (401.8mm) between
 the two buttons.
 
 Print settings for the rail buttons themselves are not covered by the
@@ -401,7 +405,12 @@ Build order for what exists today:
    bulkhead's own face receives each rod's tip; no fastener is needed
    there, it only locates the rod against side-load. Both the sled's
    radial position and its clocking (antenna outward) were already fixed
-   in step 3, by the two rods, not by anything in this step.
+   in step 3, by the two rods, not by anything in this step. **Press a
+   ruthex RX-M3×5.7 insert into `02_EBayTube.stl`'s own forward
+   rail-button boss** (Az=180°, Z=242mm from the nose tip — coordinator
+   fix, this session; the boss/insert did not exist before this) and bolt
+   the printed `RailButton()` (`RailGuide.scad`) on with an **M3×8**
+   screw — 0.7mm of backing behind the insert, does not bottom.
 7. Bolt `01_Neck.stl` to the camera assembly with 3× M3×10 SHCS into the
    heat-set inserts (5.0 mm grip, 5.0 mm thread engagement — does not
    bottom out, spec §2.1), then to the nosecone base and e-bay tube.
@@ -440,6 +449,13 @@ Build order for what exists today:
    Nothing else reacts the motor's forward thrust: the aft retainer
    only resists motion out the back. Install `12_MotorSpacer.stl` for
    the G80T (re-export for `Motor_Class=1`/`2` for the H182R/H135W).
+   **Press a ruthex RX-M3×5.7 insert into the fin can's own aft
+   rail-button boss** (Az=180°, Z=665mm — on the mid centring ring,
+   coordinator fix this session, rebased from a stale 630mm that no
+   longer landed on the ring) and bolt the second `RailButton()` on
+   with an **M3×8** screw — the mid ring backs this one (1.0mm of
+   backing, more than the forward button's 0.7mm — no Vega-board
+   clearance ceiling applies at the fin can).
 11. **Build the petal cage, THE separable joint** (petal-deployment
     transplant — this is no longer a shear-pin/tether design; see
     Status): glue `08_PetalHub.stl` to the fin can's forward end (its
@@ -750,8 +766,10 @@ Copied from spec §11, with one adaptation flagged below.
   (which is what decided BBMicro vs. BBMini). A full model for that
   remainder is future work.
 - **Rail button axial placement** — resolved (task 7; 10th review
-  corrected the forward station's own reference frame): azimuth 180°,
-  Z=630mm (aft) / Z=242mm (forward), §5 above.
+  corrected the forward station's own reference frame; coordinator fix
+  this session rebased the aft station 630->665mm onto the real mid
+  centring ring and made both stations DERIVED, not literals): azimuth
+  180°, Z=665mm (aft) / Z=242mm (forward), §5 above.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
   `tools/rocket60_model.py`, not built by any printable part.
 

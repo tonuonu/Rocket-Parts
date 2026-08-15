@@ -207,10 +207,12 @@ scratch a second time.
 Rail buttons (2×, 1010, `RailGuide.scad`'s `RailButton(OD=11, Flange_h=2,
 Slot_w=2.8)`) and the nosecone itself are external hardware/reused stock, not
 `Render_Part` numbers in `Rocket60.scad`. Axial placement (task 7,
-previously unspecified): azimuth 180°, aft button at Z=630mm (fin can,
-forward of the fins, at the mid centring ring), forward button at
-Z=230mm (e-bay tube) — keeps the G80T's own liftoff CG (394mm) between
-the two.
+previously unspecified): azimuth 180°, aft button at Z=665mm (fin can,
+on the mid centring ring — coordinator fix, this session: rebased from
+a stale 630mm literal onto the ring's own real, derived position; see
+`R60-BOM.md` for the reinforced ruthex boss added there), forward
+button at Z=242mm (e-bay tube) — keeps the G80T's own liftoff CG
+between the two.
 
 New library file `R60Lib.scad` follows the existing `R65Lib.scad` / `R75Lib.scad` convention.
 
@@ -547,9 +549,9 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 941 g | 418.1 mm | **1.69 cal** | 396.7 mm | 2.05 cal |
-| H182R-14A | 1008 g | 431.0 mm | **1.48 cal** | 399.2 mm | 2.01 cal |
-| H135W-14A | 1011 g | 430.6 mm | **1.49 cal** | 409.3 mm | 1.84 cal |
+| G80T-14A | 941 g | 418.2 mm | **1.69 cal** | 396.8 mm | 2.05 cal |
+| H182R-14A | 1008 g | 431.1 mm | **1.48 cal** | 399.3 mm | 2.01 cal |
+| H135W-14A | 1011 g | 430.6 mm | **1.49 cal** | 409.4 mm | 1.84 cal |
 
 **The G80T-14A margin IMPROVED, 1.46→1.69 cal** (10th/11th/12th review:
 this figure has moved several times since, from an intermediate 1.68

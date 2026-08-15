@@ -938,15 +938,48 @@ R60_nFins     = 3;
 // engagement length, so the rocket does not droop nose-down or tail-down
 // off the rail before it reaches flying speed.
 R60_RailButton_Az = 180;
-// Aft button: on the fin can (part 9, UNCHANGED by this task), forward
-// of the fins (fins span S_finLE..S_finLE+Cr = 646..736mm,
-// tools/rocket60_model.py) so it does not compete with a fin root for
-// wall material or foul the rail slot as a fin passes it, and landing
-// close to the fin can's own MID centring ring (S_FIN+L_FINCAN/2=630mm,
-// R60_FinCan()'s own ring-Z loop) for a double-thickness backing behind
-// the screw.
-R60_RailButton_Aft_Z = 630;
-// Forward button: on the e-bay tube (part 2). GLOBAL-FRAME FIX (this
+// S_EBAY_restated (MOVED UP, coordinator fix, this session): both
+// station formulas below need it, and OpenSCAD does not forward-
+// reference top-level assignments (confirmed empirically elsewhere in
+// this file, e.g. the Vega axial-window comment) -- it has to be defined
+// before the first constant that reads it, not just before the LATER of
+// the two. Global frame: the e-bay tube's own forward rim sits at
+// L_NOSE+L_NECK_FLANGE=94+5=99mm (tools/rocket60_model.py's own figure,
+// restated per rule 4 -- R60Lib.scad has no "nose tip" station of its
+// own otherwise).
+S_EBAY_restated = 99;
+// S_FIN_restated: the fin can's own forward-most global station, same
+// rule-4 restatement (tools/rocket60_model.py's own S_FIN = S_EBAY +
+// R60_EBay_L + R60_Chute_L) -- built here from THIS file's own already-
+// defined R60_EBay_L/R60_Chute_L, not re-typed as a bare literal, so a
+// future change to either tube's length moves this automatically instead
+// of silently going stale the way R60_RailButton_Aft_Z's own bare "630"
+// literal just did (see that constant's own history below -- the first
+// pattern in tasks/lessons.md: a station typed against a value that
+// later moved, with nothing to notice the drift).
+S_FIN_restated = S_EBAY_restated + R60_EBay_L + R60_Chute_L;   // 551
+// Aft button: on the fin can (part 9), forward of the fins (fins span
+// S_finLE..S_finLE+Cr = 646..736mm, tools/rocket60_model.py) so it does
+// not compete with a fin root for wall material or foul the rail slot
+// as a fin passes it, landing ON the fin can's own MID centring ring
+// (R60_FinCan()'s own ring-Z loop, `R60_FinCan_L/2` -- the SAME
+// expression, not a second independently-typed copy of it) for real
+// backing behind the screw, not plain 1.6mm wall.
+//
+// HISTORY -- why this was a bare literal and why that broke (coordinator
+// fix, this session): this constant used to read "630" typed directly
+// against S_FIN=516 + R60_FinCan_L/2=114 at the time it was first
+// written. S_FIN has since grown to 551 (the deployment-bay tube's own
+// growth, 12th review) -- the constant was never updated to track it,
+// so 630 quietly stopped landing on the ring at all (the real ring
+// position moved to 665) and started landing 35mm forward of it, on
+// plain unbacked wall -- found only because a coordinator review added
+// a boss/insert AT the stale 630 station and then checked what was
+// actually there. DERIVED now, not typed, so it cannot drift again the
+// same way: any future change to S_EBAY_restated, R60_EBay_L,
+// R60_Chute_L or R60_FinCan_L moves this station with it automatically.
+R60_RailButton_Aft_Z = S_FIN_restated + R60_FinCan_L/2;   // 665
+// Forward button: on the e-bay tube (part 2). GLOBAL-FRAME FIX (earlier
 // review): this constant is a GLOBAL station ("Axial stations (mm from
 // nose tip)", this section's own header), but the clearance it used to
 // be justified against -- "Door_Z0..Door_Z1 = 46..131mm" -- is
@@ -954,17 +987,18 @@ R60_RailButton_Aft_Z = 630;
 // Comparing the old value (230) directly against that LOCAL 46..131
 // window treated it as if the two shared a frame; they do not. In the
 // correct (global) frame the e-bay tube's own aft rim sits at
-// S_EBAY_restated=99mm (tools/rocket60_model.py's own
-// L_NOSE+L_NECK_FLANGE=94+5, restated per rule 4 -- R60Lib.scad has no
-// "nose tip" station of its own otherwise), so the door aperture is
-// global 99+46..99+131 = 145..230 and the cover (R60_Door_Overlap=6mm
-// larger on every side) is 139..236 -- the OLD 230 was the aperture's
-// own AFT EDGE (global), 6mm INSIDE the cover, not clear of it at all.
-// Only the azimuth (R60_RailButton_Az=180 vs the door's own 37-143deg
-// boss band, R60_EBayTube()'s Door_Boss_Az()) kept them apart -- a real
-// fact, but not the "by construction" Z-clearance this comment used to
-// claim, and not one this constant's own definition made visible.
-S_EBAY_restated = 99;   // see comment above
+// S_EBAY_restated=99mm (above), so the door aperture is global
+// 99+46..99+131 = 145..230 and the cover (R60_Door_Overlap=6mm larger on
+// every side) is 139..236 -- the OLD 230 was the aperture's own AFT EDGE
+// (global), 6mm INSIDE the cover, not clear of it at all. Only the
+// azimuth (R60_RailButton_Az=180 vs the door's own 37-143deg boss band,
+// R60_EBayTube()'s Door_Boss_Az()) kept them apart -- a real fact, but
+// not the "by construction" Z-clearance this comment used to claim, and
+// not one this constant's own definition made visible. ALREADY a
+// derived expression, not a bare literal (coordinator fix, this
+// session, confirmed while fixing the aft station's own bare-literal
+// defect above) -- nothing to change here beyond moving S_EBAY_restated
+// up to where both formulas can read it.
 R60_RailButtonFwd_Margin = 6;   // stated clearance past the cover's own
                                   // global aft edge -- a real margin, not
                                   // a bare touch

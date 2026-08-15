@@ -1111,6 +1111,46 @@ def checks(m):
         # Chute-tube-to-fin-can spigot check moved: that joint is now made
         # by the petal hub (part 8), not the chute tube -- see the
         # "petal hub spigot clears fin can forward bore" check above.
+
+        # Aft rail button boss (coordinator fix, this session -- rebased
+        # from a stale 630mm literal onto the mid ring's own real
+        # position, 665mm global / 114mm local). Same pair of checks the
+        # forward button (part 2) gets: (1) OD stays true across the
+        # boss's own Z footprint -- no tangential bulge past the true OD
+        # (defect-2a class); (2) the boss's own material reaches its
+        # calculated tip radius. r_lo=20 (AFTBTN_R_LO) is REQUIRED here,
+        # unlike the forward button's own check -- this boss sits right
+        # at the mid centring ring, and the MMT's own r=16.15 surface is
+        # exposed at the ring's exact Z boundaries (114/117), which would
+        # otherwise dominate a plain bore()-min reading and mask whether
+        # the boss itself is even there. Scanned over the boss's FULL own
+        # Z footprint (AFTBTN_Z_BAND, +-4mm = Boss_d/2), not a narrow
+        # slice at its centre -- a round boss's own reach varies smoothly
+        # across its own curved profile (measured this session: 44.60mm
+        # at the footprint's outer edges, 45.3-46.7mm nearer its centre,
+        # all consistent with one continuous round boss, no anomaly) --
+        # the TRUE tip (44.60mm, exact match to the constants below) only
+        # shows up as the band's own MINIMUM, not at any single Z.
+        AFTBTN_Z_TUBE = 114.0    # R60_RailButton_Aft_Z(665) -
+                                   # S_FIN_restated(551), restated (rule 4)
+        AFTBTN_Z_HALF = 4.0       # Boss_d/2 -- restated (rule 4)
+        AFTBTN_R_LO = 20.0        # comfortably above the MMT's own
+                                    # r=16.15, comfortably below the
+                                    # boss's own target r=22.3
+        AFTBTN_TIP_R_restated = 22.3   # R60_Body_OD/2(30) -
+                                         # AftBtn_Boss_h(7.7), restated
+                                         # (rule 4)
+        _, aftbtn_boss_od = safe(bore, a(9, "stl"),
+                                   AFTBTN_Z_TUBE - BOSS_OD_BAND_HALF,
+                                   AFTBTN_Z_TUBE + BOSS_OD_BAND_HALF,
+                                   nvals=2)
+        aftbtn_tip_min, _ = safe(
+            bore, a(9, "stl"), AFTBTN_Z_TUBE - AFTBTN_Z_HALF,
+            AFTBTN_Z_TUBE + AFTBTN_Z_HALF, AFTBTN_R_LO, nvals=2)
+        c += [("part 9 OD at aft rail button boss station",
+               aftbtn_boss_od, 60.0, 0.1),
+              ("part 9 aft rail button boss reaches its own tip radius",
+               aftbtn_tip_min, 2 * AFTBTN_TIP_R_restated, 0.3)]
     if 10 in m:
         # Span (3rd review, should-fix 7): nothing checked this before --
         # root chord and thickness were, but the dimension the flutter/

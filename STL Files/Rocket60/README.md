@@ -149,8 +149,10 @@ H135W 3.2×.
 1010 rail. The user's Estes Pro Series II rail (1.83 m, two 3-foot sections)
 is 1010-compatible per Estes, so `RailButton(OD=11, Flange_h=2, Slot_w=2.8)`
 from `RailGuide.scad` fits directly. Axial placement (task 7): azimuth
-180°, aft button Z=630mm (fin can, forward of the fins), forward button
-Z=242mm (e-bay tube) — `R60Lib.scad`'s `R60_RailButton_*` constants.
+180°, aft button Z=665mm (fin can, on the mid centring ring — rebased
+this session from a stale 630mm, typed against an S_FIN that has since
+moved), forward button Z=242mm (e-bay tube) — `R60Lib.scad`'s
+`R60_RailButton_*` constants, both now DERIVED, not literals.
 
 Rail exit on that rail: **G80T 20.0 m/s**, H182R 29.8, H135W 23.0 — all
 comfortably above the ~15 m/s minimum.

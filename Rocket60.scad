@@ -1042,6 +1042,57 @@ module R60_FinCan(){
     FwdRing_Z = R60_FinCan_L - Ring_T - R60_FinCan_FwdOpen_L;
     Cord_d    = 5;
     Cord_R    = 22.5;
+
+    // Aft rail button boss (coordinator fix, this session -- REBASED
+    // from a stale 630mm literal to the mid ring's own real position).
+    // R60_RailButton_Aft_Z is now DERIVED (R60Lib.scad: S_FIN_restated +
+    // R60_FinCan_L/2 -- the SAME R60_FinCan_L/2 this module's own ring
+    // loop below uses, not a second independently-typed copy of it), so
+    // this local Z is just that global station minus this part's own
+    // forward-most global station (S_FIN_restated) -- lands exactly on
+    // the mid ring's own z=R60_FinCan_L/2, by construction, not by
+    // coincidence. Same ruthex-boss idiom as the forward button
+    // (R60_EBayTube()) and every other insert in this design: a local
+    // wall thickening inward, flush with the true OD, blind Ø4.0x6.7mm
+    // pocket. Unlike the forward button, this station is NOT squeezed
+    // by the Vega board's own clearance ceiling (nothing Vega-related
+    // exists anywhere near the fin can) -- so this one uses the full,
+    // ordinary 1.0mm backing convention (R60_Vega_RodInsert_Backing/
+    // Door_Boss_Backing's own precedent), not the forward button's own
+    // thinned 0.7mm.
+    AftBtn_Az = R60_RailButton_Az;
+    AftBtn_Z = R60_RailButton_Aft_Z - S_FIN_restated;   // 114 -- the mid
+                                                           // ring's own z
+    AftBtn_Insert_d = 4.0;   // ruthex RX-M3x5.7 hole per datasheet, same
+                               // as every other insert in this file
+    AftBtn_Insert_h = 6.7;   // datasheet: insert L(5.7) + 1mm
+    AftBtn_Backing  = 1.0;   // ordinary convention -- see module comment
+    AftBtn_Boss_h = AftBtn_Insert_h + AftBtn_Backing;   // 7.7
+    // Same stop-short-of-the-true-OD idiom R60_EBayTube()'s Door_Boss_
+    // Reach_R already established (defect 2a: a round cap whose AXIS
+    // ends exactly at the true OD still bulges TANGENTIALLY past it) --
+    // restated here (rule 4 would share it via a constant, but this
+    // module has no existing home for a cross-part boss constant, and
+    // the formula itself, R60_Body_ID/2+1.2, is the shared idiom, not a
+    // fresh derivation).
+    AftBtn_Reach_R = R60_Body_ID/2 + 1.2;
+    // MMT clearance -- checked against the CONSTANT here (a real, stated
+    // margin, not just "smaller than the annulus"); the rendered-mesh
+    // proof this same margin actually holds is tools/verify_rocket60.py's
+    // own new "part 9 aft rail button boss clears the MMT" check, gated
+    // against the real exported STL, not just this arithmetic repeated.
+    // The motor spacer itself (R60_MotorSpacer(), inside the MMT's own
+    // ID=29.0mm) cannot ever reach this boss regardless of margin here --
+    // the MMT tube wall (32.3 OD / 29.3 ID, 1.65mm thick) sits physically
+    // between them; this assert exists for the MMT's own OD, the nearer
+    // of the two.
+    AftBtn_MMT_Clear = (R60_Body_OD/2 - AftBtn_Boss_h) - R60_MMT_OD/2;
+    assert(AftBtn_MMT_Clear >= 3.0,
+        str("R60_FinCan: aft rail button boss clears the MMT by only ",
+            AftBtn_MMT_Clear, "mm (tip r=", R60_Body_OD/2-AftBtn_Boss_h,
+            ", MMT r=", R60_MMT_OD/2, ") -- shrink AftBtn_Insert_h/",
+            "Backing or recheck the MMT diameter"));
+
     difference(){
         union(){
             R60_Tube(R60_FinCan_L);
@@ -1063,6 +1114,18 @@ module R60_FinCan(){
                 rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
                     translate([Boss_BC_R,0,0])
                         cylinder(d=Boss_d, h=Boss_h);
+            // Aft rail button boss -- Az=180deg is a plain 90deg
+            // multiple (like the forward button), so a flat
+            // rotate([0,0,Az]) IS the true local radial direction; no
+            // acos()-style correction needed. Local $fn, same reasoning
+            // as every other small boss in this design at a non-90deg-
+            // multiple-adjacent scale.
+            rotate([0,0,AftBtn_Az])
+                translate([R60_Body_OD/2-AftBtn_Boss_h, 0, AftBtn_Z])
+                    rotate([0,90,0])
+                        cylinder(d=Boss_d,
+                                 h=AftBtn_Reach_R-(R60_Body_OD/2-AftBtn_Boss_h),
+                                 $fn=32);
         }
         // Fin slots, through the outer wall only.
         for (i=[0:R60_nFins-1])
@@ -1074,6 +1137,13 @@ module R60_FinCan(){
             rotate([0,0,i*360/R60_nFins + 180/R60_nFins])
                 translate([Boss_BC_R, 0, -Overlap])
                     cylinder(d=Insert_d, h=Insert_h+Overlap);
+        // Aft rail button insert pocket -- blind, open only at the true
+        // OD (where the boss is flush), same idiom as the retainer
+        // bolts' own inserts above.
+        rotate([0,0,AftBtn_Az])
+            translate([R60_Body_OD/2-AftBtn_Insert_h, 0, AftBtn_Z])
+                rotate([0,90,0])
+                    cylinder(d=AftBtn_Insert_d, h=AftBtn_Insert_h+Overlap, $fn=32);
         // Shock cord anchor -- see the module-level comment above.
         for (x=[-4,4])
             translate([x, -Cord_R, FwdRing_Z-Overlap])
