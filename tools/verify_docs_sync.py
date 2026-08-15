@@ -211,12 +211,17 @@ def model_numbers(out):
     vf = re.search(r"Flutter Vf = (\d+) m/s", out)
     if vf:
         nums["Vf_ms"] = int(vf.group(1))
-    pm = re.search(
-        r"Per-motor: G80T ([\d.]+)x, H182R ([\d.]+)x, H135W ([\d.]+)x", out)
-    if pm:
-        nums["flutter_ratio"] = {"G80T-14A": float(pm.group(1)),
-                                  "H182R-14A": float(pm.group(2)),
-                                  "H135W-14A": float(pm.group(3))}
+    # Flutter margin table format (task 5 fix -- flutter_Vf() itself, and
+    # this gate, were re-scoped from a single "Per-motor: G80T Xx, H182R
+    # Xx, H135W Xx" summary line to a per-motor floor table, one row per
+    # motor: "   G80T-14A     Vmax= 123 m/s  Vf/Vmax= 4.8x  (OK)").
+    nums["flutter_ratio"] = {}
+    for m in re.finditer(
+            r"^\s*(G80T-14A|H182R-14A|H135W-14A)\s+Vmax=\s*\d+ m/s\s+"
+            r"Vf/Vmax=\s*([\d.]+)x", out, re.M):
+        nums["flutter_ratio"][m.group(1)] = float(m.group(2))
+    if not nums["flutter_ratio"]:
+        del nums["flutter_ratio"]
     return nums
 
 
