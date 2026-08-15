@@ -121,7 +121,7 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # integrating the divergence theorem over the exported mesh -- not
 # restated from a prior round -- since the transplant touched parts 3, 5,
 # 8, 13 and added 15-23 outright.
-STL_VOL = {1: 16.2, 2: 47.2, 3: 70.4, 4: 12.7, 5: 66.0, 6: 23.8, 7: 11.3,
+STL_VOL = {1: 16.2, 2: 47.1, 3: 70.4, 4: 12.7, 5: 66.0, 6: 23.8, 7: 11.3,
            8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 34.2, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
            22: 1.5, 23: 10.5}

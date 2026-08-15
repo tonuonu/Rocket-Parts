@@ -101,8 +101,11 @@ GENUS[6] = 5
 #   entirely (see R60Lib.scad's own "Sled retention" comment) -- the 2
 #   rails were ADDED material (no genus contribution either way) and the
 #   4 zip-tie slots were clean through-cuts (+1 each); removing all 4
-#   drops the count 6-4=2; rendered, confirmed `Genus: 2`.
-GENUS[2] = 2
+#   drops the count 6-4=2; rendered, confirmed `Genus: 2`. RE-DERIVED
+#   (task 6, static vent port): 3 plain radial through-holes at 120deg
+#   added (R60Lib.scad's R60_Vent_d/R60_Vent_Z comment) -- +3 handles;
+#   rendered, confirmed `Genus: 5`.
+GENUS[2] = 5
 
 #   part 3: deployment bay tube (petal-deployment transplant). The
 #   separable joint (and everything that used to punch through this

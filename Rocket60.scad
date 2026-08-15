@@ -285,6 +285,22 @@ module R60_EBayTube(){
                 translate([R60_Body_OD/2-Door_Pilot_Depth, 0, z])
                     rotate([0,90,0])
                         cylinder(d=Door_Pilot_d, h=Door_Pilot_Depth+Overlap, $fn=32);
+
+        // Static vent port (task 6, R60Lib.scad's R60_Vent_d/R60_Vent_Z
+        // comment) -- 3 plain radial through-holes at 120deg, clear of
+        // the neck skirt above and the door aperture below by
+        // construction. Starts just inside the ID and grows outward
+        // through the wall past the OD -- same "start inward, grow +X to
+        // reach the OD" direction as the door pilot holes above (their
+        // own comment: "blind, open only at the true OD"), just carried
+        // the full wall thickness instead of stopping blind. Local $fn,
+        // same reasoning as the door bosses/pilots (a small hole at an
+        // odd, non-90deg azimuth tessellates poorly at the file-wide $fn).
+        for (i=[0:2])
+            rotate([0,0,i*120])
+                translate([R60_Body_ID/2-Overlap, 0, R60_Vent_Z])
+                    rotate([0,90,0])
+                        cylinder(d=R60_Vent_d, h=R60_Wall_T+Overlap*2, $fn=32);
     }
 } // R60_EBayTube
 

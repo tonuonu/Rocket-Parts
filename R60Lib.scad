@@ -128,6 +128,38 @@ R60_Door_Overlap = 6;     // the door's retaining cover/frame overlaps
 R60_Door_Hole_Clear = 3;  // fastener bosses sit this far outside the
                            // aperture's own edge, on solid material
 
+// Static vent port (task 6). The Vega currently breathes only through
+// incidental leaks -- the neck's own Ø28 camera-harness bore up to the
+// camera assembly's own seal, and the nosecone's Ø15.3 lens aperture at
+// the nose's own forward stagnation point -- so ram pressure during
+// boost can drive INTO the bay through that leak instead of the bay
+// tracking ambient smoothly, the same "incidental leak at the stagnation
+// point" failure a dedicated static port exists to avoid.
+// Standard practice: 3 static ports at 120 deg (cancels any single-
+// azimuth AoA/roll pressure bias averaging to a true static reading,
+// same reasoning as a Pitot-static ring), sized to the bay's own volume
+// so it actually vents fast enough to matter, not so large it becomes a
+// structural or acoustic problem.
+//
+// Sizing (stated assumption, no closed-form spec exists in this repo for
+// it, same "standard practice, not measured" treatment as the parachute
+// packing-density assumption): total vent area ~0.3% of the bay's own
+// internal volume, a commonly used amateur/high-power rocketry static-
+// port guideline. Bay volume = pi*(R60_Body_ID/2)^2*R60_EBay_L =
+// 448.4 cm^3 = 27.4 in^3 -> total area 0.3%*27.4 = 0.082 in^2, / 3 ports
+// = 0.0274 in^2/port -> d = sqrt(4*0.0274/pi) = 0.187in = 4.74mm.
+// Rounded down slightly to a clean, comfortably-printable 4.5mm --
+// smaller than the derived figure, so if this assumption is wrong it
+// errs toward "vents a bit slowly", not toward an oversized structural
+// hole; still an order of magnitude more reliable than depending on the
+// Ø15.3 lens aperture leak path, which this task exists to stop relying on.
+R60_Vent_d = 4.5;
+// Z: below the neck skirt's own reach (R60_Neck_Skirt_L=19mm from the
+// forward rim) and below the door aperture's own bottom edge
+// (Door_Z0=(R60_EBay_L-R60_Door_Open_H)/2=46mm) -- clear of both by
+// construction, not a hand-picked number that happens to miss them today.
+R60_Vent_Z = (R60_Neck_Skirt_L + (R60_EBay_L - R60_Door_Open_H) / 2) / 2;
+
 // ============================================
 // NOSECONE INTERFACE - MEASURED, DO NOT ROUND
 // ============================================
