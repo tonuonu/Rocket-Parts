@@ -329,3 +329,63 @@ catch.
   bold-cal staleness scan) is the general form of pattern 1's own
   "Guard against this": the gate needed to assert absence of the
   superseded value, not just presence of the current one.
+
+## 10. An invented mechanism competed against a proven one in the same repo, and lost
+
+Rocket 60's recovery system was designed from scratch across nine review
+rounds: a spring carrier with a hand-built ball-lock (explicitly
+"deliberately incomplete" -- its own rotating lock ring and sliding
+plunger were never modelled, "a rotating part and a printed housing
+cannot be one piece"), a shear-pin joint sized from a self-contradictory
+spec (a nylon 2-56 pin's own PER-PIN shear figure, ~110-155N, restated as
+"2 pins ~130N combined" -- a pair total using a single-pin number), and a
+servo-released tether latch whose own actuation linkage ("a pushrod/cam/
+bellcrank of some kind") was never designed either. Nine rounds of review
+hardened the geometry AROUND these gaps -- real fixes to real defects --
+without anyone asking whether the mechanism itself, underneath all of it,
+could ever work. It could not: a spring strong enough to shear real pins
+puts several hundred N of snatch into a tether latch bench-specced at
+13N, and the "independent" ejection-charge backup could not back-drive a
+ball-lock at all (a captive detent does not release under load by
+design) -- the redesign's whole justification collapses on contact with
+its own numbers.
+
+Meanwhile the SAME repo already had a flown, proven answer: Rocket6551.scad
+(2.6", single-deploy, one CS4323 spring, first built and flown before
+this task started) uses a petal-deployment cage (PetalDeploymentLib.scad)
+released by a rotating-lock-ring cable release (CableReleaseBBMini.scad)
+-- the exact "rotating lock ring + sliding plunger" mechanism the
+invented design declared out of scope, already fully designed, already
+printed, already flown, in a file sitting in the same directory. Petals
+never separate the airframe against a shear load at all: the spring
+ejects the chute through petals a servo unlocks, so the entire "how much
+force must the pins take" problem this task spent nine rounds hardening
+around does not exist in the proven design, because it was never created
+in the first place.
+
+Replacing the invented system with the proven one (this transplant) was
+NOT a bigger job than the nine rounds of hardening the invented one
+already cost -- it was smaller: `use<>`-instantiating the donor's own
+library modules at this airframe's OD needed one mesh-measured fit
+decision (CableReleaseBBMini vs. CableReleaseBBMicro -- the flown family's
+own Activator does not fit this bore; a render proved it in minutes) and
+a station map read off the donor's own already-working Z arithmetic, not
+nine rounds of discovering what a from-scratch mechanism was missing one
+gap at a time.
+
+**Guard against this**: before designing a mechanism from scratch --
+especially one with moving parts (locks, latches, releases, hinges) --
+search the rest of the repo (or the org's other projects) for a design
+that already solves the same problem at a nearby scale. A `grep` across
+sibling `Rocket*.scad`/`*Lib.scad` files for the mechanism class (spring
+release, ball lock, petal deployment, cable release) costs minutes. Nine
+rounds of review hardening a design's surrounding geometry is not evidence
+the design itself is sound -- it is evidence reviewers were only ever
+asked "does this part's own geometry do what its own comment claims",
+never "does the assembled mechanism actually work, and has anyone here
+already built one that does". A part that is explicitly documented as
+"deliberately incomplete" or leaving a "companion piece... out of this
+task's scope" is not a stated limitation to design around -- for a moving
+mechanism, it is very often the one piece that decides whether the whole
+thing works at all, and is exactly where a proven design already has a
+real answer to copy instead of invent.
