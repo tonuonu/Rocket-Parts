@@ -121,7 +121,13 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # integrating the divergence theorem over the exported mesh -- not
 # restated from a prior round -- since the transplant touched parts 3, 5,
 # 8, 13 and added 15-23 outright.
-STL_VOL = {1: 16.2, 2: 47.1, 3: 70.4, 4: 12.7, 5: 66.0, 6: 23.8, 7: 11.3,
+#
+# [5] re-measured AGAIN (10th review, critical fix 1 + mass fix): the
+# activator mount fix replaced 3 blind M3 inserts with 2 through #10-24
+# holes (negligible volume either way), but the SAME fix hollowed the
+# skirt's own solid 15mm span to a plain R60_Wall_T tube + a 3mm aft web
+# (R60_EBayAftBulkhead()'s own module comment) -- 66.0->39.4 cm3.
+STL_VOL = {1: 16.2, 2: 47.1, 3: 70.4, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
            8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 34.2, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
            22: 1.5, 23: 10.5}
@@ -140,17 +146,61 @@ THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
 # rendering the complete stack at OD=R60_Coupler_OD.
 AFTBULK_T  = 12.0    # R60_AftBulk_T -- disc thickness
 SKIRT_L    = 15.0    # aft bulkhead's own skirt engagement into part 3
-ACT_OFFSET = -5.5    # part 15's own centroid, relative to its mount face
-                       # (measured off its rendered mesh, Z[-19,8])
+# ACT_MOUNT_GAP (10th review, critical fix 1): every station below used
+# to chain off S_CHUTE+SKIRT_L (the aft bulkhead's own aft/skirt-tip
+# face) as if the Activator's own local z=0 origin sat exactly there,
+# zero gap -- the SAME wrong assumption the old, now-fixed
+# R60_EBayAftBulkhead() mount silently encoded (its 3 insert holes bolted
+# straight to that face). The Activator's real host-mount feature
+# (CRBBm_Activator()'s nested EBay_TopPlate() ring) is at the part's own
+# LOCAL z=-19, not 0 (Rocket60.scad's Render_Part=15, confirmed on the
+# rendered mesh) -- it is the RING, not the origin, that touches the
+# bulkhead's aft face, so the Activator's own z=0 actually sits
+# ACT_MOUNT_GAP=19mm AFT of S_CHUTE+SKIRT_L (see
+# R60_EBayAftBulkhead()'s own module comment and tools/r60_assembly.scad's
+# Pair 33 for the mesh-verified placement this restates). Every station
+# from the activator through the petal hub is part of the SAME rigid
+# stack (all measured together, off one render, per the comment below) so
+# all of them move by the same +19mm -- only S_ACT0, the shared base they
+# chain from, needed correcting; SCR_OFFSET/SPRINGEND_OFFSET/
+# PETALS_OFFSET/HUB_TAIL_OFFSET (the stack's own INTERNAL relative
+# geometry) are unchanged.
+ACT_MOUNT_GAP = 19.0
+S_ACT0 = S_CHUTE + SKIRT_L + ACT_MOUNT_GAP   # release activator's (part
+                                               # 15) own local z=0, global
+ACT_OFFSET = -5.5    # part 15's own centroid, relative to its own mount
+                       # face (S_ACT0) -- (measured off its rendered
+                       # mesh, Z[-19,8], bbox midpoint)
 SCR_OFFSET = 22.5     # parts 16-20's own mount-face offset aft of part
-                       # 15's, matching Rocket6551.scad's own SCR_Z arithmetic
-SPRINGEND_OFFSET = 72.5   # part 23's own mount face, same reference
-PETALS_OFFSET = 76.5      # part 13's own base, same reference
+                       # 15's OWN z0 (S_ACT0), matching Rocket6551.scad's
+                       # own SCR_Z arithmetic
+SPRINGEND_OFFSET = 72.5   # part 23's own mount face, same reference (S_ACT0)
+PETALS_OFFSET = 76.5      # part 13's own base, same reference (S_ACT0)
 HUB_TAIL_OFFSET = 5.0     # part 8's own aft reach past the petal tips
                             # (measured off its rendered mesh, Z[-5,21.5])
 R60_Petal_Len = 120.0      # R60Lib.scad's own R60_Petal_Len -- restated
                              # (rule 4), see that constant's own comment
                              # for the packing-volume derivation
+
+# Closure check (10th review): the petal hub's (part 8) own aft-most
+# material -- the tip of its spigot, S_ACT0+PETALS_OFFSET+R60_Petal_Len+
+# HUB_TAIL_OFFSET -- has to land close to S_FIN (the fin can's own
+# forward tip, where R60_PetalHubSpigot_L=5.5mm of it actually engages
+# the fin can's own R60_FinCan_FwdOpen_L=6mm open annulus) for this whole
+# chain to be physically closed, not floating disconnected from what it
+# is stated to spigot into. Independent check on ACT_MOUNT_GAP itself:
+# under the OLD (zero-gap) assumption this lands 23.5mm SHORT of S_FIN --
+# unphysical, the hub could not have reached the fin can at all -- while
+# the corrected chain lands within one spigot length of it.
+R60_FinCanSpigot_L_restated = 5.5   # R60Lib.scad's R60_FinCanSpigot_L,
+                                      # restated (rule 4) -- shared by
+                                      # R60_PetalHubSpigot_L there
+_hub_tail = S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET
+assert abs(_hub_tail - S_FIN) <= R60_FinCanSpigot_L_restated, (
+    "rocket60_model.py: petal hub's own aft-most reach (%.1f) is not "
+    "within one spigot length (%.1f) of S_FIN (%.1f) -- the release-stack "
+    "chain does not close on the fin can it is stated to spigot into; "
+    "recheck ACT_MOUNT_GAP" % (_hub_tail, R60_FinCanSpigot_L_restated, S_FIN))
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own
@@ -193,9 +243,11 @@ RETAINER_T   = 6.0    # R60_MotorRetainer()'s own T (=part 11's own
 # by what bolts onto its outside) -- only the motor retainer's own
 # station (see build(), below) needed correcting to TOTAL+RETAINER_T/2.
 # OVERALL_LEN is the airframe's true physical envelope INCLUDING that
-# externally-bolted retainer -- 690mm, not the 684mm TOTAL alone reports
+# externally-bolted retainer -- 750mm, not the 744mm TOTAL alone reports
 # (previously published, wrongly, as the airframe's overall length in
-# both the spec and STL README).
+# both the spec and STL README; those figures were 690/684mm before the
+# petal-deployment transplant grew L_CHUTE 180->240 -- restated here to
+# match the CURRENT TOTAL, not left stale a second time).
 OVERALL_LEN = TOTAL + RETAINER_T
 
 
@@ -308,9 +360,17 @@ def build(motor):
     # distinct from its sled, which IS measured), battery+wiring (45g),
     # 2x MG90S servos (27g, datasheet), switch hardware (8g),
     # parachute+cord+hw (70g), CS4323 spring (25g, explicitly flagged
-    # "est., unverified"), tether latch pin (1g), shear pins (0.5g), rail
-    # buttons (4g). That is roughly 269g of this rocket's 874g liftoff
-    # mass -- 31% -- resting on unweighed hardware estimates, not
+    # "est., unverified"), 1 servo + mounting hardware (13.5g, folded into
+    # the aft-bulkhead line), switch hardware (8g), release activator's
+    # own small hardware (4g), release stack's bearings (11g), rail
+    # buttons (4g). RE-ITEMISED (10th review): the OLD list here named
+    # hardware the petal-deployment transplant deleted outright -- 2x
+    # MG90S servos (single-deploy needs only 1, R60_EBayAftBulkhead()'s
+    # own module comment), tether latch pin, shear pins (the tether
+    # latch/shear-pin joint itself is gone, tasks/lessons.md) -- while
+    # citing 874g, a stale liftoff mass from before that same transplant.
+    # That is roughly 269g of this rocket's 933g (not 874g) liftoff
+    # mass -- 29% -- resting on unweighed hardware estimates, not
     # measured mesh volumes. STL Files/Rocket60/README.md's own
     # instruction ("weigh the parts as they come off the printer") covers
     # the printed-part side of this; the loose-hardware side has no
@@ -380,37 +440,45 @@ def build(motor):
      ('deployment bay tube',   petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
      # Petal-deployment transplant: the release stack (parts 15-22) +
      # CS4323 spring + R60_FwdSpringEnd() (part 23) occupy the
-     # deployment bay's own forward span (0..SPRINGEND_OFFSET+25 from
-     # S_CHUTE); the packed parachute is now stowed INSIDE the petal cage
-     # (part 13), not in a separate open volume -- so this item's station
-     # moves to the petals' own centroid instead.
+     # deployment bay's own forward span; the packed parachute is now
+     # stowed INSIDE the petal cage (part 13), not in a separate open
+     # volume -- so this item's station moves to the petals' own
+     # centroid instead. FIXED (10th review): this used to omit SKIRT_L
+     # entirely (S_CHUTE + PETALS_OFFSET + ... instead of S_CHUTE +
+     # SKIRT_L + PETALS_OFFSET + ...) -- 15mm forward of the petal cage
+     # it is stated to be stowed in, pulling CG forward and overstating
+     # every published margin. Now reads the SAME S_ACT0 base every other
+     # release-stack item below uses (rule 4), not yet a third
+     # independent restatement.
      ('parachute+cord+hw',     70.0,
-      S_CHUTE + PETALS_OFFSET + R60_Petal_Len / 2),
+      S_ACT0 + PETALS_OFFSET + R60_Petal_Len / 2),
      # Release activator (part 15) -- bolts to the aft bulkhead's aft
-     # face (global S_CHUTE+SKIRT_L), carries the MG90S servo (already
-     # counted on the aft-bulkhead line above) plus its own printed mass
-     # and small hardware (2x N42 magnets, dowel pins, screws -- no
-     # per-item figures exist anywhere in this repo, ~4g stated estimate,
-     # same "flat, unverified" convention as every other loose-hardware
-     # line here).
+     # face; its own local z=0 origin is S_ACT0 (ACT_MOUNT_GAP aft of
+     # S_CHUTE+SKIRT_L -- see that constant's own comment), carries the
+     # MG90S servo (already counted on the aft-bulkhead line above) plus
+     # its own printed mass and small hardware (2x N42 magnets, dowel
+     # pins, screws -- no per-item figures exist anywhere in this repo,
+     # ~4g stated estimate, same "flat, unverified" convention as every
+     # other loose-hardware line here).
      ('release activator',     petg(STL_VOL[15]) + 4.0,
-      S_CHUTE + SKIRT_L + ACT_OFFSET),
+      S_ACT0 + ACT_OFFSET),
      # Release stack (parts 16-20): top retainer, lock ring, outer
      # bearing retainer, trigger post, magnet bracket -- bolted together
      # per CableReleaseBBMicro.scad's own hardware stack, all landing at
      # the SAME station (SCR_OFFSET aft of the activator's own mount
-     # face, matching Rocket6551.scad's own SCR_Z arithmetic). Includes
-     # the 6703-2RS bearing (~8g, catalog) and 3x MR63 lock bearings
-     # (~1g each) -- stated estimates, no per-item figures in this repo.
+     # face, S_ACT0, matching Rocket6551.scad's own SCR_Z arithmetic).
+     # Includes the 6703-2RS bearing (~8g, catalog) and 3x MR63 lock
+     # bearings (~1g each) -- stated estimates, no per-item figures in
+     # this repo.
      ('release stack (16-20)', petg(STL_VOL[16]+STL_VOL[17]+STL_VOL[18]
                                      +STL_VOL[19]+STL_VOL[20]) + 11.0,
-      S_CHUTE + SKIRT_L + SCR_OFFSET),
+      S_ACT0 + SCR_OFFSET),
      # Release extension rod + locking pin (parts 21/22) -- run through
      # the spring's own ID (40.50mm, clears R60_LockPin_d=12mm with
      # room) from the release stack up to R60_FwdSpringEnd(); midpoint of
      # that span.
      ('release rod + pin',     petg(STL_VOL[21]+STL_VOL[22]),
-      S_CHUTE + SKIRT_L + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
+      S_ACT0 + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
      # CS4323 spring -- no spring rate/mass figure exists anywhere in the
      # repo (this transplant carries the SAME open risk the design it
      # replaces already flagged); 25g is a stated, UNVERIFIED estimate
@@ -419,21 +487,21 @@ def build(motor):
      # release stack's own mount face and R60_FwdSpringEnd()'s own mount
      # face -- the span it actually occupies once compressed.
      ('CS4323 spring (est., unverified)', 25.0,
-      S_CHUTE + SKIRT_L + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
+      S_ACT0 + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
      # Forward spring end (part 23) -- the moving piston; bolts inside
      # the petal cage (part 8/13).
      ('forward spring end',    petg(STL_VOL[23]),
-      S_CHUTE + SKIRT_L + SPRINGEND_OFFSET),
+      S_ACT0 + SPRINGEND_OFFSET),
      # Petals (part 13) -- IS the separable joint now (R60_Petals()'s own
      # module comment); no shear pins anywhere in this design any more.
      ('petals',                petg(STL_VOL[13]),
-      S_CHUTE + SKIRT_L + PETALS_OFFSET + R60_Petal_Len / 2),
+      S_ACT0 + PETALS_OFFSET + R60_Petal_Len / 2),
      # Petal hub (part 8) -- bolts to the fin-can side; its own aft-most
-     # reach (HUB_TAIL_OFFSET past the petal tips) still sits inside
-     # S_FIN (confirmed: station audit below), so it never competes with
+     # reach (HUB_TAIL_OFFSET past the petal tips) lands close to S_FIN
+     # (asserted above, the closure check), so it never competes with
      # the fin can's own forward centring ring for space.
      ('petal hub',             petg(STL_VOL[8]),
-      S_CHUTE + SKIRT_L + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET/2),
+      S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET/2),
      # Plain uniform tube -- geometric midpoint.
      ('fin can (PC)',          pc(STL_VOL[9]),           S_FIN+L_FINCAN/2),
      # FIXED (defect 3c): was NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62, a
@@ -469,17 +537,21 @@ def build(motor):
      # motor-stand-in placement (the motor sits at NEGATIVE local z in the
      # retainer's frame, i.e. forward of it, confirming the retainer's own
      # +z points aft). The airframe's TRUE overall length is therefore
-     # TOTAL+RETAINER_T = 690mm, not the 684mm TOTAL alone reports (see
-     # OVERALL_LEN below) -- the spec and STL README both published 684mm
-     # and are corrected alongside this. Old TOTAL-30=654 (pre-audit) was
-     # 33mm short of the now-correct 687, not 27mm short of the
-     # intermediate (also wrong) 681 this replaces.
+     # TOTAL+RETAINER_T = 750mm, not the 744mm TOTAL alone reports (see
+     # OVERALL_LEN below) -- the spec and STL README both published this
+     # figure and are corrected alongside this (these were 690/684mm
+     # before the petal-deployment transplant grew L_CHUTE 180->240 -- the
+     # historical 654/687/681mm deltas in the rest of this comment predate
+     # that growth too, kept as the ORIGINAL station-audit record, not
+     # restated against the current TOTAL).
      ('motor retainer (PC)',   pc(STL_VOL[11]),          TOTAL+RETAINER_T/2),
-     # No SCAD backing (RailButton() mounting position is not modelled
-     # in Rocket60.scad) -- kept as the existing estimate, reasonably
-     # within the fin can's own aft-biased span where rail buttons are
-     # conventionally placed.
-     ('rail buttons x2',       4.0,                      TOTAL-60),
+     # FIXED (10th review): was TOTAL-60=684, an ungrounded guess kept
+     # AFTER R60Lib.scad's own R60_RailButton_Fwd_Z/_Aft_Z were defined --
+     # this comment used to claim "position is not modelled" when it now
+     # is. Lumped station is the mean of the two real button stations
+     # (R60Lib.scad, restated per rule 4: Fwd_Z=242, Aft_Z=630) -- 436,
+     # 248mm forward of the stale TOTAL-60 guess.
+     ('rail buttons x2',       4.0,                      (242.0+630.0)/2),
      ('motor spacer (PC)',     spacer_g,                 TOTAL-mlen-spacer_len/2),
      # Forward thrust ring (part 14) -- new this round (defect 3). Flush
      # with the fin can's own forward tip -- S_FIN+THRUST_RING_T/2, NOT

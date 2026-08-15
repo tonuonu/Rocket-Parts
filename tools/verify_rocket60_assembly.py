@@ -117,10 +117,17 @@ PAIRS = {
     29: "access door screws sweep vs door+tube",
     30: "motor retainer bolts sweep vs retainer + fin can insert",
     # 31 RETIRED (petal-deployment transplant) -- was tether latch
-    # mounting bolts vs aft bulkhead. The release activator's (part 15)
-    # own mounting bolts are a known gap -- see r60_assembly.scad's own
-    # pair-enumeration comment.
+    # mounting bolts vs aft bulkhead.
     32: "Vega board mounting screws sweep vs sled",
+    # 10th review, critical fix 1: release activator's (part 15) own
+    # mount to the aft bulkhead (part 5) -- was a known gap (the OLD
+    # mount bolted through the activator's own INTERNAL joint to the
+    # top retainer, on the wrong face, with the wrong fastener standard
+    # -- see r60_assembly.scad's own Pair 33/34 comments and
+    # Rocket60.scad's R60_EBayAftBulkhead() module comment for the full
+    # writeup, and tasks/lessons.md for the mutation-test record).
+    33: "release activator vs aft bulkhead (mating fit)",
+    34: "release activator mounting screws sweep vs bulkhead+activator",
 }
 STROKE_PAIRS = (5,)
 # Insertion stroke sweep -- 0 (first contact) through 15 (fully seated,

@@ -36,9 +36,16 @@ ring through the forward spring end, part 23) plus the fixed
   feature-free 240mm tube (grown from 180mm). It never separates; it
   houses the release stack + spring + forward spring end, with an open
   aft end the petal cage telescopes through.
-- `05_EBayAftBulkhead.stl` carries one servo mount (a ruthex-insert bolt
-  circle for `15_ReleaseActivator.stl`) instead of two servo pockets —
-  single deploy has no second (tumble-release) servo.
+- `05_EBayAftBulkhead.stl` carries one servo mount instead of two servo
+  pockets — single deploy has no second (tumble-release) servo. **10th
+  review, critical fix:** the mount is 2× #10-24 through-bolts into
+  `15_ReleaseActivator.stl`'s own `EBay_TopPlate` ring — NOT the 3× M3
+  ruthex-insert circle an earlier draft of this document (and the code)
+  described; that circle was the activator's own internal joint to its
+  neighbour part, on the wrong face, sized for the wrong screw. The
+  bulkhead's own 15mm skirt is also now mostly hollow (a plain tube +
+  a 3mm web at the tip, not a solid slug) — see `Rocket60.scad`'s
+  `R60_EBayAftBulkhead()` module comment.
 - `14_ThrustRing.stl` glues into the MMT's forward opening, flush with
   the fin can's own tip, and reacts the motor's FORWARD thrust reaction,
   which `11_MotorRetainer.stl` alone cannot: that retainer only resists
@@ -50,14 +57,16 @@ ring through the forward spring end, part 23) plus the fixed
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor. The
 petal-deployment transplant grew the deployment bay (180→240mm) and
 moved the fin can (and CP) 60mm further aft; re-run, the G80T's static
-margin **IMPROVED to 1.68 cal** (was 1.46 cal pre-transplant) — CP moved
-aft more than CG did, since the added length sits forward of the fin
-can. Clears the physical minimum, **1.0 cal** (standard high-power
-practice's accepted 1.0–2.0 cal band), with real room. See spec §6/§6.1
-for the full reasoning. Airframe is sized for
-a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is available later with
-no reprint (spec §1.1, §5); both clear the same 1.0 cal minimum (§9) at
-**1.48 cal** and **1.49 cal** respectively.
+margin **IMPROVED to 1.56 cal** (was 1.46 cal pre-transplant; 10th
+review's aft-bulkhead mass fix, below, moved the margin again, from
+1.68 to 1.56 — the mesh that CG figure is measured off changed, not the
+airframe stations) — CP moved aft more than CG did, since the added
+length sits forward of the fin can. Clears the physical minimum,
+**1.0 cal** (standard high-power practice's accepted 1.0–2.0 cal band),
+with real room. See spec §6/§6.1 for the full reasoning. Airframe is
+sized for a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is
+available later with no reprint (spec §1.1, §5); both clear the same
+1.0 cal minimum (§9) at **1.36 cal** each.
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
 Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
 
@@ -161,10 +170,16 @@ hunt for. Printing the fin can in PC satisfies "PC for the centering
 rings" automatically.
 
 **Fins stay PETG.** Spec §6 computes the fin flutter margin explicitly
-from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 955 m/s (63mm-span fin, exposed
-geometry — see §9's fin-sizing note), 1.52× the required 3× floor against
-the H182R's 210 m/s Vmax. Moving the fins to PC would change that shear
-modulus and orphan the documented margin without a recompute, and neither
+from "G ≈ 0.5 GPa for printed PETG" → Vf ≈ 589 m/s (63mm-span fin, exposed
+geometry, root-chord t/c — see §9's fin-sizing note for the 955→589 m/s
+correction; this paragraph used to cite the SUPERSEDED 955 m/s figure
+here, two sections before its own correction, a live instance of the
+exact "restated literal drifts from the source" defect §9's own note
+warns about), gated per-motor at a stated 1.5× floor, not a single "3×
+the fastest motor" check — 2.9× against the H182R's own ~203 m/s Vmax
+(§9's fin-sizing note has the full per-motor table). Moving the fins to
+PC would change that shear modulus and orphan the documented margin
+without a recompute, and neither
 the STL README's materials note nor this task's brief lists fins among the
 PC parts (both say "fin can, centering rings, retainer and spacers" —
 never "fins"). The
@@ -198,16 +213,36 @@ this document, not a design-spec number — and the reasoning is given.
 | 2 | E-bay tube | PETG | 4 (§8) | N/A — 1.6 mm tube wall, solid from perimeters | 0.2 mm (§8) | Vertical, as modeled (§8: "all tubes print vertically") | No |
 | 3 | Chute bay tube | PETG | 4 (§8) | N/A — same as e-bay tube | 0.2 mm (§8) | Vertical, as modeled | No |
 | 4 | E-bay fwd bulkhead | PETG | 4 (§8) | 25–30% gyroid **[practice default]** — 17 mm radial disc, not flight-critical (harness pass-through only) | 0.2 mm (§8) | Flat, either face down | No |
-| 5 | E-bay aft bulkhead | PETG | 4 (§8) | **≥50% gyroid, or solid, in the servo-pocket floor / cord-anchor region [practice default, deliberately conservative]** | 0.2 mm (§8) | Flat, servo/cord-pocket face **up** — the pockets open on one face only; printing that face up avoids bridging the pocket floors | Recommended — this part must not warp out of flat |
+| 5 | E-bay aft bulkhead | PETG | 4 (§8) | **≥50% gyroid, or solid, near the 2 activator-mount screw bosses and cord-anchor region [practice default, deliberately conservative]** | 0.2 mm (§8) | Flat, aft (skirt) face **up** — this face carries the 2 activator mounting holes and the now-mostly-hollow skirt's own internal ceiling (its 3mm aft web); printing it up gives the slicer a bridge/support target instead of an unsupported overhang on the down face | **Yes — supports required under the skirt's internal ceiling** (10th review: the skirt is now a hollow tube + a 3mm web at the tip, not a solid slug — R60_EBayAftBulkhead()'s own module comment). Tree/normal supports touching build plate only, so they don't fuse into the skirt's own hollow interior |
 | 6 | Vega sled | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, standoffs up | No |
 | 7 | Access door | PETG | 4 (§8) | N/A — 1.6 mm wall, matches tube wall | 0.2 mm (§8) | Vertical, curved face as modeled | No |
-| 8 | Spring/ball-lock carrier | PETG | 4 (§8) | 25–30% gyroid **[practice default]**; the diaphragm floor and ball-pocket bosses print fully solid from walls regardless | 0.2 mm (§8) | Vertical, as a tube, aft face down (the face that glues flush to `05_EBayAftBulkhead.stl`'s skirt) — matches modeled Z | **Yes, plus supports under the diaphragm** — a Ø44.8 mm internal floor bridging open space on both sides; enable tree/normal supports touching build plate only, so they don't fuse into the spring bore |
+| 8 | Petal hub | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Vertical, as a tube, aft spigot down (the face that slides into `09_FinCan.stl`'s forward opening) — matches modeled Z | No |
 | 9 | Fin can (incl. 3 integrated centering rings + MMT) | **PC** | 4 (outer 1.6 mm wall and 1.5 mm MMT wall both print fully solid at 4 loops of a 0.4 mm nozzle — see note) | 70% gyroid **[from `L2-PrintSettings.md` PC fin-can precedent]** — governs only the three ~12 mm-wide integrated ring bands, not the thin tube/MMT walls | 0.12 mm **[from L2 precedent]** | Vertical, aft (retainer) end down | **Yes, 5 mm** — PC warps; large footprint helps (per `L2-PrintSettings.md`) |
 | 10 | Fin (×3) | PETG | — (solid from flat print, no wall-loop concept) | **62% (§8, literal)** — pattern not specified by spec; gyroid assumed **[practice default: pattern only]** | 0.2 mm (§8) | Flat, oriented so layer lines run spanwise (§8, literal) | No |
 | 11 | Motor retainer | **PC** | 4+ **[from `MotorAdapter29.scad` PC print-settings precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Flat, 6 mm disc — print flat, either face down (unlike the adapter's own tall geometry, this part has no long axis to stand on) | Recommended (same precedent) |
 | 12 | Motor spacer | **PC** | 4+ **[same `MotorAdapter29` precedent]** | 40–60% **[same precedent]** | 0.2 mm **[same precedent]** | Vertical, as a tube (98 mm for the G80T; re-export for `Motor_Class=1`/`2` for the H182R/H135W — 19/6 mm; stops short of part 14, not the full MMT) | Recommended (same precedent) |
+| 13 | Petals | PETG | 4 (§8) | 25–30% gyroid **[practice default]**; the printed lock nubs print fully solid from walls regardless | 0.2 mm (§8) | Vertical, as a tube, base (hub-facing) end down | No |
 | 14 | Forward thrust ring | **PC** | 4+ **[same `MotorAdapter29` precedent]** | Solid — 6 mm thick, 1.05 mm lip, no interior to fill | 0.2 mm **[same precedent]** | Flat, either face down — a 6 mm annulus, no long axis | Recommended (same precedent) |
-| 13 | Tether latch | PETG | 4 (§8) | 40–50% **[practice default]** — small part, carries a cyclic tumbling load per §8 item 3, not just a static pull | 0.2 mm (§8) | Flat, base down, posts up — the horizontal Ø3.2 mm pin bore through each post is small enough to bridge cleanly without support at this layer height | No — small footprint and flat base |
+| 15 | Release activator | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, `EBay_TopPlate` ring face down (the face that bolts to `05_EBayAftBulkhead.stl`'s aft face) — best flatness on the mating face | Yes, under the servo pocket/magnet-post overhangs |
+| 16 | Release top retainer | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Vertical, bearing-bore axis up | Yes, under the ball-pocket/rotation-limit-slot overhangs |
+| 17 | Release lock ring | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Vertical, bore axis up | Yes, under the ball-groove overhangs |
+| 18 | Release outer bearing retainer | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, either face down | No |
+| 19 | Release trigger post | PETG | 4 (§8) | Solid — small part | 0.2 mm (§8) | Flat, base down | No |
+| 20 | Release magnet bracket | PETG | 4 (§8) | Solid — small part | 0.2 mm (§8) | Flat, base down | No |
+| 21 | Release extension rod | PETG | 4 (§8) | Solid — small part | 0.2 mm (§8) | Vertical, as a rod | No |
+| 22 | Release locking pin | PETG | 4 (§8) | Solid — small part | 0.2 mm (§8) | Vertical, as a rod | No |
+| 23 | Forward spring end | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, skirt face down | No |
+
+**Parts 15–23 (10th review):** these 9 release-hardware prints were
+already exported and listed in `STL Files/Rocket60/README.md` but were
+missing from this table entirely, meaning they printed at whatever a
+slicer's own defaults happened to be — added above at this document's
+own **[practice default]** convention (25–30% gyroid for the larger
+housings, solid for the small pins/posts/rods, matching the equivalent
+existing rows 6/1 in this table), not a Rocket 60-specific spec figure
+(none exists for this donor-library hardware). Orientation follows each
+part's own largest flat mating/bearing face, same reasoning as every
+other row.
 
 **Why the fin can gets 4 wall loops, not L2's 6.** `L2-PrintSettings.md`'s
 PC fin can used 6 loops because its design wall is 2.4 mm. Rocket 60's
@@ -245,18 +280,22 @@ rail only — the 3 mm launch rod is not usable at this mass**; at this
 length a 3 mm rod would whip badly and rail exit would be unstable
 (spec §9).
 
-At the as-built liftoff mass (933 g on the G80T, from
+At the as-built liftoff mass (907 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
-note) the rocket leaves the owner's 1.83 m rail at **20.1 m/s**, comfortably
+note) the rocket leaves the owner's 1.83 m rail at **20.4 m/s**, comfortably
 clear of the ~15 m/s minimum needed for the fins to stabilize the vehicle
-(spec §5, §6). The H182R is unaffected (29.9 m/s). Confirm actual rail
+(spec §5, §6). The H182R is unaffected (30.4 m/s). Confirm actual rail
 exit before flying (spec §11 item 6).
 
-**Axial station (task 7, previously unspecified):** azimuth 180°, aft
-button at Z=630mm (fin can, forward of the fins, at the mid centring
-ring), forward button at Z=230mm (e-bay tube) — R60Lib.scad's
-`R60_RailButton_Aft_Z`/`R60_RailButton_Fwd_Z`/`R60_RailButton_Az`. Keeps
-the G80T's own liftoff CG (394mm) between the two buttons.
+**Axial station (task 7, previously unspecified; 10th review: forward
+button station corrected — it used to be measured against the wrong Z
+frame, see `R60Lib.scad`'s own `R60_RailButton_Fwd_Z` comment):**
+azimuth 180°, aft button at Z=630mm (fin can, forward of the fins, at
+the mid centring ring), forward button at Z=242mm (e-bay tube, clear of
+the door cover's own aft edge with a stated margin) —
+R60Lib.scad's `R60_RailButton_Aft_Z`/`R60_RailButton_Fwd_Z`/
+`R60_RailButton_Az`. Keeps the G80T's own liftoff CG (401.8mm) between
+the two buttons.
 
 Print settings for the rail buttons themselves are not covered by the
 Rocket 60 sources (`RailGuide.scad` is a shared, pre-existing library, not
@@ -306,10 +345,18 @@ Build order for what exists today:
    cannot be corrected once the aft bulkhead closes the assembly in step
    6. Every fastener here is turned in open bench air; none is reached
    down a blind tube.
-4. Install both MG90S servos in `05_EBayAftBulkhead.stl`'s upright
-   pockets, shafts along the rocket axis (spec §3.2). Screw
-   `13_TetherLatch.stl` to the bulkhead's aft face (2× M3 into ruthex
-   inserts) so servo 2's horn can reach it.
+4. **Build the release stack (petal-deployment transplant; 10th review
+   updated the mount, below):** assemble `15_ReleaseActivator.stl`
+   through `20_ReleaseMagnetBracket.stl` per
+   `CableReleaseBBMicro.scad`'s own hardware stack (the servo lives
+   inside part 15 now, not in the bulkhead — one MG90S, not two; single
+   deploy has no second, tumble-release phase). Bolt part 15 to
+   `05_EBayAftBulkhead.stl`'s aft face with 2× #10-24 screws (~1-3/8in),
+   through the bulkhead from its open forward face, into part 15's own
+   `EBay_TopPlate` ring bosses — **not** the M3-ruthex-insert instruction
+   an earlier draft of this document gave; that circle was never the
+   right mounting feature (`Rocket60.scad`'s `R60_EBayAftBulkhead()`
+   module comment has the full defect writeup).
 5. Anchor the shock cord to the aft bulkhead. Do this before closing the
    e-bay — it is not accessible afterward.
 6. Assemble the e-bay inside `02_EBayTube.stl`: insert the forward
@@ -330,11 +377,15 @@ Build order for what exists today:
    with the rocket vertical on the rail (spec §7.1). The door is a cover
    that overlaps the tube's opening on every side; 4× M2.5 into the
    tube's own bosses, not a flush plug.
-9. Glue `08_SpringCarrier.stl`'s forward rim to `05_EBayAftBulkhead.stl`'s
-   aft skirt (same OD, flush joint) — this closes the e-bay's pressure
-   boundary and gives the (separately-sourced) ball-lock plunger/lock ring
-   somewhere to seat. **The carrier alone does not make a working release
-   — see Status.**
+9. **Bond `03_DeploymentBayTube.stl`'s forward rim to
+   `05_EBayAftBulkhead.stl`'s aft skirt** (same OD, flush joint) —
+   PERMANENTLY: this is no longer a separable, serviceable joint (the
+   spring-carrier/shear-pin design this step used to describe is
+   deleted — see Status). The release stack (step 4) now sits inside
+   this tube. Thread the locking pin + extension rod (parts 21/22)
+   through the lock ring, load the CS4323 spring over them, and cap the
+   free end with `23_ForwardSpringEnd.stl`, captive on the pin until
+   the servo releases it — see spec §4.2 for the full mechanism.
 10. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
    `11_MotorRetainer.stl` to the fin can aft end (3× M3 into ruthex
    inserts). Glue `14_ThrustRing.stl` into the MMT's forward opening,
@@ -343,15 +394,20 @@ Build order for what exists today:
    Nothing else reacts the motor's forward thrust: the aft retainer
    only resists motion out the back. Install `12_MotorSpacer.stl` for
    the G80T (re-export for `Motor_Class=1`/`2` for the H182R/H135W).
-11. Slide `03_ChuteBayTube.stl` forward over `05_EBayAftBulkhead.stl`'s
-    aft skirt until the two shear-pin holes line up, and drive in the 2
-    nylon 2-56 pins — this is the joint the ejection-charge backup shears
-    (spec §4.2). Do not glue it; it must stay serviceable. Tie the tether
-    off through the tube's forward-rim lug (part of the same tube) to
-    `13_TetherLatch.stl`'s pin. Bond the chute bay tube to the fin can's
-    forward end — its own aft end carries a Ø56.4 spigot that inserts
-    into the fin can's forward opening, so this is a located, concentric
-    joint, not a bare butt bond.
+11. **Build the petal cage, THE separable joint** (petal-deployment
+    transplant — this is no longer a shear-pin/tether design; see
+    Status): bolt `08_PetalHub.stl` to the fin can's forward end (its own
+    aft spigot inserts into the fin can's forward opening — a located,
+    concentric joint, not a bare butt bond), bolt `13_Petals.stl` to the
+    hub, and bolt `23_ForwardSpringEnd.stl` (already captive on the
+    release stack's pin, step 9) inside the petal cage. Bond
+    `03_DeploymentBayTube.stl` to the fin can is NOT a step here any
+    more: the two halves simply telescope together — the deployment bay
+    tube's own open aft end slides over the petal cage as a plain
+    sliding fit (its natural bore already gives the same clearance every
+    other internal joint in this design uses), with no bond and no pins.
+    Nothing in the airframe shears; the petals themselves hold the two
+    halves together until the servo releases them (spec §4.2).
 
 ---
 
@@ -436,13 +492,14 @@ Copied from spec §11, with one adaptation flagged below.
 4. Bench-test the full Vega sequence on the ground: arm → apogee servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
 6. **Weigh the fully assembled rocket and compare against
-   `tools/rocket60_model.py`'s own liftoff-mass figure (933 g, G80T
+   `tools/rocket60_model.py`'s own liftoff-mass figure (907 g, G80T
    config) before flying.** Rail exit is what mass actually threatens on
-   this rocket (20.1 m/s off the owner's 1.83 m rail against a ~15 m/s
+   this rocket (20.4 m/s off the owner's 1.83 m rail against a ~15 m/s
    minimum, spec §6.1) — NOT stability, which clears its own
-   1.0 cal minimum with real room (spec §6.1, 1.68 cal). Roughly a third of
-   the modelled 933 g is flat-gram hardware ESTIMATES, not measured
-   mesh volumes, so the real liftoff mass could differ meaningfully:
+   1.0 cal minimum with real room (spec §6.1, 1.56 cal). Roughly a
+   quarter of the modelled 907 g is flat-gram hardware ESTIMATES, not
+   measured mesh volumes, so the real liftoff mass could differ
+   meaningfully:
    - camera assembly (60 g), 1× MG90S servo + small release hardware
      (~15 g, datasheet/estimate — one servo now, not two),
      parachute+cord+hardware (70 g), battery+wiring (45 g), CATS Vega
@@ -455,11 +512,11 @@ Copied from spec §11, with one adaptation flagged below.
      stated, unverified assumption applied across every PETG part alike,
      not per-part infill actually measured off a scale (§3's own
      infill % differs 25–62% per part).
-   - If the weighed rocket comes in meaningfully over 933 g, re-check
+   - If the weighed rocket comes in meaningfully over 907 g, re-check
      rail exit against the ~15 m/s minimum before flying — a shorter or
      lower-thrust rail exit is the actual failure mode a heavier-than-
      modelled rocket produces, not a stability problem.
-7. Confirm rail exit on the actual 1.83 m rail (20.1 m/s predicted).
+7. Confirm rail exit on the actual 1.83 m rail (20.4 m/s predicted).
 8. **Confirm the arming switch can actually be reached and thrown with the
    rocket vertical on the rail.** The Vega calibrates once, automatically,
    as soon as it detects no motion after boot — it must not be powered up
@@ -469,23 +526,23 @@ Copied from spec §11, with one adaptation flagged below.
    GNSS fix **before** the rocket leaves your hands. The firmware default
    is `false`.
 10. First flight on the G80T-14A, single objective: recover the airframe
-    and read the Vega log. Compare logged apogee to the 588 m prediction
+    and read the Vega log. Compare logged apogee to the 603 m prediction
     and correct Cd₀ before flying the H.
 
 ---
 
 ## 9. Known gaps — do not treat this as a finished rocket
 
-- **Ball-lock plunger and rotating lock ring** — `08_SpringCarrier.stl`'s
-  fixed housing (mounting rim, diaphragm, ball pockets, spring bore) exists,
-  but the two moving companion parts that actually catch and release the
-  spring do not, and are not given part numbers by this design (a rotating
-  part and a printed housing cannot be one piece) is **resolved by the
-  petal-deployment transplant** (spec §4): `15_ReleaseActivator.stl`
-  through `22_ReleaseLockingPin.stl` are real, `use<>`-instantiated
-  parts (`CableReleaseBBMicro.scad`) implementing exactly this rotating
-  lock ring / ball-detent / magnetic over-centre catch, not a stated
-  future task.
+- **Ball-lock plunger and rotating lock ring** — the invented spring/
+  ball-lock carrier design's own fixed housing existed, but the two
+  moving companion parts that actually catch and release the spring did
+  not, and were never given part numbers (a rotating part and a printed
+  housing cannot be one piece). **Resolved by the petal-deployment
+  transplant** (spec §4): `15_ReleaseActivator.stl` through
+  `22_ReleaseLockingPin.stl` are real, `use<>`-instantiated parts
+  (`CableReleaseBBMicro.scad`) implementing exactly this rotating lock
+  ring / ball-detent / magnetic over-centre catch, not a stated future
+  task.
 - **Spring force** — no spring rate or vendor figure for the CS4323 exists
   anywhere in this repo. Spec A11 calls this the single largest
   open risk in the recovery system; bench-test before flight (§8 item 2).
@@ -494,13 +551,21 @@ Copied from spec §11, with one adaptation flagged below.
   G80T's charge builds enough pressure fast enough to pop the petal
   lock nubs before venting is untested. Ground-test before flight (§8
   item 2).
-- **Release-hardware mounting interference** — the release chain (parts
-  15-23) has no mesh-against-mesh assembly-interference check in
-  `tools/verify_rocket60_assembly.py` yet (only the max-radius-vs-bore
-  dimensional check in `tools/verify_rocket60.py`, which is what decided
-  BBMicro vs. BBMini). A full bolt-to-bolt mounting model is future work.
-- **Rail button axial placement** — resolved (task 7): azimuth 180°,
-  Z=630mm (aft) / Z=230mm (forward), §5 above.
+- **Release-hardware mounting interference** — PARTIALLY resolved (10th
+  review): part 15's own mount to the aft bulkhead (part 5) now has a
+  mesh-against-mesh mating-fit AND fastener-reach check
+  (`tools/r60_assembly.scad` Pairs 33/34) — this is the joint that was
+  actually broken (wrong bolt circle, wrong fastener standard; see
+  `Rocket60.scad`'s `R60_EBayAftBulkhead()` module comment). The REST of
+  the internal release chain (16↔15, 17↔16, etc — all donor-native
+  `CableReleaseBBMicro.scad` hardware, unmodified by this transplant)
+  still has no bolt-to-bolt mounting-interference model, only the
+  max-radius-vs-bore dimensional check in `tools/verify_rocket60.py`
+  (which is what decided BBMicro vs. BBMini). A full model for that
+  remainder is future work.
+- **Rail button axial placement** — resolved (task 7; 10th review
+  corrected the forward station's own reference frame): azimuth 180°,
+  Z=630mm (aft) / Z=242mm (forward), §5 above.
 - Spec §5/§6 (performance, stability) are analysis, reproduced by
   `tools/rocket60_model.py`, not built by any printable part.
 
@@ -509,20 +574,21 @@ fin planform (Cr 90/Ct 35/span 63/sweep 45/t 4.0mm) is exactly as it
 was before the petal-deployment transplant; only the AIRFRAME'S overall
 length changed (deployment bay 180→240mm), moving both CP and the fin
 can 60mm aft. Re-run with the transplant's new geometry, the G80T-14A
-margin **IMPROVED from 1.46 cal to 1.68 cal** — CP moved aft by more
-than CG did, since the added length sits entirely forward of the fin
-can. Clears the physical minimum, **1.0 cal**, with real room. H182R-14A
-gives **1.48 cal** and H135W-14A gives **1.49 cal** on the
-same fins — both comfortably
-above 1.0 cal, no ballast needed. **Flutter formula fixed, not just
-re-run**: `flutter_Vf()` computed t/c on the exposed panel's MEAN chord;
-the NAR/TIR-33 form it implements (from NACA TN 4197) defines t/c on
-the exposed ROOT chord. The previously-published 955 m/s was wrong by a
-factor of (77.9/56.4)^1.5≈1.62×; the corrected figure is **589 m/s**.
-Still clears the G80T (the sizing case) at 4.8× its Vmax; the flutter
-gate itself was re-scoped from a single "3× the fastest motor overall"
-check (calibrated against the wrong 955 m/s number) to a per-motor 1.5×
-floor — G80T 4.8×, H182R 3.0×, H135W 3.2×, all clear. Rail exit on
-the G80T on the owner's 1.83 m rail is 20.1 m/s, comfortably above the
-~15 m/s minimum. See `tools/rocket60_model.py`'s own
-output for the full sweep.
+margin **IMPROVED from 1.46 cal to 1.56 cal** (10th review: this figure
+also moved, from an intermediate 1.68 cal, when the aft bulkhead's own
+mass fix shifted CG — same station audit discipline this section's own
+history already follows) — CP moved aft by more than CG did, since the
+added length sits entirely forward of the fin can. Clears the physical
+minimum, **1.0 cal**, with real room. H182R-14A and H135W-14A both give
+**1.36 cal** on the same fins — comfortably above 1.0 cal, no ballast
+needed. **Flutter formula fixed, not just re-run**: `flutter_Vf()`
+computed t/c on the exposed panel's MEAN chord; the NAR/TIR-33 form it
+implements (from NACA TN 4197) defines t/c on the exposed ROOT chord.
+The previously-published 955 m/s was wrong by a factor of
+(77.9/56.4)^1.5≈1.62×; the corrected figure is **589 m/s**. Still clears
+the G80T (the sizing case) at 4.7× its Vmax; the flutter gate itself was
+re-scoped from a single "3× the fastest motor overall" check (calibrated
+against the wrong 955 m/s number) to a per-motor 1.5× floor — G80T 4.7×,
+H182R 2.9×, H135W 3.1×, all clear. Rail exit on the G80T on the owner's
+1.83 m rail is 20.4 m/s, comfortably above the ~15 m/s minimum. See
+`tools/rocket60_model.py`'s own output for the full sweep.

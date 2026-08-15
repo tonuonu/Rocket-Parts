@@ -389,3 +389,55 @@ task's scope" is not a stated limitation to design around -- for a moving
 mechanism, it is very often the one piece that decides whether the whole
 thing works at all, and is exactly where a proven design already has a
 real answer to copy instead of invent.
+
+## 11. A transplanted mounting bolt circle was the DONOR's own internal
+## joint, not a host-mount feature -- and nothing checked it
+
+The petal-deployment transplant (lesson 10) correctly moved the release
+catch (`CableReleaseBBMicro.scad`) into Rocket 60 wholesale, but the aft
+bulkhead's own mount to `CRBBm_Activator()` (part 15) was invented, not
+transplanted: it bolted 3x M3 to `CRBBm_BottomBoltCircle_d()`, a name
+that sounds like a host-mount radius but is actually the Activator's own
+INTERNAL joint to its neighbour (`CRBBm_TopRetainer()`, 22.5mm away in
+the real, proven stack) -- on the wrong face, sized for the wrong screw
+standard (#4-40, not M3, 0.16mm off). This survived because the harness's
+own pair-enumeration comment had already written off parts 15-23 as a
+"known gap" -- true of the REST of the internal release chain, but not
+of part 15's OWN mount, which is exactly the joint a from-scratch
+integration is most likely to get wrong (lesson 10's own point, one
+layer deeper: even a proven library's SHARED parts can be joined to the
+new host incorrectly, in a spot the "known gap" language quietly stopped
+looking).
+
+**Guard against this**: when a "known gap" comment excuses a class of
+checks as future work, re-read it every time a NEW part in that class
+gets its own novel mounting feature (not just the internal joints the
+donor library already proves against itself) -- the new interface is
+precisely the one thing the donor's own history cannot vouch for. Found
+by actually rendering the shared library part and measuring which
+feature it presents at the mating face, not by trusting a bolt-circle
+accessor's own name.
+
+Found and fixed together (10th review): the real host-mount feature
+(`CRBBm_Activator()`'s own `EBay_TopPlate()` ring, at the part's aft-most
+local Z) needed 2 new accessor functions in the donor file
+(`CRBBm_EBayTopPlate_BC_d()`/`_BossAz()`, additive only, mirroring the
+existing `CRBBm_BottomBoltCircle_d()` idiom) to reach from outside it;
+clocking the Activator to clear the bulkhead's own shock-cord/rod-pocket
+holes needed a real 0-360deg clearance scan, not an eyeballed rotation
+(the unrotated position missed by 3.3mm, a real, mutation-tested
+collision -- `tools/r60_assembly.scad` Pairs 33/34, `R60Lib.scad`'s
+`R60_Act_Clock_a`); and every station downstream of the activator in
+`tools/rocket60_model.py` (the whole release-stack-to-petal-hub chain)
+turned out to share the SAME wrong-zero-gap assumption the SCAD mount
+bug had, caught by a closure check (does the chain's own far end land on
+the fin can it is stated to spigot into?) that failed loudly (23.5mm
+short) before the fix and closed cleanly after it.
+
+Mutation-tested at every layer, not just the SCAD render: the assembly
+pair at the OLD implied placement (3.7cm3 real collision), the fastener
+sweep at the OLD bolt circle (0.57cm3, "no free hole to bolt to" made
+concrete), the clocking-clearance assert at the unrotated position
+(3.3mm, matching the pair's own collision), and the Python closure
+check at `ACT_MOUNT_GAP=0` (23.5mm short) -- four independent proofs
+that would have caught this on its own, all previously absent.

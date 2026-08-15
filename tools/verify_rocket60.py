@@ -120,12 +120,31 @@ GENUS[3] = 1
 #   tether-latch insert holes are all deleted outright (single deploy has
 #   no second servo/tether phase; the joint moved to the petal cage) --
 #   servo 1 itself also moved OFF this part, onto part 15's own Activator
-#   print, so there is no shaft bore here either. What remains: 2 shock-
+#   print, so there is no shaft bore here either. What remained: 2 shock-
 #   cord through-holes (+2 handles on the plain disc+skirt solid, which
 #   is otherwise a solid puck -- no bore of its own, confirmed on the
-#   rendered mesh) + 3 blind Vega rod pockets (0, blind) + 3 blind
-#   Activator mounting inserts (0, blind) = 2. Rendered `Genus: 2`.
-GENUS[5] = 2
+#   rendered mesh) + 2 blind Vega rod pockets (0, blind -- this file used
+#   to say 3 here; the code (`for (x=[-R60_Vega_Rail_X,
+#   R60_Vega_Rail_X])`) only ever cut 2, a stale-comment mismatch this
+#   review fixed, harmless to the total either way since a blind pocket
+#   contributes 0 regardless of count) + 3 blind Activator mounting
+#   inserts (0, blind) = 2. Rendered `Genus: 2`.
+#
+#   RE-DERIVED (10th review, critical fix 1): the 3 blind M3 inserts
+#   above were the wrong mounting interface entirely (R60_EBayAftBulkhead()'s
+#   own module comment) -- replaced with 2 THROUGH #10-24 clearance holes
+#   (+2, both ends now genuinely open: this disc's forward face and the
+#   skirt's own aft tip) into CRBBm_Activator()'s real host-mount ring. The
+#   same fix hollows the skirt's own middle span to a plain tube, capped
+#   both ends by solid material (the disc at the forward end, a new Web_T
+#   web at the aft tip) -- a fully SEALED internal cavity with no opening
+#   to either exterior face, which this file's own convention (immune to
+#   a print's "how many voids" question by construction, per this
+#   function's own docstring) counts as ONE additional handle, the same
+#   way OpenSCAD's own Genus already counts every other through-feature
+#   here. Total: 2 (cord) + 0 (rod pockets) + 2 (activator screws,
+#   through) + 1 (sealed skirt cavity) = 5. Rendered, confirmed `Genus: 5`.
+GENUS[5] = 5
 
 #   part 7: curved door cover. 4 bolt holes = 4. Unchanged across the
 #   defect 1a azimuth fix -- that fix repositions each hole's AXIS, not
@@ -453,6 +472,26 @@ def hole_azimuth_at_r(stl, cx, cy, z_at, r_target, search_r=4.0, zwin=2.0,
     return math.degrees(math.atan2(sy, sx))
 
 
+def vent_hole(stl, y_half=3.0, r_target=30.0, r_win=0.05, zlo=15.0, zhi=45.0):
+    """Static vent hole's own measured (diameter, Z centre), off part 2's
+    rendered OD-breakthrough edge loop for the i=0 hole (R60Lib.scad's
+    R60_Vent_d/R60_Vent_Z, R60_EBayTube()'s own cut) -- 10th review: this
+    constant was previously UNCHECKED against the rendered part at all,
+    the same "restated but never measured" gap this file's own rule 4
+    exists to close. Isolates the i=0 hole (the other two sit at +-120deg,
+    well outside |y|<y_half) at the OD (r_target=R60_Body_OD/2), not the
+    ID breakthrough -- the OD loop is what actually reads as a clean
+    round hole (or does not) from outside the part."""
+    pts = [(x, y, z) for tri in tris(stl) for (x, y, z) in tri
+           if abs(math.hypot(x, y) - r_target) < r_win and abs(y) < y_half
+           and zlo < z < zhi]
+    if not pts:
+        raise RuntimeError("no vent-hole geometry near r=%.1f of %s"
+                            % (r_target, stl))
+    zs = [p[2] for p in pts]
+    return max(zs) - min(zs), (min(zs) + max(zs)) / 2.0
+
+
 def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
     """Arming-switch hole's own measured (X centre, Z centre), off part 7
     (door cover)'s rendered edge loop (a Ø12 hole cut through the cover's
@@ -563,6 +602,19 @@ def checks(m):
                               z_boss + BOSS_OD_BAND_HALF, nvals=2)
             c += [("part 2 OD at door boss station (z=%.1f)" % z_boss,
                    boss_od, 60.0, 0.1)]
+
+        # Static vent hole (10th review) -- see vent_hole()'s own
+        # docstring. Diameter confirms a clean round Ø4.5 hole (the
+        # crescent-edge defect this review fixed would read short here);
+        # Z centre confirms R60_Vent_Z (29.0, R60Lib.scad's corrected,
+        # own-frame derivation) actually landed where the SCAD source
+        # says it did, not just that some formula produced a number.
+        try:
+            vent_d, vent_z = vent_hole(a(2, "stl"))
+        except RuntimeError:
+            vent_d, vent_z = float("nan"), float("nan")
+        c += [("part 2 vent hole diameter", vent_d, 4.5, 0.1),
+              ("part 2 vent hole Z centre", vent_z, 29.0, 0.3)]
 
     if 6 in m:
         # sled length: 7th review, finding 1/2 -- now 2 continuous RAILS

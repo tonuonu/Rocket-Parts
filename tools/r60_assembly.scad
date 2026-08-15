@@ -37,6 +37,14 @@
 
 include<R60Lib.scad>
 use<Rocket60.scad>
+// use<CableReleaseBBMicro.scad> (Pair 33/34): Rocket60.scad's own
+// `use<CableReleaseBBMicro.scad>` does not transitively export that
+// file's functions here -- use<> is not chained, only the file directly
+// named in it -- so Pair 34's own ActBoltSweep() needs its own direct
+// use<> for CRBBm_EBayTopPlate_BC_d()/_BossAz()/_Thread_d(), the SAME 3
+// accessors R60_EBayAftBulkhead() itself calls (rule 4: this reads the
+// real functions live, not a second hand-typed copy of their formulas).
+use<CableReleaseBBMicro.scad>
 
 // use<> imports Rocket60.scad's modules but NOT its top-level variables
 // (Motor_Class=0 there is invisible here) -- module BODIES still resolve
@@ -266,6 +274,77 @@ module Pair11_B(){
     translate([0,0,Push-R60_Motor_L[Motor_Class]]) cylinder(d=29.0, h=R60_Motor_L[Motor_Class]);
 }
 
+// Pair 33: release activator (part 15) <-> e-bay aft bulkhead (part 5) --
+// CRITICAL FIX, this review (Rocket60.scad's own R60_EBayAftBulkhead()
+// module comment has the full defect writeup, and tasks/lessons.md
+// records the mutation test below). Closes a KNOWN GAP the pair-
+// enumeration comment (below) used to carry for parts 15-23: this is the
+// one dimensional question that gap left uncovered ("does each part fit
+// inside the bore") that actually mattered here -- whether part 15
+// bolts to anything real on part 5's aft face at all.
+//
+// The activator's own host-mount feature (CRBBm_Activator()'s nested
+// EBay_TopPlate() ring) is its AFT-most feature, local z=-19
+// (CRBBm_EBayTopPlate_Z0(), CableReleaseBBMicro.scad) -- it butts flush
+// against the bulkhead's own aft face, bulkhead-local z=Total_H=27
+// (R60_AftBulk_T=12 + Skirt_L=15 -- Skirt_L is LOCAL to
+// R60_EBayAftBulkhead(), restated here per rule 4, matching that
+// module's own literal). Placing the activator's own z=0 at
+// bulkhead-local z=Total_H-(-19)=46 lands the ring exactly there. No X/Y
+// flip (unlike Pairs 0/2/23's end-for-end idiom): this part's own local
+// -Z is already its aft-facing feature (R60_ReleaseActivator()'s own
+// module comment), so a plain z-translate is the correct rigid-body
+// placement.
+//
+// Mutation-tested (this review): rendered at the OLD code's own IMPLIED
+// placement instead (bulkhead-local z=Total_H=27, i.e. no +19 correction
+// -- what R60_EBayAftBulkhead()'s previous 3x-M3-at-BottomBoltCircle_d
+// mount silently assumed by bolting straight to the aft face with zero
+// gap) -- 19mm of the activator's own ring/servo body buries itself
+// inside the bulkhead's own solid disc: a real, measured 3.7277cm3
+// collision. At the correct z=46 (this file, as committed) it renders
+// empty, 0.0000cm3.
+module Pair33_A(){ translate([0,0,46]) R60_ReleaseActivator(); }
+module Pair33_B(){ R60_EBayAftBulkhead(); }
+
+// Pair 34: release activator mounting screws (2x #10-24, Pair 33's own
+// frame) -- fastener INSERTION check, same class as Pairs 25-32 below.
+// ACCESS: from the bulkhead's own open forward face (assembly step 9,
+// before the deployment bay tube/release stack go anywhere near a
+// completed cartridge) -- Travel swept well past that. Engage reaches
+// through the bulkhead's own Total_H=27 plus into the activator's own
+// boss, CRBBm_EBayTopPlate_Z1()-CRBBm_EBayTopPlate_Z0()=8mm of donor
+// thread -- Engage=27+8=35, matching the module comment's own stated
+// ~1-3/8in screw length. Az/BC_d read the SAME live accessors
+// R60_EBayAftBulkhead() itself cuts from (rule 4), not a second
+// hand-typed copy.
+//
+// Mutation-tested (this review, the OLD code's OTHER defect -- wrong
+// bolt circle, not just wrong offset): with R60_EBayAftBulkhead()'s own
+// Act_BC_d temporarily forced back to the old CRBBm_BottomBoltCircle_d()
+// (r=5.5, the activator's own INTERNAL joint radius, not this real
+// host-mount ring's r=21.775) -- this pair's own sweep (still aimed at
+// the real boss, r=21.775) finds solid, undrilled bulkhead material in
+// its path: a real 0.5717cm3 collision, confirming "no free hole to bolt
+// to" is a genuine, mutation-catchable defect, not a paper one. At the
+// real Act_BC_d (this file, as committed) it renders empty, 0.0000cm3.
+module ActBoltSweep(){
+    Act_BC_d = CRBBm_EBayTopPlate_BC_d(OD=R60_Coupler_OD);
+    for (az=[CRBBm_EBayTopPlate_BossAz()+R60_Act_Clock_a,
+             CRBBm_EBayTopPlate_BossAz()+R60_Act_Clock_a+180])
+        rotate([0,0,az])
+            translate([0, Act_BC_d/2, 0])
+                FastenerSweep(Shank_d=CRBBm_EBayTopPlate_Thread_d()+0.4,
+                               Head_d=8.0, Travel=20, Engage=35);
+}
+module Pair34_A(){ ActBoltSweep(); }
+module Pair34_B(){
+    union(){
+        R60_EBayAftBulkhead();
+        translate([0,0,46]) R60_ReleaseActivator();
+    }
+}
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
@@ -291,10 +370,12 @@ module Pair11_B(){
 //                         centred profiles, no off-axis feature.
 //  5  aft bulkhead    -- e-bay tube(2)[2], deployment bay tube(3)[5,
 //                         stroke]. Release activator(15) bolts to this
-//                         part's aft face -- NOT enumerated as a mesh pair
-//                         (known gap, see below); its bolt circle is
-//                         DERIVED from CRBBm_BottomBoltCircle_d() (this
-//                         part's own module comment), not hand-matched.
+//                         part's aft face -- pair 33 (mating fit) + pair
+//                         34 (fastener sweep, 10th review, critical fix
+//                         1 -- CLOSES the gap this comment used to record
+//                         here); its bolt circle is DERIVED from
+//                         CRBBm_EBayTopPlate_BC_d() (this part's own
+//                         module comment), not hand-matched.
 //  6  Vega sled       -- e-bay tube(2)[3]; arming switch's own envelope[20,
 //                         retired -- see below]. CATS Vega board itself is
 //                         external hardware, probed via BoardProbe[21].
@@ -328,17 +409,21 @@ module Pair11_B(){
 //                         bolting/stacking onto its immediate neighbour in
 //                         the release chain (part 15's own module comment
 //                         in Rocket60.scad states the full stack order).
-//                         EXCLUDED from mesh-interference pairs here --
-//                         known gap, not silently dropped: this task's own
+//                         Part 15's OWN mount to the airframe (part 5) is
+//                         now covered -- pairs 33/34, above. The REST of
+//                         the internal chain (16<->15, 17<->16, etc, all
+//                         donor-native CableReleaseBBMicro.scad hardware,
+//                         unmodified by this transplant) remains a KNOWN
+//                         GAP, not silently dropped: this task's own
 //                         binding dimensional question (does each part fit
 //                         inside the airframe's own bore) is covered by
 //                         verify_rocket60.py's max-radius-vs-bore check,
 //                         which is what actually decided BBMini vs BBMicro
 //                         (see that check's own comment); a full bolt-to-
-//                         bolt mounting-interference model for the release
-//                         chain (parts 15<->5, 16<->15, 17<->16, etc.) has
-//                         not been built this session and belongs in
-//                         R60-PrintSettings.md's known-gaps list.
+//                         bolt mounting-interference model for the REST of
+//                         the release chain has not been built this
+//                         session and belongs in R60-PrintSettings.md's
+//                         known-gaps list.
 // 21  Vega BOARD's own envelope vs. e-bay tube(2).
 // 22  fitted arming switch's own envelope vs. the Vega BOARD's own
 //     envelope (pair 21's BoardProbe).
@@ -436,11 +521,39 @@ module SwitchProbe(){
 // SAME way Pair 3 positions the sled (VegaSledPlaced()'s own frame) plus
 // the stack height (sled T+Standoff_h+Vega_H) that sits between the
 // sled's back and the board's own inner face.
+// Board_Y0 (10th review): this probe used to assume the board is
+// centred on the SLED PLATE's own symmetric printed margin
+// (R60_VegaSled()'s L=R60_Vega_L+12, a 6mm margin each end) -- but the
+// board's REAL mounting-hole pattern (R60_Vega_Holes, "L-shaped M3
+// pattern... 60mm apart along the length", the manual-sourced physical
+// anchor for where the standoffs are actually built) is NOT itself
+// centred at local Y=0: its own Y span (-25..+35) centres at +5. The
+// standoffs sit at the hole positions regardless of what this probe
+// assumes about the board's own outline, so the correct placement for a
+// clearance probe is centred on the real mounting pattern, not the
+// plate's own arbitrary margin choice -- DERIVED here (from
+// R60_Vega_Holes directly), not hand-typed, so the two can never
+// silently disagree again.
+Board_Y0 = (max([for (h=R60_Vega_Holes) h[1]])
+            + min([for (h=R60_Vega_Holes) h[1]])) / 2;
+// Check (rule "add a check comparing them"): does the real board, sited
+// on its OWN hole pattern, still fit within the plate's own printed
+// span (R60_VegaSled()'s L=R60_Vega_L+12, restated per rule 4)? At
+// Board_Y0=+5 it does, but only by 1mm at the forward end (55 of 56) --
+// tight, not a defect, but exactly the kind of margin a future
+// R60_Vega_Holes or plate-margin change could erase silently without
+// this assert.
+Vega_Plate_L = R60_Vega_L + 12;
+assert(Board_Y0 + R60_Vega_L/2 <= Vega_Plate_L/2
+    && Board_Y0 - R60_Vega_L/2 >= -Vega_Plate_L/2,
+    str("BoardProbe: the real board, centred on its own R60_Vega_Holes ",
+        "pattern (Y0=", Board_Y0, "), overhangs the sled plate's own ",
+        "printed span (+/-", Vega_Plate_L/2, ")"));
 module BoardProbe(){
     translate([0, R60_Vega_Facing_Y_Nom + (R60_Vega_Sled_T+R60_Vega_Standoff_h),
                R60_Vega_AxialCenter])
         rotate([-90,0,0])
-            translate([-R60_Vega_W/2, -R60_Vega_L/2, 0])
+            translate([-R60_Vega_W/2, Board_Y0-R60_Vega_L/2, 0])
                 cube([R60_Vega_W, R60_Vega_L, R60_Vega_H]);
 }
 module Pair21_A(){ BoardProbe(); }
@@ -829,7 +942,7 @@ module Pair32_B(){ R60_VegaSled(); }
 // transplant, see tasks/lessons.md) -- removed from this list too, not
 // just their own `if` dispatch line below, per this comment's own rule.
 KNOWN_PAIRS = [0,1,2,3,4,5,7,8,10,11,21,22,23,24,
-               25,26,27,28,29,30,32];
+               25,26,27,28,29,30,32,33,34];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -856,3 +969,5 @@ if (Pair==28) intersection(){ Pair28_A(); Pair28_B(); }
 if (Pair==29) intersection(){ Pair29_A(); Pair29_B(); }
 if (Pair==30) intersection(){ Pair30_A(); Pair30_B(); }
 if (Pair==32) intersection(){ Pair32_A(); Pair32_B(); }
+if (Pair==33) intersection(){ Pair33_A(); Pair33_B(); }
+if (Pair==34) intersection(){ Pair34_A(); Pair34_B(); }

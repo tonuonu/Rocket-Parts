@@ -37,8 +37,8 @@ circle must meet inserts in a PCB that does not shrink.
 | `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.1 cm³ | PETG |
 | `03_DeploymentBayTube.stl` | 3 | 240.00 | 60.00 | 70.4 cm³ | PETG |
 | `04_EBayFwdBulkhead.stl` | 4 | 7.70 | 56.40 | 12.7 cm³ | PETG |
-| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 66.0 cm³ | PETG |
-| `06_VegaSled.stl` | 6 | 8.00 | 144×44 flat | 23.8 cm³ | PETG |
+| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 39.4 cm³ | PETG |
+| `06_VegaSled.stl` | 6 | 8.00 | 133.1×45.6 flat | 23.8 cm³ | PETG |
 | `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 11.3 cm³ | PETG |
 | `08_PetalHub.stl` | 8 | 26.50 | 56.40 | 24.8 cm³ | PETG |
 | `09_FinCan.stl` | 9 | 228.00 | 60.00 | 114.0 cm³ | **PC** |
@@ -48,7 +48,7 @@ circle must meet inserts in a PCB that does not shrink.
 | `13_Petals.stl` | 13 | 120.00 | 56.40 | 34.2 cm³ | PETG |
 | `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ | **PC** |
 
-Airframe total 466.9 cm³. Tallest part 228 mm, inside the 250 mm envelope
+Airframe total 440.3 cm³. Tallest part 228 mm, inside the 250 mm envelope
 with 22 mm to spare. `NoseCone.stl` is the user's `Nose Cone.STEP`
 converted, not regenerated.
 
@@ -109,9 +109,13 @@ Re-run after the petal-deployment transplant (spec sec 4).
 
 | Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
-| G80T-14A | 933 g | 1.68 cal | 20.1 m/s |
-| H182R-14A | 1000 g | 1.48 cal | — |
-| H135W-14A | 1003 g | 1.49 cal | — |
+| G80T-14A | 907 g | 1.56 cal | 20.4 m/s |
+| H182R-14A | 973 g | 1.36 cal | 30.4 m/s |
+| H135W-14A | 976 g | 1.36 cal | 23.4 m/s |
+
+Fin flutter Vf = 589 m/s (root-chord t/c, NAR/TIR-33 form). Per-motor
+margin against each motor's own Vmax, floor 1.5×: G80T 4.7×, H182R 2.9×,
+H135W 3.1×.
 
 ## Launch
 
@@ -119,9 +123,9 @@ Re-run after the petal-deployment transplant (spec sec 4).
 is 1010-compatible per Estes, so `RailButton(OD=11, Flange_h=2, Slot_w=2.8)`
 from `RailGuide.scad` fits directly. Axial placement (task 7): azimuth
 180°, aft button Z=630mm (fin can, forward of the fins), forward button
-Z=230mm (e-bay tube) — `R60Lib.scad`'s `R60_RailButton_*` constants.
+Z=242mm (e-bay tube) — `R60Lib.scad`'s `R60_RailButton_*` constants.
 
-Rail exit on that rail: **G80T 20.1 m/s**, H182R 29.9, H135W 23.1 — all
+Rail exit on that rail: **G80T 20.4 m/s**, H182R 30.4, H135W 23.4 — all
 comfortably above the ~15 m/s minimum.
 
 The 3 mm rod is not usable at this mass. The TSP E20-P is excluded: 8.9 m/s

@@ -156,6 +156,33 @@ function CRBBm_TopBoltCircle_d(LockRing_d=LockRing_d)=LockRing_d-Bolt4Inset*2;
 function CRBBm_LockRingDiameter()=LockRing_d;
 function CRBBm_LockRingBoltCircle_d()=LockRingBoltCircle_d;
 
+// Host-mount accessors (added for a caller that needs to bolt something
+// to CRBBm_Activator()'s own aft-most feature -- its nested EBay_TopPlate()
+// module, a flat ring at local Z=Servo_Z..Servo_Z+Boss_t (-19..-11 at
+// CRBBm_Activator()'s own defaults) carrying 2 AXIAL #10-24 threaded
+// bosses on a Outer_BC_d bolt circle. Servo_Z/Boss_t/ServoPos_a/Outer_BC_d
+// are all LOCAL to CRBBm_Activator() (not reachable from outside it, same
+// restriction CRBBm_BottomBoltCircle_d() etc. above exist to work around)
+// -- restated here from that module's own source, not re-measured by eye:
+// BC_d mirrors EBay_TopPlate()'s own Outer_BC_d formula exactly;
+// BossAz mirrors ServoPos_a's own formula (using the real top-level
+// StopOffset_a, not a restated copy of IT too) plus EBay_TopPlate()'s own
+// call-site rotation (ServoPos_a+77) plus 90 -- BoltBoss() itself places
+// each boss along local +Y (`translate([0,Outer_BC_d/2,0])`), i.e. ring-
+// local 90/270, not 0/180, before the `rotate([0,0,360/nOuterBolts*j])`
+// loop (j=0,1) turns that Y-anchored point to its final 2 positions.
+// Confirmed against the real rendered mesh, not just this arithmetic
+// (Rocket60.scad's Render_Part=15, z=-19 aft face: real material centred
+// at BC_r=21.775, world az 83/263 with zero additional clocking, matching
+// this function to within the render's own sampling resolution).
+function CRBBm_EBayTopPlate_BC_d(OD=LOC54Coupler_OD, MotorTube_OD=LOC29Body_OD)
+    = MotorTube_OD+(OD-MotorTube_OD)/2;
+function CRBBm_EBayTopPlate_BossAz(StopOffset_a=StopOffset_a)
+    = 360/9*3-17+StopOffset_a+77+90;
+function CRBBm_EBayTopPlate_Z0()=-19;   // Servo_Z, restated
+function CRBBm_EBayTopPlate_Z1()=-11;   // Servo_Z+Boss_t, restated
+function CRBBm_EBayTopPlate_Thread_d()=0.190*25.4;   // #10-24 major dia
+
 module ShowCableReleaseBBMicro(GuidePoint=false){
 	Point_Len=GuidePoint? GuidePoint_Len:0;
 	CT_Len=20;

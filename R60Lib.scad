@@ -154,11 +154,40 @@ R60_Door_Hole_Clear = 3;  // fastener bosses sit this far outside the
 // hole; still an order of magnitude more reliable than depending on the
 // Ø15.3 lens aperture leak path, which this task exists to stop relying on.
 R60_Vent_d = 4.5;
-// Z: below the neck skirt's own reach (R60_Neck_Skirt_L=19mm from the
-// forward rim) and below the door aperture's own bottom edge
-// (Door_Z0=(R60_EBay_L-R60_Door_Open_H)/2=46mm) -- clear of both by
-// construction, not a hand-picked number that happens to miss them today.
-R60_Vent_Z = (R60_Neck_Skirt_L + (R60_EBay_L - R60_Door_Open_H) / 2) / 2;
+// Z (WRONG-FRAME FIX, this review): the vent holes are cut in
+// R60_EBayTube()'s own frame, z=0 at the AFT rim (where the aft bulkhead
+// seats, R60_AftBulk_T=12mm deep) growing toward z=R60_EBay_L at the
+// FORWARD rim (where the neck skirt seats, R60_Neck_Skirt_L=19mm back
+// from THAT end) -- R60_Tube()'s own doc ("base at Z=0") and
+// tools/r60_assembly.scad's Pair 0/2 frame comments both confirm this.
+// The OLD formula used R60_Neck_Skirt_L -- a LENGTH measured from the
+// forward rim -- as if it were a station near z=0, the AFT rim: the
+// skirt does not occupy z=0..19 in this frame at all (it is at
+// z=R60_EBay_L-R60_Neck_Skirt_L..R60_EBay_L, the far end), so that term
+// never actually bounded anything real; the result (32.5) only cleared
+// both hazards by accident, on today's numbers. The genuine aft-side
+// hazard IN THIS FRAME is R60_AftBulk_T (the aft bulkhead's own disc,
+// z=0..12) -- using it instead of R60_Neck_Skirt_L means growing that
+// disc (this review already grows it nowhere, but a future change might)
+// re-derives this Z automatically instead of silently drifting toward
+// it. Door_Z0=(R60_EBay_L-R60_Door_Open_H)/2=46mm is unchanged (already
+// stated in this same frame -- Rocket60.scad's R60_EBayTube() computes
+// it identically and cuts the door aperture directly at that Z, no
+// further transform). Asserted against both real hazards below, not
+// just the door, so a future R60_AftBulk_T/R60_Neck_Skirt_L growth fails
+// loudly instead of quietly boring into the bulkhead or the skirt --
+// see tools/verify_rocket60.py's own vent-hole check for the
+// mesh-measured confirmation (this constant was previously unchecked
+// against the rendered part at all).
+R60_Vent_Z = (R60_AftBulk_T + (R60_EBay_L - R60_Door_Open_H) / 2) / 2;
+assert(R60_Vent_Z - R60_Vent_d/2 > R60_AftBulk_T,
+    str("R60_Vent_Z: vent hole (z=", R60_Vent_Z, "+/-", R60_Vent_d/2,
+        ") is not clear of the aft bulkhead's own disc (z=0..",
+        R60_AftBulk_T, ")"));
+assert(R60_Vent_Z + R60_Vent_d/2 < R60_EBay_L - R60_Neck_Skirt_L,
+    str("R60_Vent_Z: vent hole (z=", R60_Vent_Z, "+/-", R60_Vent_d/2,
+        ") is not clear of the neck skirt (z=", R60_EBay_L-R60_Neck_Skirt_L,
+        "..", R60_EBay_L, ")"));
 
 // ============================================
 // NOSECONE INTERFACE - MEASURED, DO NOT ROUND
@@ -534,20 +563,53 @@ R60_Spring_CBL = 22;    // coil-bound length
 
 // Release catch: CableReleaseBBMicro.scad, chosen over CableReleaseBBMini
 // (the family Rocket6551.scad actually flies) on MESH-MEASURED evidence,
-// not the family's own flight history. CRBBm_Activator(OD=56.4) --
-// the servo-carrying top plate, and the ONE part of either family that
-// is NOT simply clipped to whatever OD it's called with (its own file
-// carries an explicit "Designed and works for Loc65 tube, may not
-// scale" warning on this exact module) -- was rendered and measured at
-// R60_Coupler_OD this session: BBMini's Activator reaches r=31.8mm, PAST
-// this bore's own r=28.4mm (its spoke/servo-strut geometry is built from
-// absolute mm offsets, not values derived from its own OD parameter, so
-// it does not shrink with it). BBMicro's Activator, same render, same
-// OD, measures r=28.2mm -- landing exactly on R60_Coupler_OD/2, this
-// repo's own standard 0.4mm-diametral-clearance convention, not a
-// coincidence. Every other shared part (lock ring, top retainer, outer
-// bearing retainer) clears the bore with 10-13mm to spare either family,
-// so the Activator is the ONE part that actually decides this. BBMicro
+// not the family's own flight history.
+//
+// BOTH families' own CRBBm_Activator() module carries a "may not scale"
+// class warning -- BBMini's is explicit text ("*** Designed and works
+// for Loc65 tube, may not scale ***"); BBMicro's is a shorter comment on
+// the SAME module ("// only works for 54mm tubes") an earlier version of
+// this comment did not disclose, citing only BBMini's -- corrected here:
+// neither family's warning is being taken on faith in either direction
+// any more, both were checked against real geometry this session.
+//
+// BBMini fails outright: CRBBm_Activator(OD=R60_Coupler_OD) reaches
+// r=31.8mm, PAST this bore's own r=28.4mm -- its spoke/servo-strut
+// geometry is built from absolute mm offsets, not values derived from
+// its own OD parameter, so it does not shrink with the bore at all.
+//
+// BBMicro's own max radius (28.2mm, landing exactly on
+// R60_Coupler_OD/2) came from a DIFFERENT feature than the warning
+// concerns, though -- EBay_TopPlate(), a plain OD-hugging ring
+// (`Tube(OD=OD, ID=OD-4, ...)`) that is trivially, unconditionally
+// correct at any OD by construction, not evidence about the
+// servo-carrying mechanism the warning is actually about. Checked
+// directly this session, not inferred: rendered CRBBm_Activator(OD=54)
+// (the family's own native size) and CRBBm_Activator(OD=56.4) side by
+// side and intersected each against a r=20mm cylinder to isolate the
+// mechanically load-bearing CORE (bearing plate, servo pocket, magnet
+// post, TopMountingBolts pattern) from the OD-reaching spokes/braces/
+// ring. Result: the core's own bounding box is BIT-IDENTICAL between the
+// two ODs (xmin/xmax/ymin/ymax/zmin/zmax match to the last printed
+// digit) -- none of it is built from the OD parameter at all, so
+// R60_Coupler_OD=56.4 (a 4.4% larger tube than the native 54mm this
+// warning was written for) produces the EXACT SAME core geometry the
+// donor already prints and flies at 54mm, not a scaled, unverified copy
+// of it. Only the connecting Spoke()/ServoBrace() struts and the ring
+// itself lengthen (each hulls from a fixed inner point out to
+// OD/2-0.6, by construction, confirmed by the core-intersection's own
+// small 1.6% volume delta -- entering/exiting spoke stubs, nothing in
+// the core). The warning's real risk (whatever "may not scale" is
+// guarding against) is a non-issue here specifically BECAUSE the part
+// that would have to scale to break it does not scale at all -- and this
+// review's own new tools/r60_assembly.scad Pairs 33/34 render that exact
+// core, at OD=56.4, correctly interlocked with the aft bulkhead (mating
+// fit + fastener reach both clear) -- a real assembled proof, not just
+// an isolated-part measurement.
+//
+// Every other shared part (lock ring, top retainer, outer bearing
+// retainer) clears the bore with 10-13mm to spare either family, so the
+// Activator was always the one part that actually decided this. BBMicro
 // is the newer, less-flown family (first print 2025-10-16 vs BBMini's
 // 2025-09-21, and its own hardware-BOM comment is stale -- 5/16" balls
 // and a 6705 bearing are listed, but the LIVE code cut 11/10/2025 uses
@@ -558,6 +620,29 @@ R60_LockPin_d = 12;   // CableReleaseBBMicro.scad's own default
 R60_Ball_d    = 6;    // 6mm balls, live "Smallest" variant (not the
                         // stale 5/16" the file's own BOM comment lists)
 R60_nBalls    = 3;
+
+// Activator installed clocking (critical defect, this review: the OLD
+// mount bolted through the internal Activator<->TopRetainer joint, wrong
+// face AND wrong fastener standard -- see R60_EBayAftBulkhead()'s own
+// module comment for the fix, which bolts to CRBBm_Activator()'s real
+// host-mount feature, its nested EBay_TopPlate() ring, instead).
+// Unrotated, that ring's 2 #10-24 bosses land at world az 83/263deg
+// (CRBBm_EBayTopPlate_BossAz(), CableReleaseBBMicro.scad) -- measured
+// this session (Rocket60.scad Render_Part=15, aft face z=-19) 8.3deg from
+// this bulkhead's own shock-cord hole at az=254.7 (r=22.8), a 3.3mm
+// centre distance, well inside the two features' own combined
+// half-widths (mutation-tested: tools/r60_assembly.scad's Pair 33 gives a
+// real, non-empty collision at R60_Act_Clock_a=0). Scanned 0-360deg (1deg
+// step) this session for the clocking maximising the WORST-CASE distance
+// from either boss to the 2 shock-cord holes AND the 2 Vega rod-guide
+// pockets already cut into that same disc: true optimum 97deg (13.5mm
+// worst case); 90 -- a cleaner number to mark on the print, and easier to
+// hit by eye during assembly -- gives 10.95mm, still >3x the as-built
+// 3.3mm failure this replaces. Baked into R60_ReleaseActivator() itself
+// (not a per-call-site rotate) so the standalone print and the assembly
+// probe can never silently disagree on which way it was clocked when
+// printed.
+R60_Act_Clock_a = 90;
 
 // Petal count and length. nPetals=3 matches every precedent this
 // transplant draws from (Rocket6551's own nPetals=3).
@@ -602,28 +687,36 @@ R60_PetalHubSpigot_L = R60_FinCanSpigot_L;
 // and Ct-trim alternatives that were rejected for costing more mass at
 // the same margin). 63mm clears the design's real physical minimum --
 // 1.0 cal, standard high-power practice's accepted 1.0-2.0 cal band --
-// with genuine room: 1.46 cal at liftoff on the G80T (9th review: was
-// 1.45, predating the 8th review's MMT_r correction; 5th review,
-// finding 11: this comment used to cite a 1.5 cal target, since retired
-// as never having been a physical requirement, and a 1.61 cal figure,
-// itself twice corrected downward by a full station audit -- see spec
-// section 6.1 for the ruling and tools/rocket60_model.py's own
-// MIN_MARGIN_CAL for the current gate). Flutter velocity -- a function of
-// exposed AR, which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s;
+// with genuine room: 1.56 cal at liftoff on the G80T (10th review: was
+// 1.46, predating this review's aft-bulkhead mass fix -- R60_
+// EBayAftBulkhead()'s own module comment -- which moved ~26g off a
+// station forward of the CG, raising the margin; 9th review: was 1.45,
+// predating the 8th review's MMT_r correction; 5th review, finding 11:
+// this comment used to cite a 1.5 cal target, since retired as never
+// having been a physical requirement, and a 1.61 cal figure, itself
+// twice corrected downward by a full station audit -- see spec section
+// 6.1 for the ruling and tools/rocket60_model.py's own MIN_MARGIN_CAL
+// for the current gate). Flutter velocity -- a function of exposed AR,
+// which RISES as span grows (span 55->AR 0.739->Vf 1220 m/s;
 // 63->0.869->955; 70->0.982->802 -- growing span 18% raised AR 18% and
-// CUT Vf ~21%, the opposite of a free lever; the 55mm/70mm points are
-// PRE-CORRECTION illustrations of the same trend, not current model
-// output for those spans -- only 63mm, the shipped span, is re-verified
-// against tools/rocket60_model.py's own current Vf=955 above) -- still
-// stays comfortably
-// above 3x the fastest flight speed on any motor at 63mm. This is a real
-// cost, not a margin grown for free: do not read this as licence to keep
-// growing span for stability headroom without re-checking Vf each time
-// (R60_Fin()'s own module comment already says this; restated here so
-// this comment does not contradict it) -- see
-// tools/verify_rocket60.py's fin-span check (3rd review, should-fix 7)
-// and the module comment on R60_Fin() for the current AR/flutter
-// figures. Slot geometry in R60_FinCan() needs no
+// CUT Vf ~21%, the opposite of a free lever; ALL THREE of those points
+// are the PRE-CORRECTION (mean-chord t/c) illustration of the trend, not
+// current model output for any span, including 63mm: the root-chord t/c
+// fix (see flutter_Vf()'s own comment, tools/rocket60_model.py) dropped
+// the shipped 63mm span's own Vf to 589 m/s, ~1.62x lower than the 955
+// figure this comment used to re-verify itself against -- restated here
+// so this comment cannot re-publish a number the model itself already
+// corrected). Gated per-motor now, not against a single "3x the fastest
+// flight speed" floor (R60-PrintSettings.md sec 3's own corrected
+// figures) -- 589 m/s clears every motor this design flies with real
+// room (G80T 4.7x, H182R 2.9x, H135W 3.1x, tools/rocket60_model.py's own
+// FLUTTER_MIN_RATIO=1.5x floor). This is a real cost, not a margin grown
+// for free: do not read this as licence to keep growing span for
+// stability headroom without re-checking Vf each time (R60_Fin()'s own
+// module comment already says this; restated here so this comment does
+// not contradict it) -- see tools/verify_rocket60.py's fin-span check
+// (3rd review, should-fix 7) and the module comment on R60_Fin() for the
+// current AR/flutter figures. Slot geometry in R60_FinCan() needs no
 // width change: the slot already cuts clear through to the body OD
 // (r=30) regardless of span, so only Slot_L (root chord, unchanged) sets
 // its footprint -- span only changes how far the fin's OWN tip reaches
@@ -668,13 +761,42 @@ R60_RailButton_Az = 180;
 // R60_FinCan()'s own ring-Z loop) for a double-thickness backing behind
 // the screw.
 R60_RailButton_Aft_Z = 630;
-// Forward button: on the e-bay tube (part 2), clear of the door aperture
-// (Door_Z0..Door_Z1 = 46..131mm) and the neck skirt (Z<19mm), positioned
-// so the G80T's own liftoff CG (394mm) sits comfortably between the two
-// buttons (164mm from this one, 236mm from the aft one -- weighted
-// toward the aft button, standard/conservative practice for a rocket
-// whose mass is aft-loaded at liftoff).
-R60_RailButton_Fwd_Z = 230;
+// Forward button: on the e-bay tube (part 2). GLOBAL-FRAME FIX (this
+// review): this constant is a GLOBAL station ("Axial stations (mm from
+// nose tip)", this section's own header), but the clearance it used to
+// be justified against -- "Door_Z0..Door_Z1 = 46..131mm" -- is
+// R60_EBayTube()'s own LOCAL window (z=0 at that tube's own aft rim).
+// Comparing the old value (230) directly against that LOCAL 46..131
+// window treated it as if the two shared a frame; they do not. In the
+// correct (global) frame the e-bay tube's own aft rim sits at
+// S_EBAY_restated=99mm (tools/rocket60_model.py's own
+// L_NOSE+L_NECK_FLANGE=94+5, restated per rule 4 -- R60Lib.scad has no
+// "nose tip" station of its own otherwise), so the door aperture is
+// global 99+46..99+131 = 145..230 and the cover (R60_Door_Overlap=6mm
+// larger on every side) is 139..236 -- the OLD 230 was the aperture's
+// own AFT EDGE (global), 6mm INSIDE the cover, not clear of it at all.
+// Only the azimuth (R60_RailButton_Az=180 vs the door's own 37-143deg
+// boss band, R60_EBayTube()'s Door_Boss_Az()) kept them apart -- a real
+// fact, but not the "by construction" Z-clearance this comment used to
+// claim, and not one this constant's own definition made visible.
+S_EBAY_restated = 99;   // see comment above
+R60_RailButtonFwd_Margin = 6;   // stated clearance past the cover's own
+                                  // global aft edge -- a real margin, not
+                                  // a bare touch
+R60_RailButton_Fwd_Z = S_EBAY_restated + (R60_EBay_L - R60_Door_Open_H)/2
+    + R60_Door_Open_H + R60_Door_Overlap + R60_RailButtonFwd_Margin;
+    // = 242mm -- still comfortably forward of the G80T's own liftoff CG
+    // (399.4mm, tools/rocket60_model.py's current printed figure -- was
+    // 394mm when this section was first written, restated here as the
+    // CURRENT number so this comment does not itself go stale the same
+    // way the constant it describes just did), which is the real
+    // constraint this button's station serves (so the rocket does not
+    // droop nose-down or tail-down off the rail before flying speed).
+assert(R60_RailButton_Fwd_Z > 236,
+    str("R60_RailButton_Fwd_Z (", R60_RailButton_Fwd_Z,
+        ") does not clear the door cover's own global aft edge (236)"));
+assert(R60_RailButton_Fwd_Z < 399.4 && R60_RailButton_Aft_Z > 399.4,
+    "R60_RailButton_Fwd_Z/Aft_Z no longer straddle the G80T's liftoff CG");
 
 // ============================================
 // SHARED MODULES

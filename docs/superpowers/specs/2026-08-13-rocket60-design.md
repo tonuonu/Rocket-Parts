@@ -326,23 +326,26 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | v@1m rail | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 933 g | 8.5 | 14.8 m/s | 123 m/s | **0.36** | 588 m | 10.7 s |
-| **H182R-14A** (29 mm DMS) | 1000 g | 18.6 | 22.0 m/s | 198 m/s | **0.58** | 956 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 1003 g | 11.8 | 16.8 m/s | 185 m/s | **0.54** | 1000 m | 13.2 s |
+| **G80T-14A** (owned) | 907 g | 8.7 | 15.0 m/s | 126 m/s | **0.37** | 603 m | 10.8 s |
+| **H182R-14A** (29 mm DMS) | 973 g | 19.1 | 22.1 m/s | 203 m/s | **0.60** | 967 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 976 g | 12.1 | 17.0 m/s | 189 m/s | **0.56** | 1013 m | 13.2 s |
 
 Rail-exit speed off the owner's actual Estes Pro Series II rail (1.83 m,
 not the 1.5 m this table used to assume) is reported separately in §6.1
--- **G80T-14A 20.1 m/s**, comfortably above the 15 m/s minimum.
+-- **G80T-14A 20.4 m/s**, comfortably above the 15 m/s minimum.
 
 (Figures from `tools/rocket60_model.py`'s own output, re-run after the
 petal-deployment transplant (§4) -- see §6 below for the matching
 stability table. Liftoff mass moved from 874/941/944g to
-933/1000/1003g: the transplant removes the spring carrier, tether latch,
-shear pins and one MG90S servo (-82g combined) and adds the petal cage,
-release hardware and the grown deployment bay tube (+~113g net) -- see
-`tools/rocket60_model.py`'s STL_VOL comment for the full per-part
-breakdown. Apogee/Mach move with the mass and CP changes; margins are
-updated in §6.)
+933/1000/1003g at the transplant itself (the transplant removes the
+spring carrier, tether latch, shear pins and one MG90S servo (-82g
+combined) and adds the petal cage, release hardware and the grown
+deployment bay tube (+~113g net) -- see `tools/rocket60_model.py`'s
+STL_VOL comment for the full per-part breakdown), then to 907/973/976g
+(10th review: the aft bulkhead's own mount fix also hollowed its
+15mm skirt, -~26g -- `R60_EBayAftBulkhead()`'s own module comment).
+Apogee/Mach move with the mass and CP changes; margins are updated in
+§6.)
 
 Motor data, all from thrustcurve.org:
 
@@ -417,19 +420,22 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 933 g | 394.2 mm | **1.68 cal** | 373.3 mm | 2.03 cal |
-| H182R-14A | 1000 g | 406.4 mm | **1.48 cal** | 375.7 mm | 1.99 cal |
-| H135W-14A | 1003 g | 405.9 mm | **1.49 cal** | 385.4 mm | 1.83 cal |
+| G80T-14A | 907 g | 401.8 mm | **1.56 cal** | 380.9 mm | 1.90 cal |
+| H182R-14A | 973 g | 413.8 mm | **1.36 cal** | 383.2 mm | 1.87 cal |
+| H135W-14A | 976 g | 413.4 mm | **1.36 cal** | 392.9 mm | 1.70 cal |
 
-**The G80T-14A margin IMPROVED, 1.46→1.68 cal**, despite +59g of liftoff
-mass — CP moved aft (+42.2mm) by more than CG did, because the
-deployment bay's own growth is entirely FORWARD of the fin can, pushing
-the fins (which dominate CN) further from the nose without adding mass
-there. H182R/H135W both clear 1.0 cal with real room (1.48-1.49 cal).
-**If this had come out below 1.0 cal the answer would have been to stop
-and report it, not to force a fix** — it did not; no design change was
-needed to reach this figure. Margin *increases* through the burn on
-every configuration (burnout G80T margin is 2.03 cal).
+**The G80T-14A margin IMPROVED, 1.46→1.56 cal** (10th review: this
+figure moved again from an intermediate 1.68 cal when the aft
+bulkhead's own mass fix shifted CG, below), despite +33g of net liftoff
+mass over the pre-transplant figure — CP moved aft (+42.2mm) by more
+than CG did, because the deployment bay's own growth is entirely
+FORWARD of the fin can, pushing the fins (which dominate CN) further
+from the nose without adding mass there. H182R/H135W both clear 1.0 cal
+with real room (1.36 cal each). **If this had come out below 1.0 cal
+the answer would have been to stop and report it, not to force a fix**
+— it did not; no design change was needed to reach this figure. Margin
+*increases* through the burn on every configuration (burnout G80T
+margin is 1.90 cal).
 
 ### 6.1 Stability gate: 1.0 cal minimum (unchanged), rail exit re-verified on the real rail
 
@@ -437,15 +443,15 @@ The stability gate in `tools/rocket60_model.py` remains **1.0 cal** — the
 physical minimum for the accepted 1.0-2.0 cal high-power-rocketry band,
 not a re-litigated target (see git history for the 5th-round ruling that
 retired an earlier 1.5 cal comfort target; that reasoning is unchanged
-and not repeated here). G80T (1.68 cal), H182R (1.48 cal) and H135W
-(1.49 cal) all clear it with real room.
+and not repeated here). G80T (1.56 cal), H182R (1.36 cal) and H135W
+(1.36 cal) all clear it with real room.
 
 **Rail exit, on the owner's actual rail.** `tools/rocket60_model.py`'s
 rail-exit sim used to hardcode a 1.5m rail no one owns; fixed to
 `RAIL_LEN`=1.83m (Estes Pro Series II, 1010-compatible, the rail actually
-used). At the transplant's new 933g liftoff mass, the G80T leaves the
-rail at **20.1 m/s**, comfortably above the 15 m/s minimum (H182R
-29.9 m/s, H135W 23.1 m/s). Roughly a third of liftoff mass is still
+used). At the current 907g liftoff mass, the G80T leaves the
+rail at **20.4 m/s**, comfortably above the 15 m/s minimum (H182R
+30.4 m/s, H135W 23.4 m/s). Roughly a quarter of liftoff mass is still
 unweighed hardware ESTIMATES, not measured mesh volumes — see
 `R60-PrintSettings.md`'s own pre-flight weigh-in step.
 
@@ -460,13 +466,13 @@ previously-published **955 m/s was wrong; the corrected figure is 589 m/s.**
 Vf=589 m/s still clears the G80T (the sizing case) with real margin, but
 not the old blanket "3× the single fastest Vmax across all motors" gate,
 which was calibrated against the inflated number — H182R (the fastest
-motor overall) sits at 2.8×, below a 3× floor. Re-scoped to a per-motor
+motor overall) sits at 2.9×, below a 3× floor. Re-scoped to a per-motor
 1.5× floor (same physical-floor-vs-engineering-margin split as the 1.0
 cal stability gate above; the true physical floor is 1.0×, Vf>Vmax):
 
-- **4.8× the G80T's ~123 m/s Vmax**
-- **3.0× the H182R's ~198 m/s Vmax**
-- **3.2× the H135W's ~185 m/s Vmax**
+- **4.7× the G80T's ~126 m/s Vmax**
+- **2.9× the H182R's ~203 m/s Vmax**
+- **3.1× the H135W's ~189 m/s Vmax**
 
 All three clear the 1.5× floor with real room. Do not make the fins
 thinner, or grow the span further, without recomputing both stability

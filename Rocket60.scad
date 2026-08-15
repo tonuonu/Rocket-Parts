@@ -289,18 +289,33 @@ module R60_EBayTube(){
         // Static vent port (task 6, R60Lib.scad's R60_Vent_d/R60_Vent_Z
         // comment) -- 3 plain radial through-holes at 120deg, clear of
         // the neck skirt above and the door aperture below by
-        // construction. Starts just inside the ID and grows outward
-        // through the wall past the OD -- same "start inward, grow +X to
-        // reach the OD" direction as the door pilot holes above (their
-        // own comment: "blind, open only at the true OD"), just carried
-        // the full wall thickness instead of stopping blind. Local $fn,
-        // same reasoning as the door bosses/pilots (a small hole at an
-        // odd, non-90deg azimuth tessellates poorly at the file-wide $fn).
+        // construction. Same "rotate for azimuth, then translate along
+        // local +X = radial" idiom as the door bosses/pilots.
+        //
+        // Vent_StartR (crescent-edge fix, this review): the cut used to
+        // start its flat face at R60_Body_ID/2-Overlap -- just inside the
+        // ID ONLY on the hole's own radial centreline. Off that
+        // centreline, at the cut's own tangential edges (+-R60_Vent_d/2),
+        // the TRUE curved bore surface sits at radius
+        // sqrt(startR^2+(R60_Vent_d/2)^2), which EXCEEDS R60_Body_ID/2
+        // once startR is this close to it -- the flat starting face was
+        // already past the true bore surface there, leaving a feathered
+        // crescent of un-cut wall (measured up to 0.039mm thick) instead
+        // of a clean round hole. Starting a full R60_Vent_d inside the ID
+        // keeps the WHOLE starting face's tangential edges well below the
+        // true bore radius (checked: sqrt(23.9^2+2.25^2)=24.0, 4.4mm of
+        // margin under the 28.4mm bore) -- grows outward past the OD from
+        // there, same direction as before, just further to travel.
+        // Local $fn, same reasoning as the door bosses/pilots (a small
+        // hole at an odd, non-90deg azimuth tessellates poorly at the
+        // file-wide $fn).
+        Vent_StartR = R60_Body_ID/2 - R60_Vent_d;
         for (i=[0:2])
             rotate([0,0,i*120])
-                translate([R60_Body_ID/2-Overlap, 0, R60_Vent_Z])
+                translate([Vent_StartR, 0, R60_Vent_Z])
                     rotate([0,90,0])
-                        cylinder(d=R60_Vent_d, h=R60_Wall_T+Overlap*2, $fn=32);
+                        cylinder(d=R60_Vent_d,
+                                 h=(R60_Body_OD/2-Vent_StartR)+Overlap, $fn=32);
     }
 } // R60_EBayTube
 
@@ -408,15 +423,45 @@ module R60_EBayFwdBulkhead(){
 // joint the same positive locating spigot every other internal joint in
 // this design has.
 //
-// Activator mount: 3x M3 into ruthex inserts, DERIVED from
-// CRBBm_BottomBoltCircle_d() (CableReleaseBBMicro.scad's own accessor,
-// not a hand-matched guess) so the bolt circle can never silently drift
-// out of step with the part it actually has to catch -- same "derive
-// from the real part's own geometry" idiom as R60_TetherLatch_HoleX used
-// to be for the design this replaces. Offset 60deg / spaced 120deg,
-// matching CRBBm_Activator()'s own TopMountingBolts()-adjacent aft
-// pattern exactly (verified against its source, this session: `for
-// (j=[0:2]) rotate([0,0,120*j+60]) translate([0,BottomBoltCircle_d/2,...])`).
+// Activator mount (CRITICAL FIX, this review): the previous 3x M3
+// ruthex-insert pattern at CRBBm_BottomBoltCircle_d() was wrong on two
+// independent counts, found by actually rendering
+// CRBBm_Activator(OD=R60_Coupler_OD) and measuring its aft face
+// (Rocket60.scad's Render_Part=15, world z=-19, this session):
+//  1. BottomBoltCircle_d is the Activator's own INTERNAL joint to
+//     CRBBm_TopRetainer() (part 16) -- CRBBm_Activator()'s own
+//     TopMountingBolts() cuts this SAME circle on its OPPOSITE
+//     (forward, TopRetainer-ward) face, 22.5mm away in the real stack
+//     (Rocket6551.scad's own SCR_Z-22.5 arithmetic) -- nothing on THIS
+//     face ever matched it.
+//  2. That circle's own hardware (CableReleaseBBMicro.scad's Bolt4* =
+//     #4-40 UNC, major dia 2.845mm) is 0.16mm undersized for the M3
+//     ruthex inserts this bulkhead was cutting for it regardless of
+//     position.
+// The real host-mount feature on this face is CRBBm_Activator()'s own
+// nested EBay_TopPlate() -- a flat ring at the part's own aft-most extent
+// (local Z=-19..-11, confirmed against the render's own zmin=-19)
+// carrying 2 axial #10-24 threaded bosses, donor-native hardware built
+// for exactly this job. CableReleaseBBMicro.scad gained 2 accessor
+// functions this session (CRBBm_EBayTopPlate_BC_d()/_BossAz(), mirroring
+// the existing CRBBm_BottomBoltCircle_d() idiom -- both are otherwise
+// LOCAL to CRBBm_Activator()) so this bolt circle is derived from the
+// real part, never hand-matched. Clocked R60_Act_Clock_a (R60Lib.scad,
+// baked into R60_ReleaseActivator() itself) clear of the shock-cord holes
+// and Vega rod pockets already cut into this same disc -- see that
+// constant's own comment for the clearance scan.
+//
+// SEATING: the Activator's ring (its aft-most feature) butts directly
+// against this bulkhead's own aft face (Total_H) -- there is no air gap
+// between them. The mounting screws are #10-24, ~1-3/8in (35mm): through
+// this disc/skirt's full Total_H=27mm, then Boss_t=8mm of thread
+// engagement in the Activator's own boss, comfortably short of bottoming
+// (CableReleaseBBMicro.scad's own ExternalThread cut runs the boss's
+// full depth). Access is from this disc's OPEN forward face, before the
+// deployment bay tube goes anywhere near the assembly -- see
+// tools/r60_assembly.scad's Pair 33/34 for the mesh-verified seat and
+// fastener-reach proof, and tasks/lessons.md for the mutation test that
+// failed on the OLD mount before this fix.
 module R60_EBayAftBulkhead(){
     T         = R60_AftBulk_T;   // shared with R60_EBayTube()'s Vega
                                    // rails (3rd review, defect 2)
@@ -426,12 +471,50 @@ module R60_EBayAftBulkhead(){
                                    // from it any more
     Total_H   = T + Skirt_L;
     Cord_d    = 5;
-    // Activator mount -- see module comment. Insert depth matches every
-    // other ruthex RX-M3x5.7 convention in this file (R60_FinCan(),
-    // R60_MotorRetainer()).
-    Act_BC_d   = CRBBm_BottomBoltCircle_d();
-    Act_Insert_d = 4.0;
-    Act_Insert_h = 6.7;
+    // Skirt WALL (mass defect, this review): the skirt used to be a
+    // solid Ø56.4 slug for its full Skirt_L=15mm -- 67.5cm3, ~65g, the
+    // third-heaviest part in the rocket, with nothing passing through it
+    // (the mount is now on this disc's own aft FACE, not through the
+    // skirt's body) -- R60_Neck() thins its own skirt to a tube 3 lines
+    // into this file for the exact same joint class, and this one never
+    // got the same treatment. Hollowed to a plain R60_Wall_T tube for
+    // its own middle span (T..Total_H-Web_T) -- same wall convention as
+    // every airframe tube here -- leaving Web_T solid only at the very
+    // tip.
+    Web_T = 3;   // solid web at the skirt's own aft tip -- NOT part of
+                  // the mass this fix removes: it is the only solid
+                  // material in the skirt's own span the 2 mounting
+                  // screws below can pass through to reach the
+                  // Activator's real boss material beyond (the hollowed
+                  // tube's own wall, R60_Wall_T=1.6mm radially, is far
+                  // too thin at the boss's own Act_BC_d/2=21.775mm radius
+                  // -- that radius sits inside the open bore, not in the
+                  // wall, once hollowed). Prints as a horizontal internal
+                  // ceiling over the hollow -- needs slicer support
+                  // underneath (R60-PrintSettings.md sec 4, part 5).
+    // Activator mount -- see module comment above.
+    Act_BC_d = CRBBm_EBayTopPlate_BC_d(OD=R60_Coupler_OD);
+    Act_Bolt_Clear_d = CRBBm_EBayTopPlate_Thread_d() + 0.4;   // #10-24
+                         // clearance, same +0.4mm diametral convention as
+                         // every other clearance hole in this file
+                         // (R60_Cam_Bolt_d etc.)
+    Act_Az = [CRBBm_EBayTopPlate_BossAz()+R60_Act_Clock_a,
+              CRBBm_EBayTopPlate_BossAz()+R60_Act_Clock_a+180];
+    // Clearance assert -- re-derived from the SAME live geometry the cut
+    // below uses (not the R60_Act_Clock_a comment's own stated numbers),
+    // so a future change to the shock-cord/rod-pocket layout that erodes
+    // this margin fails loudly here instead of silently reopening the
+    // 3.3mm collision this review fixed.
+    Act_MinClear = min([
+        for (az=Act_Az, kx=[-6,6])
+            norm([Act_BC_d/2*cos(az)-kx, Act_BC_d/2*sin(az)-(-22)]),
+        for (az=Act_Az, kx=[-R60_Vega_Rail_X, R60_Vega_Rail_X])
+            norm([Act_BC_d/2*cos(az)-kx, Act_BC_d/2*sin(az)-R60_Vega_Rail_Y]),
+    ]);
+    assert(Act_MinClear > 8,
+        str("R60_EBayAftBulkhead: activator mounting screw clears the ",
+            "shock-cord/rod-pocket holes by only ", Act_MinClear,
+            "mm -- recheck R60_Act_Clock_a"));
     difference(){
         union(){
             cylinder(d=R60_Coupler_OD, h=T);
@@ -456,11 +539,20 @@ module R60_EBayAftBulkhead(){
             translate([x, R60_Vega_Rail_Y, -Overlap])
                 cylinder(d=R60_Vega_Rail_d, h=R60_Vega_RodPocket_Depth+Overlap);
 
-        // Activator (part 15) mounting inserts, blind from the aft face.
-        for (j=[0:2])
-            rotate([0,0,120*j+60])
-                translate([0, Act_BC_d/2, Total_H-Act_Insert_h])
-                    cylinder(d=Act_Insert_d, h=Act_Insert_h+Overlap);
+        // Skirt bore -- see Web_T's own comment above for why the last
+        // Web_T of it stays solid.
+        translate([0,0,T-Overlap])
+            cylinder(d=R60_Coupler_OD-2*R60_Wall_T, h=Skirt_L-Web_T+Overlap);
+
+        // Activator (part 15) mounting screws -- see module comment.
+        // THROUGH holes, not blind: the fastener enters this disc's own
+        // forward face and threads into the Activator's own boss beyond
+        // Web_T -- nothing here for it to bottom out against short of
+        // that.
+        for (az=Act_Az)
+            rotate([0,0,az])
+                translate([0, Act_BC_d/2, -Overlap])
+                    cylinder(d=Act_Bolt_Clear_d, h=Total_H+Overlap*2);
     }
 } // R60_EBayAftBulkhead
 
@@ -830,14 +922,18 @@ module R60_FinCan(){
 } // R60_FinCan
 
 // Fin, printed flat. Low aspect ratio (0.87, exposed) is deliberate - it
-// is what puts flutter velocity at ~955 m/s (9th review: was 959,
-// predating the 8th review's MMT_r correction), 4.6x the H182R's Vmax
-// (~210 m/s) and 4.9x the H135W's (9th review: was 3.0x, materially
-// wrong against this design's own "Vf >= 3x fastest Vmax" gate -- a
-// reader would have concluded the H135W sits near the limit when it
-// clears it 4.9x over) -- both re-derived on the EXPOSED
-// panel (root at the body OD, not the buried root at the MMT), which is
-// the panel that actually flexes. Span grew 55->63mm (task report,
+// is what puts flutter velocity at ~589 m/s (10th review: was 955,
+// R60-PrintSettings.md's own sec 3 correction/flutter_Vf()'s own comment
+// -- the mean-chord t/c bug that produced the old 955 figure inflated
+// Vf 1.62x; 955 itself superseded a 9th-review 959, predating the 8th
+// review's MMT_r correction), 2.9x the H182R's Vmax (~203 m/s) and 3.1x
+// the H135W's -- both re-derived on the EXPOSED panel (root at the body
+// OD, not the buried root at the MMT), which is the panel that actually
+// flexes, and gated PER-MOTOR against a stated 1.5x floor
+// (tools/rocket60_model.py's own FLUTTER_MIN_RATIO), not the retired
+// single "Vf >= 3x fastest Vmax" gate this comment used to cite -- see
+// that constant's own comment for why the gate itself was re-scoped, not
+// just the number recomputed. Span grew 55->63mm (task report,
 // coordinator decision) to fix the G80T-14A's static margin, which was
 // only 1.05 cal when Barrowman was correctly fed the exposed geometry;
 // root/tip/sweep/thickness are unchanged because span is the most
@@ -1023,7 +1119,17 @@ module R60_Petals(){
 // that actually decides this, and BBMini's does not fit.
 module R60_ReleaseActivator(){
     $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
-    CRBBm_Activator(OD=R60_Coupler_OD);
+    // R60_Act_Clock_a (R60Lib.scad): clocks the part's own 2 EBay_TopPlate
+    // mounting bosses clear of this bulkhead's shock-cord holes/Vega rod
+    // pockets -- baked in here (not at the call site) so the standalone
+    // print and every assembly reference agree on which way it was
+    // printed. No X/Y flip (unlike parts 16/17/19/20/23): this part's own
+    // local -Z (its EBay_TopPlate ring, the real host-mount face) already
+    // lands at the SMALLER global station once translated to the
+    // bulkhead's aft face -- see R60_EBayAftBulkhead()'s own module
+    // comment.
+    rotate([0,0,R60_Act_Clock_a])
+        CRBBm_Activator(OD=R60_Coupler_OD);
 } // R60_ReleaseActivator
 
 // Release top retainer (part 16). Stationary; carries the 6703 bearing's

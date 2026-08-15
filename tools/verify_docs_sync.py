@@ -19,23 +19,53 @@ This is a regression gate, not a source of truth: when it fails, fix the
 DOCS to match the model's current output (never fudge the model to match
 stale prose).
 
-SCOPE (9th review): DOCS above covers three Markdown files -- it does NOT
-read .scad source comments, and Rocket60.scad/R60Lib.scad both carry
-free-prose commentary that quotes the same model figures (e.g.
-R60_Fin()'s own flutter-ratio comment, R60_SpringCarrier_L's neighbouring
-span-sweep note) and has gone stale there independently at least twice.
-Deliberately left outside this gate's net rather than extended to match:
-unlike the three tracked docs, which publish a small, closed set of
-figures in a fairly formulaic way (a table row, a bolded headline
-number), .scad comments quote model numbers embedded in long, freeform
-design-rationale prose with no consistent delimiter this script could
-anchor a needle to without a real risk of matching the wrong sentence (or
-missing the real one) -- the CHECKS table's exact-string approach only
-works because the three Markdown docs are edited with those exact
-strings in mind; a .scad comment is not. Coverage there is manual: a
-reviewer reading a changed constant should re-read the comments around
-it, the same expectation this codebase already places on every other
-piece of restated-per-rule-4 commentary.
+SCOPE (10th review, revising the 9th review's decision below): the three
+tracked Markdown docs get the FULL positive-needle treatment (a doc must
+contain the model's CURRENT figure, in the doc's own known phrasing).
+Rocket60.scad/R60Lib.scad do NOT get that same treatment, for the reason
+the 9th review gave and this docstring still keeps below -- but ARE now
+covered by a narrower, DENY-LIST check (STALE_SCAD_NEEDLES): a short list
+of specific, already-superseded number/phrase strings (e.g. "955 m/s",
+"4.6x the H182R") that must never reappear in either file. This is the
+honest middle ground the 10th review's own task asked for: a .scad
+comment's freeform prose is still too unstructured for a POSITIVE
+"contains the current figure" check to anchor on safely (the reason
+below still holds), but a NEGATIVE "does not contain this specific,
+already-dead number" check has no such ambiguity -- there is no
+legitimate reason "955 m/s" (this file's own now-corrected flutter
+figure) should ever appear in either .scad file again, in any sentence,
+historical or current, once every existing occurrence is fixed (a
+historical illustration can and does still cite the BARE number, e.g.
+"63->0.869->955", without its unit suffix -- the deny string is scoped
+to the exact "955 m/s"/"959 m/s" phrasing the stale CURRENT-claim
+sentences used, confirmed zero false positives against the corpus as
+fixed this round). This closes the SPECIFIC failure this task's own
+review found (a 62% error surviving a correction commit) without
+claiming the broader problem below is solved.
+
+Original 9th-review reasoning, still the reason this file does not get
+the full positive-needle treatment: unlike the three tracked docs, which
+publish a small, closed set of figures in a fairly formulaic way (a
+table row, a bolded headline number), .scad comments quote model numbers
+embedded in long, freeform design-rationale prose with no consistent
+delimiter this script could anchor a POSITIVE needle to without a real
+risk of matching the wrong sentence (or missing the real one) -- the
+CHECKS table's exact-string approach only works because the three
+Markdown docs are edited with those exact strings in mind; a .scad
+comment is not. Coverage of the CURRENT figure being present and correct
+there is still manual: a reviewer reading a changed constant should
+re-read the comments around it, the same expectation this codebase
+already places on every other piece of restated-per-rule-4 commentary.
+Numbers NOT covered by either mechanism (say honestly which): any
+.scad-comment figure that was NEVER wrong (so never made this deny
+list) but silently drifts in some FUTURE change -- e.g. if the G80T
+margin moves again, "1.56 cal" in these files' comments could go stale
+exactly the way "1.46"/"1.45" did twice before, and nothing here would
+catch it until it is added to STALE_SCAD_NEEDLES retroactively, after a
+review finds it. The deny list only ever grows by finding a NEW
+staleness instance, the same way GENUS/STL_VOL entries in this repo's
+own verify scripts are re-derived after the fact, not predicted in
+advance.
 """
 import os, re, shutil, subprocess, sys, tempfile
 
@@ -55,6 +85,25 @@ DOCS = [
     # "the fourth occurrence of this defect class".
     os.path.join(REPO, "docs", "superpowers", "specs",
                   "2026-08-13-rocket60-design.md"),
+]
+
+# SCAD comment staleness -- deny list, not a positive-needle check (see
+# this module's own SCOPE docstring for why). Each string is a figure
+# already found stale in Rocket60.scad/R60Lib.scad's own freeform
+# comments and fixed this round; it must never reappear in either file.
+# Grows only when a NEW instance is found and fixed -- see the docstring.
+SCAD_FILES = [
+    os.path.join(REPO, "Rocket60.scad"),
+    os.path.join(REPO, "R60Lib.scad"),
+]
+STALE_SCAD_NEEDLES = [
+    "955 m/s",   # superseded Vf (mean-chord t/c bug) -- corrected 589 m/s
+    "959 m/s",   # an even earlier superseded Vf, predating the 8th
+                  # review's MMT_r correction
+    "4.6x the H182R",   # superseded flutter ratio (was actually H182R's
+                          # own ratio at the wrong Vf, per this file's own
+                          # 10th-review fix)
+    "4.9x the H135W",   # superseded flutter ratio, same fix
 ]
 
 _bad = 0
@@ -226,9 +275,24 @@ def model_numbers(out):
 
 
 def doc_has(path, *needles):
+    """(10th review) Whitespace-normalised: a needle that spans a line
+    wrap in the doc's own hand-wrapped prose (confirmed real, not
+    hypothetical -- "G80T 4.7×, H182R 2.9×, H135W 3.1×", this review's
+    own new flutter needle, broke across exactly one such wrap in BOTH
+    R60-PrintSettings.md and the STL README, at a different point in
+    each) used to read as "missing" even though a human reads it as one
+    unbroken sentence -- a false failure that would have forced prose
+    reflowed around the checker's own literal newlines, backwards from
+    what this gate is for. Collapsing all whitespace runs (spaces,
+    newlines) to a single space in BOTH the doc text and each needle
+    before comparing makes the check match what a reader sees, not the
+    doc's own line-wrap column -- strictly safer than the old plain `in`
+    check (a match here is always also a real match on the substance;
+    only a spurious near-miss caused by wrapping start passing, never a
+    genuinely absent figure)."""
     with open(path) as f:
-        text = f.read()
-    return [n for n in needles if n not in text]
+        text = re.sub(r"\s+", " ", f.read())
+    return [n for n in needles if re.sub(r"\s+", " ", n) not in text]
 
 
 def stale_bold_cal(path, expected_cals):
@@ -318,6 +382,23 @@ def main():
     cg_bo = lambda d: "%.1f mm" % d["cg_bo_mm"]
     ratio_needle = lambda mo, label: "%.1f× the %s's ~%d m/s Vmax" % (
         nums["flutter_ratio"][mo], label, nums[mo]["vmax_ms"])
+    # (10th review) Flutter Vf/per-motor-ratio needles for the OTHER two
+    # tracked docs -- R60-PrintSettings.md and STL Files/Rocket60/
+    # README.md both now publish Vf and a per-motor ratio line too (a
+    # "G80T 4.7×, H182R 2.9×, H135W 3.1×" short form, not the spec doc's
+    # own "4.7× the G80T's ~126 m/s Vmax" long form -- these are two
+    # different prose conventions this gate has to match separately, not
+    # one needle reused). Before this, a doc could publish a STALE Vf
+    # (955 m/s survived one whole correction commit in
+    # R60-PrintSettings.md's own §3, two sections away from its own
+    # corrected §9 figure) with nothing here to catch it -- only the spec
+    # doc's own per-motor ratio needles existed, and neither of THOSE
+    # ever spelled out "589 m/s"/"955 m/s" as a bare figure to check
+    # against.
+    vf_needle = "%d m/s" % nums["Vf_ms"]
+    short_ratio_needle = "G80T %.1f×, H182R %.1f×, H135W %.1f×" % (
+        nums["flutter_ratio"]["G80T-14A"], nums["flutter_ratio"]["H182R-14A"],
+        nums["flutter_ratio"]["H135W-14A"])
 
     # (9th review, finding 3) R60Lib.scad's own derived Vega rod length --
     # a SCAD echo, not a rocket60_model.py figure, so it is fetched
@@ -342,12 +423,16 @@ def main():
             ("H182R-14A margin", (cal(h182r),)),
             ("H135W-14A margin", (cal(h135w),)),
             ("Vega rod length (R60_Vega_RodLength)", (rod_len_needle,)),
+            ("flutter: Vf and per-motor ratios",
+             (vf_needle, short_ratio_needle)),
         ],
         "STL Files/Rocket60/README.md": [
             ("G80T-14A liftoff/margin/rail-exit",
              (grams(g80t), cal(g80t), "%.1f m/s" % g80t["rail_exit_ms"])),
             ("H182R-14A liftoff/margin", (grams(h182r), cal(h182r))),
             ("H135W-14A liftoff/margin", (grams(h135w), cal(h135w))),
+            ("flutter: Vf and per-motor ratios",
+             (vf_needle, short_ratio_needle)),
         ],
         # 8th review, finding 3b; CG/burnout/flutter columns added per
         # coordinator follow-up in the same review round -- this is now
@@ -413,6 +498,22 @@ def main():
               "" if ok else "-- found %s cal, bolded, not a current "
               "margin/marg_bo for any motor (stale/superseded figure "
               "still presented as current)" % stale))
+
+    # SCAD deny-list (10th review) -- see this module's own SCOPE
+    # docstring and STALE_SCAD_NEEDLES for what this does and does not
+    # guarantee.
+    for path in SCAD_FILES:
+        rel = os.path.relpath(path, REPO)
+        if not os.path.exists(path):
+            print("%s %s: file not found -- cannot verify it" % (bad(False), rel))
+            continue
+        with open(path) as f:
+            text = f.read()
+        found = [n for n in STALE_SCAD_NEEDLES if n in text]
+        ok = not found
+        print("%-4s %s: no stale flutter figures %s" % (bad(ok), rel,
+              "" if ok else "-- found %s (already-superseded figure(s) "
+              "reappeared)" % found))
 
     print("\n%d check(s) failed" % _bad)
     return 1 if _bad else 0
