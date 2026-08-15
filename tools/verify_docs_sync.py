@@ -172,6 +172,28 @@ def vega_rod_length():
     return float(m.group(1))
 
 
+def petal_len_mm():
+    """R60Lib.scad's own R60_Petal_Len, read DIRECTLY off the source
+    (13th review, "the spec's parts table still says Len=120mm" finding
+    -- a 3rd-party review caught it because nothing here gated the
+    figure at all). A bare literal, not a derived formula like
+    R60_Vega_RodLength above -- reading it straight out of R60Lib.scad's
+    own source text (not re-typing it as a THIRD copy in this file, and
+    not trusting rocket60_model.py's own restated Python copy, which
+    could itself drift from R60Lib.scad the same way the docs did) is
+    the same "one source of truth" reasoning vega_rod_length() uses,
+    minus the render -- OpenSCAD's own evaluator is not needed for a
+    plain integer assignment."""
+    with open(os.path.join(REPO, "R60Lib.scad")) as f:
+        src = f.read()
+    m = re.search(r"^R60_Petal_Len\s*=\s*(\d+)\s*;", src, re.MULTILINE)
+    if not m:
+        raise RuntimeError(
+            "could not find R60Lib.scad's own R60_Petal_Len assignment -- "
+            "its source line changed; update this regex")
+    return int(m.group(1))
+
+
 def section(out, header, next_header):
     """Slice of `out` starting right after `header` and ending right
     before `next_header` (or end of string) -- the model prints several
@@ -407,6 +429,17 @@ def main():
     rod_len = vega_rod_length()
     rod_len_needle = "%.1f mm" % rod_len
 
+    # (13th review) R60Lib.scad's own R60_Petal_Len, same "read the real
+    # source, not a hand-typed copy" reasoning as rod_len above -- this
+    # is the number the spec's own parts table survived at a stale
+    # "Len=120mm" through the 12th review's own 120->140 growth, because
+    # nothing here gated it at all.
+    # Needle includes the backtick (matches the spec's own parts-table
+    # cell convention, `Len`=NNmm -- other params in that same cell,
+    # Lock_Span_a/AntiClimber_h, follow the identical inline-code-name-
+    # then-bare-value style, so this is not a one-off).
+    petal_len_needle = "`Len`=%dmm" % petal_len_mm()
+
     # The specific published figures this check exists to keep honest --
     # exact strings, so a doc that still says "871 g" or "1.45 cal" after
     # the model has moved on fails here instead of surviving to print.
@@ -439,6 +472,7 @@ def main():
         # the one doc that publishes the FULL per-motor table plus the
         # flutter section, so it is the one doc with the full check list.
         "docs/superpowers/specs/2026-08-13-rocket60-design.md": [
+            ("petal length (R60_Petal_Len)", (petal_len_needle,)),
             ("G80T-14A liftoff/margin/rail-exit",
              (grams(g80t), cal(g80t), "%.1f m/s" % g80t["rail_exit_ms"])),
             ("G80T-14A CG loaded/burnout", (cg(g80t), cg_bo(g80t))),

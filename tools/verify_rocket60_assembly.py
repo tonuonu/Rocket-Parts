@@ -355,6 +355,23 @@ PACKING_BORE_D_MM = 53.2   # PD_Petals' own tube ID at Wall_t=1.6,
                             # matches r60_assembly.scad's own Pair 42/43
 PACKING_REQUIRED_CM3 = 250.0
 
+# NOT yet netted out (13th review, found while checking a DIFFERENT
+# fix -- AntiClimber_h -- reported, not silently absorbed into this
+# check's own scope this round): PD_Petals()'s own AntiClimber() ridges
+# (R60_Petals()'s AntiClimber_h=4, corrected this session -- Rocket60.
+# scad's own module comment) reach inward to a measured r=22.26mm at
+# two petal-local Z-bands per petal (~7.2-15.2 and ~121.2-129.2) --
+# DEEPER than the lock nubs' own r=24.2mm minimum, and at azimuths the
+# hub/spring-holder/piston probes (Pairs 42/43) do not cover, since
+# those measure hub/piston material, not petal material. The net
+# packing figure above (net_cm3) does not charge for this third
+# obstruction source; the true usable volume is somewhat LESS than
+# net_cm3 states, by an unmeasured amount (a thin ridge, not a slab --
+# likely small next to the ~45cm3 of margin over PACKING_REQUIRED_CM3,
+# but not measured, so not asserted here as small). A Pair 44 probing
+# PD_Petals() itself the same way 42/43 probe the hub/piston would
+# close this -- not built this round.
+
 
 def check_packing(tmp):
     """Net packing volume: bore cross-section area (from PACKING_BORE_D_MM)

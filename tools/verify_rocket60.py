@@ -278,6 +278,13 @@ CHUTE_AFT_TOP_BAND = (137.5, 138.01)    # part 26: true aft-end, past the
 R60_ChuteSplit_SocketID_restated = 58.8   # R60Lib.scad's own
                                             # R60_ChuteSplit_SocketID --
                                             # restated (rule 4)
+
+# Petal lock nub arc scan (13th review) -- r_thresh sits cleanly below
+# both of PD_Petals()' own plain-wall radii at this OD (ID/2=26.6,
+# OD/2=28.2) and above the transitional hull faces of PD_PetalLocks()'s
+# own nub geometry, isolating just the nub tips (measured minimum
+# r=24.2 this session) -- see petal_lock_arcs()'s own docstring.
+PETAL_LOCK_R_THRESH = 25.5
 BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
 # Part 9's base face carries BOTH the outer tube (60/56.8) and the MMT
 # (32/29.3), so one band yields both measurements: bore() returns
@@ -573,6 +580,86 @@ def door_switch_hole(stl, xhalf=6.5, zlo=20.0, zhi=80.0):
     xs = [p[0] for p in pts]
     zs = [p[1] for p in pts]
     return (min(xs) + max(xs)) / 2.0, (min(zs) + max(zs)) / 2.0
+
+
+def petal_lock_arcs(stl, zlo, zhi, r_thresh, gap_deg=2.0):
+    """Azimuthal arcs (list of (start_deg, end_deg), 0..360, wraparound
+    merged) of INWARD-projecting lock-nub material in a petal's own
+    rendered mesh, within Z-band [zlo,zhi] and radius <= r_thresh -- the
+    mesh-level guard for `Lock_Span_a` (13th review: this constant
+    regressed to the library default 0 -- full-circumference lock
+    ridges, ~4x the donor's flown engagement -- once already, silently,
+    because nothing checked the RENDERED part, only the source line
+    that sets it). PD_PetalLocks()'s own geometry (PetalDeploymentLib.
+    scad) is a hull of small cylinders/cube corners dipping inward from
+    the petal's plain wall surfaces (which sit at r=ID/2=26.6 and
+    r=OD/2=28.2 in this design) down to a real, measured minimum around
+    r=24.2 -- r_thresh=25.5 (PETAL_LOCK_R_THRESH below) sits cleanly
+    below both plain-wall radii and above the transitional hull faces,
+    isolating just the nub tips, confirmed empirically (this session:
+    the same scan at Lock_Span_a=0 -- full-circumference -- returns
+    exactly ONE arc spanning the full 360 degrees, not three).
+
+    Vertices are bucketed to whole-degree azimuth and merged into arcs
+    wherever the gap to the next occupied bin exceeds gap_deg (a real
+    nub is a contiguous cluster; ordinary mesh sampling noise is not) --
+    same "reachable edge loop, not an inferred value" idiom as this
+    file's own hole_azimuth_at_r()/fincan_slot_width(), generalised to
+    return every contiguous arc instead of one hole's mean position,
+    since the defect this check exists to catch is about arc COUNT and
+    SPACING, not a single position."""
+    pts = []
+    for tri in tris(stl):
+        for (x, y, z) in tri:
+            if zlo <= z <= zhi:
+                r = math.hypot(x, y)
+                if r <= r_thresh:
+                    pts.append(math.degrees(math.atan2(y, x)) % 360.0)
+    if not pts:
+        return []
+    pts.sort()
+    arcs = []
+    start = prev = pts[0]
+    for t in pts[1:]:
+        if t - prev > gap_deg:
+            arcs.append((start, prev))
+            start = t
+        prev = t
+    arcs.append((start, prev))
+    # Merge wraparound (an arc that straddles the 0/360 seam splits into
+    # a piece at the start of the sorted list and a piece at the end).
+    if len(arcs) > 1 and arcs[0][0] < gap_deg and (360.0 - arcs[-1][1]) < gap_deg:
+        first = arcs.pop(0)
+        last = arcs.pop(-1)
+        arcs.append((last[0] - 360.0, first[1]))
+        arcs.sort()
+    return arcs
+
+
+def petal_lock_metrics(stl, zlo, zhi, r_thresh, gap_deg=2.0):
+    """(n_arcs, avg_span, max_spacing_dev_from_120) -- a fixed-size
+    numeric summary of petal_lock_arcs(), so it fits this file's own
+    (label, actual, expected, tol) checks() convention (a variable-
+    length arc list does not). max_spacing_dev_from_120 is nan-safe-
+    sentinelled to a large, obviously-failing value (999.0) whenever
+    there are not at least 2 arcs to measure spacing between at all --
+    same "cannot silently read as a pass" reasoning as scad_verify.py's
+    own overshoot()/shortfall() nan handling, so a Lock_Span_a=0
+    regression (1 merged arc, no spacing to compute) fails the spacing
+    check for an honest reason (no arcs to space out) instead of a
+    division/indexing error, or worse, a vacuous skip."""
+    arcs = petal_lock_arcs(stl, zlo, zhi, r_thresh, gap_deg)
+    n = len(arcs)
+    if n == 0:
+        return (0, 0.0, 999.0)
+    spans = [b - a for (a, b) in arcs]
+    avg_span = sum(spans) / n
+    if n < 2:
+        return (n, avg_span, 999.0)
+    centers = sorted((a + b) / 2.0 % 360.0 for (a, b) in arcs)
+    spacings = [(centers[(i + 1) % n] - centers[i]) % 360.0 for i in range(n)]
+    max_dev = max(abs(s - 360.0 / n) for s in spacings)
+    return (n, avg_span, max_dev)
 
 
 def hole_flat_max_x(stl, r_at, z_at, x_side=1, r_win=0.02, zwin=1.5):
@@ -1065,6 +1152,41 @@ def checks(m):
     # petal-deployment transplant, see tasks/lessons.md. Part 13 is now
     # R60_Petals() (PetalDeploymentLib.scad), covered by the max-radius-
     # vs-bore check above, same as parts 8/15-23.
+    #
+    # 13th review: `Lock_Span_a` (Rocket60.scad's own R60_Petals() call)
+    # regressed to the library default (0, full-circumference lock
+    # ridges) once already, silently -- a 3rd-party review caught it,
+    # not this file, because nothing here checked the RENDERED mesh,
+    # only trusted the source line that sets it. petal_lock_arcs() reads
+    # the real geometry: PD_PetalLocks()'s own BaseOffset+Len-Lock_h to
+    # BaseOffset+Len band (7.2+140-1.5=145.7 to 7.2+140=147.2 at the
+    # CURRENT R60_Petal_Len -- restated below, rule 4) for inward-
+    # projecting nub material. Correct (Lock_Span_a=30): 3 arcs, ~38deg
+    # each, 120deg apart. Mutation-tested (this session): Lock_Span_a=0
+    # collapses this to ONE arc spanning the full 360deg -- n_arcs=1
+    # (want 3), avg_span=360 (want ~38), spacing metric hits its own
+    # 999.0 not-enough-arcs-to-space sentinel (want ~0) -- all three
+    # fail loudly, not just one.
+    if 13 in m:
+        petal_len = a(13, "height")   # PD_Petals()'s own printed length
+                                        # IS R60_Petal_Len by construction
+                                        # -- read off the mesh, not
+                                        # restated, so this band tracks
+                                        # a future Petal_Len change
+                                        # automatically
+        PETAL_LOCK_BASE_OFFSET = 7.2   # PD_PetalLocks()'s own BaseOffset
+                                         # (PetalDeploymentLib.scad) --
+                                         # restated (rule 4)
+        PETAL_LOCK_H = 1.5              # PD_PetalLocks()'s own Lock_h --
+                                         # restated (rule 4)
+        zlo = PETAL_LOCK_BASE_OFFSET + petal_len - PETAL_LOCK_H
+        zhi = PETAL_LOCK_BASE_OFFSET + petal_len
+        n_arcs, avg_span, spacing_dev = safe(
+            petal_lock_metrics, a(13, "stl"), zlo, zhi,
+            PETAL_LOCK_R_THRESH, nvals=3)
+        c += [("petal lock nub arc count", n_arcs, 3, 0.4),
+              ("petal lock nub arc span (deg)", avg_span, 38.2, 8.0),
+              ("petal lock nub arc spacing (deg from 120)", spacing_dev, 0.0, 2.0)]
 
     # Build volume, every part -- 6th review, finding 4: this used to
     # derive its own "expected" FROM the measurement (min(height, MAX_Z)),

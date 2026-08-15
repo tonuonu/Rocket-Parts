@@ -197,7 +197,7 @@ scratch a second time.
 | 10 | Fins ×3 | new | Cr 90 / Ct 35 / span 63 / sweep 45 / t 4.0. **UNCHANGED by this task.** |
 | 11 | Motor retainer | adapt `MotorAdapter29.scad` patterns | 29 mm aft retainer — resists AFT motion only; see part 14. |
 | 12 | Motor spacer | new | 98 mm for the G80T, 19 mm for the H182R (228 mm MMT − 6 mm part-14 ring − motor length); ~6 mm for the H135W. |
-| 13 | Petals | `use<>` `PetalDeploymentLib.scad`'s `PD_Petals()` | Hinges to part 8 via part 24 (not bolted to part 8 directly — `PD_Petals()` has no axial holes). `Len`=120mm, `Lock_Span_a`=30 (donor's own flown value — 11th review, was omitted, defaulting to a full-circumference lock ridge), `HasLocks=true` for the small printed catch nubs the spring overcomes (the charge does **not** — §4.3, retracted). **This IS the separable joint** — nothing else in this design shears. |
+| 13 | Petals | `use<>` `PetalDeploymentLib.scad`'s `PD_Petals()` | Hinges to part 8 via part 24 (not bolted to part 8 directly — `PD_Petals()` has no axial holes). `Len`=140mm (12th review, grown from 120 for real packing margin — §4.1), `Lock_Span_a`=30 (donor's own flown value — 11th review, was omitted, defaulting to a full-circumference lock ridge; 13th review added a mesh-level guard, `verify_rocket60.py`'s own `petal_lock_arcs()`, after this same constant regressed once already), `AntiClimber_h`=4 (13th review — the donor's own print convention, not the ShowRocket()-embedded display call this used to follow), `HasLocks=true` for the small printed catch nubs the spring overcomes (the charge does **not** — §4.3, retracted). **This IS the separable joint** — nothing else in this design shears. |
 | 14 | Forward thrust ring | new | Reacts the motor's FORWARD thrust reaction (part 11 alone only resists aft motion); Ø26.8 mm lip, flush with the fin can's own forward tip. |
 | 15 | Release activator | `use<>` `CableReleaseBBMicro.scad`'s `CRBBm_Activator()` | Servo mount + lock-ring driver; bolts to part 5's aft face. **BBMicro, not the flown BBMini** — see §4 below for the mesh-measured reason. |
 | 16-20 | Release stack | `use<>` `CableReleaseBBMicro.scad` | Top retainer, lock ring, outer bearing retainer, trigger post, magnet bracket — the rotating-lock-ring/ball-detent/magnetic-over-centre release the abandoned design left "deliberately incomplete". |
@@ -375,8 +375,11 @@ anywhere between the motor's own forward face and the petal cage — but that on
 charge's gas reaches the lock nubs at all; it does not mean the gas can open them.
 
 The charge **cannot be disabled** (it is the motor's own ejection charge, not a separate,
-switchable device) and fires on its own timer, independent of the recovery system,
-**1–3 seconds after whatever separation the servo path produced** — venting straight up the
+switchable device) and fires on its own timer, independent of the recovery system.
+**Undrilled, ~5.0 seconds after apogee** (13th review, correcting a "1-3 second" figure
+that matches only a DRILLED delay: burnout 1.7s + the stock 14s delay grain = 15.7s from
+liftoff, against 10.7s to apogee — the ~2-3s range the old wording described only holds if
+the delay is drilled to ~11s, spec §9 item A5) — venting straight up the
 open fin can/deployment bay toward the just-deployed main. This is a real hazard to the
 canopy and lines regardless of the retracted backup claim above: **specify a Nomex chute
 protector between the charge and the packed main, and a sleeved (Nomex or similar) shock
@@ -402,9 +405,9 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | v@1m rail | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 940 g | 8.4 | 14.7 m/s | 122 m/s | **0.36** | 584 m | 10.7 s |
-| **H182R-14A** (29 mm DMS) | 1006 g | 18.4 | 21.8 m/s | 197 m/s | **0.58** | 953 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 1009 g | 11.7 | 16.7 m/s | 184 m/s | **0.54** | 996 m | 13.2 s |
+| **G80T-14A** (owned) | 941 g | 8.4 | 14.7 m/s | 122 m/s | **0.36** | 583 m | 10.7 s |
+| **H182R-14A** (29 mm DMS) | 1007 g | 18.4 | 21.8 m/s | 196 m/s | **0.58** | 952 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 1010 g | 11.7 | 16.7 m/s | 183 m/s | **0.54** | 996 m | 13.2 s |
 
 Rail-exit speed off the owner's actual Estes Pro Series II rail (1.83 m,
 not the 1.5 m this table used to assume) is reported separately in §6.1
@@ -502,9 +505,9 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 940 g | 418.1 mm | **1.69 cal** | 396.6 mm | 2.05 cal |
-| H182R-14A | 1006 g | 431.0 mm | **1.48 cal** | 399.2 mm | 2.01 cal |
-| H135W-14A | 1009 g | 430.6 mm | **1.49 cal** | 409.3 mm | 1.84 cal |
+| G80T-14A | 941 g | 418.2 mm | **1.69 cal** | 396.7 mm | 2.05 cal |
+| H182R-14A | 1007 g | 431.0 mm | **1.48 cal** | 399.3 mm | 2.01 cal |
+| H135W-14A | 1010 g | 430.6 mm | **1.49 cal** | 409.4 mm | 1.84 cal |
 
 **The G80T-14A margin IMPROVED, 1.46→1.69 cal** (10th/11th/12th review:
 this figure has moved several times since, from an intermediate 1.68
@@ -558,8 +561,8 @@ motor overall) sits at 3.0×, below a 3× floor. Re-scoped to a per-motor
 cal stability gate above; the true physical floor is 1.0×, Vf>Vmax):
 
 - **4.8× the G80T's ~122 m/s Vmax**
-- **3.0× the H182R's ~197 m/s Vmax**
-- **3.2× the H135W's ~184 m/s Vmax**
+- **3.0× the H182R's ~196 m/s Vmax**
+- **3.2× the H135W's ~183 m/s Vmax**
 
 All three clear the 1.5× floor with real room. Do not make the fins
 thinner, or grow the span further, without recomputing both stability

@@ -205,7 +205,7 @@ correction; this paragraph used to cite the SUPERSEDED 955 m/s figure
 here, two sections before its own correction, a live instance of the
 exact "restated literal drifts from the source" defect §9's own note
 warns about), gated per-motor at a stated 1.5× floor, not a single "3×
-the fastest motor" check — 3.0× against the H182R's own ~197 m/s Vmax
+the fastest motor" check — 3.0× against the H182R's own ~196 m/s Vmax
 (§9's fin-sizing note has the full per-motor table). Moving the fins to
 PC would change that shear modulus and orphan the documented margin
 without a recompute, and neither
@@ -312,7 +312,7 @@ rail only — the 3 mm launch rod is not usable at this mass**; at this
 length a 3 mm rod would whip badly and rail exit would be unstable
 (spec §9).
 
-At the as-built liftoff mass (940 g on the G80T, from
+At the as-built liftoff mass (941 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
 note) the rocket leaves the owner's 1.83 m rail at **20.0 m/s**, comfortably
 clear of the ~15 m/s minimum needed for the fins to stabilize the vehicle
@@ -427,7 +427,11 @@ Build order for what exists today:
    (parts 21/22) through the lock ring, load the CS4323 spring over
    them (seated on part 25, not floating), and cap the free end with
    `23_ForwardSpringEnd.stl`, captive on the pin until the servo
-   releases it — see spec §4.2 for the full mechanism.
+   releases it. The pin→rod→piston tension member is a **#10-24
+   all-thread rod, cut to ~58mm** (13th review — `R60Lib.scad`'s own
+   `R60_ReleaseRodLen` echo has the derivation; bench-adjustable over
+   the extension rod's own ~26mm span, so cut a little long and trim)
+   — see spec §4.2 for the full mechanism.
 10. Epoxy the 3 fins into `09_FinCan.stl`'s slots; screw
    `11_MotorRetainer.stl` to the fin can aft end (3× M3 into ruthex
    inserts). Glue `14_ThrustRing.stl` into the MMT's forward opening,
@@ -467,9 +471,13 @@ Build order for what exists today:
     `09_FinCan.stl`'s forward centring ring (its own 2× Ø5 axial
     holes). **Sleeve the cord and fit a Nomex chute protector between
     the packed main and the motor** — the G80T's ejection charge cannot
-    be disabled and fires 1–3s after the servo-driven separation above,
-    venting straight up the open fin can/deployment bay toward the
-    just-deployed main (spec §4.3).
+    be disabled and fires **~5.0s after apogee, undrilled** (13th
+    review, correcting a "1-3s" figure that only matches a DRILLED
+    delay — burnout 1.7s + the stock 14s delay grain = 15.7s from
+    liftoff, vs 10.7s to apogee; drilling to ~11s (spec §9 item A5)
+    gives the shorter ~2-3s the old figure actually described), venting
+    straight up the open fin can/deployment bay toward the just-
+    deployed main (spec §4.3).
 
 ---
 
@@ -563,16 +571,30 @@ Copied from spec §11, with one adaptation flagged below.
    delay window.
 3. Cycle the release catch (servo 1 → lock ring → locking pin release)
    20 times on the bench: confirm it neither jams nor creeps open under
-   the spring's own standing load between cycles.
+   the spring's own standing load between cycles. **This cycle test is
+   the gate for a real substitution, not a formality** (13th review):
+   the petal/hinge/spring/piston geometry (parts 8/13/23/24) IS the
+   donor's own flown mechanism, but the ball-lock stack itself
+   (parts 15-22) is not — Rocket6551 flies `CableReleaseBBMini`
+   (LockPin_d=16, LockPin_Len=23), this design uses `CableReleaseBBMicro`
+   (LockPin_d=12, LockPin_Len=18) instead, forced by mesh evidence, not
+   chosen freely: BBMini's own Activator measures r=31.8mm and cannot
+   enter this design's Ø56.8mm bore at all, where BBMicro's own
+   Activator lands exactly on the coupler OD's own 0.4mm-clearance
+   convention (spec §4.2 has the full measurement). A smaller, less-
+   flown ball-lock family (BBMicro's own first print 2025-10-16 vs
+   BBMini's 2025-09-21) is what this cycle test is actually there to
+   de-risk before flight, not the donor-proven petal mechanism it sits
+   next to.
 4. Bench-test the full Vega sequence on the ground: arm → apogee servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
 6. **Weigh the fully assembled rocket and compare against
-   `tools/rocket60_model.py`'s own liftoff-mass figure (940 g, G80T
+   `tools/rocket60_model.py`'s own liftoff-mass figure (941 g, G80T
    config, 12th review) before flying.** Rail exit is what mass actually
    threatens on this rocket (20.0 m/s off the owner's 1.83 m rail
    against a ~15 m/s minimum, spec §6.1) — NOT stability, which clears
    its own 1.0 cal minimum with real room (spec §6.1, 1.69 cal). Roughly
-   a quarter of the modelled 940 g is flat-gram hardware ESTIMATES, not
+   a quarter of the modelled 941 g is flat-gram hardware ESTIMATES, not
    measured mesh volumes, so the real liftoff mass could differ
    meaningfully:
    - camera assembly (60 g), 1× MG90S servo + small release hardware
@@ -587,7 +609,7 @@ Copied from spec §11, with one adaptation flagged below.
      stated, unverified assumption applied across every PETG part alike,
      not per-part infill actually measured off a scale (§3's own
      infill % differs 25–62% per part).
-   - If the weighed rocket comes in meaningfully over 940 g, re-check
+   - If the weighed rocket comes in meaningfully over 941 g, re-check
      rail exit against the ~15 m/s minimum before flying — a shorter or
      lower-thrust rail exit is the actual failure mode a heavier-than-
      modelled rocket produces, not a stability problem.
@@ -630,10 +652,13 @@ Copied from spec §11, with one adaptation flagged below.
   path (servo, wiring, Vega servo rail, lock ring) is a single point of
   failure for recovery. A from-scratch redundancy design is out of this
   task's scope (spec §4.3).
-- **The ejection charge cannot be disabled** and fires 1–3s after
-  whatever separation the servo path produces, venting up the open fin
-  can/deployment bay toward the just-deployed main — fit a Nomex chute
-  protector and sleeve the shock cord (spec §4.3, assembly step 12).
+- **The ejection charge cannot be disabled** and fires, undrilled,
+  **~5.0s after apogee** (13th review, correcting a "1-3s" figure that
+  only matches a DRILLED ~11s delay, not the stock 14s grain — burnout
+  1.7s + 14s = 15.7s from liftoff vs 10.7s to apogee; see spec §9
+  item A5 for the drilled case), venting up the open fin can/deployment bay toward
+  the just-deployed main — fit a Nomex chute protector and sleeve the
+  shock cord (spec §4.3, assembly step 12).
 - **Chute-bay depth shortfall — RESOLVED (12th review, owner's
   ruling)** — the 11th review's ~12.2mm shortfall (measured at the
   then-current `R60_Petal_Len`=120/`R60_Chute_L`=240) was the correct
@@ -693,7 +718,16 @@ Copied from spec §11, with one adaptation flagged below.
   ceiling for a single CS4323 spring) for a real, checked 294.9 cm³,
   ~18% margin — see spec §4.1 for the full record; the smaller-canopy
   and thinner-fabric-pack options once listed here are superseded, not
-  still live alternatives.
+  still live alternatives. **Not yet netted out of that 294.9 cm³**
+  (13th review, found while checking `AntiClimber_h`, reported rather
+  than folded into this round's scope): `PD_Petals()`'s own
+  `AntiClimber()` ridges reach inward to a measured r=22.26mm — deeper
+  than the lock nubs' own r=24.2mm — at azimuths the hub/spring-holder/
+  piston probes (Pairs 42/43) do not cover, since those measure hub/
+  piston material, not petal material. True usable volume is somewhat
+  less than 294.9 cm³ by an unmeasured (likely small, not asserted
+  small) amount — see `verify_rocket60_assembly.py`'s own
+  `PACKING_REQUIRED_CM3` comment.
 - **Release-hardware mounting interference** — PARTIALLY resolved (10th
   review): part 15's own mount to the aft bulkhead (part 5) now has a
   mesh-against-mesh mating-fit AND fastener-reach check

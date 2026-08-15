@@ -161,10 +161,12 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # 3, 13, 26: re-measured this session (12th review, tube split +
 # Petal_Len=140) off the actual rendered mesh, not scaled/estimated --
 # 3: 41.1 (was 70.4 at Chute_L=240 one-piece; now the fwd piece only,
-# 143mm incl. spigot), 26: 39.3 (new, the aft piece, 138mm incl. socket),
-# 13: 39.3 (was 33.8 at Petal_Len=120; now 140mm).
+# 143mm incl. spigot), 26: 39.3 (new, the aft piece, 138mm incl. socket).
+# 13: 40.7 (13th review, re-measured again -- AntiClimber_h 0->4, the
+# donor's own print convention, not the ShowRocket()-embedded display
+# call this used to follow, Rocket60.scad's own R60_Petals() comment).
 STL_VOL = {1: 16.2, 2: 47.1, 3: 41.1, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
-           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 39.3, 14: 0.6,
+           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 40.7, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
            22: 1.5, 23: 10.5, 24: 2.2, 25: 4.1, 26: 39.3}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)

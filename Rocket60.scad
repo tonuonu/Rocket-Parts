@@ -1166,7 +1166,32 @@ module R60_ThrustRing(){
 // own default (0) means Lock_Span_a=0 -> full-circumference lock ridge,
 // about 4x the donor's actual flown engagement arc. Left un-set here
 // before this review, silently inheriting the library default instead
-// of the donor's own deliberately narrowed one.
+// of the donor's own deliberately narrowed one. This is the constant
+// that regressed to 0 once already (a `use<>` refactor dropped the
+// argument silently) -- verify_rocket60.py's own petal_lock_arcs()
+// check reads the RENDERED mesh (three ~30-38deg inward-nub arcs at
+// 120deg spacing, Z=145.7-147.2) so a second regression fails loudly
+// instead of just failing to lock.
+//
+// AntiClimber_h=4 (13th review -- SAME defect class as the Lock_Span_a
+// regression above, caught by a 3rd-party review, not this repo's own
+// checks): Rocket6551.scad's own header block, under its own literal
+// "***** for STL output *****" banner -- the donor's real print
+// convention, not a preview/display artifact -- calls
+// `PD_Petals(..., AntiClimber_h=4, HasLocks=true, Lock_Span_a=30)`
+// (lines 56-58 there) for this exact petal cage. The value this module
+// used instead (0) came from Rocket6551's OWN ShowRocket()-embedded
+// calls (lines 386/441 there, AntiClimber_h=0, HasLocks=true, no
+// Lock_Span_a at all -- inheriting the library default 0, i.e. the
+// SAME full-circumference-lock bug, just never instantiated standalone
+// so never actually printed that way) -- a preview/assembly-render
+// convenience call, not the donor's own stated print instructions.
+// Follow the print convention: AntiClimber_h=4. (AntiClimber() adds a
+// small radial nub-and-slot near the BASE end of each petal wall,
+// PetalDeploymentLib.scad's own module -- an assembly aid, not part of
+// the lock/hinge/spring load path, so this change re-exports part 13's
+// mesh but does not touch any of the checked dimensions/interfaces
+// above.)
 //
 // R60_Petal_Len (R60Lib.scad) derivation -- packing volume for a 24in
 // main + Nomex protector + shroud lines, ~250 cm^3 at a stated ~0.2
@@ -1175,7 +1200,7 @@ module R60_ThrustRing(){
 module R60_Petals(){
     $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     PD_Petals(OD=R60_Coupler_OD, Len=R60_Petal_Len, nPetals=R60_nPetals,
-              Wall_t=R60_Wall_T, AntiClimber_h=0, HasLocks=true,
+              Wall_t=R60_Wall_T, AntiClimber_h=4, HasLocks=true,
               Lock_Span_a=30);
 } // R60_Petals
 

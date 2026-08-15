@@ -96,6 +96,17 @@ MR63 lock bearings, 2× N42 magnets, dowel pins, #4-40 screws — see
 `CableReleaseBBMicro.scad`'s own header for the full catalog list (note:
 that header's own BOM comment is stale, listing 5/16in balls and a 6705
 bearing; the parts above are built from the LIVE code, 6mm balls/6703).
+**#10-24 all-thread rod (1, cut to length): ~58mm** (13th review — the
+donor's own header lists this as "Eyebolt threaded rod or other
+attachment" with no length anywhere; `R60Lib.scad`'s own
+`R60_ReleaseRodLen` echo derives it: 15mm engaged into
+`22_ReleaseLockingPin.stl`'s own ~18mm internal thread + 26mm through
+`21_ReleaseExtensionRod.stl`'s own full clearance bore + 4mm into
+`23_ForwardSpringEnd.stl`'s own shallow thread boss + 13mm extra free
+span, this design's smaller/shorter BBMicro pin reaching less far into
+the stack than the flown BBMini family's own longer pin did. Bench-
+adjustable over the extension rod's own ~26mm span — a starting length
+to save an iteration, not a tight-tolerance cut.
 
 ## Ground-test motors
 
@@ -125,9 +136,9 @@ Re-run after the petal-deployment transplant (spec sec 4).
 
 | Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
-| G80T-14A | 940 g | 1.69 cal | 20.0 m/s |
-| H182R-14A | 1006 g | 1.48 cal | 29.8 m/s |
-| H135W-14A | 1009 g | 1.49 cal | 23.0 m/s |
+| G80T-14A | 941 g | 1.69 cal | 20.0 m/s |
+| H182R-14A | 1007 g | 1.48 cal | 29.8 m/s |
+| H135W-14A | 1010 g | 1.49 cal | 23.0 m/s |
 
 Fin flutter Vf = 589 m/s (root-chord t/c, NAR/TIR-33 form). Per-motor
 margin against each motor's own Vmax, floor 1.5×: G80T 4.8×, H182R 3.0×,

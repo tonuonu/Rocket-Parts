@@ -712,6 +712,51 @@ R60_Ball_d    = 6;    // 6mm balls, live "Smallest" variant (not the
                         // stale 5/16" the file's own BOM comment lists)
 R60_nBalls    = 3;
 
+// #10-24 all-thread rod length (13th review) -- the pin(22)->rod->
+// piston(23) tension member that holds R60_FwdSpringEnd() captive
+// against R60_ReleaseLockingPin() (through R60_ReleaseExtensionRod()'s
+// own clearance bore) while the CS4323 spring is compressed. Present in
+// neither this repo nor CableReleaseBBMicro.scad's own header catalog
+// ("#10-24 Eyebolt threaded rod or other attachment" -- no length) --
+// a 3rd-party review flagged the omission and its own cause: this
+// design uses BBMicro's LockPin_d=12/LockPin_Len=18 (R60_LockPin_d
+// above), not the flown BBMini family's LockPin_d=16/LockPin_Len=23
+// (CableReleaseBBMini.scad's own defaults) -- a shorter, smaller pin
+// that reaches less far into the stack, leaving MORE of the rod's own
+// span unsupported by any printed part ("free span") than the donor's
+// own longer pin did.
+//
+// Derived, not copied from the donor (which never states a length for
+// either pin family): R60_ReleaseLockingPin_Engage (a secure, non-
+// bottoming bite into the pin's own ~18mm internal thread cavity,
+// CRBBm_LockingPin()'s own difference()-cut ExternalThread()) +
+// R60_ReleaseExtensionRodLen (26mm, R60_ReleaseExtensionRod()'s own
+// full printed length -- the rod runs its ENTIRE clearance bore, not
+// just part of it) + R60_ReleaseThreadEngage_Piston (R60_FwdSpringEnd()'s
+// own Boss_t=4mm -- the piston's shallow female thread cavity, the
+// hard ceiling on that end's own engagement, not a chosen margin) +
+// R60_ReleaseFreeSpan_Extra (the smaller-pin free span above -- this
+// session's own review finding, not re-derived from a full mesh
+// station audit of parts 21/22/23 together, which this fix's own scope
+// does not extend to; stated here, not silently assumed).
+R60_ReleaseLockingPin_Engage = 15;    // mm into the pin's own ~18mm bore
+R60_ReleaseExtensionRodLen   = 26;    // R60_ReleaseExtensionRod()'s own
+                                        // Len, restated (rule 4)
+R60_ReleaseThreadEngage_Piston = 4;   // R60_FwdSpringEnd()'s own Boss_t,
+                                        // restated (rule 4) -- the max
+                                        // this end can ever engage
+R60_ReleaseFreeSpan_Extra    = 13;    // BBMicro's shorter/smaller pin
+                                        // vs BBMini's, this review's
+                                        // own finding (see comment above)
+R60_ReleaseRodLen = R60_ReleaseLockingPin_Engage + R60_ReleaseExtensionRodLen
+                    + R60_ReleaseThreadEngage_Piston + R60_ReleaseFreeSpan_Extra;
+                    // = 58mm, inside the review's own stated 55-60mm
+                    // window -- bench-adjustable over the extension
+                    // rod's own ~26mm span either way, so this is a
+                    // starting length, not a tight-tolerance cut
+echo(str("R60_ReleaseRodLen (#10-24 all-thread, pin->rod->piston): ",
+    R60_ReleaseRodLen, " mm"));
+
 // Activator installed clocking (critical defect, this review: the OLD
 // mount bolted through the internal Activator<->TopRetainer joint, wrong
 // face AND wrong fastener standard -- see R60_EBayAftBulkhead()'s own
