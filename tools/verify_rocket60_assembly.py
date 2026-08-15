@@ -12,13 +12,14 @@ it only fails once you also place the neck's skirt where it actually
 seats). intersection() + measured volume is the only check that is
 looking at the same thing an assembler's hands would find.
 
-Where a joint has a stroke -- the chute tube telescopes over the e-bay
-aft bulkhead's skirt and the spring carrier as they're bonded together
-during assembly -- checked ALONG the stroke (Ins=0..80mm), not only at
-the final seated position: a joint can be clear when fully seated and
-still jam partway through assembly (exactly what defect 1 does: clear at
-the seated position, but the tether lug catches solid carrier material
-partway through the stroke and the rocket cannot be assembled at all).
+Where a joint has a stroke -- the deployment bay tube telescopes over the
+e-bay aft bulkhead's skirt during assembly -- checked ALONG the stroke
+(Ins=0..15mm), not only at the final seated position: a joint can be
+clear when fully seated and still jam partway through assembly. (The
+petal-deployment transplant removed the deeper stroke this used to sweep
+-- the old chute tube telescoped over a skirt+carrier insert, and a
+defect there once jammed mid-stroke while clearing at both ends; the
+carrier is gone, so this joint is now a plain tube over a plain skirt.)
 """
 import os, shutil, subprocess, sys, tempfile
 
@@ -60,33 +61,30 @@ PAIRS = {
     2: "e-bay aft bulkhead vs e-bay tube",
     3: "vega sled vs e-bay tube",
     4: "access door vs e-bay tube",
-    5: "aft bulkhead skirt vs chute tube (stroke)",
-    6: "spring carrier vs chute tube (stroke)",
-    7: "chute tube vs fin can",
+    5: "aft bulkhead skirt vs deployment bay tube (stroke)",
+    7: "deployment bay tube vs fin can",
     8: "motor spacer vs MMT (fin can)",
-    9: "tether latch vs aft bulkhead",
     10: "thrust ring obstructs motor+spacer (forward trap)",
     11: "motor retainer obstructs motor (aft trap)",
     # 4th review, harness item 2 (complete the pair matrix) -- see
     # r60_assembly.scad's own pair-enumeration comment block for the full
     # part-by-part table this was read off, including what was
     # deliberately excluded and why.
-    12: "tether latch vs spring carrier",
-    13: "tether latch vs chute tube (stroke)",
-    14: "spring carrier vs aft bulkhead",
-    # Not part-vs-part -- a declared MOVING ELEMENT's required path
-    # (harness item 3) vs. the real part(s) around it.
-    15: "servo-2 horn/pin-release path vs tether latch",
+    #
+    # Pairs 6, 9, 12-15, 17, 19, 31 RETIRED (petal-deployment transplant --
+    # tasks/lessons.md): all checked the deleted spring-carrier/tether-
+    # latch/servo-2 design. The petal cage (parts 8/13) and release
+    # hardware (15-23) are a KNOWN GAP here -- not silently dropped, see
+    # r60_assembly.scad's own pair-enumeration comment -- their binding
+    # dimensional question (fits inside the airframe's bore) is covered
+    # instead by verify_rocket60.py's max-radius-vs-bore check.
+    #
     # 6th review, finding 2: pairs 16 (switch vs tube), 18 (pin path vs
     # aft bulkhead) and 20 (switch vs Vega sled) are DELETED, not merely
     # unlisted here -- each was structurally incapable of failing under
-    # any plausible change (no shared coordinate range for 16/18; 20 was
-    # additionally probing the sled in its raw, unplaced local frame). See
-    # r60_assembly.scad's own pair-enumeration comment for the specific
-    # reason each one was removed rather than "fixed" into a check that
-    # would still never fire.
-    17: "tether latch pin path vs spring carrier",
-    19: "tether latch pin path vs chute tube",
+    # any plausible change. See r60_assembly.scad's own pair-enumeration
+    # comment for the specific reason each one was removed rather than
+    # "fixed" into a check that would still never fire.
     # 5th review, finding 2: pair 3 only ever modelled the SLED -- the
     # real collision was between the door bosses and the Vega BOARD
     # sitting on top of it, which nothing in this harness had ever
@@ -118,13 +116,16 @@ PAIRS = {
     28: "camera bolts sweep vs neck",
     29: "access door screws sweep vs door+tube",
     30: "motor retainer bolts sweep vs retainer + fin can insert",
-    31: "tether latch bolts sweep vs aft bulkhead",
+    # 31 RETIRED (petal-deployment transplant) -- was tether latch
+    # mounting bolts vs aft bulkhead. The release activator's (part 15)
+    # own mounting bolts are a known gap -- see r60_assembly.scad's own
+    # pair-enumeration comment.
     32: "Vega board mounting screws sweep vs sled",
 }
-STROKE_PAIRS = (5, 6, 13)
-# Insertion stroke sweep -- 0 (first contact) through 80 (fully seated,
-# shear pins aligned -- see r60_assembly.scad's Pair 5/6 comment for the
-# derivation).
+STROKE_PAIRS = (5,)
+# Insertion stroke sweep -- 0 (first contact) through 15 (fully seated,
+# petal-deployment transplant: Skirt_L=15, no carrier any more -- see
+# r60_assembly.scad's Pair 5 comment for the derivation).
 #
 # 4th review, harness item 5: this used to be a fixed 5mm grid while the
 # comment here claimed a "closing to 1mm near the transition" refinement
@@ -136,9 +137,12 @@ STROKE_PAIRS = (5, 6, 13)
 # either: there is no hit to refine around when both flanking coarse
 # samples are already clean. The only sweep that can actually promise
 # "nothing narrower than Xmm slips through" is one sampled AT Xmm
-# throughout -- so this is now a genuine, unconditional 1mm sweep (81
-# samples per stroke pair), not a coarse pass with a refinement step.
-INS_SWEEP = list(range(0, 81, 1))
+# throughout -- so this is a genuine, unconditional 1mm sweep, not a
+# coarse pass with a refinement step. Range shrank 0..80 -> 0..15
+# (petal-deployment transplant: the stroke is now just the skirt's own
+# Skirt_L=15mm, no 65mm carrier appended) -- 16 samples for the one
+# remaining stroke pair (5), not 81.
+INS_SWEEP = list(range(0, 16, 1))
 
 # Obstruction-proof pairs (defect 3, the missing forward thrust ring):
 # INVERTED polarity from every other pair here. Push=0 is the normal
