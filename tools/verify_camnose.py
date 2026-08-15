@@ -9,8 +9,8 @@ the lens face it gives the camera's maximum radius from the lens axis.
 """
 import math, os, subprocess, sys, tempfile
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+from scad_verify import REPO, render, measure, bore, volume, overshoot, shortfall
+
 SCAD = os.path.join(REPO, "PeregrineCamNose.scad")
 
 APEX = 441.43           # lens sits here
@@ -43,74 +43,26 @@ CAM_ENVELOPE = [
 GENUS = {0: 1, 1: 2, 5: 1, 6: 1}   # slices carry holes; checked separately
 
 
-def render(part, out):
-    env = dict(os.environ, OPENSCADPATH=REPO)
-    r = subprocess.run(
-        [OPENSCAD, "--export-format", "asciistl", "-o", out,
-         "-D", "Render_Part=%d" % part, SCAD],
-        capture_output=True, text=True, env=env, timeout=900)
-    err = r.stdout + r.stderr
-    if (r.returncode != 0 or "ERROR:" in err.upper()
-            or "Can't find include file" in err
-            or "Ignoring unknown module" in err
-            or not os.path.exists(out) or os.path.getsize(out) < 200):
-        raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
-    g = None
-    for line in err.splitlines():
-        if "Genus:" in line:
-            try:
-                g = int(line.split("Genus:")[1].split()[0])
-            except (ValueError, IndexError):
-                pass
-    return g
-
-
-def _tris(stl):
-    vs = []
-    with open(stl) as fh:
-        for line in fh:
-            s = line.lstrip()
-            if s.startswith("vertex"):
-                vs.append(tuple(map(float, s.split()[1:4])))
-                if len(vs) == 3:
-                    yield vs
-                    vs = []
-
-
-def measure(stl):
-    zmin, zmax, dmax = 1e9, -1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            zmin = min(zmin, z); zmax = max(zmax, z)
-            dmax = max(dmax, 2 * math.hypot(x, y))
-    return {"zmin": zmin, "zmax": zmax, "height": zmax - zmin, "dmax": dmax}
-
-
-def bore(stl, zlo, zhi):
-    lo, hi = 1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            if zlo <= z <= zhi:
-                d = 2 * math.hypot(x, y)
-                lo = min(lo, d); hi = max(hi, d)
-    if lo > hi:
-        raise RuntimeError("no geometry in Z band %.2f-%.2f of %s" % (zlo, zhi, stl))
-    return lo, hi
-
-
-def volume(stl):
-    v = 0.0
-    for (x1,y1,z1),(x2,y2,z2),(x3,y3,z3) in _tris(stl):
-        v += (x1*(y2*z3-y3*z2) - x2*(y1*z3-y3*z1) + x3*(y1*z2-y2*z1)) / 6.0
-    return abs(v) / 1000.0
-
-
 NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
          4:"top slice", 5:"spacer front", 6:"spacer rear"}
 
 
+
+
 def camera_clearance(stls):
-    """Worst radial clearance between the camera envelope and the real bore."""
+    """Worst radial clearance between the camera envelope and the real bore.
+
+    (8th review, finding 3c) 1e9 is a running-MINIMUM sentinel ONLY --
+    every real candidate clearance is far below it, so `c < worst[0]`
+    always replaces it on the first station actually measured. It must
+    never escape as the RETURNED "worst" value: if every single station is
+    skipped (unmeasurable geometry, an empty `stls`, or every station
+    landing in the lens hole), the loop body never runs and the old code
+    returned the raw (1e9, None) sentinel as if 1e9mm were a genuine
+    clearance reading -- printing "CAMERA CLEARANCE (worst, Nonemm behind
+    lens) 1000000000.000 expected 1000000000.000" and PASSING. A nosecone
+    whose clearance was never actually measured must fail loudly instead,
+    same nan-as-failure convention as scad_verify's measure()/overshoot()."""
     worst = (1e9, None)
     for b, r in CAM_ENVELOPE:
         z = APEX - b
@@ -128,19 +80,30 @@ def camera_clearance(stls):
         c = inner / 2.0 - r
         if c < worst[0]:
             worst = (c, b)
+    if worst[1] is None:
+        return (float("nan"), None)
     return worst
 
 
 def main(argv):
     parts = [int(a) for a in argv[1:]] or [0, 1, 2, 3, 4, 5, 6]
     m, genus, stls, tmp = {}, {}, {}, tempfile.mkdtemp()
+    bad = 0
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
-            genus[p] = render(p, out)
+            genus[p] = render(SCAD, p, out)
         except (RuntimeError, subprocess.TimeoutExpired) as e:
+            # `return 1` here (6th review, finding 4, rocket60) used to
+            # abort the WHOLE run -- any part after this one never
+            # rendered and the checks below never printed at all, the
+            # identical "one bad row kills the whole report" class
+            # verify_rocket60.py's safe() exists to fix for individual
+            # checks. Now a counted FAIL for just this part; the loop and
+            # the report continue with whatever DID render.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
+            bad += 1
+            continue
         stls[p] = out
         m[p] = measure(out)
         print("  part %d %-14s h=%7.2f dia=%7.2f z=%7.2f..%7.2f %5.0f g"
@@ -154,8 +117,21 @@ def main(argv):
         checks += [("middle zmin", m[3]["zmin"], CUT1_Z, 0.2)]
     if 4 in m:
         checks += [("tip height (lens-hole rim)", m[4]["zmax"], RIM_Z, 0.2)]
-        lo, _ = bore(stls[4], APEX - 3.0, APEX - 0.2)
-        checks += [("lens hole dia", lo, LENS_D, 0.2)]
+        # (8th review, finding 3d) this bare bore() used to re-introduce
+        # the exact whole-run abort the render-failure try/except above
+        # was written to eliminate: bore() raises RuntimeError whenever
+        # the lens-hole edge loop leaves its stated Z band (e.g. the tip's
+        # own geometry regresses just enough that this scan window no
+        # longer straddles a real hole edge) -- precisely the regression
+        # this check exists to catch, and the run used to die on an
+        # uncaught traceback with none of the OTHER checks below ever
+        # printed. Same counted-FAIL-and-continue idiom as that block.
+        try:
+            lo, _ = bore(stls[4], APEX - 3.0, APEX - 0.2)
+            checks += [("lens hole dia", lo, LENS_D, 0.2)]
+        except RuntimeError as e:
+            print("FAIL  lens hole bore scan (part 4)\n%s" % e)
+            bad += 1
     if 2 in m and 3 in m:
         checks += [("joint 1 overlap", m[2]["zmax"] - m[3]["zmin"], 7.0, 0.2)]
     if 3 in m and 4 in m:
@@ -167,18 +143,35 @@ def main(argv):
         if p in m:
             want = 2.83 if p == 5 else 6.08
             checks += [("spacer %d thickness" % p, m[p]["height"], want, 0.05)]
+    # 6th review (rocket60), finding 4: report the OVERAGE past 250mm
+    # instead of deriving "expected" from the measurement itself
+    # (min(height,250.0) always exactly equals the measured height
+    # whenever it fits, printing a self-comparing "115.00 expected
+    # 115.00" instead of the real constraint, height<=250). 0 for
+    # anything that fits, the actual excess in mm otherwise. overshoot()
+    # (scad_verify) instead of a bare max(0.0, ...): a nan height (a
+    # degenerate, zero-triangle mesh, measure()'s own convention) must
+    # fail this loudly, not silently compare as a 0mm overshoot -- see
+    # that helper's own docstring.
     for p in m:
-        checks += [("part %d fits 250mm Z" % p, m[p]["height"],
-                    min(m[p]["height"], 250.0), 0.01)]
+        checks += [("part %d fits 250mm Z" % p,
+                    overshoot(m[p]["height"], 250.0), 0.0, 0.01)]
+    # A missing genus (render succeeded but no "Genus:" line was found)
+    # used to be silently dropped by `and g is not None` -- the check just
+    # never ran, rather than failing loudly. Emit nan instead: it never
+    # equals GENUS[p] within any tolerance, so a genuine miss is a visible
+    # FAIL, not a quietly-absent row -- same fix verify_nosecone.py and
+    # verify_rocket60.py already have.
     for p, g in genus.items():
-        if p in GENUS and g is not None:
-            checks += [("part %d genus" % p, g, GENUS[p], 0)]
+        if p in GENUS:
+            checks += [("part %d genus" % p,
+                       g if g is not None else float("nan"), GENUS[p], 0)]
     if {2, 3, 4} <= set(m):
         c, at = camera_clearance(stls)
-        checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at,
-                    c, max(c, MIN_CLEAR), 0.001)]
+        at_label = at if at is not None else "no station measured, "
+        checks += [("CAMERA CLEARANCE (worst, %smm behind lens)" % at_label,
+                    shortfall(c, MIN_CLEAR), 0.0, 0.001)]
     print()
-    bad = 0
     for label, actual, expected, tol in checks:
         ok = abs(actual - expected) <= tol
         bad += not ok
