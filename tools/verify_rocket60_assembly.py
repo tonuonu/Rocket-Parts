@@ -375,17 +375,39 @@ PACKING_REQUIRED_CM3 = 250.0
 
 def check_packing(tmp):
     """Net packing volume: bore cross-section area (from PACKING_BORE_D_MM)
-    times R60_Petal_Len, minus Pairs 42+43's own measured obstruction
+    times R60_Petal_Len, minus Pairs 42+43+44's own measured obstruction
     volume, checked against PACKING_REQUIRED_CM3.
 
+    Pair 44 (14th review) closes the gap the 13th review's own
+    AntiClimber_h fix exposed and reported rather than fixed: PD_Petals()
+    itself has TWO real inward intrusions into this same bore -- the
+    lock nubs (r=24.2mm minimum) and the AntiClimber ridges (r=22.26mm,
+    deeper) -- neither netted out before this pair existed. A single
+    intersection of the WHOLE petals mesh against the bore, at its real
+    hub-relative offset, captures both at once (2.74cm3 measured, not
+    estimated -- the SAME defect class, "an obstruction estimated
+    rather than measured", that produced the original false "13%
+    shortfall" this whole packing check exists to never repeat).
+    Summing Pairs 42/43/44 rather than unioning them first is valid
+    because none of the three collide with each other (Pair 35: hub vs
+    petals, Pair 36/37: spring holder vs hub/petals, all ~0cm3) -- their
+    solid volumes do not overlap, so their bore-obstruction volumes
+    don't either, and summing independent measurements does not double-
+    count. Piston-vs-petals non-collision is assumed (the same physical
+    requirement as the checked pairs, not independently re-probed at
+    the piston's own real relative offset this round -- a genuine
+    residual gap, not silently claimed as closed; see the "still
+    uncovered" list this file already carries elsewhere).
+
     Mutation-tested (this session, actually run): at R60_Petal_Len=100
-    (edit R60Lib.scad) net drops to 206.0 cm^3 -- correctly FAILs, 44.0
-    cm^3 under the requirement (and check_closure() ALSO correctly fails
-    at this same mutation, from the other direction -- a shorter cage
-    leaves the tube too long relative to it, the same too-long defect
-    class fix 3 added coverage for). At the current R60_Petal_Len=140
-    (owner's ruling) net is 294.9 cm^3, correctly PASSes with ~18% real
-    margin."""
+    (edit R60Lib.scad) net drops well under 250cm3 -- correctly FAILs
+    (and check_closure() ALSO correctly fails at this same mutation,
+    from the other direction -- a shorter cage leaves the tube too long
+    relative to it, the same too-long defect class fix 3 added coverage
+    for). At the current R60_Petal_Len=140 (owner's ruling) net is
+    292.2 cm^3 (14th review, corrected from the pre-Pair-44 294.9 cm^3
+    -- the 2.74cm3 AntiClimber/lock-nub intrusion, now netted, not
+    estimated), correctly PASSes with ~17% real margin."""
     import math
     # R60_Petal_Len itself is not carried in this file (rule 4 would
     # otherwise duplicate it a third time, after R60Lib.scad and
@@ -407,12 +429,17 @@ def check_packing(tmp):
     render_probe(43, None, out43)
     piston_end_cm3 = volume(out43)
 
-    net_cm3 = gross_cm3 - hub_end_cm3 - piston_end_cm3
+    out44 = os.path.join(tmp, "pair44.stl")
+    render_probe(44, None, out44)
+    petal_own_cm3 = volume(out44)
+
+    net_cm3 = gross_cm3 - hub_end_cm3 - piston_end_cm3 - petal_own_cm3
     ok = net_cm3 >= PACKING_REQUIRED_CM3
-    msg = ("Petal_Len %.0fmm: gross %.1f - hub/PSH %.1f - piston %.1f = "
-           "net %.1f cm3 vs %.0f cm3 required -- %s"
-           % (petal_len_mm, gross_cm3, hub_end_cm3, piston_end_cm3, net_cm3,
-              PACKING_REQUIRED_CM3,
+    msg = ("Petal_Len %.0fmm: gross %.1f - hub/PSH %.1f - piston %.1f - "
+           "petal locks/AntiClimber %.1f = net %.1f cm3 vs %.0f cm3 "
+           "required -- %s"
+           % (petal_len_mm, gross_cm3, hub_end_cm3, piston_end_cm3,
+              petal_own_cm3, net_cm3, PACKING_REQUIRED_CM3,
               "clears (%.0f%% margin)" % (100.0 * (net_cm3 / PACKING_REQUIRED_CM3 - 1.0))
               if ok else
               "SHORT by %.1f cm3" % (PACKING_REQUIRED_CM3 - net_cm3)))

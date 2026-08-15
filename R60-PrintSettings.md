@@ -705,29 +705,38 @@ Copied from spec §11, with one adaptation flagged below.
   volume probe cannot see missing material, only colliding material);
   and the shock-cord route's clearance past the hinges/release stack —
   see `check_closure()`'s own module comment for the full list.
-- **Packing volume — RESOLVED (12th review), and the 11th review's own
-  "~13% shortfall" figure retracted as an overestimate.** That figure
-  was itself never measured — an assumed ~24mm fixed obstruction
-  (hub floor + spring-holder bosses "~18mm", piston face "6mm", both
-  eyeballed off the source). Mesh-probed this session
-  (`check_packing()`, Pairs 42/43): the real obstruction is 16.3 cm³,
-  not the ~53 cm³ the estimate implied. At the OLD `R60_Petal_Len`=120,
-  net packing is 250.4 cm³ against the ~250 cm³ requirement — tangent,
-  zero real margin, not a 13% shortfall, but not a margin either. Owner
-  ruling: grow `R60_Petal_Len` to 140 (Rocket6551.scad's own stated
-  ceiling for a single CS4323 spring) for a real, checked 294.9 cm³,
-  ~18% margin — see spec §4.1 for the full record; the smaller-canopy
-  and thinner-fabric-pack options once listed here are superseded, not
-  still live alternatives. **Not yet netted out of that 294.9 cm³**
-  (13th review, found while checking `AntiClimber_h`, reported rather
-  than folded into this round's scope): `PD_Petals()`'s own
-  `AntiClimber()` ridges reach inward to a measured r=22.26mm — deeper
-  than the lock nubs' own r=24.2mm — at azimuths the hub/spring-holder/
-  piston probes (Pairs 42/43) do not cover, since those measure hub/
-  piston material, not petal material. True usable volume is somewhat
-  less than 294.9 cm³ by an unmeasured (likely small, not asserted
-  small) amount — see `verify_rocket60_assembly.py`'s own
-  `PACKING_REQUIRED_CM3` comment.
+- **Packing volume — RESOLVED (12th/14th review), and the 11th
+  review's own "~13% shortfall" figure retracted as an overestimate.**
+  That figure was itself never measured — an assumed ~24mm fixed
+  obstruction (hub floor + spring-holder bosses "~18mm", piston face
+  "6mm", both eyeballed off the source). Mesh-probed (12th review,
+  `check_packing()`, Pairs 42/43): the real hub/piston obstruction is
+  16.3 cm³, not the ~53 cm³ the estimate implied. At the OLD
+  `R60_Petal_Len`=120, net packing was 250.4 cm³ against the ~250 cm³
+  requirement — tangent, not a 13% shortfall, but not a margin either.
+  Owner ruling: grow `R60_Petal_Len` to 140 (Rocket6551.scad's own
+  stated ceiling for a single CS4323 spring). **14th review: a THIRD
+  obstruction source — `PD_Petals()`'s own lock nubs (r=24.2mm) and
+  `AntiClimber()` ridges (r=22.26mm), found while checking
+  `AntiClimber_h` — was reported, then closed the same session, not
+  left unnetted.** Pair 44 (`r60_assembly.scad`) mesh-probes the WHOLE
+  petals mesh against the same bore, at its real hub-relative offset:
+  2.7 cm³, measured (not estimated) — the same "measure it, don't
+  estimate it" standard that retracted the 11th review's own 13%
+  figure, now applied a second time to a different feature. Net,
+  correctly: **292.2 cm³ against the ~250 cm³ requirement, ~17% real
+  margin** (was a provisional, incompletely-netted 294.9 cm³/~18%
+  between the 12th and 14th review) — see spec §4.1 for the full
+  record; the smaller-canopy and thinner-fabric-pack options once
+  listed here are superseded, not still live alternatives. Printed-
+  geometry intrusions into the bore are now believed complete (hub
+  floor, spring-holder bosses, piston face, petal lock nubs/
+  AntiClimber — four sources, all mesh-measured); NOT geometrically
+  netted, and not expected to be, since they are not printed geometry:
+  the 3x hinge-preload coil springs and the shock cord's own route,
+  both loose hardware whose packed footprint is a density question
+  (folded into the stated ~0.20 g/cm³ packing-density assumption), not
+  a rigid-body volume subtraction.
 - **Release-hardware mounting interference** — PARTIALLY resolved (10th
   review): part 15's own mount to the aft bulkhead (part 5) now has a
   mesh-against-mesh mating-fit AND fastener-reach check

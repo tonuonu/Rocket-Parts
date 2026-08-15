@@ -291,12 +291,32 @@ designs are not interchangeable at the same length just because the length match
 
 **Decision (12th review, owner's ruling) — length, not canopy or fabric.** `R60_Petal_Len`
 120→**140mm**: Rocket6551.scad's own stated ceiling ("140 is max for a single 4323 spring")
-and its own preferred/flown value. Net at 140: 311.2-16.3=**294.9 cm³, ~18% real margin**.
+and its own preferred/flown value. Net at 140 against the hub/spring-holder/piston
+obstruction alone: 311.2-16.3=294.9 cm³, ~18% margin — provisional, not final (below).
 A tangent fit on the one system whose job is getting the camera back is not a margin, and
 the closure fix below needs the tube's own length to grow regardless of which packing
 option was picked — so there was nothing to buy by shrinking the canopy or the fabric pack
 instead. Do not re-litigate this without a real reason: the smaller-canopy and thinner-
 fabric options once documented here are superseded, not still live.
+
+**14th review — a third obstruction, found and closed the same session, not left
+unnetted.** Fixing `AntiClimber_h` (§4, "for the flown mechanism, follow the print
+convention") surfaced that `PD_Petals()` itself has two more real inward intrusions into
+this same bore: the lock nubs (r=24.2mm) and the `AntiClimber()` ridges (r=22.26mm,
+deeper) — neither accounted for by the hub/spring-holder/piston probe above, since that
+probe measures hub and piston material, not petal material. Mesh-probed the same way
+(Pair 44, `r60_assembly.scad`: the whole petals mesh against the bore, at its real
+hub-relative offset) rather than estimated — the exact standard that retracted the 11th
+review's own false "13% shortfall", applied here to a different feature so it is not
+repeated by omission. Measured: **2.7 cm³**. Corrected net: 311.2-16.3-2.7=
+**292.2 cm³ against the ~250 cm³ requirement, ~17% real margin** — down from the
+provisional 294.9 cm³/~18% above, still comfortably clear. Printed-geometry intrusions
+into the bore are now believed complete (four sources: hub floor, spring-holder bosses,
+piston face, petal lock nubs/AntiClimber — all mesh-measured, none estimated); NOT
+geometrically netted, and not expected to be, since they are not printed geometry: the 3x
+hinge-preload coil springs and the shock cord's own route are loose hardware whose packed
+footprint is a density question (folded into the stated ~0.20 g/cm³ packing-density
+assumption), not a rigid-body volume subtraction.
 
 **Consequence: the deployment bay tube no longer fits the print envelope as one piece,
 and is split (12th review).** `R60_Chute_L`'s own required length for a correct (not

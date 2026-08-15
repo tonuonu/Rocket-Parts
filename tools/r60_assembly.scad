@@ -475,6 +475,38 @@ module Pair42_B(){ translate([0,0,9.5]) cylinder(d=53.2, h=50, $fn=90); }
 module Pair43_A(){ R60_FwdSpringEnd(); }
 module Pair43_B(){ translate([0,0,-30]) cylinder(d=53.2, h=35, $fn=90); }
 
+// Pair 44: petals (part 13) <-> the bore, at the petals' own REAL
+// relative offset (translate([0,0,9.5]), same as Pairs 35/37/39/41 --
+// R60_PetalHub()'s own module comment has the donor-derived offset).
+// 14th review, closing a gap the 13th review's own AntiClimber_h fix
+// exposed: check_packing() (verify_rocket60_assembly.py) used to net
+// only the hub/spring-holder/piston (Pairs 42/43) off the gross bore
+// volume -- but PD_Petals() itself has TWO real inward intrusions of
+// its own into that same bore: the lock nubs (PD_PetalLocks(), the
+// Lock_Span_a guard's own r=24.2mm minimum) and the AntiClimber ridges
+// (r=22.26mm, deeper). Both are real petal-mesh material, so a single
+// intersection of the WHOLE petals mesh against the bore captures both
+// at once, correctly, without needing to name or split their separate
+// contributions -- same "measure the real assembled geometry, don't
+// enumerate features by name" idiom Pair 42 already uses for the hub.
+// Spans the petals' own TRUE rendered extent, not just R60_Petal_Len:
+// PD_Petals()'s own mesh starts at its own BaseOffset=7.2 (PD_
+// PetalLocks()'s own constant, restated here per rule 4, matching
+// verify_rocket60.py's own PETAL_LOCK_BASE_OFFSET), not local Z=0 -- so
+// in the hub frame the real span is [9.5+7.2, 9.5+7.2+R60_Petal_Len] =
+// [16.7, 156.7] at the current Petal_Len=140, not [9.5, 149.5]. A first
+// version of this probe used the wrong (too-short) window and silently
+// clipped the lock-nub band off the top -- caught by comparing this
+// pair's own zmax against Render_Part=13's real bbox before trusting
+// the number, same "measure, don't assume" rule everything else in
+// this file already follows. +/-2mm margin each end for safety.
+module Pair44_A(){ translate([0,0,9.5]) R60_Petals(); }
+module Pair44_B(){
+    PD_BaseOffset = 7.2;
+    translate([0,0,9.5+PD_BaseOffset-2])
+        cylinder(d=53.2, h=R60_Petal_Len+4, $fn=90);
+}
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
@@ -1091,7 +1123,7 @@ module Pair32_B(){ R60_VegaSled(); }
 // just their own `if` dispatch line below, per this comment's own rule.
 KNOWN_PAIRS = [0,1,2,3,4,5,8,10,11,21,22,23,24,
                25,26,27,28,29,30,32,33,34,35,36,37,38,39,
-               40,41,42,43];
+               40,41,42,43,44];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -1131,3 +1163,4 @@ if (Pair==40) intersection(){ Pair40_A(); Pair40_B(); }
 if (Pair==41) union(){ Pair41_A(); Pair41_B(); }
 if (Pair==42) intersection(){ Pair42_A(); Pair42_B(); }
 if (Pair==43) intersection(){ Pair43_A(); Pair43_B(); }
+if (Pair==44) intersection(){ Pair44_A(); Pair44_B(); }
