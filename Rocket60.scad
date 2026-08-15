@@ -735,6 +735,15 @@ module R60_Door(){
 // derive, so this is stated from the rendered mesh, same convention as
 // this repo's STL_VOL figures).
 module R60_PetalHub(){
+    $fn=90;   // use<>'d libraries' own file-scope $fn (their convention:
+              // $preview?24:90 or ?36:90) never executes -- use<> only
+              // imports definitions, not top-level statements -- so
+              // without this, these calls inherit R60Lib.scad's own
+              // $fn=180 and balloon small mechanism parts to 10-100x the
+              // triangle count they need (confirmed: part 15 measured
+              // 88838 triangles / 25.8MB at the inherited 180, the same
+              // geometry at the donor's own intended 90 is a fraction of
+              // that with no visible difference at this feature size).
     R65_PetalHub(OD=R60_Coupler_OD, nPetals=R60_nPetals, nBolts=R60_nPetals*2,
                  Skirt_h=5, HasWirePath=false);
     translate([0,0,16])
@@ -962,6 +971,7 @@ module R60_ThrustRing(){
 // g/cm^3 packing-density assumption -- is in that constant's own
 // comment, alongside why it also matches Rocket6551's own flown value.
 module R60_Petals(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     PD_Petals(OD=R60_Coupler_OD, Len=R60_Petal_Len, nPetals=R60_nPetals,
               Wall_t=R60_Wall_T, AntiClimber_h=0, HasLocks=true);
 } // R60_Petals
@@ -1012,12 +1022,14 @@ module R60_Petals(){
 // family's own bore with 10+mm to spare -- the Activator is the one part
 // that actually decides this, and BBMini's does not fit.
 module R60_ReleaseActivator(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     CRBBm_Activator(OD=R60_Coupler_OD);
 } // R60_ReleaseActivator
 
 // Release top retainer (part 16). Stationary; carries the 6703 bearing's
 // inner race and the ball-lock pockets.
 module R60_ReleaseTopRetainer(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0])
         CRBBm_TopRetainer(LockPin_d=R60_LockPin_d, nBalls=R60_nBalls, Ball_d=R60_Ball_d,
                           LockRing_d=CRBBm_LockRingDiameter(), Flange_t=4, OD=0,
@@ -1027,6 +1039,7 @@ module R60_ReleaseTopRetainer(){
 // Release lock ring (part 17). Rotating; the servo (in part 15) turns
 // this ~24deg to free the balls and release the locking pin (part 22).
 module R60_ReleaseLockRing(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0])
         CRBBm_LockRing(LockPin_d=R60_LockPin_d, Ball_d=R60_Ball_d, nBalls=R60_nBalls,
                        GuidePoint=false);
@@ -1035,6 +1048,7 @@ module R60_ReleaseLockRing(){
 // Release outer bearing retainer (part 18). Bolts to, and rotates with,
 // part 17.
 module R60_ReleaseOuterBearingRetainer(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     CRBBm_OuterBearingRetainer(Light=true);
 } // R60_ReleaseOuterBearingRetainer
 
@@ -1042,6 +1056,7 @@ module R60_ReleaseOuterBearingRetainer(){
 // horn (part 15) strikes this to kick the lock ring off its magnetic
 // detent.
 module R60_ReleaseTriggerPost(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0]) CRBBm_TriggerPost();
 } // R60_ReleaseTriggerPost
 
@@ -1049,6 +1064,7 @@ module R60_ReleaseTriggerPost(){
 // of the two N42 magnets forming the over-centre detent against part
 // 15's own fixed magnet post.
 module R60_ReleaseMagnetBracket(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0]) CRBBm_MagnetBracket();
 } // R60_ReleaseMagnetBracket
 
@@ -1056,12 +1072,14 @@ module R60_ReleaseMagnetBracket(){
 // through the spring's own ID (40.50mm, clears R60_LockPin_d=12mm with
 // room) up to R60_FwdSpringEnd() (part 23).
 module R60_ReleaseExtensionRod(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     CRBBm_ExtensionRod(LockPin_d=R60_LockPin_d, Len=26, ID=0.190*25.4, Light=true);
 } // R60_ReleaseExtensionRod
 
 // Release locking pin (part 22). The load path: captive in part 17's
 // ball pockets until the servo releases it.
 module R60_ReleaseLockingPin(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     CRBBm_LockingPin(nBalls=R60_nBalls, LockPin_d=R60_LockPin_d, LockPin_Len=18,
                      GuidePoint=false);
 } // R60_ReleaseLockingPin
@@ -1086,6 +1104,7 @@ module R60_ReleaseLockingPin(){
 // by the CS4323 spring into the petals (part 13), popping them open.
 // Bolts inside R60_PetalHub()'s (part 8) own petal cage.
 module R60_FwdSpringEnd(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0])
         R65_FwdSpringEnd(OD=R60_Coupler_OD, ID=R60_Coupler_OD-1.8, LockPin_d=R60_LockPin_d,
                          nRopes=6, Skirt_h=25, HasServoConnector=false);

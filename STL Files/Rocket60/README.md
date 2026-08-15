@@ -1,12 +1,16 @@
 # Rocket 60 — printable meshes
 
-Ø60 mm camera rocket, 684 mm, built around the user's own CAD nosecone.
-Regenerated from `Rocket60.scad` at branch HEAD after the 9th review round;
-every file below was measured after export and checked against the geometry
-that part is supposed to have.
+Ø60 mm camera rocket, 744 mm, built around the user's own CAD nosecone.
+Regenerated from `Rocket60.scad` at branch HEAD after the petal-deployment
+transplant (the invented spring/ball-lock carrier + shear-pin + servo-
+tether design replaced by a flown design's own petal-deployment + cable-
+release libraries — see `docs/superpowers/specs/2026-08-13-rocket60-
+design.md` sec 4 and `tasks/lessons.md`); every file below was measured
+after export and checked against the geometry that part is supposed to
+have.
 
 Verify with `python3 tools/verify_rocket60.py`, the assembly harness
-(`verify_rocket60_assembly.py`, 33 pairs), and `verify_docs_sync.py`.
+(`verify_rocket60_assembly.py`, 23 pairs), and `verify_docs_sync.py`.
 
 ## Print part 0 first, and stop there
 
@@ -30,26 +34,52 @@ circle must meet inserts in a PCB that does not shrink.
 |---|---|---|---|---|---|
 | `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ | PETG |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ | PETG |
-| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.2 cm³ | PETG |
-| `03_ChuteBayTube.stl` | 3 | 185.50 | 60.00 | 55.6 cm³ | PETG |
+| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.1 cm³ | PETG |
+| `03_DeploymentBayTube.stl` | 3 | 240.00 | 60.00 | 70.4 cm³ | PETG |
 | `04_EBayFwdBulkhead.stl` | 4 | 7.70 | 56.40 | 12.7 cm³ | PETG |
-| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 54.3 cm³ | PETG |
+| `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 66.0 cm³ | PETG |
 | `06_VegaSled.stl` | 6 | 8.00 | 144×44 flat | 23.8 cm³ | PETG |
 | `07_AccessDoor.stl` | 7 | 97.00 | 64.00 | 11.3 cm³ | PETG |
-| `08_SpringCarrier.stl` | 8 | 65.00 | 56.40 | 52.9 cm³ | PETG |
+| `08_PetalHub.stl` | 8 | 26.50 | 56.40 | 24.8 cm³ | PETG |
 | `09_FinCan.stl` | 9 | 228.00 | 60.00 | 114.0 cm³ | **PC** |
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ | PETG, print 3 |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ | **PC** |
 | `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ | **PC** |
-| `13_TetherLatch.stl` | 13 | 16.00 | 41.78 | 3.0 cm³ | PETG |
+| `13_Petals.stl` | 13 | 120.00 | 56.40 | 34.2 cm³ | PETG |
 | `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ | **PC** |
 
-Airframe total 457.2 cm³. Tallest part 228 mm, inside the 250 mm envelope
+Airframe total 466.9 cm³. Tallest part 228 mm, inside the 250 mm envelope
 with 22 mm to spare. `NoseCone.stl` is the user's `Nose Cone.STEP`
 converted, not regenerated.
 
 `12_MotorSpacer.stl` is the G80T spacer (`Motor_Class = 0`); set
 `Motor_Class` to 1 or 2 and re-export for the H182R or H135W.
+
+## Release hardware (petal-deployment transplant)
+
+`use<>`-instantiated from a flown design's own libraries
+(`CableReleaseBBMicro.scad`, `R65Lib.scad`) rather than designed here --
+see the spec's sec 4 for the mechanism and why BBMicro, not the flown
+BBMini. All PETG.
+
+| File | Part | Height | Vol |
+|---|---|---|---|
+| `15_ReleaseActivator.stl` | 15 | 27.00 | 7.3 cm³ |
+| `16_ReleaseTopRetainer.stl` | 16 | 24.20 | 5.4 cm³ |
+| `17_ReleaseLockRing.stl` | 17 | 20.00 | 3.6 cm³ |
+| `18_ReleaseOuterBearingRetainer.stl` | 18 | 5.70 | 1.6 cm³ |
+| `19_ReleaseTriggerPost.stl` | 19 | 8.00 | 0.3 cm³ |
+| `20_ReleaseMagnetBracket.stl` | 20 | 11.38 | 0.4 cm³ |
+| `21_ReleaseExtensionRod.stl` | 21 | 26.00 | 1.1 cm³ |
+| `22_ReleaseLockingPin.stl` | 22 | 18.00 | 1.5 cm³ |
+| `23_ForwardSpringEnd.stl` | 23 | 25.00 | 10.5 cm³ |
+
+Release hardware total 31.7 cm³. Plus loose hardware this design does
+not model as its own solid: 6mm Delrin balls (3), 6703-2RS bearing, 3×
+MR63 lock bearings, 2× N42 magnets, dowel pins, #4-40 screws — see
+`CableReleaseBBMicro.scad`'s own header for the full catalog list (note:
+that header's own BOM comment is stale, listing 5/16in balls and a 6705
+bearing; the parts above are built from the LIVE code, 6mm balls/6703).
 
 ## Ground-test motors
 
@@ -75,24 +105,26 @@ enough that it should not be a surprise.
 ## Flight figures
 
 Kept here so `tools/verify_docs_sync.py` can gate them against the model.
+Re-run after the petal-deployment transplant (spec sec 4).
 
-| Motor | Liftoff | Margin | Rail exit (1.5 m) |
+| Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
-| G80T-14A | 874 g | 1.46 cal | 18.8 m/s |
-| H182R-14A | 941 g | 1.28 cal | — |
-| H135W-14A | 944 g | 1.29 cal | — |
+| G80T-14A | 933 g | 1.68 cal | 20.1 m/s |
+| H182R-14A | 1000 g | 1.48 cal | — |
+| H135W-14A | 1003 g | 1.49 cal | — |
 
 ## Launch
 
 1010 rail. The user's Estes Pro Series II rail (1.83 m, two 3-foot sections)
 is 1010-compatible per Estes, so `RailButton(OD=11, Flange_h=2, Slot_w=2.8)`
-from `RailGuide.scad` fits directly.
+from `RailGuide.scad` fits directly. Axial placement (task 7): azimuth
+180°, aft button Z=630mm (fin can, forward of the fins), forward button
+Z=230mm (e-bay tube) — `R60Lib.scad`'s `R60_RailButton_*` constants.
 
-Rail exit on that rail: **G80T 20.9 m/s**, H182R 30.8, H135W 23.8 — all
-comfortably above the ~15 m/s minimum. On a shorter 1.5 m rail the G80T
-gives 18.8 m/s, still acceptable.
+Rail exit on that rail: **G80T 20.1 m/s**, H182R 29.9, H135W 23.1 — all
+comfortably above the ~15 m/s minimum.
 
-The 3 mm rod is not usable at this mass. The TSP E20-P is excluded: 9.4 m/s
+The 3 mm rod is not usable at this mass. The TSP E20-P is excluded: 8.9 m/s
 off the 1.83 m rail, well under the minimum.
 
 ## Verification
