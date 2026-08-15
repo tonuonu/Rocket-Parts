@@ -335,7 +335,9 @@ half as a spigot, the receiving piece's own outer half as a socket) keeps both t
 the OD unbroken through the joint, so the split can land anywhere. Sized against the
 post-separation ejection charge's own pressure pulse (the governing case, ~8x the CS4323's
 own estimated max force) at a conservative, stated 15psi assumption (the charge itself is
-undocumented, same gap class as spec A11's spring rate) — ~200mm² of glue area required, a
+undocumented — the gap class spec A11's spring rate used to occupy before `R60-BOM.md`
+resolved it against Century Spring's own catalog; the ejection charge has no such catalog
+figure to close against) — ~200mm² of glue area required, a
 6mm real engagement around the ~57.6mm mean glue diameter gives ~1086mm², >5x margin. Same
 gluing-flange technique as `NoseCone.scad`'s own field-proven `GluingflangeHeight`
 (the owner's own printed 3-slice Peregrine nosecone), applied within the wall instead of
@@ -406,8 +408,24 @@ protector between the charge and the packed main, and a sleeved (Nomex or simila
 cord run**, not because the charge helps deployment, but because it fires close behind it
 either way.
 
-> **A11 (carried forward) — spring force is undocumented.** No spring rate, Newton figure,
-> or vendor appears in any of the CS4323's source files. Bench-test before flight.
+> **A11 (catalog-known, 15th review) — spring force is no longer undocumented; ~22 N
+> installed, ~25 N max, bench-test still required.** No spring rate, Newton figure, or
+> vendor appears in any of the CS4323's own source files in this repo — that part of A11
+> stands — but Century Spring's own published catalog for CS4323 (free length 8in/203.2mm,
+> OD 1.75in/44.45mm, ID 1.606in/40.79mm, 12 coils, rate **0.82 lb/in = 0.1436 N/mm**) closes
+> the vendor/rate gap from outside this repo. Applied to this design's own MODELLED installed
+> (captive, compressed) span — 50mm, `tools/rocket60_model.py`'s own
+> `SCR_OFFSET`(22.5)..`SPRINGEND_OFFSET`(72.5), stated there as "the span it actually
+> occupies once compressed" — compression is 203.2−50=153.2mm, giving **≈22.0 N**. (A
+> shallower ~29–33mm span once assumed elsewhere gives ≈24–25 N; neither reading reaches
+> 30 N, and both are well short of the spring's own coil-bound limit — see `R60-BOM.md` for
+> the full derivation and the catalog-vs-modelled OD/ID mismatch this also surfaced, which
+> the seat at part 25 does not currently accommodate.) The structural load case at
+> `R60_ChuteSplit_Engage` (R60Lib.scad) used ~31.5N as the spring's conservative upper bound
+> and is non-governing there regardless (the ejection-charge case is ~8x larger) — it stays
+> conservative at the real ~22-25N. **The real open question was never spring force, it is
+> NUB-RELEASE force** — how hard the petals' own printed lock nubs resist being popped open
+> — still undocumented anywhere in this repo. Bench-test that before flight.
 >
 > **A13 (new, replaces the retracted A12) — no mechanical backup exists for the primary
 > release.** If the servo, its wiring, the Vega servo rail, or the lock ring fails, the
@@ -702,7 +720,7 @@ and rail exit would be unstable.
 | ~~A8~~ | ~~The aft bulkhead's servo pocket floor was sized against steady servo torque, not the ejection-charge backup's impulsive reaction~~ | — | **Superseded, petal-deployment transplant (§4):** the servo now lives inside part 15's own Activator print, not a pocket in the aft bulkhead; the ejection charge acts on the petal cage's own lock nubs, not the bulkhead at all. See A12. |
 | ~~A10~~ | ~~The repo's spring/cable-release libraries parameterise down to a Ø60 airframe~~ | — | **Resolved by this transplant:** `CableReleaseBBMicro.scad`'s Activator does, mesh-measured (§4.2); `CableReleaseBBMini.scad`'s does not. |
 | A9 | Servo-pocket dividing wall is 1.2 mm (3 perimeters at a 0.4 mm nozzle) | Below ~0.8 mm the slicer drops to thin-wall mode and the two pockets can fuse | **No longer applies** — one servo now, no dividing wall between two pockets (petal-deployment transplant §4) |
-| A11 | CS4323 spring force is undocumented (no spring rate, Newton figure, or vendor in any source file) | Spring may not reliably pop the petals' own lock nubs | Bench-test the physical spring (§11.2) |
+| A11 | CS4323 spring force is now catalog-known (~22N installed, ~25N max, Century Spring's own published rate — see §4.3's blockquote and `R60-BOM.md`); the real unknown is the petal lock nubs' own release force | Spring may not reliably pop the petals' own lock nubs | Bench-test the physical spring against the real nubs (§11.2) |
 | A12 | Ejection-charge backup force is undocumented, and the deployment bay is an open (unsealed) volume, not a sealed pressure vessel (§4.3) | Backup may not build enough pressure fast enough before venting through the joint's own clearances | Ground-test the charge with the bay in the loop (§11.2) |
 
 ## 11. Verification before first flight
