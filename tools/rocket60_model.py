@@ -53,11 +53,15 @@ L_NOSE = 94.0
 # e-bay tube's forward rim -- its 19mm skirt telescopes INSIDE L_EBAY
 # (already counted there) and adds no further length, but the flange
 # itself is real, additional airframe length TOTAL used to omit entirely.
-# Physical stack: 94 (nose) + 5 (flange) + 177 (e-bay) + 180 (chute) + 228
-# (fin can) = 684mm -- this is that other 5mm.
+# Physical stack: 94 (nose) + 5 (flange) + 177 (e-bay) + 240 (deployment
+# bay) + 228 (fin can) = 744mm -- this is that other 5mm.
 L_NECK_FLANGE = 5.0
 L_EBAY = 177.0
-L_CHUTE= 180.0
+# L_CHUTE (petal-deployment transplant): R60Lib.scad's R60_Chute_L, grown
+# 180->240 to house the release stack + spring + petal cage -- see that
+# constant's own comment for the measured 226.5mm stack + margin this
+# comes from.
+L_CHUTE= 240.0
 L_FINCAN=228.0
 TOTAL  = L_NOSE+L_NECK_FLANGE+L_EBAY+L_CHUTE+L_FINCAN
 
@@ -112,26 +116,41 @@ S_FIN  = S_CHUTE+L_CHUTE
 # own 0.1 cm3 rounding, so [4]'s published figure is unchanged and [5]'s
 # moves the one place it does not round away (54.4->54.3).
 NOSECONE_VOL = 29.4                 # NoseCone.stl
-STL_VOL = {1: 16.2, 2: 47.2, 3: 55.7, 4: 12.7, 5: 54.3, 6: 25.4, 7: 11.3,
-           8: 52.9, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 3.0, 14: 0.6}
+# Re-measured in full this session (petal-deployment transplant): every
+# figure below comes from rendering Rocket60.scad's own Render_Part=N and
+# integrating the divergence theorem over the exported mesh -- not
+# restated from a prior round -- since the transplant touched parts 3, 5,
+# 8, 13 and added 15-23 outright.
+STL_VOL = {1: 16.2, 2: 47.2, 3: 70.4, 4: 12.7, 5: 66.0, 6: 23.8, 7: 11.3,
+           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 34.2, 14: 0.6,
+           15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
+           22: 1.5, 23: 10.5}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
                         # stops this much short of MMT_L, see build()
 
-# Aft bulkhead skirt / spring carrier stations (4th review, should-fix
-# 11) -- restated literals (rule 4) matching R60Lib.scad's
-# R60_AftBulk_T/R60_Pin_Skirt_L and R60_SpringCarrier()'s own L=65, used
-# below to derive both items' stations from where their geometry actually
-# sits once assembled (r60_assembly.scad's own Pair 5/6 comments derive
-# the SAME "stack" frame these come from), not a hand-picked offset from
-# S_CHUTE.
+# Aft bulkhead skirt / release-stack stations (petal-deployment
+# transplant) -- restated literals (rule 4) matching R60Lib.scad's
+# R60_AftBulk_T and Rocket60.scad's own local Skirt_L=15 in
+# R60_EBayAftBulkhead(), used below to derive each new part's station
+# from where its geometry actually sits once assembled -- the SAME
+# relative Z arithmetic Rocket6551.scad's own ShowRocket()/
+# ShowCableRelease() uses for this stack (mirrored fwd<->aft, since this
+# design's e-bay is forward instead of aft), measured this session by
+# rendering the complete stack at OD=R60_Coupler_OD.
 AFTBULK_T  = 12.0    # R60_AftBulk_T -- disc thickness
-PIN_SKIRT_L = 15.0   # R60_Pin_Skirt_L -- skirt engagement past the disc
-CARRIER_L  = 65.0    # R60Lib.scad's R60_SpringCarrier_L (8th review,
-                       # finding 4b -- promoted from a bare local L=65
-                       # inside R60_SpringCarrier() to a shared constant
-                       # also read by R60_ChuteTube()'s own Stop_Z; this
-                       # restatement now names what it restates)
+SKIRT_L    = 15.0    # aft bulkhead's own skirt engagement into part 3
+ACT_OFFSET = -5.5    # part 15's own centroid, relative to its mount face
+                       # (measured off its rendered mesh, Z[-19,8])
+SCR_OFFSET = 22.5     # parts 16-20's own mount-face offset aft of part
+                       # 15's, matching Rocket6551.scad's own SCR_Z arithmetic
+SPRINGEND_OFFSET = 72.5   # part 23's own mount face, same reference
+PETALS_OFFSET = 76.5      # part 13's own base, same reference
+HUB_TAIL_OFFSET = 5.0     # part 8's own aft reach past the petal tips
+                            # (measured off its rendered mesh, Z[-5,21.5])
+R60_Petal_Len = 120.0      # R60Lib.scad's own R60_Petal_Len -- restated
+                             # (rule 4), see that constant's own comment
+                             # for the packing-volume derivation
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own
@@ -164,11 +183,6 @@ VEGA_RODBOSS_FWDEXTRA = 1.7   # R60_Vega_RodBoss_FwdExtra
 VEGA_AXIAL_CENTER = (AFTBULK_T
                       + ((L_EBAY - NECK_SKIRT_L - FWDBULK_T) - VEGA_RODBOSS_FWDEXTRA)
                       ) / 2.0
-PIN_Z_FROM_JOINT = 8.0   # R60_Pin_Z_FromJoint
-LATCH_H      = 16.0   # R60_TetherLatch()'s own Base_T+Post_H (=part 13's
-                        # own measured height, 16.00mm)
-CB_DEPTH     = 17.0   # R60_SpringCarrier()'s own CB_Depth
-DIA_T        = 3.0    # R60_SpringCarrier()'s own Dia_T
 RETAINER_T   = 6.0    # R60_MotorRetainer()'s own T (=part 11's own
                         # measured height, 6.00mm)
 
@@ -301,39 +315,15 @@ def build(motor):
     # instruction ("weigh the parts as they come off the printer") covers
     # the printed-part side of this; the loose-hardware side has no
     # equivalent check anywhere in this repo.
-    # ---- Full station audit (coordinator override, 4th review) ----
-    # Every station below was re-derived from the assembled geometry
-    # (Rocket60.scad/R60Lib.scad's own constants, or r60_assembly.scad's
-    # own "stack" frame for parts that mount past a joint), the same way
-    # the two fixed last round were, rather than trusting a hand-picked
-    # offset. Items with NO SCAD backing (loose/external hardware --
-    # nosecone shell, camera, battery+wiring, CATS Vega+sled, rail
-    # buttons) are flagged inline as heuristic estimates, unchanged
+    # ---- Full station audit (petal-deployment transplant) ----
+    # Every station in the deployment-bay group below (aft bulkhead
+    # through the petal hub) is read off the SAME measured stack this
+    # session used to derive L_CHUTE (R60Lib.scad's own comment) --
+    # AFTBULK_T/SKIRT_L/ACT_OFFSET/SCR_OFFSET/SPRINGEND_OFFSET/
+    # PETALS_OFFSET/HUB_TAIL_OFFSET above, all mm from S_CHUTE. Items
+    # with NO SCAD backing (loose/external hardware) are flagged inline
+    # as heuristic estimates, unchanged from before this transplant
     # because there is nothing more precise to derive them from.
-    #
-    # station-audit table (mm; delta = new - old; nearly every correction
-    # moves CG AFT, i.e. delta > 0, EXCEPT the access door -- see the
-    # per-item comments for why):
-    #   item                          old      new     delta
-    #   e-bay fwd bulkhead            105.0    121.0    +16.0
-    #   access door + switch          236.0    187.5    -48.5  (forward --
-    #                                                     the single largest
-    #                                                     error in this audit)
-    #   e-bay aft bulkhead+servos     246.0    277.5    +31.5  (fixed last round)
-    #   spring carrier                267.0    323.5    +56.5  (fixed last round)
-    #   CS4323 spring                 316.0    334.25   +18.25
-    #   tether latch + pin            271.0    299.0    +28.0
-    #   shear pins x2                 276.0    284.0     +8.0
-    #   parachute+cord+hw             357.0    406.0    +49.0
-    #   fins x3                       626.5    638.5    +12.0
-    #   motor retainer                654.0    687.0    +33.0  (9th review:
-    #                                                     was 681/+27, the
-    #                                                     "intermediate (also
-    #                                                     wrong)" value the
-    #                                                     item's own comment
-    #                                                     below already
-    #                                                     disowns)
-    #   (all others confirmed already correct; see per-item comments)
     items = [
     # (name, mass g, station mm)
      # No SCAD backing (external CAD/hardware, no internal geometry to
@@ -345,125 +335,106 @@ def build(motor):
      # own measured height, 24.00mm, confirms this exactly): flange
      # (94..99, external) + skirt (99..118, telescoped inside the e-bay
      # tube). Geometric midpoint, same convention as every uniform-tube
-     # item below -- audited, confirmed correct (was already
-     # L_NOSE+12=106, now expressed as a derived formula instead of a
-     # bare literal).
+     # item below.
      ('neck + bolts',          petg(STL_VOL[1]) + 3.0,
       L_NOSE + (L_NECK_FLANGE + NECK_SKIRT_L) / 2),
-     # Plain uniform tube -- geometric midpoint. Audited, confirmed
-     # correct.
+     # Plain uniform tube -- geometric midpoint.
      ('e-bay tube',            petg(STL_VOL[2]),         S_EBAY+L_EBAY/2),
-     # Sled's own AXIAL position (7th review, finding 6): the sled now
-     # bridges a window between the two bulkheads and is captured by rods
-     # threaded/nutted at each end (R60Lib.scad's "Sled retention"
-     # comment) -- its station is that window's own midpoint,
-     # VEGA_AXIAL_CENTER, NOT the e-bay tube's own geometric midpoint
-     # (S_EBAY+L_EBAY/2). The stale comment this replaces described a
-     # zip-tie retention scheme retired two reviews ago; the station
-     # itself was never updated when the retention mechanism changed.
-     # No SCAD backing for the board's own mass distribution beyond
-     # centring on the sled's own station.
-     # Station sign fix (8th review, finding 2): VEGA_AXIAL_CENTER is in
-     # the e-bay TUBE's own frame, z=0 at the AFT rim (R60Lib.scad's
-     # R60_Vega_Window_Z0=R60_AftBulk_T comment) -- the SAME frame the
-     # 'e-bay fwd bulkhead' item below states the conversion for:
-     # global = S_CHUTE - local_z. This item used S_EBAY+VEGA_AXIAL_CENTER
-     # (a FORWARD-rim-referenced frame this constant was never built in),
-     # landing at 180.15 instead of the correct 276-81.15=194.85 -- 14.7mm
-     # too far forward, moving CG 0.84mm forward of true and breaking this
-     # audit's own advertised invariant that every correction moves CG
-     # AFT (this is the one that silently moved it forward).
+     # Sled's own AXIAL position: the sled bridges a window between the
+     # two bulkheads, captured by rods threaded/nutted at each end
+     # (R60Lib.scad's "Sled retention" comment) -- its station is that
+     # window's own midpoint, VEGA_AXIAL_CENTER, in the e-bay TUBE's own
+     # frame (z=0 at the AFT rim, R60Lib.scad's R60_Vega_Window_Z0
+     # comment): global = S_CHUTE - local_z.
      ('CATS Vega + sled',      25.0 + petg(STL_VOL[6]),  S_CHUTE-VEGA_AXIAL_CENTER),
      # No SCAD backing (loose hardware, no specific mounting geometry) --
      # kept at the e-bay tube's own midpoint, the best available estimate.
      ('battery + wiring',      45.0,                     S_EBAY+L_EBAY/2),
-     # Station audit: this part sits flush against the underside of the
-     # NECK SKIRT's own tip (r60_assembly.scad's Pair 1 comment), not at
-     # the e-bay tube's own forward rim -- the old S_EBAY+6=105 ignored
-     # the neck skirt's own 19mm depth entirely. True span (tube's own
-     # frame, global = S_CHUTE - local_z): local
-     # EBay_L-NECK_SKIRT_L-FWDBULK_T .. EBay_L-NECK_SKIRT_L =
-     # global S_EBAY+NECK_SKIRT_L .. S_EBAY+NECK_SKIRT_L+FWDBULK_T
-     # = 118..124, midpoint 121 (was 105, +16mm).
+     # This part sits flush against the underside of the NECK SKIRT's own
+     # tip. True span (tube's own frame, global = S_CHUTE - local_z):
+     # local EBay_L-NECK_SKIRT_L-FWDBULK_T .. EBay_L-NECK_SKIRT_L =
+     # global S_EBAY+NECK_SKIRT_L .. S_EBAY+NECK_SKIRT_L+FWDBULK_T.
      ('e-bay fwd bulkhead',    petg(STL_VOL[4]),
       S_EBAY + NECK_SKIRT_L + FWDBULK_T / 2),
-     # 2x MG90S at ~13.4g each (datasheet), mounted upright in the aft
-     # bulkhead per its module comment.
+     # ONE MG90S now, not two (petal-deployment transplant: single
+     # deploy has no tumble/tether phase to release separately, so the
+     # second servo is deleted outright -- R60_EBayAftBulkhead()'s own
+     # module comment). The servo itself now lives inside part 15's own
+     # Activator print, not this bulkhead -- see that part's own comment.
      #
-     # Station (4th review, should-fix 11): this whole part (STL_VOL[5])
-     # is the disc (12mm) PLUS the skirt (15mm) that projects AFT of the
-     # e-bay tube's own cut end into the chute bay -- see
-     # R60_EBayAftBulkhead()'s own module comment. Once assembled the
-     # disc's forward face sits at S_CHUTE-AFTBULK_T (264mm) and the
-     # skirt's aft tip at S_CHUTE+PIN_SKIRT_L (291mm) -- see
-     # r60_assembly.scad's Pair 5 comment for the same "stack" frame this
-     # is read off.
-     ('e-bay aft bulkhead + 2 servos', petg(STL_VOL[5])+27.0,
-      S_CHUTE + (PIN_SKIRT_L - AFTBULK_T) / 2),
-     # Station audit: R60_EBayTube()'s own Door_Z0+Door_Z1=EBay_L
-     # identically (the aperture is symmetric in the tube's own frame by
-     # construction, and R60_Door_Overlap cancels in the midpoint) -- so
-     # the door's own true centre is ALWAYS the e-bay tube's own overall
-     # midpoint, regardless of EBay_L. The old S_EBAY+L_EBAY-40=236 was a
-     # single edge (Door_Z0 at the OLD EBay_L=165, restated as a literal
-     # that silently stopped matching anything once EBay_L grew again) --
-     # 48.5mm off the part's own true centre, and the single largest
-     # station error found in this audit.
+     # Station: this whole part (STL_VOL[5]) is the disc (12mm) PLUS the
+     # skirt (SKIRT_L=15mm) that projects AFT of the e-bay tube's own cut
+     # end into the deployment bay -- see R60_EBayAftBulkhead()'s own
+     # module comment. Disc's forward face sits at S_CHUTE-AFTBULK_T,
+     # skirt's aft tip at S_CHUTE+SKIRT_L.
+     ('e-bay aft bulkhead + 1 servo', petg(STL_VOL[5])+13.5,
+      S_CHUTE + (SKIRT_L - AFTBULK_T) / 2),
+     # R60_EBayTube()'s own Door_Z0+Door_Z1=EBay_L identically (the
+     # aperture is symmetric in the tube's own frame by construction, and
+     # R60_Door_Overlap cancels in the midpoint) -- so the door's own true
+     # centre is ALWAYS the e-bay tube's own overall midpoint.
      ('access door + switch',  petg(STL_VOL[7]) + 8.0,   S_EBAY+L_EBAY/2),
-     # Plain uniform tube -- geometric midpoint. Audited, confirmed
-     # correct (does not separately account for the ~5.5mm fin-can
-     # spigot's own mass shifting the true centroid a further ~2mm aft;
-     # left as the same order-of-approximation every other uniform-tube
-     # item here already accepts).
-     ('chute bay tube',        petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
-     # Station audit: the spring/ball-lock MECHANISM occupies the chute
-     # bay's own forward PIN_SKIRT_L..PIN_SKIRT_L+CARRIER_L span (the
-     # skirt+carrier "stack", 15..80mm from S_CHUTE) -- the packed
-     # parachute and shock cord are stowed AFT of that, in the remaining
-     # open volume through to the fin can's own forward centring ring
-     # (S_FIN). The old S_CHUTE+L_CHUTE*0.45=357 placed this INSIDE the
-     # mechanism's own footprint instead of aft of it -- fixed to the
-     # midpoint of the actually-open packing volume.
+     # Plain uniform tube -- geometric midpoint. Now a plain, feature-free
+     # tube (R60_ChuteTube()'s own module comment) -- no internal mass
+     # asymmetry to correct for any more.
+     ('deployment bay tube',   petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
+     # Petal-deployment transplant: the release stack (parts 15-22) +
+     # CS4323 spring + R60_FwdSpringEnd() (part 23) occupy the
+     # deployment bay's own forward span (0..SPRINGEND_OFFSET+25 from
+     # S_CHUTE); the packed parachute is now stowed INSIDE the petal cage
+     # (part 13), not in a separate open volume -- so this item's station
+     # moves to the petals' own centroid instead.
      ('parachute+cord+hw',     70.0,
-      S_CHUTE + (PIN_SKIRT_L + CARRIER_L + L_CHUTE) / 2),
-     # Spring/ball-lock carrier (part 8) -- geometry-derived station,
-     # confirmed correct (fixed last round; formula is parametric in
-     # S_CHUTE so it stayed correct through this round's L_NECK_FLANGE
-     # change automatically).
-     ('spring carrier',        petg(STL_VOL[8]),
-      S_CHUTE + PIN_SKIRT_L + CARRIER_L / 2),
-     # No spring rate/mass figure exists anywhere in the repo
-     # (R60Lib.scad's own R60_Pin_d comment); 25g is a stated,
-     # UNVERIFIED estimate for a ~44mm OD / 200mm free-length compression
-     # spring, not a measurement -- bench-weigh the real part.
-     #
-     # Station audit: the spring's own aft seat is the carrier's
-     # diaphragm (Dia_Z=CB_DEPTH+3, own thickness DIA_T -- "the spring's
-     # forward seat" per R60_SpringCarrier()'s comment), and it reacts
-     # against the chute tube's own spring-reaction tabs at the carrier's
-     # far/aft tip (stack z=PIN_SKIRT_L+CARRIER_L=80, where the module
-     # comment says the tabs are "positioned flush with where the carrier
-     # ends"). Midpoint of that bounded span -- the best available
-     # estimate for a part with no SCAD solid of its own; still flagged
-     # unverified, now ALSO geometry-bounded rather than a bare S_CHUTE+40.
+      S_CHUTE + PETALS_OFFSET + R60_Petal_Len / 2),
+     # Release activator (part 15) -- bolts to the aft bulkhead's aft
+     # face (global S_CHUTE+SKIRT_L), carries the MG90S servo (already
+     # counted on the aft-bulkhead line above) plus its own printed mass
+     # and small hardware (2x N42 magnets, dowel pins, screws -- no
+     # per-item figures exist anywhere in this repo, ~4g stated estimate,
+     # same "flat, unverified" convention as every other loose-hardware
+     # line here).
+     ('release activator',     petg(STL_VOL[15]) + 4.0,
+      S_CHUTE + SKIRT_L + ACT_OFFSET),
+     # Release stack (parts 16-20): top retainer, lock ring, outer
+     # bearing retainer, trigger post, magnet bracket -- bolted together
+     # per CableReleaseBBMicro.scad's own hardware stack, all landing at
+     # the SAME station (SCR_OFFSET aft of the activator's own mount
+     # face, matching Rocket6551.scad's own SCR_Z arithmetic). Includes
+     # the 6703-2RS bearing (~8g, catalog) and 3x MR63 lock bearings
+     # (~1g each) -- stated estimates, no per-item figures in this repo.
+     ('release stack (16-20)', petg(STL_VOL[16]+STL_VOL[17]+STL_VOL[18]
+                                     +STL_VOL[19]+STL_VOL[20]) + 11.0,
+      S_CHUTE + SKIRT_L + SCR_OFFSET),
+     # Release extension rod + locking pin (parts 21/22) -- run through
+     # the spring's own ID (40.50mm, clears R60_LockPin_d=12mm with
+     # room) from the release stack up to R60_FwdSpringEnd(); midpoint of
+     # that span.
+     ('release rod + pin',     petg(STL_VOL[21]+STL_VOL[22]),
+      S_CHUTE + SKIRT_L + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
+     # CS4323 spring -- no spring rate/mass figure exists anywhere in the
+     # repo (this transplant carries the SAME open risk the design it
+     # replaces already flagged); 25g is a stated, UNVERIFIED estimate
+     # for a ~44mm OD / 200mm free-length compression spring, not a
+     # measurement -- bench-weigh the real part. Station: midpoint of the
+     # release stack's own mount face and R60_FwdSpringEnd()'s own mount
+     # face -- the span it actually occupies once compressed.
      ('CS4323 spring (est., unverified)', 25.0,
-      S_CHUTE + PIN_SKIRT_L + (CB_DEPTH + 3 + DIA_T / 2 + CARRIER_L) / 2),
-     # Station audit: mounts at the SAME "stack" reference the carrier
-     # does (bulkhead's own aft-most face, stack z=PIN_SKIRT_L=15,
-     # r60_assembly.scad's Pair 9/12 comments), its own height (LATCH_H,
-     # matching part 13's measured 16.00mm) growing aft from there. Old
-     # S_EBAY+L_EBAY-5=271 was never derived from this part's own
-     # geometry at all -- 28mm short of its true midpoint (299).
-     ('tether latch + pin',    petg(STL_VOL[13]) + 1.0,
-      S_CHUTE + PIN_SKIRT_L + LATCH_H / 2),
-     # Station audit: shear pins land PIN_Z_FROM_JOINT past the joint on
-     # both sides (R60_ChuteTube()/R60_EBayAftBulkhead()'s shared
-     # constant) -- was bare S_CHUTE (the joint itself), 8mm off; at 0.5g
-     # total this does not move CG measurably, corrected anyway for
-     # completeness.
-     ('shear pins x2',         0.5,                      S_CHUTE+PIN_Z_FROM_JOINT),
-     # Plain uniform tube -- geometric midpoint. Audited, confirmed
-     # correct.
+      S_CHUTE + SKIRT_L + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
+     # Forward spring end (part 23) -- the moving piston; bolts inside
+     # the petal cage (part 8/13).
+     ('forward spring end',    petg(STL_VOL[23]),
+      S_CHUTE + SKIRT_L + SPRINGEND_OFFSET),
+     # Petals (part 13) -- IS the separable joint now (R60_Petals()'s own
+     # module comment); no shear pins anywhere in this design any more.
+     ('petals',                petg(STL_VOL[13]),
+      S_CHUTE + SKIRT_L + PETALS_OFFSET + R60_Petal_Len / 2),
+     # Petal hub (part 8) -- bolts to the fin-can side; its own aft-most
+     # reach (HUB_TAIL_OFFSET past the petal tips) still sits inside
+     # S_FIN (confirmed: station audit below), so it never competes with
+     # the fin can's own forward centring ring for space.
+     ('petal hub',             petg(STL_VOL[8]),
+      S_CHUTE + SKIRT_L + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET/2),
+     # Plain uniform tube -- geometric midpoint.
      ('fin can (PC)',          pc(STL_VOL[9]),           S_FIN+L_FINCAN/2),
      # FIXED (defect 3c): was NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62, a
      # planform-prism ESTIMATE (chord x span x thickness) that broke this

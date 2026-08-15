@@ -47,7 +47,27 @@ R60_Coupler_OD = R60_Body_ID - 0.4;            // 56.4
 // switch's own placement is now entirely local to R60_Door() and cannot
 // invert this tube's length again.
 R60_EBay_L   = 177;   // fits Vega 100 + upright MG90S 29 + slack
-R60_Chute_L  = 180;   // spring mechanism 80 + 24in main 100
+// R60_Chute_L (petal-deployment transplant): the FIXED tube bonded to
+// the e-bay aft bulkhead's aft face, housing the release stack
+// (Activator/TopRetainer/LockRing/OuterBearingRetainer/TriggerPost/
+// MagnetBracket), the CS4323 spring, and R60_FwdSpringEnd, with an OPEN
+// aft end the petal cartridge (R60_PetalHub()/R60_Petals(), bolted to
+// the fin can side) telescopes through at deployment -- see
+// R60_PetalHub()/R60_Petals()'s own module comments in Rocket60.scad,
+// and R60Lib.scad's "PETAL DEPLOYMENT" section below for the release-
+// catch and petal-length derivations this length depends on.
+//
+// Measured this session by rendering the complete stack (all 9 release
+// parts + FwdSpringEnd + R60_Petals(Len=R60_Petal_Len) + R60_PetalHub) at
+// their real relative offsets, taken from Rocket6551.scad's own
+// ShowRocket()/ShowCableRelease() Z arithmetic (mirrored fwd<->aft,
+// since this design's e-bay is forward instead of aft): total span
+// 226.5mm. Grown to 240 for a stated ~14mm margin (skirt/adapter
+// clearance at the fin-can joint, forward mounting lip) over that
+// measured figure, same "measured, then margin" idiom as R60_EBay_L's
+// own history above.
+R60_Chute_L  = 240;   // was 180 ("spring mechanism 80 + 24in main 100",
+                        // the abandoned ball-lock design) -- see comment
 R60_FinCan_L = 228;
 
 // Chute-bay-to-fin-can spigot (3rd review, should-fix 6). Every OTHER
@@ -453,126 +473,84 @@ R60_Motor_Lip_d = R60_MMT_ID - 2.5;
 R60_ThrustRing_T = 6;
 
 // ============================================
-// SPRING SEPARATION JOINT (spec 4.2 -- supersedes the cam-ramped bayonet)
+// PETAL DEPLOYMENT (replaces the invented spring/ball-lock carrier +
+// shear-pin + servo-tether design -- see tasks/lessons.md's "invented
+// mechanism vs. proven one" entry for why). Transplanted from
+// Rocket6551.scad/R65Lib.scad/PetalDeploymentLib.scad/
+// CableReleaseBBMicro.scad/SpringEndsLib.scad -- a flown, single-deploy,
+// non-pyro 2.6" design using one CS4323 spring and a petal-deployment
+// hub. The whole "which pin shears how hard" load-path problem this
+// replaces does not exist here: the petals themselves are BOTH the
+// separable joint and the deployment mechanism, so nothing shears --
+// see R60_PetalHub()/R60_Petals()'s own module comments in Rocket60.scad.
 // ============================================
-// CS4323 compression spring OD, as documented in the repo's
-// SpringThingBooster.scad/SpringEndsLib.scad family (ST_DSpring_OD) and
-// restated here since Rocket60.scad does not `use<>` those files -- see
-// R60_SpringCarrier()'s module comment for why.
-//
-// 8th review, finding 4c: R60_Spring_ID/FL/CBL (ST_DSpring_ID/CBL/FL's own
-// restatements) used to live here too, defined and never read by anything
-// -- only OD sizes the carrier's bore. R60_SpringCarrier()'s own module
-// comment asserts a cocked-spring-room figure ("~35mm remaining, down
-// from ~55mm") in prose, but that claim was never actually computed from
-// ID/FL/CBL (the carrier's own plunger/lock-ring, which the spring's aft
-// end bears against, is explicitly NOT modelled -- see that module's own
-// "deliberately incomplete" comment -- so the room available to a COCKED
-// spring cannot be derived from this file's geometry at all). Deleted
-// rather than left implying a verification that does not exist; the
-// prose estimate is unchanged, still flagged under spec A11 as physically
-// unverified.
+// CS4323 compression spring OD -- as SpringEndsLib.scad's own
+// Spring_CS4323_OD (confirmed 44.30 in that file this session). Restated
+// here since Rocket60.scad's other constants live in this file, not
+// SpringEndsLib.scad's own SE_Spring_CS4323_OD() accessor, matching this
+// file's existing "restate, don't cross-include for one number" pattern
+// (R60_Spring_OD existed before this transplant for the same reason).
+// No spring rate/vendor figure exists anywhere in this repo for the
+// CS4323 (confirmed by grep, same finding the design this replaces
+// already carried under spec A11) -- still physically unverified,
+// carried forward as the same open risk, not a new one this transplant
+// introduces.
 R60_Spring_OD  = 44.30;
+R60_Spring_ID  = 40.50;
+R60_Spring_FL  = 200;   // free length
+R60_Spring_CBL = 22;    // coil-bound length
 
-// Shear pins bridge the REAL separable airframe joint -- chute bay tube
-// (part 3) into the e-bay aft bulkhead's skirt (part 5) -- not the spring
-// carrier. See R60_EBayAftBulkhead()'s module comment for why that
-// placement is what keeps the two separation paths independent.
+// Release catch: CableReleaseBBMicro.scad, chosen over CableReleaseBBMini
+// (the family Rocket6551.scad actually flies) on MESH-MEASURED evidence,
+// not the family's own flight history. CRBBm_Activator(OD=56.4) --
+// the servo-carrying top plate, and the ONE part of either family that
+// is NOT simply clipped to whatever OD it's called with (its own file
+// carries an explicit "Designed and works for Loc65 tube, may not
+// scale" warning on this exact module) -- was rendered and measured at
+// R60_Coupler_OD this session: BBMini's Activator reaches r=31.8mm, PAST
+// this bore's own r=28.4mm (its spoke/servo-strut geometry is built from
+// absolute mm offsets, not values derived from its own OD parameter, so
+// it does not shrink with it). BBMicro's Activator, same render, same
+// OD, measures r=28.2mm -- landing exactly on R60_Coupler_OD/2, this
+// repo's own standard 0.4mm-diametral-clearance convention, not a
+// coincidence. Every other shared part (lock ring, top retainer, outer
+// bearing retainer) clears the bore with 10-13mm to spare either family,
+// so the Activator is the ONE part that actually decides this. BBMicro
+// is the newer, less-flown family (first print 2025-10-16 vs BBMini's
+// 2025-09-21, and its own hardware-BOM comment is stale -- 5/16" balls
+// and a 6705 bearing are listed, but the LIVE code cut 11/10/2025 uses
+// 6mm balls and a 6703 bearing; document hardware from the code, not
+// that comment) -- but a part that cannot pass through the airframe
+// wall as printed is not a live option regardless of flight history.
+R60_LockPin_d = 12;   // CableReleaseBBMicro.scad's own default
+R60_Ball_d    = 6;    // 6mm balls, live "Smallest" variant (not the
+                        // stale 5/16" the file's own BOM comment lists)
+R60_nBalls    = 3;
+
+// Petal count and length. nPetals=3 matches every precedent this
+// transplant draws from (Rocket6551's own nPetals=3).
 //
-// Target: 2x nylon 2-56, ~130N combined shear (spec 4.2). NO spring force
-// figure exists anywhere in this repo (grep of all nine spring/release
-// files found none) -- this pin size is a stated target, not a verified
-// one. The spring must be bench-measured to confirm it beats this load
-// before flight (spec A11 -- the largest open risk in the recovery
-// system). Do not treat PIN_D as validated by anything in this file.
-R60_Pin_d            = 2.2;   // nylon 2-56 clearance
-R60_Pin_Skirt_L      = 15;    // e-bay aft bulkhead's aft skirt engagement
-R60_Pin_Z_FromJoint  = 8;     // both R60_ChuteTube() and R60_EBayAftBulkhead()
-                               // cut their pin hole this far from the joint,
-                               // so one physical pin lines up through both
+// Petal_Len derivation (task: "derive from volume rather than scaling
+// [Rocket6551's 120-140mm] blindly, state the packing assumption"):
+// PD_Petals' own tube ID at Wall_t=1.6 is R60_Coupler_OD-2*1.6=53.2mm,
+// bore area pi*26.6^2/100 = 22.24 cm^2/cm. Packing assumption: ripstop
+// nylon 24in main + Nomex protector + shroud lines, ~50g at a packing
+// density of ~0.20 g/cm^3 (a standard rocketry packing-density estimate
+// for ripstop nylon in a Nomex sleeve -- this repo states no per-chute
+// figure of its own to check it against) needs ~250 cm^3. At Len=120mm:
+// 22.24*12=267 cm^3, clears 250 cm^3 with real (7%) margin. This is also
+// exactly Rocket6551's own flown value (its comment: "120 ... preferred,
+// 140 is max for a single 4323 spring") -- the volume-derived and the
+// flight-precedent numbers agree, not a coincidence forced to fit; both
+// are bounded by the same spring's practical throw.
+R60_Petal_Len = 120;
+R60_nPetals   = 3;
 
-// Tether latch (part 13, Task 8) routing. Shared between R60_ChuteTube()
-// (the fixed tie-off at the chute bay's forward rim), R60_EBayAftBulkhead()
-// (the latch's own mount, offset under servo 2's horn so it can drive it,
-// plus a relief channel through the skirt) and R60_SpringCarrier() (a
-// matching notch through its counterbore rim), so the tether's ~50mm cord
-// path lines up across all three once assembled -- see each module's
-// comment. This is a SEPARATE line from the shock cord (which is
-// permanently anchored e-bay aft bulkhead <-> fin can forward centring
-// ring, spec 4.1) -- conflating the two leaves the aft section attached
-// to nothing after main release.
-R60_Tether_Y  = 13.6;   // R60_EBayAftBulkhead()'s own S2_Y now READS this
-                          // constant directly (6th review, finding 3.3 --
-                          // was a second, independently-typed 13.6 that
-                          // this comment asserted equal without enforcing
-                          // it), so servo 2's own pocket/horn slot always
-                          // stays under wherever this moves to
-R60_Tether_Az = 90;     // +Y -- azimuth of the relief channel/tie-off
-
-// Tether tie-off lug (R60_ChuteTube(), part 3) and the relief notch that
-// must swallow it through the aft bulkhead skirt (part 5, which the chute
-// tube's forward rim slides over). Defined once, here, so the notch is
-// always DERIVED from the lug's own footprint plus a stated clearance --
-// not a hand-matched dimension that can silently drift out of sync (a
-// first draft sized the notch to exactly the lug's own dimensions: zero
-// clearance on width and 0.8mm of outright interference on depth. See
-// task report).
-R60_TetherLug_W  = 8;     // lug width, X
-R60_TetherLug_D  = 4;     // lug radial depth, Y -- how far it reaches
-                           // inward from the chute tube's own ID
-R60_TetherLug_H  = 5;     // lug height, Z
-R60_TetherLug_Z  = 4;     // lug Z position (base), in the chute tube's
-                           // own frame
-R60_Tether_Clear = 0.6;   // stated per-side clearance: the notch is cut
-                           // this much deeper (radius) and this much wider
-                           // (each side) than the lug's own footprint
-
-// Tether latch (part 13) mounting hole spacing. Servo 2's horn slot
-// (R60_Horn_L, R60_EBayAftBulkhead()) is shared here so the latch's own
-// mounting holes and the bulkhead's insert holes it screws into are always
-// derived from the SAME slot dimension, and so they can never again land
-// inside its void -- see task report: the original +-11mm spacing put
-// both mounting inserts inside the horn slot (only ~2.5mm^2 of a 12.6mm^2
-// bore was solid).
-R60_Horn_L            = 24;    // servo 2 horn slot length, X
-R60_Horn_W            = 9;     // servo 2 horn slot width, Y -- shared for
-                                // the same reason R60_Horn_L is: 4th
-                                // review, critical 5, needs it to size the
-                                // pass-through R60_TetherLatch() now cuts
-                                // through its own base (see that module's
-                                // comment) so it never again matches the
-                                // bulkhead's own slot width by coincidence
-R60_TetherInsert_d    = 4.0;   // ruthex RX-M3x5.7 hole, tether latch mount
-R60_Tether_Wall_Min   = 2.0;   // min solid wall around the insert hole,
-                                // clear of the horn slot void
-R60_TetherLatch_HoleX = R60_Horn_L/2 + R60_TetherInsert_d/2 + R60_Tether_Wall_Min;  // 16
-
-// Spring carrier (part 8) counterbore diameter -- shared with
-// R60_TetherLatch() (4th review, critical 2) so the latch can clip its
-// own base to a radius that is guaranteed to stay inside it, DERIVED,
-// rather than the two silently drifting the way R60_TetherLug_*/
-// R60_Tether_Clear were introduced to prevent for the tether notch. Was
-// a second, local-only `CB_D=51` inside R60_SpringCarrier() with nothing
-// else deriving from it -- fine while the latch was assumed to fit
-// inside it whole, which the module comment claimed ("the posts and pin
-// recess into that counterbore") but never actually checked for the
-// latch's own rectangular BASE, offset R60_Tether_Y off the carrier's
-// axis so servo 2 can reach it. A round counterbore centred ON that axis
-// can never fully clear an off-axis rectangle no matter how large --
-// the base's own far corners (r=28.97mm from the carrier's axis) sit
-// PAST the carrier's own OD (28.2mm), so growing CB_D cannot be the fix;
-// R60_TetherLatch()'s own module comment explains the clip this drives.
-R60_SpringCarrier_CB_D = 51;
-
-// Spring carrier (part 8) overall length -- shared (8th review, finding
-// 4b) so R60_ChuteTube()'s own Stop_Z (the spring reaction tabs' station,
-// which has to sit flush with where the carrier ACTUALLY ends for the
-// spring to load them with no free travel) and tools/rocket60_model.py's
-// restated CARRIER_L both derive from -- or, for the Python file, name --
-// the SAME number as the module that actually builds it, instead of three
-// independent copies of "65" that only stay equal by nobody having
-// touched any of them yet.
-R60_SpringCarrier_L = 65;
+// Petal cartridge's own aft spigot into the fin can (part 9, UNCHANGED --
+// see task constraint) -- same joint R60_ChuteTube() used to make, same
+// derived length, now carried by R60_PetalHub() instead. Shared, not
+// restated, for the same reason R60_FinCanSpigot_L above already is.
+R60_PetalHubSpigot_L = R60_FinCanSpigot_L;
 
 // ============================================
 // FINS
