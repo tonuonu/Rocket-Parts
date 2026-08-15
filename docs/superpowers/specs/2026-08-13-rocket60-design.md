@@ -419,8 +419,12 @@ either way.
 > occupies once compressed" — compression is 203.2−50=153.2mm, giving **≈22.0 N**. (A
 > shallower ~29–33mm span once assumed elsewhere gives ≈24–25 N; neither reading reaches
 > 30 N, and both are well short of the spring's own coil-bound limit — see `R60-BOM.md` for
-> the full derivation and the catalog-vs-modelled OD/ID mismatch this also surfaced, which
-> the seat at part 25 does not currently accommodate.) The structural load case at
+> the full derivation. The catalog-vs-modelled OD/ID mismatch this also surfaced (part
+> 25's own seat pocket, cut with zero clearance against the wrong OD) is FIXED, not just
+> reported: `R60_Spring_OD`/`_ID` now carry the catalog's own 44.45/40.79, and
+> `CRBBm_CenteringRingMount()` takes a real, mutation-tested `Spring_Clear` — see
+> `R60-BOM.md` §9 for the mesh-measured before/after and the mutation proof.) The
+> structural load case at
 > `R60_ChuteSplit_Engage` (R60Lib.scad) used ~31.5N as the spring's conservative upper bound
 > and is non-governing there regardless (the ejection-charge case is ~8x larger) — it stays
 > conservative at the real ~22-25N. **The real open question was never spring force, it is
@@ -543,9 +547,9 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 941 g | 418.2 mm | **1.69 cal** | 396.7 mm | 2.05 cal |
-| H182R-14A | 1007 g | 431.0 mm | **1.48 cal** | 399.3 mm | 2.01 cal |
-| H135W-14A | 1010 g | 430.6 mm | **1.49 cal** | 409.4 mm | 1.84 cal |
+| G80T-14A | 941 g | 418.1 mm | **1.69 cal** | 396.7 mm | 2.05 cal |
+| H182R-14A | 1008 g | 431.0 mm | **1.48 cal** | 399.2 mm | 2.01 cal |
+| H135W-14A | 1011 g | 430.6 mm | **1.49 cal** | 409.3 mm | 1.84 cal |
 
 **The G80T-14A margin IMPROVED, 1.46→1.69 cal** (10th/11th/12th review:
 this figure has moved several times since, from an intermediate 1.68
@@ -554,8 +558,13 @@ when the 11th review's hinge subsystem (part 24 x3 + springs/bolts) and
 CS4323 seat (part 25) added their own mass, to 1.69 when the 12th
 review's owner ruling grew R60_Chute_L to 275 (the tube split, printed
 as two pieces) and R60_Petal_Len to 140 (real packing margin) — see §4.1
-for that decision's own record), despite the added liftoff mass over
-every prior figure — CP moved aft by more than CG did at every step,
+for that decision's own record. Coordinator fixes 1/2 (`R60-BOM.md`) add
++0.2g total — the spring seat's own real entry clearance and the new
+rail-button boss/insert both add a hair of material — moving liftoff
+mass and CG by ≤1g/≤0.1mm on every motor; the cal figures above are
+unchanged at this rounding, still 1.69/1.48/1.49), despite the added
+liftoff mass over every prior figure — CP moved aft by more than CG did
+at every step,
 because the deployment bay's own growth is entirely FORWARD of the fin
 can, pushing the fins (which dominate CN) further from the nose without
 adding mass there. H182R clears 1.0 cal at 1.48 cal, H135W at 1.49 cal

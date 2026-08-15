@@ -636,21 +636,49 @@ R60_ThrustRing_T = 6;
 // separable joint and the deployment mechanism, so nothing shears --
 // see R60_PetalHub()/R60_Petals()'s own module comments in Rocket60.scad.
 // ============================================
-// CS4323 compression spring OD -- as SpringEndsLib.scad's own
-// Spring_CS4323_OD (confirmed 44.30 in that file this session). Restated
-// here since Rocket60.scad's other constants live in this file, not
-// SpringEndsLib.scad's own SE_Spring_CS4323_OD() accessor, matching this
-// file's existing "restate, don't cross-include for one number" pattern
-// (R60_Spring_OD existed before this transplant for the same reason).
-// No spring rate/vendor figure exists anywhere in this repo for the
-// CS4323 (confirmed by grep, same finding the design this replaces
-// already carried under spec A11) -- still physically unverified,
-// carried forward as the same open risk, not a new one this transplant
-// introduces.
-R60_Spring_OD  = 44.30;
-R60_Spring_ID  = 40.50;
-R60_Spring_FL  = 200;   // free length
-R60_Spring_CBL = 22;    // coil-bound length
+// CS4323 compression spring OD/ID -- CATALOG values (R60-BOM.md task 2/
+// coordinator fix 1), not SpringEndsLib.scad's own SE_Spring_CS4323_OD()/
+// _ID() (44.30/40.50), which is that donor file's own generic figure
+// shared across every design that references it and is NOT touched here
+// (dozens of unrelated Rocket*.scad files read it -- changing it there
+// would move geometry this task never verified). Century Spring's own
+// published CS4323 catalog: free length 8in/203.2mm, OD 1.75in/44.45mm,
+// ID 1.606in/40.79mm, 12 coils, rate 0.82 lb/in. These ARE the real
+// spring's own dimensions -- R60Lib.scad's existing "restate, don't
+// cross-include for one number" pattern means every Rocket60-only
+// consumer of this spring's size should read THESE, not the donor's.
+//
+// R60_Spring_Clear (new): the ACTUAL clearance applied where this
+// spring's own OD/ID meet printed material, not baked into R60_Spring_OD/
+// _ID themselves -- those two constants stay the spring's true nominal
+// size so a future reader never has to ask "is this the spring or the
+// hole." CRBBm_CenteringRingMount()'s own spring pocket (part 25) is the
+// one consumer that applies it: pocket cut = R60_Spring_OD+R60_Spring_Clear
+// (real entry clearance -- the spring must physically enter this bore),
+// shoulder bore = R60_Spring_ID-R60_Spring_Clear (the coil's own inner
+// edge must land INSIDE solid support material with margin, not tangent
+// to it -- the same "state a real margin, not a tangent" standard this
+// spec applies to the chute-packing fit). 0.4mm diametral, matching this
+// file's own R60_Coupler_OD clearance convention used everywhere else.
+R60_Spring_Clear = 0.4;
+R60_Spring_OD  = 44.45;
+R60_Spring_ID  = 40.79;
+R60_Spring_FL  = 203.2;   // free length, catalog 8in (was 200, this
+                            // file's own prior estimate)
+R60_Spring_CBL = 22;    // coil-bound length -- no catalog figure for
+                          // this one; kept as the prior estimate,
+                          // conservative (a shorter real CBL only makes
+                          // the spring even less likely to reach it)
+// R65_FwdSpringEnd() (part 23, the piston) is DELIBERATELY NOT
+// parameterised to read R60_Spring_ID here. Its own centering boss
+// (R65Lib.scad, `Tube(OD=Spring_ID, ID=Spring_ID-4.4, ...)`) is hardcoded
+// to SpringEndsLib.scad's SE_Spring_CS4323_ID()=40.50 -- correct BY
+// ACCIDENT now that the real spring's ID is 40.79 (0.29mm of diametral
+// clearance the boss never had to be designed for, but has). Pointing it
+// at R60_Spring_ID=40.79 instead would set that boss's own OD exactly
+// equal to the coil's real ID -- the SAME zero-clearance defect this fix
+// closes on the centering-ring-mount side, just moved to the piston.
+// Leave R65_FwdSpringEnd() untouched; this comment is the record of why.
 
 // Release catch: CableReleaseBBMicro.scad, chosen over CableReleaseBBMini
 // (the family Rocket6551.scad actually flies) on MESH-MEASURED evidence,

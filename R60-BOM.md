@@ -19,6 +19,23 @@ ECHO: "R60_Vega_RodLength (M3 rod, cut length): 152.8 mm"
 ECHO: "R60_ReleaseRodLen (#10-24 all-thread, pin->rod->piston): 58 mm"
 ```
 
+**Read this before ordering anything: two donor library header comments in this
+repo are wrong for the hardware they actually cut.** `CableReleaseBBMicro.scad`'s own
+`***** Hardware *****` block says 5/16in Delrin balls, an MR84-2RS bearing and a
+6705-2RS bearing — the file's own live top-of-file constants (confirmed independently
+by `R60Lib.scad`'s own restated `R60_Ball_d`/`R60_LockPin_d`) build 6mm balls, an
+MR63-2RS lock bearing and a 6703-2RS main bearing instead. `PetalDeploymentLib.scad`'s
+header claims 3× #4-40 SHCS bolt the petal hub down; this design's hub has that exact
+hole pattern in its printed mesh but nothing bolts through it (the petals have no
+matching holes) — 0 screws, not 3. **§1 and §3 below are counted from the code, not
+either header — order from this table, not from opening the `.scad` files and reading
+their own comments.**
+
+**Update (2026-08-15, coordinator-authorised fixes):** three items previously reported
+here as defects, not fixed, are now fixed in geometry (§1's part-25 screw length, §4's
+forward rail-button boss, and §9's spring-seat clearance) — see each section for the
+mutation-tested proof. The aft rail button remains an open item — see §4.
+
 ---
 
 ## 1. Release mechanism (`CableReleaseBBMicro.scad`, ×1 assembly)
@@ -49,12 +66,34 @@ Quantities below are the header's own stated "Req" counts (spot-verified where n
 (26mm) + piston thread engagement (4mm) + BBMicro's shorter-pin free-span allowance
 (13mm) = 58mm, "inside the review's own stated 55-60mm window — bench-adjustable."
 
-**Additional joint, not in the header at all**: part 25 (our own spring centering ring
-mount, §2 below) bolts to part 16 via `CRBBm_MountingBoltPattern` (3× #4-40 positions).
-This mount does not exist in the donor's own design the header describes, so whether
-this reuses hardware already counted in one of the three "Req" rows above or is
-genuinely additive **was not fully traced** — budget 3 more #4-40 screws to be safe;
-verify at build/fit time. Length not derived.
+**Additional joint, not in the header at all — length now resolved.** Part 25 (our own
+spring centering ring mount, §2 below) bolts to part 16 via `CRBBm_MountingBoltPattern`
+(3× #4-40 positions). This mount does not exist in the donor's own design the header
+describes, so it is additive to the header's stated 10 (the header undercounts its own
+base design by exactly one 3-bolt joint, independent of this addition — see the note
+below). **Length, mesh-measured, not guessed**: part 25's own clearance cut
+(`Bolt4ButtonHeadHole()`, `CableReleaseBBMicro.scad`) passes through its own 6mm
+`Thickness`; the two parts sit **1.2mm apart** at their real assembled offset
+(`tools/r60_assembly.scad`'s own Pair 38, cross-checked by rendering both parts at
+that pair's real relative transform: part 25's mating face lands at z=−12.7, part 16's
+nearest face at z=−11.5); part 16's own tapped boss is bounded by its `Flange_t=4mm` —
+material beyond that is open interior, not more thread. Total reach before running out
+of tapped material: 6+1.2+4=11.2mm. **#4-40 × 3/8" (9.525mm) BHCS** gives 9.525−7.2=
+**2.325mm of engagement** — thinner than this design's usual ~5mm target (the joint's
+own geometry, not a choice, bounds it there), but real, and comfortably clear of the
+11.2mm ceiling. **Do not go to 1/2" (12.7mm)**: 12.7−7.2=5.5mm exceeds the 4mm flange
+outright — it would punch through into the rotating lock-ring/trigger-post envelope
+beyond, the worse failure (a screw that never seats and clamps, vs. one with thin but
+real engagement).
+
+**The header undercounts its own base design by one joint, independent of the above.**
+Tallying every distinct #4-40 joint in the release stack by module (not just the
+header's own 3 "Req" lines): LockRing↔TopRetainer (3), OuterBearingRetainer↔TopRetainer
+(3, `Bolt4HeadHole`), CenteringRingMount↔TopRetainer (3, `Bolt4ButtonHeadHole` — this
+design's own part 25 above), magnet bracket + trigger post (4, verified exact) = **13**,
+not the header's 10. The header's "3× SHCS" and "3× BHCS" lines cover only two of the
+three 3-bolt joints; which one they miss was not traced further, since part 25's own
+joint (this design's own addition) is accounted for above regardless.
 
 ---
 
@@ -62,8 +101,8 @@ verify at build/fit time. Length not derived.
 
 | Item | Spec | Qty | Used for |
 |---|---|---|---|
-| CS4323 compression spring | 8in free length, 1.75in OD, 1.606in ID, 12 coils, 0.82 lb/in | 1 | Primary ejection spring — see §5 (Task 2) for the closed force question |
-| Spring centering ring mount hardware | see "Additional joint" above | 3× #4-40 | Seats the spring, bolts to part 16 |
+| CS4323 compression spring | 8in free length, 1.75in OD, 1.606in ID, 12 coils, 0.82 lb/in | 1 | Primary ejection spring — see §9 (Task 2) for the closed force question and the seat-clearance fix |
+| #4-40 × 3/8" (9.525mm) BHCS | see "Additional joint" above — ~2.3mm engagement, does not bottom | 3 | Seats the spring (part 25), bolts to part 16 |
 
 ---
 
@@ -109,18 +148,43 @@ remainder may be inside the hub's own mating boss, not traced here).
 | M2.5 self-tapping screw | 2.0mm cover shell (clearance) + 6.0mm pilot engagement = **M2.5×8**, self-tapped into PETG, not an insert | 4 | Access door (part 7) → e-bay tube boss |
 | Panel-mount toggle switch, 12mm hole | — | 1 | Arming switch, cut into the door itself; rated for full battery current (CATS manual §4.3.4) |
 | RailButton (printed, `RailGuide.scad`) | — | 2 | 1010-rail buttons, `OD=11, Flange_h=2, Slot_w=2.8`, at Az=180°, Fwd_Z=242mm / Aft_Z=630mm |
-| **Rail button fastener — GEOMETRY GAP, reported not fixed** | — | — | See note below |
+| M3 machine screw + ruthex RX-M3×5.7 insert | **FORWARD button only** — 2.0mm button flange + up to 5mm engagement (of a 6.7mm insert) ⇒ **M3×8**, 0.7mm margin, does not bottom | 1 + 1 | Forward rail button (part 2, e-bay tube) — new boss, fixed this session |
+| **Aft rail button fastener — still a geometry gap, still not fixed** | — | — | See note below |
 
-**Rail button fastener — no mounting boss or hole exists.** `R60Lib.scad` defines the
-rail buttons' axial stations and azimuth (`R60_RailButton_Az/Fwd_Z/Aft_Z`) but neither
-`R60_FinCan()` nor `R60_EBayTube()` cuts a matching hole or boss anywhere in the fin
-can or e-bay tube for them — confirmed by grep across both modules. `RailButton()`
-itself (`RailGuide.scad`) is a plain disc with a Ø4.6mm through-bore and no threaded
-feature of its own. This repo's own `RailGuide.scad` convention for a #6-32 screw
-(`Bolt6*`, ~3.5mm major dia) fits that clearance loosely; **this is a plausible
-build-time solution, not something the source specifies** — no length is derived
-anywhere. Report only, not fixed (out of this task's scope: "do not fix a geometry
-defect, report it").
+**Forward rail button (Az=180°, Fwd_Z=242mm, on part 2/e-bay tube) — FIXED.** Neither
+`R60_FinCan()` nor `R60_EBayTube()` cut a matching hole or boss for either button
+before this session — a button screw went straight into a plain 1.6mm wall and would
+have pulled through. `R60_EBayTube()` now carries a ruthex-boss, same idiom as every
+other insert in this design (local wall thickening inward, flush with the true OD,
+Ø4.0×6.7mm blind pocket, 0.7mm backing — thinner than this design's usual 1.0mm
+because this exact station's own radial budget is tighter against the Vega board's own
+worst-case corner clearance; caught by a new `assert()`, not by eye, on the first
+attempt at the usual 1.0mm). `tools/verify_rocket60.py` gates it with two new,
+mutation-tested checks (OD stays true at the boss station; the boss's own material
+reaches its calculated tip radius, 45.2mm read vs 56.8mm plain-wall — removing the
+boss addition drops the reading to 56.8mm AND regresses genus 5→6, both fail).
+`RailButton()` itself (`RailGuide.scad`) is a plain disc with a Ø4.6mm through-bore and
+no threaded feature of its own — loose but workable clearance for the M3 screw.
+
+**Aft rail button (nominally Az=180°, Aft_Z=630mm, on part 9/fin can) — NOT fixed,
+flagged for a decision, not resolved unilaterally.** Two independent problems, found
+while fixing the forward button:
+1. **No boss exists here either** — same defect class as the forward button.
+2. **The 630mm station is now stale, not just unbossed.** Its own comment
+   ("at the mid centring ring, `S_FIN+L_FINCAN/2`") was computed when `S_FIN`=516
+   (516+228/2=630 exactly). `S_FIN` is now 551 (the deployment-bay tube's own growth,
+   12th review) — the real mid ring sits at 551+114=**665mm**, not 630. **630mm today
+   lands 35mm forward of the ring it was meant to sit on, on plain unbacked wall** —
+   the exact pull-through risk this fix exists to close, compounded.
+
+Fixing this means editing `09_FinCan.stl` — a part marked "UNCHANGED by this task"
+through nine-plus review rounds and treated everywhere in this repo (spec, print
+settings) as hardened/stable. **This was not fixed here because the owner may already
+have this part printed**, and there are two live options once it's confirmed safe to
+touch: rebase the boss on the real 665mm ring position (restores the original
+"backed by a ring" intent) or keep 630mm and add local reinforcement without the ring
+(a plain boss, weaker but no station change). This needs an explicit answer, not an
+assumption — see the task reply.
 
 ---
 
@@ -130,7 +194,8 @@ defect, report it").
 |---|---|---|
 | E-bay fwd bulkhead (part 4), Vega rod anchors | 2 | |
 | Fin can (part 9) aft face, motor retainer bolts | 3 | Pre-exists this task, part 9 unchanged |
-| **Total** | **5** | Camera's own 3 inserts are pre-installed in the purchased assembly, not sourced by the owner |
+| E-bay tube (part 2), forward rail button | 1 | New this session — fix 2 |
+| **Total (excluding the aft rail button, still open)** | **6** | Camera's own 3 inserts are pre-installed in the purchased assembly, not sourced by the owner. Add 1 more once the aft rail button's own fix is resolved (§4). |
 
 ---
 
@@ -228,49 +293,92 @@ number that actually matters for "does the spring open the petals") was never
 estimated anywhere, catalog or otherwise; it remains the open item the bench test (spec
 §11 item 2) exists to answer.
 
-**Does the catalog spring still fit the seat and piston?**
+*Note on that same comment's own worked numbers*: `R60_ChuteSplit_Engage`'s own prose
+(wire d=1.9mm, mean coil d=42.4mm, etc.) was hand-computed from the OLD 44.30/40.50
+literals, now superseded by `R60_Spring_OD`/`_ID`'s own catalog update above (this
+comment is prose, not a live formula referencing those constants, so updating the
+constants did not update it). Left untouched — out of this fix's scope, and the actual
+sized quantity (`R60_ChuteSplit_Engage=7`) is a fixed literal that never read those
+constants either — but flagged here so the ~0.3% staleness in that worked example
+doesn't surprise a future reader.
 
-- **Seat (part 25, `CRBBm_CenteringRingMount`, our own addition) — does NOT fit as
-  modelled.** Its spring pocket is cut at exactly `Spring_OD` with **zero clearance**
-  (`translate([0,0,Spring_Z]) cylinder(d=Spring_OD, h=Thickness);` —
-  `CableReleaseBBMicro.scad` line 1281, called with `SE_Spring_CS4323_OD()`=44.30 from
-  `Rocket60.scad`). The part's own module comment confirms this was intentional and
-  already tight: *"the spring cavity's own inner wall... measures Ø44.29 —
-  SE_Spring_CS4323_OD()=44.30 — so the spring seats on this part's own step, not
-  float"* — i.e. even the modelled 44.30mm nominal is 0.01mm oversized for the printed
-  44.29mm cavity. The catalog spring's real OD (44.45mm) is **0.15mm larger again** —
-  and a compression spring's OD grows slightly further as it's compressed, so the real
-  mismatch at installed length is if anything worse than the free-length 0.15mm
-  figure. **This will not drop into the pocket as printed — report only, not fixed.**
-- **Piston (part 23, `R65_FwdSpringEnd`) — fits fine, no change needed.** Its own
-  centering boss is sized to `Spring_ID` as an OD (`Tube(OD=Spring_ID,
-  ID=Spring_ID-4.4, ...)`, R65Lib.scad:1419) — a spigot the spring's coil sits AROUND,
-  not a bore the spring sits IN. The catalog's real ID (40.79mm) is larger than the
-  modelled 40.50mm, which only gives this joint *more* clearance, not less.
+**Does the catalog spring still fit the seat and piston? — seat FIXED this session
+(coordinator fix 1), piston confirmed fine, no change.**
+
+- **Seat (part 25, `CRBBm_CenteringRingMount`, our own addition) — FIXED, real
+  clearance in both directions, not a tangent.** Was cut at exactly `Spring_OD` with
+  **zero clearance** (mesh-measured pre-fix at Ø44.29 against a then-modelled 44.30mm
+  spring — already tight before the catalog's real 44.45mm made it worse by another
+  0.15mm, and a compression spring's OD grows slightly further as it compresses, so the
+  real mismatch was if anything worse than that free-length figure). **Fixed two ways
+  together, not one:**
+  1. `R60Lib.scad`'s `R60_Spring_OD`/`R60_Spring_ID` now carry the catalog's own real
+     figures (44.45/40.79, were 44.30/40.50) — the spring's true size, not a hole size.
+  2. A new `R60_Spring_Clear=0.4` (this design's own established diametral-clearance
+     convention, matching `R60_Coupler_OD` etc.) is applied as a real, separate
+     parameter on `CableReleaseBBMicro.scad`'s `CRBBm_CenteringRingMount()`
+     (additive-only — default 0, no other caller of that shared module is affected):
+     the **entry pocket grows to `Spring_OD+Spring_Clear`** (mesh-measured **44.84mm**
+     post-fix — the spring must physically enter, so it gets a real clearance to enter
+     with) and the **shoulder bore under the coil's own inner edge shrinks to
+     `Spring_ID-Spring_Clear`** (mesh-measured **40.38mm** post-fix — the coil's inner
+     edge now lands on solid support material with **0.2mm of radial margin**, not
+     tangent to the support's own rim, the same class of margin-not-tangent fix this
+     spec already applied to the chute-packing volume).
+  
+  **Mutation-tested**: `tools/verify_rocket60.py`'s new "part 25 spring pocket clears
+  catalog OD" check gates the entry side (floor: `R60_Spring_OD+0.2`, a real print-
+  tolerance floor, not the full nominal). Forcing `Spring_Clear` back to 0 (the exact
+  pre-fix state) reproduces the pocket at 44.45mm and **FAILS** (0.211mm shortfall);
+  reverted, the real 44.84mm pocket **PASSES** (0.0mm shortfall). `R60_Spring_OD`
+  itself was deliberately NOT the thing mutated — the check's own floor derives from
+  it, so moving both sides together would prove nothing.
+- **Piston (part 23, `R65_FwdSpringEnd`) — confirmed fine, deliberately NOT
+  parameterised to the catalog constants.** Its own centering boss is sized to
+  `Spring_ID` as an OD (`Tube(OD=Spring_ID, ID=Spring_ID-4.4, ...)`, R65Lib.scad:1419)
+  — a spigot the spring's coil sits AROUND, not a bore the spring sits IN — hardcoded
+  to `SE_Spring_CS4323_ID()`=40.50, the donor's own generic figure. This is correct
+  **by accident**: the catalog's real ID (40.79mm) is larger than that hardcoded 40.50,
+  giving 0.29mm of diametral clearance the boss was never designed to need but has.
+  **Left untouched on purpose** — pointing it at the new `R60_Spring_ID`=40.79 instead
+  would set the boss's own OD exactly equal to the coil's real ID, recreating the
+  SAME zero-clearance defect on the piston that was just fixed on the seat. Documented
+  in `R60Lib.scad`'s own constants comment so a future reader does not "fix" this into
+  a regression.
 
 ---
 
 ## 10. Summary counts
 
-- **Distinct hardware line items** (excluding printed parts and consumables): 24
-  (release mechanism 10, petal deployment 2, our airframe hardware 12).
+- **Distinct hardware line items** (excluding printed parts and consumables): 25
+  (release mechanism 10, petal deployment 2, our airframe hardware 13 — +1 for the
+  forward rail button's own new M3+insert line).
 - **Fasteners by type and length**:
   - **#4-40**: 3× 1/2in BHCS + 4× 1/4in BHCS (verified exact) + 3× 3/8in SHCS
-    (release stack, per header) + 3× unresolved-length (part 25 → part 16, additive,
-    not in the header) + 6× 1/4in BHCS (petal hinges, verified exact) = **19**.
+    (release stack, per header) + **3× 3/8in (9.525mm) BHCS, ~2.3mm engagement,
+    resolved this session** (part 25 → part 16, additive, not in the header) + 6× 1/4in
+    BHCS (petal hinges, verified exact) = **19**.
   - **#10-24**: 1× 58mm (release rod, echoed exact) + 2× ~35mm (aft bulkhead →
     activator, stated in source) = **3**.
   - **M3**: 3× M3×10 (neck → camera) + 2× M3×152.8mm all-thread (Vega sled rails,
     echoed exact) + 3× M3×~16 (Vega board → standoffs, derived, verify against real
-    board) + 3× M3×12 (motor retainer → fin can, derived) = **11**, plus 2× M3 nut +
+    board) + 3× M3×12 (motor retainer → fin can, derived) + **1× M3×8 (forward rail
+    button → its own new insert, resolved this session)** = **12**, plus 2× M3 nut +
     2× M3 washer (sled aft retention) + 3× M3 nut (Vega board) = **7** nuts/washers.
   - **M2.5**: 4× M2.5×8 (door, derived, self-tapping).
-- **Catalog spring dimensions vs our seat**: piston clears; **centering-ring-mount seat
-  does not** (pocket cut to 44.30mm nominal/zero clearance vs catalog's real 44.45mm
-  OD) — geometry defect, reported, not fixed.
+- **Catalog spring dimensions vs our seat**: piston clears (unchanged, confirmed safe
+  as-is); **centering-ring-mount seat — FIXED this session**: real clearance in both
+  directions (entry pocket 44.84mm measured, shoulder bore 40.38mm measured), mutation-
+  tested against a regression back to the zero-clearance state.
 - **Anything depended on ≥30N?** One non-governing structural ceiling
   (`R60_ChuteSplit_Engage`, 31.5N) — stays conservative at the real ~22-25N. No
   calculation depended on the spring *reaching* 30N; the real open question (nub-release
   force) was never estimated at all.
 - **Imperial vs metric**: buy imperial for the release mechanism (Accu, one order,
   alongside the metric hardware already in this design) — do not convert the model.
+- **Rail buttons**: forward (part 2) fixed this session — real boss, real insert,
+  mutation-tested checks. **Aft (part 9/fin can) still open** — no boss AND the
+  630mm station itself is stale (the real mid-ring position moved to 665mm when
+  `S_FIN` grew); fixing it means editing a part marked unchanged/hardened across
+  9+ review rounds, which the owner may already have printed — flagged for an
+  explicit decision, not resolved unilaterally.

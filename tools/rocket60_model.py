@@ -165,10 +165,18 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # 13: 40.7 (13th review, re-measured again -- AntiClimber_h 0->4, the
 # donor's own print convention, not the ShowRocket()-embedded display
 # call this used to follow, Rocket60.scad's own R60_Petals() comment).
-STL_VOL = {1: 16.2, 2: 47.1, 3: 41.1, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
+# [2]/[25] re-measured (coordinator fix 1/2, this session): [2] 47.1->
+# 47.2 (the new rail-button boss/insert, coordinator fix 2 -- a small
+# local wall thickening, negligible at this rounding), [25] 4.1->4.2 (the
+# spring pocket's own real entry clearance, coordinator fix 1 -- growing
+# the pocket cut by Spring_Clear also grows its own surrounding wall by
+# the same amount to keep Wall_t real, adding a little material, not
+# removing it). Both measured off the freshly re-exported meshes, same
+# divergence-theorem volume() method as every other figure in this dict.
+STL_VOL = {1: 16.2, 2: 47.2, 3: 41.1, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
            8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 40.7, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
-           22: 1.5, 23: 10.5, 24: 2.2, 25: 4.1, 26: 39.3}
+           22: 1.5, 23: 10.5, 24: 2.2, 25: 4.2, 26: 39.3}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
                         # stops this much short of MMT_L, see build()

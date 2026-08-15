@@ -7,7 +7,7 @@ supposed to produce it.
 """
 import math, os, shutil, subprocess, sys, tempfile
 
-from scad_verify import REPO, render, measure, bore, volume, tris, components, overshoot, safe
+from scad_verify import REPO, render, measure, bore, volume, tris, components, overshoot, safe, shortfall
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
@@ -278,6 +278,22 @@ CHUTE_AFT_TOP_BAND = (137.5, 138.01)    # part 26: true aft-end, past the
 R60_ChuteSplit_SocketID_restated = 58.8   # R60Lib.scad's own
                                             # R60_ChuteSplit_SocketID --
                                             # restated (rule 4)
+
+# Spring pocket entry clearance (coordinator fix 1 -- the CS4323's real
+# catalog OD (44.45mm) does not fit the pre-fix pocket, cut at exactly
+# R60_Spring_OD with zero clearance). R60Lib.scad's own R60_Spring_OD/
+# R60_Spring_Clear, restated (rule 4). Band picks the pocket's own true
+# entry-face ring: CRBBm_CenteringRingMount()'s local z=Thickness=6 (the
+# part's own open/outer face) maps to global z=-6 here because
+# R60_CenteringRingMount() wraps it in rotate([180,0,0]) -- confirmed by
+# rendering: a global-z scan of the rendered mesh finds a clean, isolated
+# 44.839mm ring right at z=-6..-5.6 (vs the intended 44.85mm nominal --
+# the same ~0.01mm $fn-faceting undershoot this part's own module comment
+# already documents for its pre-fix 44.30-nominal/44.29-measured pocket).
+SPRING_POCKET_BAND = (-6.0, -5.6)   # part 25: entry-bore ring at the
+                                      # part's own open face
+R60_Spring_OD_restated = 44.45      # R60Lib.scad's own R60_Spring_OD
+                                      # (catalog), restated (rule 4)
 
 # Petal lock nub arc scan (13th review) -- r_thresh sits cleanly below
 # both of PD_Petals()' own plain-wall radii at this OD (ID/2=26.6,
@@ -788,6 +804,41 @@ def checks(m):
         c += [("part 2 vent hole diameter", vent_d, 4.5, 0.1),
               ("part 2 vent hole Z centre", vent_z, 29.0, 0.3)]
 
+        # Rail button boss (coordinator fix 2) -- R60_RailButton_Fwd_Z/
+        # _Az were placement-only before this fix; nothing rendered a
+        # boss or insert there at all -- a button screw would have gone
+        # straight into a plain 1.6mm wall and pulled through. Two
+        # checks: (1) OD at the boss's own Z station stays 60.0 -- same
+        # defect-2a tangential-bulge check DOOR_HOLE_Z_TUBE already gets,
+        # confirming the boss's outer cap stops short of the true OD;
+        # (2) the boss's own inner face (where its thickened material
+        # ends and the insert pocket begins) reads at the expected tip
+        # radius, not the plain wall's own r=28.4 -- proving real
+        # reinforcement material exists at this station, not just a
+        # bulge-free wall. (Not bore()'d for the insert's own Ø4.0
+        # separately -- bore() reads radius from the TUBE's central axis,
+        # and the insert sits off-axis at r=23.3..30, so its own small
+        # local diameter does not show up as a small bore() reading the
+        # way an axisymmetric hole would; the boss-tip depth below is
+        # the meaningful, correctly-axis-relative proof instead.)
+        RAILBTN_FWD_Z_TUBE = 143.0   # R60_RailButton_Fwd_Z(242) -
+                                       # S_EBAY_restated(99), restated
+                                       # (rule 4)
+        RAILBTN_TIP_R_restated = 22.6   # R60_Body_OD/2(30) -
+                                          # RailBtn_Boss_h(7.4), restated
+                                          # (rule 4)
+        _, railbtn_boss_od = safe(bore, a(2, "stl"),
+                                   RAILBTN_FWD_Z_TUBE - BOSS_OD_BAND_HALF,
+                                   RAILBTN_FWD_Z_TUBE + BOSS_OD_BAND_HALF,
+                                   nvals=2)
+        railbtn_tip_min, _ = safe(
+            bore, a(2, "stl"), RAILBTN_FWD_Z_TUBE - 3.0,
+            RAILBTN_FWD_Z_TUBE + 3.0, nvals=2)
+        c += [("part 2 OD at rail button boss station",
+               railbtn_boss_od, 60.0, 0.1),
+              ("part 2 rail button boss reaches its own tip radius",
+               railbtn_tip_min, 2 * RAILBTN_TIP_R_restated, 0.2)]
+
     if 6 in m:
         # sled length: 7th review, finding 1/2 -- now 2 continuous RAILS
         # (constant cross-section, full window length) instead of a plate
@@ -1187,6 +1238,31 @@ def checks(m):
         c += [("petal lock nub arc count", n_arcs, 3, 0.4),
               ("petal lock nub arc span (deg)", avg_span, 38.2, 8.0),
               ("petal lock nub arc spacing (deg from 120)", spacing_dev, 0.0, 2.0)]
+
+    # Spring pocket entry clearance (coordinator fix 1). The spring must
+    # physically ENTER this pocket, not just meet it tangent -- the same
+    # "measure it, don't assert it" standard every other mating dimension
+    # in this file already gets, applied to the one that was never
+    # checked at all before this fix (found by a coordinator review
+    # reading Century Spring's own published CS4323 catalog, not by
+    # anything in this harness). shortfall() floor: R60_Spring_OD+0.2 --
+    # half the intended 0.4mm R60_Spring_Clear, a real floor a print's
+    # own faceting/tolerance can still clear (the measured ring already
+    # reads ~0.01mm under its own nominal -- see SPRING_POCKET_BAND's own
+    # comment), not the full nominal, which would flag a healthy print as
+    # a false failure. Mutation-tested: forcing Spring_Clear back to 0 in
+    # Rocket60.scad's own R60_CenteringRingMount() call (the exact pre-fix
+    # state) re-renders the pocket at 44.45mm -- shortfall against the
+    # 44.65mm floor is then 0.20mm, FAILS; reverted (Spring_Clear=0.4),
+    # the real 44.84mm pocket gives shortfall 0.0, PASSES. Not mutating
+    # R60_Spring_OD itself (5th-review-class trap): the floor is DERIVED
+    # from that same constant, so moving it moves both sides of the
+    # check together and proves nothing -- only Spring_Clear, the actual
+    # fix, is mutated.
+    if 25 in m:
+        pocket_min, _ = safe(bore, a(25, "stl"), *SPRING_POCKET_BAND, nvals=2)
+        c += [("part 25 spring pocket clears catalog OD",
+               shortfall(pocket_min, R60_Spring_OD_restated + 0.2), 0.0, 0.01)]
 
     # Build volume, every part -- 6th review, finding 4: this used to
     # derive its own "expected" FROM the measurement (min(height, MAX_Z)),

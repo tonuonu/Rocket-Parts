@@ -237,6 +237,50 @@ module R60_EBayTube(){
     // slivers as real topology). Same "rotate for azimuth, then translate
     // along local +X = radial" idiom as R60_FinCan()'s bosses instead.
     function Door_Boss_Az(x) = acos(x/(R60_Body_OD/2));   // y>=0 (+Y side)
+
+    // Rail button boss (coordinator fix 2) -- R60_RailButton_Fwd_Z/_Az
+    // (R60Lib.scad) were placement-only until now: no hole or boss
+    // existed anywhere in the airframe for either rail button, so a
+    // button screw would have gone straight into a plain 1.6mm wall and
+    // pulled through. Same ruthex-boss idiom as every other fastener in
+    // this design (R60_EBayFwdBulkhead()'s Vega rod anchor,
+    // R60_MotorRetainer()'s retainer bolts): a local wall thickening
+    // INWARD, flush with the true OD, carrying a blind Ø4.0x6.7mm
+    // insert pocket with 1.0mm of backing so it never punches through.
+    // Local frame: R60_EBayTube()'s own z=0 is the tube's aft rim, which
+    // R60Lib.scad's S_EBAY_restated fixes at global station 99mm -- so
+    // R60_RailButton_Fwd_Z (242, global) lands at LOCAL z=143.
+    RailBtn_Z = R60_RailButton_Fwd_Z - S_EBAY_restated;   // 143
+    RailBtn_Insert_d = 4.0;    // ruthex RX-M3x5.7 hole per datasheet,
+                                 // same as every other insert in this file
+    RailBtn_Insert_h = 6.7;    // datasheet: insert L(5.7) + 1mm
+    // RailBtn_Backing: 0.7mm, THINNER than Door_Boss_Backing's 1.0mm --
+    // deliberately, not an oversight. This station's own radial budget is
+    // tighter than the door's: the first attempt at 1.0mm backing (7.7mm
+    // total reach) FAILED the assert below by 0.05mm (tip at r=22.30 vs a
+    // 22.35 floor) -- caught by the assert doing its job, not discovered
+    // by eye. Insert_h itself is not a free parameter (6.7mm is the
+    // ruthex RX-M3x5.7's own datasheet length, same everywhere else in
+    // this file), so backing is the only real lever. 0.7mm still leaves
+    // solid material behind the insert's own floor -- it never reaches
+    // open bore -- with a real (not tangent) ~0.25mm margin past the
+    // Vega board's own worst-case corner clearance.
+    RailBtn_Backing  = 0.7;
+    RailBtn_Boss_h = RailBtn_Insert_h + RailBtn_Backing;   // 7.4
+    // Same board-clearance floor the door boss above already asserts
+    // against (Door_Boss_Clear, this module's own local var) -- this
+    // boss reaches nearly as far inward (7.7mm vs the door's 7.0mm) at a
+    // DIFFERENT azimuth (180deg vs the door's ~37-143deg band), so it
+    // gets its own, independent assert rather than assuming the door's
+    // passing margin also covers it.
+    RailBtn_MinInner_R = R60_Vega_Board_Corner_R + Door_Boss_Clear;
+    assert(R60_Body_OD/2 - RailBtn_Boss_h >= RailBtn_MinInner_R,
+        str("R60_EBayTube: rail button boss reaches past the Vega ",
+            "board's own corner clearance (tip lands at r=",
+            R60_Body_OD/2 - RailBtn_Boss_h, ", must stay >= ",
+            RailBtn_MinInner_R, ") -- shrink RailBtn_Insert_h/Backing or ",
+            "recheck the board stack"));
+
     // Vega sled retention -- REMOVED (6th review, finding 1): this tube
     // used to cut 2 rails + 4 zip-tie slots at the -Y wall to capture the
     // sled's long edges. That concept failed three separate ways across
@@ -278,6 +322,22 @@ module R60_EBayTube(){
                             cylinder(d=Door_Boss_d,
                                      h=Door_Boss_Reach_R-(R60_Body_OD/2-Door_Boss_h),
                                      $fn=32);
+            // Rail button boss -- R60_RailButton_Az=180deg is a plain
+            // 90deg multiple, so (unlike the door bosses above, at an
+            // odd ~44deg offset) a flat rotate([0,0,180]) IS the true
+            // local radial direction here; no Door_Boss_Az()-style acos()
+            // correction is needed. Local $fn anyway, matching every
+            // other small odd-shaped boss in this file. Outer reach is
+            // Door_Boss_Reach_R, NOT R60_Body_OD/2 -- reusing the SAME
+            // stop-short-of-the-true-OD idiom the door boss above uses
+            // (defect 2a's own comment): a round cap whose AXIS ends
+            // exactly at the true OD still bulges TANGENTIALLY past it.
+            rotate([0,0,R60_RailButton_Az])
+                translate([R60_Body_OD/2-RailBtn_Boss_h, 0, RailBtn_Z])
+                    rotate([0,90,0])
+                        cylinder(d=Door_Boss_d,
+                                 h=Door_Boss_Reach_R-(R60_Body_OD/2-RailBtn_Boss_h),
+                                 $fn=32);
         }
         translate([0,0,Door_Z0])
             translate([-R60_Door_Open_W/2,0,0])
@@ -291,6 +351,15 @@ module R60_EBayTube(){
                 translate([R60_Body_OD/2-Door_Pilot_Depth, 0, z])
                     rotate([0,90,0])
                         cylinder(d=Door_Pilot_d, h=Door_Pilot_Depth+Overlap, $fn=32);
+
+        // Rail button insert pocket -- blind, open only at the true OD
+        // (where the boss is flush, same idiom as the door pilots above),
+        // ruthex RX-M3x5.7, RailBtn_Backing(1.0mm) of solid material left
+        // behind its own floor so it never punches through into the bore.
+        rotate([0,0,R60_RailButton_Az])
+            translate([R60_Body_OD/2-RailBtn_Insert_h, 0, RailBtn_Z])
+                rotate([0,90,0])
+                    cylinder(d=RailBtn_Insert_d, h=RailBtn_Insert_h+Overlap, $fn=32);
 
         // Static vent port (task 6, R60Lib.scad's R60_Vent_d/R60_Vent_Z
         // comment) -- 3 plain radial through-holes at 120deg, clear of
@@ -1427,13 +1496,29 @@ module R60_PSH_Placed(j=0){
 // dropped.
 //
 // Verified mesh-against-mesh, not asserted: the spring cavity's own
-// inner wall (z=4..6 band, this part's rendered mesh) measures
-// Ø44.29 -- SE_Spring_CS4323_OD()=44.30 -- so the spring seats on this
-// part's own step, not float. Below the spring (z=0..3.4 band) the ONLY
-// opening is the Ø30 lock-pin guide -- everything else is this part's
-// own solid disc, the fence that keeps the spring's coils out of the
-// rotating lock-ring/trigger-post/magnet-bracket's own r<=19.1
-// envelope below it.
+// inner wall (z=4..6 band, this part's rendered mesh) used to measure
+// Ø44.29 against a THEN-modelled spring OD of 44.30 -- a real defect,
+// not the "seats on this part's own step, not float" this comment used
+// to claim: Century Spring's own published CS4323 catalog gives the
+// real OD as 44.45mm, 0.15mm past that pocket, and the pocket was cut
+// with ZERO clearance even against the smaller modelled figure
+// (R60-BOM.md task 2/coordinator fix 1). FIXED: R60_Spring_OD/_ID are
+// now the catalog's own 44.45/40.79 (R60Lib.scad), and
+// CRBBm_CenteringRingMount() takes a new Spring_Clear parameter
+// (=R60_Spring_Clear=0.4, additive-only -- every other caller of that
+// module defaults to 0, unchanged) applied in BOTH directions: the
+// entry pocket grows to Spring_OD+Spring_Clear (a real clearance to
+// enter, mesh-measured at 44.84mm), and the shoulder bore beneath it
+// shrinks to Spring_ID-Spring_Clear (40.38mm measured) so the coil's own
+// inner edge lands on solid support with margin, not tangent to the
+// support's own rim. `tools/verify_rocket60.py`'s own "part 25 spring
+// pocket clears catalog OD" check gates this now, mutation-tested
+// (Spring_Clear:=0 reproduces the old defect and fails the check; see
+// that file's own comment on the check). Below the spring (z=0..3.4
+// band) the ONLY opening is the Ø30 lock-pin guide -- everything else is
+// this part's own solid disc, the fence that keeps the spring's coils
+// out of the rotating lock-ring/trigger-post/magnet-bracket's own
+// r<=19.1 envelope below it.
 //
 // Bolts to CRBBm_TopRetainer() (part 16) via its own
 // CRBBm_MountingBoltPattern -- same joint class as parts 16/17/19/20/23
@@ -1462,7 +1547,8 @@ module R60_CenteringRingMount(){
     // module comment), not through this mount.
     rotate([180,0,0])
         CRBBm_CenteringRingMount(OD=R60_Coupler_OD, nRopes=6,
-            Spring_OD=R60_Spring_OD, Spring_ID=R60_Spring_ID);
+            Spring_OD=R60_Spring_OD, Spring_ID=R60_Spring_ID,
+            Spring_Clear=R60_Spring_Clear);
 } // R60_CenteringRingMount
 
 // ============================================

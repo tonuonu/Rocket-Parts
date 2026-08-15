@@ -44,7 +44,7 @@ circle must meet inserts in a PCB that does not shrink.
 |---|---|---|---|---|---|
 | `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ | PETG |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ | PETG |
-| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.1 cm³ | PETG |
+| `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.2 cm³ | PETG |
 | `03_DeploymentBayTubeFwd.stl` | 3 | 143.00 | 60.00 | 41.1 cm³ | PETG |
 | `04_EBayFwdBulkhead.stl` | 4 | 7.70 | 56.40 | 12.7 cm³ | PETG |
 | `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 39.4 cm³ | PETG |
@@ -60,7 +60,7 @@ circle must meet inserts in a PCB that does not shrink.
 | `24_PetalSpringHolder.stl` | 24 | 36.70 | 28.00 | 2.2 cm³ | PETG, print 3 |
 | `26_DeploymentBayTubeAft.stl` | 26 | 138.00 | 60.00 | 39.3 cm³ | PETG |
 
-Airframe total 481.9 cm³ (parts 0-14, 26 + 3× part 24). Tallest part
+Airframe total 482.0 cm³ (parts 0-14, 26 + 3× part 24). Tallest part
 228 mm (fin can, part 9), inside the 250 mm envelope with 22 mm to spare
 — parts 3/26 (143/138 mm) are comfortably under it too, the reason the
 tube split into two pieces at all (275 mm assembled). `NoseCone.stl` is
@@ -87,9 +87,9 @@ BBMini. All PETG.
 | `21_ReleaseExtensionRod.stl` | 21 | 26.00 | 1.1 cm³ |
 | `22_ReleaseLockingPin.stl` | 22 | 18.00 | 1.5 cm³ |
 | `23_ForwardSpringEnd.stl` | 23 | 25.00 | 10.5 cm³ |
-| `25_CenteringRingMount.stl` | 25 | 6.00 | 4.1 cm³ |
+| `25_CenteringRingMount.stl` | 25 | 6.00 | 4.2 cm³ |
 
-Release hardware total 35.8 cm³ (parts 15-23 + 25). Plus loose hardware
+Release hardware total 35.9 cm³ (parts 15-23 + 25). Plus loose hardware
 this design does
 not model as its own solid: 6mm Delrin balls (3), 6703-2RS bearing, 3×
 MR63 lock bearings, 2× N42 magnets, dowel pins, #4-40 screws — see
@@ -137,8 +137,8 @@ Re-run after the petal-deployment transplant (spec sec 4).
 | Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
 | G80T-14A | 941 g | 1.69 cal | 20.0 m/s |
-| H182R-14A | 1007 g | 1.48 cal | 29.8 m/s |
-| H135W-14A | 1010 g | 1.49 cal | 23.0 m/s |
+| H182R-14A | 1008 g | 1.48 cal | 29.8 m/s |
+| H135W-14A | 1011 g | 1.49 cal | 23.0 m/s |
 
 Fin flutter Vf = 589 m/s (root-chord t/c, NAR/TIR-33 form). Per-motor
 margin against each motor's own Vmax, floor 1.5×: G80T 4.8×, H182R 3.0×,

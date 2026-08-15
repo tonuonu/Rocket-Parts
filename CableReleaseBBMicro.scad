@@ -1230,8 +1230,21 @@ module CRBBm_ServoMount38(OD=ULine38Body_ID-IDXtra){
 // wants BBMicro's own family). Defaults are unchanged (still
 // SE_Spring3670_*()) so this is additive-only -- no existing caller
 // (there are none in this repo yet) sees a behaviour change.
+// Spring_Clear (Rocket 60 coordinator fix 1, additive-only -- default 0
+// changes NOTHING for any existing caller of this module, including
+// this repo's other Spring_OD/Spring_ID callers that never pass it):
+// real diametral clearance applied where the spring physically meets
+// this part, not folded into the caller's own Spring_OD/Spring_ID. The
+// pocket the spring's OD must ENTER grows by +Spring_Clear (a genuine
+// entry clearance, not the previous tangent fit -- confirmed by mesh
+// measurement that a zero-clearance pocket does not reliably clear even
+// its OWN nominal spring, let alone one 0.15mm larger); the shoulder
+// bore under the spring's own ID shrinks by -Spring_Clear so the coil's
+// inner edge lands on solid support material with real margin, not
+// tangent to the support's own inner rim.
 module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6,
-			Spring_OD=SE_Spring3670_OD(), Spring_ID=SE_Spring3670_ID()){
+			Spring_OD=SE_Spring3670_OD(), Spring_ID=SE_Spring3670_ID(),
+			Spring_Clear=0){
 	Rope_d=3;
 
 
@@ -1249,9 +1262,12 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6,
 			// Body centering
 			Tube(OD=OD, ID=OD-Wall_t*2, Len=Thickness, myfn=$preview? 90:myFn);
 			
-			// Spring
-			Tube(OD=Spring_OD+Wall_t*2, ID=Spring_OD, Len=Thickness, myfn=$preview? 90:myFn);
-			Tube(OD=Spring_OD+Wall_t*2, ID=Spring_ID, Len=Spring_Z, myfn=$preview? 90:myFn);
+			// Spring -- OD grown by Spring_Clear on both the cavity's own
+			// inner face (matches the enlarged cut below) and the outer
+			// face (so Wall_t survives the enlarged cut instead of
+			// thinning by Spring_Clear/2)
+			Tube(OD=Spring_OD+Spring_Clear+Wall_t*2, ID=Spring_OD+Spring_Clear, Len=Thickness, myfn=$preview? 90:myFn);
+			Tube(OD=Spring_OD+Spring_Clear+Wall_t*2, ID=Spring_ID-Spring_Clear, Len=Spring_Z, myfn=$preview? 90:myFn);
 			
 			// Lock Pin Guide Hole
 			Tube(OD=LockPin_d+1+Wall_t*2, ID=LockPin_d+1, Len=Spring_Z, myfn=$preview? 90:myFn);
@@ -1276,10 +1292,13 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6,
 			} // hull
 		}
 	
-		// Spring
+		// Spring -- entry bore grown by +Spring_Clear (real clearance to
+		// enter), shoulder bore shrunk by -Spring_Clear (real margin to
+		// land on solid support, not the coil's own inner rim tangent to
+		// the hole edge)
 		//difference(){
-			translate([0,0,Spring_Z]) cylinder(d=Spring_OD, h=Thickness);
-			translate([0,0,Boss_t]) cylinder(d=Spring_ID, h=Thickness);
+			translate([0,0,Spring_Z]) cylinder(d=Spring_OD+Spring_Clear, h=Thickness);
+			translate([0,0,Boss_t]) cylinder(d=Spring_ID-Spring_Clear, h=Thickness);
 		//} // difference
 				
 		// Bolts to CRBB_TopRetainer
