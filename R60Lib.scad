@@ -637,6 +637,46 @@ R60_Fin_T     = 4.0;
 R60_nFins     = 3;
 
 // ============================================
+// RAIL BUTTONS (task 7) -- placement was specified nowhere before this.
+// Owner launches from an Estes Pro Series II rail, 1.83m, 1010-compatible
+// -- RailGuide.scad's own RailButton(OD=11, Flange_h=2, Slot_w=2.8), same
+// call this repo's other Rocket*.scad files reference for a 1010 rail
+// (e.g. Rocket6551.scad's own commented reference). Printed and mounted
+// per this repo's existing convention (a separate print from
+// RailGuide.scad, not built into Rocket60.scad's own dispatch -- every
+// other Rocket*.scad file in this repo follows the same pattern).
+//
+// 2 buttons, same azimuth (a straight rail line), 180deg -- 90deg clear
+// of the access door's own crown (Hole_Az(0)=90deg, R60_Door()) and the
+// Vega sled's own facing azimuth (R60_Vega_Facing_Y_Nom faces 270deg),
+// and not coincident with any of the 3 fin azimuths (0/120/240deg).
+//
+// Axial stations (mm from nose tip): the rail (1.83m) is more than
+// double this airframe's own overall length (750mm, tools/rocket60_
+// model.py's OVERALL_LEN) once assembled, so both buttons stay engaged
+// for the entire rail-exit stroke regardless of spacing -- the binding
+// constraint is keeping the G80T's own liftoff CG (394mm, that file's
+// own printed figure) BETWEEN the two buttons, not button-to-rail
+// engagement length, so the rocket does not droop nose-down or tail-down
+// off the rail before it reaches flying speed.
+R60_RailButton_Az = 180;
+// Aft button: on the fin can (part 9, UNCHANGED by this task), forward
+// of the fins (fins span S_finLE..S_finLE+Cr = 646..736mm,
+// tools/rocket60_model.py) so it does not compete with a fin root for
+// wall material or foul the rail slot as a fin passes it, and landing
+// close to the fin can's own MID centring ring (S_FIN+L_FINCAN/2=630mm,
+// R60_FinCan()'s own ring-Z loop) for a double-thickness backing behind
+// the screw.
+R60_RailButton_Aft_Z = 630;
+// Forward button: on the e-bay tube (part 2), clear of the door aperture
+// (Door_Z0..Door_Z1 = 46..131mm) and the neck skirt (Z<19mm), positioned
+// so the G80T's own liftoff CG (394mm) sits comfortably between the two
+// buttons (164mm from this one, 236mm from the aft one -- weighted
+// toward the aft button, standard/conservative practice for a rocket
+// whose mass is aft-loaded at liftoff).
+R60_RailButton_Fwd_Z = 230;
+
+// ============================================
 // SHARED MODULES
 // ============================================
 
