@@ -45,12 +45,13 @@ circle must meet inserts in a PCB that does not shrink.
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ | PETG, print 3 |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ | **PC** |
 | `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ | **PC** |
-| `13_Petals.stl` | 13 | 120.00 | 56.40 | 34.2 cm³ | PETG |
+| `13_Petals.stl` | 13 | 120.00 | 56.40 | 33.8 cm³ | PETG |
 | `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ | **PC** |
+| `24_PetalSpringHolder.stl` | 24 | 36.70 | 28.00 | 2.2 cm³ | PETG, print 3 |
 
-Airframe total 440.3 cm³. Tallest part 228 mm, inside the 250 mm envelope
-with 22 mm to spare. `NoseCone.stl` is the user's `Nose Cone.STEP`
-converted, not regenerated.
+Airframe total 442.1 cm³ (parts 0-14 + 3× part 24). Tallest part 228 mm,
+inside the 250 mm envelope with 22 mm to spare. `NoseCone.stl` is the
+user's `Nose Cone.STEP` converted, not regenerated.
 
 `12_MotorSpacer.stl` is the G80T spacer (`Motor_Class = 0`); set
 `Motor_Class` to 1 or 2 and re-export for the H182R or H135W.
@@ -73,8 +74,10 @@ BBMini. All PETG.
 | `21_ReleaseExtensionRod.stl` | 21 | 26.00 | 1.1 cm³ |
 | `22_ReleaseLockingPin.stl` | 22 | 18.00 | 1.5 cm³ |
 | `23_ForwardSpringEnd.stl` | 23 | 25.00 | 10.5 cm³ |
+| `25_CenteringRingMount.stl` | 25 | 6.00 | 4.1 cm³ |
 
-Release hardware total 31.7 cm³. Plus loose hardware this design does
+Release hardware total 35.8 cm³ (parts 15-23 + 25). Plus loose hardware
+this design does
 not model as its own solid: 6mm Delrin balls (3), 6703-2RS bearing, 3×
 MR63 lock bearings, 2× N42 magnets, dowel pins, #4-40 screws — see
 `CableReleaseBBMicro.scad`'s own header for the full catalog list (note:
@@ -109,13 +112,13 @@ Re-run after the petal-deployment transplant (spec sec 4).
 
 | Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
-| G80T-14A | 907 g | 1.56 cal | 20.4 m/s |
-| H182R-14A | 973 g | 1.36 cal | 30.4 m/s |
-| H135W-14A | 976 g | 1.36 cal | 23.4 m/s |
+| G80T-14A | 924 g | 1.53 cal | 20.2 m/s |
+| H182R-14A | 991 g | 1.34 cal | 30.1 m/s |
+| H135W-14A | 994 g | 1.34 cal | 23.2 m/s |
 
 Fin flutter Vf = 589 m/s (root-chord t/c, NAR/TIR-33 form). Per-motor
-margin against each motor's own Vmax, floor 1.5×: G80T 4.7×, H182R 2.9×,
-H135W 3.1×.
+margin against each motor's own Vmax, floor 1.5×: G80T 4.8×, H182R 3.0×,
+H135W 3.2×.
 
 ## Launch
 

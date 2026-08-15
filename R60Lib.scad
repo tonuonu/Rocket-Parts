@@ -650,16 +650,23 @@ R60_Act_Clock_a = 90;
 // Petal_Len derivation (task: "derive from volume rather than scaling
 // [Rocket6551's 120-140mm] blindly, state the packing assumption"):
 // PD_Petals' own tube ID at Wall_t=1.6 is R60_Coupler_OD-2*1.6=53.2mm,
-// bore area pi*26.6^2/100 = 22.24 cm^2/cm. Packing assumption: ripstop
-// nylon 24in main + Nomex protector + shroud lines, ~50g at a packing
-// density of ~0.20 g/cm^3 (a standard rocketry packing-density estimate
-// for ripstop nylon in a Nomex sleeve -- this repo states no per-chute
-// figure of its own to check it against) needs ~250 cm^3. At Len=120mm:
-// 22.24*12=267 cm^3, clears 250 cm^3 with real (7%) margin. This is also
-// exactly Rocket6551's own flown value (its comment: "120 ... preferred,
-// 140 is max for a single 4323 spring") -- the volume-derived and the
-// flight-precedent numbers agree, not a coincidence forced to fit; both
-// are bounded by the same spring's practical throw.
+// bore area pi*26.6^2/100 = 22.24 cm^2/cm. At Len=120mm: 22.24*12=267
+// cm^3 -- this is GROSS bore volume, not usable packing volume (11th
+// review, correcting a "+7% margin" this repo used to publish here).
+// Net of the hub's own internal floor + 3x PD_PetalSpringHolder() bosses
+// (part 24, fix 2 -- absent when 267 was first computed) at the root end
+// (~18mm) and R65_FwdSpringEnd()'s own solid 6mm base disk at the other,
+// usable is ~95-100mm, ~215-220 cm^3 -- against the stated ~250 cm^3
+// requirement (ripstop nylon 24in main + Nomex protector + shroud lines,
+// ~50g at ~0.20 g/cm^3 packing density, no per-chute figure of this
+// repo's own to check it against), a ~13% SHORTFALL, not a margin.
+// "Matches Rocket6551's own flown 120mm" does not rescue this: that
+// design's own cage ID is 61.6mm (its Coupler_OD is larger), so its
+// 120mm holds 357 cm^3 gross, not 267 -- comparing the LENGTH across two
+// different bores, not the volume. See docs/superpowers/specs/
+// 2026-08-13-rocket60-design.md sec 4.1 for the three numbered options
+// (longer cage / smaller canopy / thinner-fabric pack) this is left to
+// the owner to choose between, not decided here.
 R60_Petal_Len = 120;
 R60_nPetals   = 3;
 

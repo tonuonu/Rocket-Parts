@@ -23,9 +23,14 @@ carrier is gone, so this joint is now a plain tube over a plain skirt.)
 """
 import os, shutil, subprocess, sys, tempfile
 
-from scad_verify import REPO, OPENSCAD, volume
+from scad_verify import REPO, OPENSCAD, volume, measure, render
 
 SCAD = os.path.join(REPO, "tools", "r60_assembly.scad")
+# check_closure() (11th review, fix 7) renders part 3 directly off the
+# main file -- r60_assembly.scad's own Pair dispatch has no part-3-alone
+# mode, and adding one would duplicate scad_verify.render()'s own
+# per-part convention for no reason.
+SCAD_MAIN = os.path.join(REPO, "Rocket60.scad")
 
 # Zero-volume tolerance. A genuinely clear fit renders a truly EMPTY
 # solid (OpenSCAD: "Current top level object is empty", no output file at
@@ -197,6 +202,99 @@ OBSTRUCT_MIN_CM3 = 0.01
 HINGE_PAIRS = (36,)
 HINGE_MAX_CM3 = 0.05
 
+# Deployment-bay axial closure (11th review, fix 7 -- tasks/lessons.md's
+# own "R60_Petal_Len=200 passes both suites with exit 0" finding: NOTHING
+# checked whether the petal cage the file's own Render_Part=13 built
+# could physically fit inside the tube it is stated to fit inside).
+# Mesh-based, not the restated-constants version tools/rocket60_model.py
+# also carries (that script's own HUB_TAIL_OFFSET assert is the SAME
+# fact from restated numbers -- this is independent proof, rendering the
+# real SCAD instead of trusting a Python copy of it not to drift).
+#
+# CLOSURE_RESERVE_MM restates (rule 4) the release-stack's own footprint
+# ahead of the petal cage, in the SAME reference tools/rocket60_model.py
+# already establishes and documents (S_ACT0's own SKIRT_L=15 +
+# ACT_MOUNT_GAP=19, restated matching Rocket60.scad's own
+# R60_EBayAftBulkhead()/R60_ReleaseActivator() module comments) plus
+# PETALS_OFFSET=76.5 (the petals' own forward/tip station past S_ACT0,
+# same file, same session's own mesh measurement) -- none of these three
+# numbers depend on R60_Petal_Len, so a mutation to that ONE constant
+# changes only the measured Pair-39 span this check renders fresh, not
+# this reserve.
+CLOSURE_RESERVE_MM = 15 + 19 + 76.5   # = 110.5
+CLOSURE_TOL_MM = 5.5   # R60_FinCanSpigot_L (R60Lib.scad), same spigot-
+                         # length tolerance rocket60_model.py's own
+                         # closure assert uses
+
+# Neighbouring blind spots (11th review, fix 7's own "say what remains
+# uncovered" instruction) -- this closure check answers ONE geometric
+# question (does the cage's own printed length fit the tube it is stated
+# to fit inside); it does NOT answer any of these, still uncovered by
+# anything in this repo:
+#   1. Spring throw vs. insertion depth -- the CS4323's own free length
+#      (200mm, R60Lib.scad) minus coil-bound length (22mm) gives ~178mm
+#      of throw; nothing checks that is actually enough to drive
+#      R65_FwdSpringEnd() through the real mechanical travel needed to
+#      pop the lock nubs and fully open the petals (a stroke-sweep pair,
+#      same style as Pair 5's STROKE_PAIRS, over the piston's real path
+#      -- not built here).
+#   2. Lock-nub engagement force -- Lock_Span_a=30 (this review, fix 3)
+#      sets the geometric engagement ARC, but whether the spring can
+#      actually overcome that engagement is a FORCE question no mesh
+#      check can answer without a stated CS4323 spring-rate figure
+#      (spec A11, still undocumented).
+#   3. Hinge rotation clearance through its full swing -- Pair 36 checks
+#      the axle/socket fit at the CLOSED (rest) position only; nothing
+#      sweeps the spring-holder's own hinge boss through the petal's
+#      full open-swing arc to confirm PD_PetalHub()'s own "Petal
+#      clearance" hull actually clears it throughout, not just at rest.
+#   4. The hinge's own 5/16in preload spring -- fix 4 seated the CS4323
+#      (the main release spring); the three SMALLER coil springs inside
+#      each PD_PetalSpringHolder() have no geometry check of their own
+#      (free/compressed length vs. the holder's own receiver pocket).
+#   5. Shock-cord route clearance -- the route this review documented
+#      (spec §4.1: bulkhead -> piston rope holes -> hub Ø5 -> fin-can
+#      ring) has never been checked against the spring-holders or
+#      rotating release-stack parts it passes near for pinch/sever risk.
+
+
+def check_closure(tmp):
+    """Deployment-bay axial closure: renders Pair 39 (the ACTUAL hub+
+    petals union, r60_assembly.scad) fresh and measures its own real
+    span, then checks CLOSURE_RESERVE_MM + that span fits inside part
+    3's own rendered length (R60_Chute_L), within CLOSURE_TOL_MM.
+
+    Returns (ok, message). Mutation-tested (this session): at the
+    CURRENT R60_Petal_Len=120 this already reads a real, honest FAIL --
+    see the printed message -- the corrected (right-way-round) hub needs
+    more chute-bay depth than R60_Chute_L=240 currently budgets (same
+    finding tools/rocket60_model.py's own closure assert makes,
+    independently). At R60_Petal_Len=200 (`-D R60_Petal_Len=200`,
+    R60Lib.scad) the SAME check's own shortfall grows from ~12mm to
+    ~92mm -- proving this check's magnitude tracks the mutation, not
+    just a static failure that would fail identically either way."""
+    out3 = os.path.join(tmp, "part3.stl")
+    render(SCAD_MAIN, 3, out3)
+    chute_len = measure(out3)["height"]
+
+    out39 = os.path.join(tmp, "pair39.stl")
+    render_probe(39, None, out39)
+    cage_span = measure(out39)["height"]
+
+    needed = CLOSURE_RESERVE_MM + cage_span
+    over = needed - chute_len   # raw distance past the chute tube's own length
+    ok = over <= CLOSURE_TOL_MM
+    # "short by" reported net of CLOSURE_TOL_MM -- matches
+    # tools/rocket60_model.py's own closure assert convention (its own
+    # spigot-length tolerance is not itself part of the shortfall the
+    # rocket needs to grow by; only the part past it is).
+    msg = ("cage span %.1f + reserve %.1f = %.1f needed vs chute length "
+           "%.1f -- %s" % (cage_span, CLOSURE_RESERVE_MM, needed, chute_len,
+                            ("clears" if ok else
+                             "SHORT by %.1fmm net of %.1fmm spigot tolerance"
+                             % (over - CLOSURE_TOL_MM, CLOSURE_TOL_MM))))
+    return ok, msg
+
 
 def render_probe(pair, ins, out, push=0.0):
     """Render one assembly-probe pair to ASCII STL. Returns the measured
@@ -338,6 +436,21 @@ def main(argv):
                 print("%-4s pair %d %-42s  %.4f cm3%s"
                       % ("OK" if ok else "FAIL", p, name, vol,
                          "  (hinge, limit %.4f)" % limit if p in HINGE_PAIRS else ""))
+
+        # Deployment-bay axial closure (11th review, fix 7) -- see
+        # check_closure()'s own docstring. Not gated on `pairs` (it does
+        # not accept a Pair-style selector; it always runs) since it is
+        # the one check this whole task exists to add, not an optional
+        # extra a caller might want to skip.
+        try:
+            ok, msg = check_closure(tmp)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  closure  deployment-bay axial closure (fix 7)  render error: %s" % e)
+            bad += 1
+        else:
+            bad += 0 if ok else 1
+            print("%-4s closure deployment-bay axial closure (fix 7)  %s"
+                  % ("OK" if ok else "FAIL", msg))
 
         print("\n%d check(s) failed" % bad)
         return 1 if bad else 0

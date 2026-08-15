@@ -441,3 +441,46 @@ concrete), the clocking-clearance assert at the unrotated position
 (3.3mm, matching the pair's own collision), and the Python closure
 check at `ACT_MOUNT_GAP=0` (23.5mm short) -- four independent proofs
 that would have caught this on its own, all previously absent.
+
+## 12. A transplant must follow the donor's assembly, not a narration of
+## it -- the hub went in inverted and its hinge parts were never
+## noticed missing because no check models the mechanism as a mechanism
+
+The petal-deployment transplant (lessons 10/11) replaced an invented
+mechanism with a proven one, correctly, at the level of "which library
+modules to `use<>`" -- but the actual assembly of those modules was
+wrong in two ways an independent review caught and this repo's own
+checks did not: `R60_PetalHub()`'s aft spigot was built onto the SAME
+face as the petal-mating features (`R65_PetalHub()`'s own
+`PD_PetalHub()` call), not the skirt -- a 1.31cm3 collision with the
+petals' own root, verified empty once moved -- and the hinge subsystem
+(`PD_PetalSpringHolder()`, the donor's own printed, flown part bolting
+each petal to the hub's pivot socket) was never instantiated at all,
+leaving the petals with no joint to the hub whatsoever.
+
+Both defects passed every check this repo had, for the same underlying
+reason: nothing rendered the hub and the petals TOGETHER, at their real
+relative offset, and measured the result. Per-part checks (does part 8
+fit inside the bore? does part 13?) cannot see a collision or a missing
+joint that only exists in the RELATIVE position between two parts --
+the exact blind spot lessons 10/11's own `tools/r60_assembly.scad`
+pair-probe pattern exists to close, just not yet applied to THIS
+mechanism. The false "petals bolt to the hub via `PD_PetalHubBoltPattern`"
+claim, repeated across `Rocket60.scad`'s own module comments and the
+design spec, was never checked against the donor's own source either:
+that bolt pattern is the hub's own axial mounting circle (bolts to
+whatever the hub's skirt attaches to externally), and `PD_Petals()` has
+no axial holes at all -- a claim that would have taken one `grep` and
+one read of `PD_Petals()`'s own source to falsify, not caught because
+nothing needed the claim to be geometrically true to pass.
+
+**Guard against this**: when a transplant instantiates a proven donor's
+own library modules, ALSO render and measure the modules TOGETHER, at
+the donor's own real relative offsets (read off the donor's own
+assembly code, e.g. `ShowRocket()`/`ShowCableRelease()`), not just each
+one standalone. A part that "fits inside the bore" on its own can still
+be assembled backwards, missing its own hinge, or bolted to a claim
+that was never checked against the parts it names. The donor's own
+assembly IS the specification for how its parts fit together -- follow
+it (render it, measure it, mutation-test the result), don't narrate
+what a module comment says it does and stop there.

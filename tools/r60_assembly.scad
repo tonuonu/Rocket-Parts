@@ -399,6 +399,21 @@ module Pair37_B(){ R60_PSH_Placed(0); }
 module Pair38_A(){ translate([0,0,-12.7]) R60_CenteringRingMount(); }
 module Pair38_B(){ R60_ReleaseTopRetainer(); }
 
+// Pair 39: NOT a collision probe (11th review, fix 7 -- deployment-bay
+// axial closure, tasks/lessons.md's own "mutation R60_Petal_Len=200
+// passes both suites with exit 0" finding). Every other pair in this
+// file intersects two parts and expects empty; this one UNIONS the
+// petal cage (hub + petals, the SAME real relative offset every other
+// petal-cage pair here uses) so verify_rocket60_assembly.py's own
+// closure check can measure its real, assembled, mesh-derived depth --
+// mesh-against-mesh, not the restated-constants version
+// tools/rocket60_model.py's own HUB_TAIL_OFFSET closure assert already
+// carries (this is the second, independent proof of the same fact, not
+// a duplicate: the Python assert can drift from the SCAD it restates,
+// this cannot, because it renders the SCAD directly).
+module Pair39_A(){ translate([0,0,9.5]) R60_Petals(); }
+module Pair39_B(){ R60_PetalHub(); }
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
@@ -996,7 +1011,7 @@ module Pair32_B(){ R60_VegaSled(); }
 // transplant, see tasks/lessons.md) -- removed from this list too, not
 // just their own `if` dispatch line below, per this comment's own rule.
 KNOWN_PAIRS = [0,1,2,3,4,5,7,8,10,11,21,22,23,24,
-               25,26,27,28,29,30,32,33,34,35,36,37,38];
+               25,26,27,28,29,30,32,33,34,35,36,37,38,39];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -1029,3 +1044,5 @@ if (Pair==35) intersection(){ Pair35_A(); Pair35_B(); }
 if (Pair==36) intersection(){ Pair36_A(); Pair36_B(); }
 if (Pair==37) intersection(){ Pair37_A(); Pair37_B(); }
 if (Pair==38) intersection(){ Pair38_A(); Pair38_B(); }
+// Pair 39: UNION, not intersection -- see Pair39_A/B's own comment above.
+if (Pair==39) union(){ Pair39_A(); Pair39_B(); }

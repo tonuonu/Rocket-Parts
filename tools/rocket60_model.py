@@ -127,10 +127,18 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # holes (negligible volume either way), but the SAME fix hollowed the
 # skirt's own solid 15mm span to a plain R60_Wall_T tube + a 3mm aft web
 # (R60_EBayAftBulkhead()'s own module comment) -- 66.0->39.4 cm3.
+# Re-measured this round (11th review, petal-hub/hinge fixes): [8]
+# 24.8->24.8 (spigot relocated, same volume of material moved to the
+# other face -- rounds to the same published figure); [13] 34.2->33.8
+# (Lock_Span_a=30, fix 3 -- less lock-ridge material than the previous
+# unset/full-circumference default); [24]/[25] are new (the hinge
+# subsystem and the CS4323 seat, fixes 2/4) -- all four measured off the
+# freshly re-exported meshes, same divergence-theorem method as every
+# other figure in this dict.
 STL_VOL = {1: 16.2, 2: 47.1, 3: 70.4, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
-           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 34.2, 14: 0.6,
+           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 33.8, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
-           22: 1.5, 23: 10.5}
+           22: 1.5, 23: 10.5, 24: 2.2, 25: 4.1}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
                         # stops this much short of MMT_L, see build()
@@ -220,23 +228,33 @@ R60_Petal_Len = 120.0      # R60Lib.scad's own R60_Petal_Len -- restated
 # measured off the SAME inverted hub this review fixed -- its spigot sat
 # inside the petals' own envelope instead of past them, so that render
 # never saw the hub extend past the petals at all, and undercounted the
-# true depth needed by roughly this same ~20mm. Left as a hard, failing
-# assert (not silently patched by growing R60_Chute_L here) because that
-# is a real airframe-length change with its own CG/stability
-# consequences, outside a station-bookkeeping script's own authority to
-# decide -- flagged for the owner, same as the packing-volume shortfall.
+# true depth needed by roughly this same ~20mm. Reported as a FAIL (not
+# silently patched by growing R60_Chute_L here) because that is a real
+# airframe-length change with its own CG/stability consequences, outside
+# a station-bookkeeping script's own authority to decide -- flagged for
+# the owner, same as the packing-volume shortfall.
+#
+# bad()-tracked (11th review), not a hard `assert` (this used to be one,
+# and a real, honest failure here crashed the WHOLE script with a raw
+# traceback before the mass/CG/margin/flutter report below ever printed
+# -- the same "one bad row kills the whole report" failure class every
+# OTHER check in this file, and verify_rocket60.py's own checks(), was
+# already fixed against; the closure math doesn't gate anything the
+# report below actually needs to compute, so there is no reason for it
+# to be the one check in this file that still can).
 R60_FinCanSpigot_L_restated = 5.5   # R60Lib.scad's R60_FinCanSpigot_L,
                                       # restated (rule 4) -- shared by
                                       # R60_PetalHubSpigot_L there
 _hub_tail = S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET
-assert abs(_hub_tail - S_FIN) <= R60_FinCanSpigot_L_restated, (
-    "rocket60_model.py: petal hub's own aft-most reach (%.1f) is not "
-    "within one spigot length (%.1f) of S_FIN (%.1f) -- the corrected "
-    "(right-way-round) hub needs ~%.1fmm more chute-bay depth than "
-    "R60_Chute_L currently budgets; grow R60_Chute_L (and re-check CG/"
-    "stability) or shorten another stack element -- see this block's own "
-    "comment" % (_hub_tail, R60_FinCanSpigot_L_restated, S_FIN,
-                 abs(_hub_tail - S_FIN) - R60_FinCanSpigot_L_restated))
+_closure_ok = abs(_hub_tail - S_FIN) <= R60_FinCanSpigot_L_restated
+print("%s closure: petal hub's own aft-most reach (%.1f) vs S_FIN (%.1f), "
+      "within one spigot length (%.1f)%s"
+      % (bad(_closure_ok), _hub_tail, S_FIN, R60_FinCanSpigot_L_restated,
+         "" if _closure_ok else
+         (" -- SHORT by %.1fmm; the corrected (right-way-round) hub needs "
+          "more chute-bay depth than R60_Chute_L currently budgets, see "
+          "this block's own comment"
+          % (abs(_hub_tail - S_FIN) - R60_FinCanSpigot_L_restated))))
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own
@@ -524,20 +542,37 @@ def build(motor):
      # face -- the span it actually occupies once compressed.
      ('CS4323 spring (est., unverified)', 25.0,
       S_ACT0 + (SCR_OFFSET + SPRINGEND_OFFSET) / 2),
-     # Forward spring end (part 23) -- the moving piston; bolts inside
-     # the petal cage (part 8/13).
+     # Forward spring end (part 23) -- the moving piston; locks onto the
+     # petals (part 13) directly (R65_FwdSpringEnd()'s own module
+     # comment: "This locks onto the bottom of the petals") -- NOT
+     # bolted to the hub, corrected 11th review.
      ('forward spring end',    petg(STL_VOL[23]),
       S_ACT0 + SPRINGEND_OFFSET),
      # Petals (part 13) -- IS the separable joint now (R60_Petals()'s own
      # module comment); no shear pins anywhere in this design any more.
      ('petals',                petg(STL_VOL[13]),
       S_ACT0 + PETALS_OFFSET + R60_Petal_Len / 2),
-     # Petal hub (part 8) -- bolts to the fin-can side; its own aft-most
-     # reach (HUB_TAIL_OFFSET past the petal tips) lands close to S_FIN
-     # (asserted above, the closure check), so it never competes with
-     # the fin can's own forward centring ring for space.
+     # Petal spring holder x3 (part 24, 11th review fix 2) -- the hinge:
+     # bolts to each petal, sits at the SAME station as the petals'
+     # own root (PETALS_OFFSET+R60_Petal_Len, R60_PetalHub()'s own
+     # module comment: petal root nests around the hub's petal-mating
+     # face). 2x #4-40 per holder (~1g/3 holders, stated estimate) plus
+     # 3x 5/16in coil springs (~2g each, stated estimate, no vendor
+     # figure -- same open-risk class as the CS4323, spec A11).
+     ('petal spring holders x3 + springs+bolts', 3*petg(STL_VOL[24]) + 1.0 + 6.0,
+      S_ACT0 + PETALS_OFFSET + R60_Petal_Len),
+     # Petal hub (part 8) -- spigots (glued, not bolted) into the fin
+     # can's own forward opening; its own aft-most reach
+     # (HUB_TAIL_OFFSET past the petal root) lands S_FIN's own station
+     # (the closure check above), so it never competes with the fin
+     # can's own forward centring ring for space.
      ('petal hub',             petg(STL_VOL[8]),
       S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET/2),
+     # Spring centering ring mount (part 25, 11th review fix 4) -- bolts
+     # to the release top retainer (part 16), same station as the rest
+     # of the release stack (16-20).
+     ('spring centering ring mount', petg(STL_VOL[25]),
+      S_ACT0 + SCR_OFFSET),
      # Plain uniform tube -- geometric midpoint.
      ('fin can (PC)',          pc(STL_VOL[9]),           S_FIN+L_FINCAN/2),
      # FIXED (defect 3c): was NFIN*fin_area*FIN_T*RHO_PETG/1000.0*0.62, a

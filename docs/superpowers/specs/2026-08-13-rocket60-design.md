@@ -190,12 +190,14 @@ scratch a second time.
 | 5 | E-bay aft bulkhead | new | Shock-cord anchor (unchanged, permanent) + skirt (plain glue joint now, no pins) + 3× ruthex inserts for the release activator (part 15), bolt circle derived from `CRBBm_BottomBoltCircle_d()`. **One servo now, not two** — it lives inside part 15's own printed body, not this bulkhead; the second servo (the old design's tumble-release servo) is deleted outright, single deploy has no tumble phase. |
 | 6 | Vega sled | new | M3 standoffs on the L-pattern A (−13.5, −25), B (−13.5, +35), C (+13.5, +35) — 60 × 27 mm spacing per manual §4.3.3. Patch antenna faces radially outward, nothing between it and the wall. Bridges the full e-bay span and bolts to parts 4/5 at each end, 2× M3 into ruthex inserts per end — both radial position and clocking about the tube axis are fixed by those 4 holes, not by resting against anything (6th review, finding 1; retired a rail/zip-tie scheme that failed three review rounds running). |
 | 7 | Access door | new (hand-built) | 4× M2.5, curved panel, plus a panel-mount arming switch cut into the door itself (moved off the tube wall, 5th review) operable with the rocket vertical on the rail. |
-| 8 | Petal hub | `use<>` `R65Lib.scad`'s `R65_PetalHub()` | Bolts to the fin-can side (the section that separates and pulls away), plus this task's own aft spigot into the fin can's forward opening (same joint the old chute-tube spigot made). Carries part 13 via `PD_PetalHubBoltPattern`. |
+| 8 | Petal hub | `use<>` `R65Lib.scad`'s `R65_PetalHub()` | Spigots (glued, skirt/-z face) into the fin can's own forward opening — the section that separates and pulls away — same joint the old chute-tube spigot made. **Not bolted to part 13** — `PD_PetalHubBoltPattern` is this part's own axial bolt circle, unused in this design (11th review, retracted from the row below too); the real petal joint is part 24's hinges, below. |
+| 24 | Petal spring holder ×3 | `use<>` `PetalDeploymentLib.scad`'s `PD_PetalSpringHolder()` | THE hinge (11th review — missing entirely from the first transplant attempt, `tasks/lessons.md`). Bolts to each petal (2× #4-40 through the petal's own only holes); its axle rides in part 8's pivot socket, preloaded open by a 5/16in coil spring seated in part 8's own bosses. |
+| 25 | Spring centering ring mount | `use<>` `CableReleaseBBMicro.scad`'s `CRBBm_CenteringRingMount()`, parameterised for the CS4323 | Seats the release spring (11th review, fix 4) — bolts to part 16. Without it the spring's preload rested on part 15's own 1.2mm spokes/servo braces, pad to apogee. |
 | 9 | Fin can | adapt `FinCan2Lib.scad` | 228 mm, Ø29 MMT (228 mm), 3 fin slots, 3 centering rings. **UNCHANGED by this task.** |
 | 10 | Fins ×3 | new | Cr 90 / Ct 35 / span 63 / sweep 45 / t 4.0. **UNCHANGED by this task.** |
 | 11 | Motor retainer | adapt `MotorAdapter29.scad` patterns | 29 mm aft retainer — resists AFT motion only; see part 14. |
 | 12 | Motor spacer | new | 98 mm for the G80T, 19 mm for the H182R (228 mm MMT − 6 mm part-14 ring − motor length); ~6 mm for the H135W. |
-| 13 | Petals | `use<>` `PetalDeploymentLib.scad`'s `PD_Petals()` | Bolts to part 8. `Len`=120mm (packing-volume derivation, §4 below), `HasLocks=true` for the small printed catch nubs the spring/charge overcomes. **This IS the separable joint** — nothing else in this design shears. |
+| 13 | Petals | `use<>` `PetalDeploymentLib.scad`'s `PD_Petals()` | Hinges to part 8 via part 24 (not bolted to part 8 directly — `PD_Petals()` has no axial holes). `Len`=120mm, `Lock_Span_a`=30 (donor's own flown value — 11th review, was omitted, defaulting to a full-circumference lock ridge), `HasLocks=true` for the small printed catch nubs the spring overcomes (the charge does **not** — §4.3, retracted). **This IS the separable joint** — nothing else in this design shears. |
 | 14 | Forward thrust ring | new | Reacts the motor's FORWARD thrust reaction (part 11 alone only resists aft motion); Ø26.8 mm lip, flush with the fin can's own forward tip. |
 | 15 | Release activator | `use<>` `CableReleaseBBMicro.scad`'s `CRBBm_Activator()` | Servo mount + lock-ring driver; bolts to part 5's aft face. **BBMicro, not the flown BBMini** — see §4 below for the mesh-measured reason. |
 | 16-20 | Release stack | `use<>` `CableReleaseBBMicro.scad` | Top retainer, lock ring, outer bearing retainer, trigger post, magnet bracket — the rotating-lock-ring/ball-detent/magnetic-over-centre release the abandoned design left "deliberately incomplete". |
@@ -237,30 +239,65 @@ it was never created in the first place.
 | t | Alt | Event | Mechanism |
 |---|---|---|---|
 | 0 | — | Launch | Estes Pro Series II rail, 1.83 m, 1010-compatible, exit 20.1 m/s |
-| 10.7 s | 588 m | Apogee, single deploy | Servo 1 (in part 15's activator) rotates the release catch's lock ring, freeing the forward spring end (part 23); the CS4323 spring drives it into the petals (part 13), popping their printed lock nubs and pushing the fin-can section clear. Main is drawn out immediately — no tumble phase. **Backup:** G80T ejection charge acts on the same lock nubs directly (see below), independent of servo/lock-ring state. |
+| 10.7 s | 588 m | Apogee, single deploy | Servo 1 (in part 15's activator) rotates the release catch's lock ring, freeing the forward spring end (part 23); the CS4323 spring drives it into the petals (part 13), popping their printed lock nubs and pushing the fin-can section clear. Main is drawn out immediately — no tumble phase. **No mechanical backup exists** — see §4.3: the G80T's ejection charge cannot open the petal locks (11th review, retracts the earlier "acts on the same lock nubs directly" claim). |
 | — | 588→0 m | Descent under the 24in main | ~8.0 m/s (stated calc, §4.1 — not yet a `tools/rocket60_model.py` simulation), ~74 s |
 
 ### 4.1 The joint, the chute, and the descent estimate
 
 **The joint IS the petal cage — there is no second, independent shear feature.** The petal
-hub (part 8) is bolted to the fin-can side; the petals (part 13) bolt to the hub and, when
-closed, mechanically hold the two airframe sections together through their own printed lock
-nubs (`PD_PetalLocks`) — a light catch, not a structural joint sized against flight loads.
-The spring (captive until servo 1 releases it) is what actually separates the sections,
-by ramming `R65_FwdSpringEnd()` into the petals hard enough to pop those nubs. The shock
-cord (unchanged, permanent, e-bay aft bulkhead ↔ fin can forward centring ring) is what
-keeps the aft section attached through the whole descent, exactly as before this transplant.
+hub (part 8) spigots (glued, not bolted) into the fin can's own forward opening — the same
+joint the chute tube used to make, now carried by the hub instead (11th review: the hub was
+printed upside down in the first transplant attempt, spigot on the wrong face, and is fixed
+now — see `tasks/lessons.md`). The petals (part 13) do **not** bolt to the hub either —
+`PD_Petals()` has no axial holes at all. The real joint is 3x printed hinges
+(`PD_PetalSpringHolder()`, part 24): each bolts to one petal through its only holes (radial,
+2x #4-40) and carries an axle that rides in the hub's own pivot socket, preloaded open by a
+5/16in coil spring seated in the hub's integral bosses. Closed, the petals' own printed lock
+nubs (`PD_PetalLocks`) hold the hinge shut against that preload — a light catch, not a
+structural joint sized against flight loads. The spring (captive until servo 1 releases it)
+is what actually separates the sections, by ramming `R65_FwdSpringEnd()` into the petals
+hard enough to pop those nubs, driving the hinges open. The shock cord (unchanged,
+permanent) keeps the aft section attached through the whole descent, exactly as before this
+transplant — route: e-bay aft bulkhead's own tie-off → through the forward spring end's own
+rope holes (part 23, `nRopes`=6, `R65_FwdSpringEnd()`'s own Ø4 holes just outside the spring
+OD) → through the petal hub's own Ø5 centre hole (part 8, `PD_PetalHub()`'s own
+`CenterHole_d`) → tied off on the fin can's forward centring ring's own 2x Ø5 axial holes
+(`R60_FinCan()`'s own shock-cord anchor). Separate from the cord path: the forward spring
+end's own centre bore is a #10-24 threaded stud (`Thread1024_d`, `R65_FwdSpringEnd()`'s own
+`ExternalThread()` boss) — that is how the piston threads onto the locking pin/extension
+rod (parts 21/22), not a cord attachment.
 
-**Chute packing.** The 24in main is packed **inside the petal cage itself** (not a
-separate chute-bay volume) — `PD_Petals`' own tube IS the stowage volume between the hub
-and the forward spring end. `Petal_Len`=120mm derivation: bore ID at `Wall_t`=1.6mm is
-`R60_Coupler_OD`-2×1.6=53.2mm, area 22.24 cm²/cm → at 120mm, 267 cm³. Stated packing
-assumption (no per-chute figure exists in this repo to check it against): ripstop nylon +
-Nomex protector + shroud lines, ~50g at ~0.20 g/cm³ packing density (a standard rocketry
-estimate) needs ~250 cm³ — 267 cm³ clears it with 7% real margin. This is also exactly
-Rocket6551's own flown value (that design's comment: "120 ... preferred, 140 is max for a
-single 4323 spring") — the volume-derived and flight-precedent numbers agree independently,
-both bounded by the same spring's practical throw.
+**Chute packing (11th review, corrected — was overstated as "+7% margin").** The 24in main
+is packed **inside the petal cage itself** — `PD_Petals`' own tube between the hub and the
+forward spring end. `Petal_Len`=120mm, bore ID at `Wall_t`=1.6mm is
+`R60_Coupler_OD`-2×1.6=53.2mm, area 22.24 cm²/cm → at 120mm, **267 cm³ gross bore volume**.
+That figure was previously published as the usable packing volume. It is not — it is the
+volume of a plain, unobstructed cylinder the same size as the bore, and the real cage is
+not unobstructed: the hub's own internal floor and 3x `PD_PetalSpringHolder()` bosses (part
+24, fix 2 — absent from the design 267 cm³ was originally computed against, since the hinge
+subsystem did not exist yet) occupy roughly the first 18mm of the cage's own length, and
+`R65_FwdSpringEnd()`'s own base disk (the piston pressing in from the other end) is a solid
+6mm-thick face, not a knife-edge (confirmed against source: `cylinder(d=OD, h=6, ...)`,
+`R65Lib.scad`). Net of both: **usable length ~95–100mm, ~215–220 cm³** — against the
+stated ~250 cm³ requirement (ripstop nylon + Nomex protector + shroud lines, ~50g at
+~0.20 g/cm³ packing density), that is a **~13% shortfall**, not a 7% margin.
+
+"Same as Rocket6551's own flown 120mm" does not rescue this: that comparison used the same
+LENGTH on a DIFFERENT bore. Rocket6551's own cage ID is 61.6mm (its own `Coupler_OD` is
+larger than this design's 56.4mm), so its 120mm holds 357 cm³ gross, not 267 — the two
+designs are not interchangeable at the same length just because the length matches.
+
+**Options, with numbers, not a silent pick:**
+
+| Option | Change | Result |
+|---|---|---|
+| Longer cage | `Petal_Len` 120→~137mm (usable volume scales at 22.24 cm³/cm net of the same ~24mm fixed obstruction: (250+24×2.224)/22.24≈13.6cm) | Closes the packing shortfall, but **grows the same station chain fix 1's rocket60_model.py closure check found already ~12.2mm short of `R60_Chute_L`=240** (§ below) — this option makes that shortfall worse by the same ~17mm, not better. Any `R60_Chute_L` growth to fix the closure gap should be sized to cover this too, not decided twice. |
+| Smaller canopy | 24in → ~22in main | Packed-volume requirement scales ~(D/D₀)² ≈0.84× → ~210 cm³ needed, inside the current 215–220 cm³ usable **without** changing `Petal_Len` or `R60_Chute_L` at all. |
+| Thinner fabric / tighter pack | 0.20→~0.23 g/cm³ effective packing density (higher-thread-count ripstop, tighter roll) | 50g/0.23≈217 cm³ needed, at the edge of the current 215–220 cm³ usable range — the least design-disruptive option but the smallest margin of the three. |
+
+No option is applied here silently — this is a packing-volume/canopy-size/cage-length
+tradeoff for whoever is sewing and packing the actual chute, not a dimension this task
+should pick unilaterally.
 
 **Descent estimate (stated calculation, not a model output — `tools/rocket60_model.py` has
 no descent/drift simulator).** Terminal velocity under the 24in main, V=√(2mg/(ρ·Cd·A)):
@@ -293,29 +330,45 @@ wall as printed is not a live option regardless. Hardware note: BBMicro's own he
 comment is stale (5/16in balls, a 6705 bearing); the **live code** (cut 2025-11-10) uses
 6mm balls, a 6703-2RS bearing, MR63 lock bearings — build from the code, not that comment.
 
-### 4.3 The ejection-charge backup: what it actually acts on
+### 4.3 The ejection charge: no mechanical backup exists (11th review, retraction)
 
-The G80T's ejection charge is **not** a sealed-pressure-vessel backup the way the deleted
-shear-pin design imagined (charge pressurises a closed bay, breaks pins). The deployment
-bay (part 3) is now a plain, open, unsealed tube — there is no diaphragm anywhere between
-the motor's own forward face and the petal cage. What the charge's gas actually reaches,
-through the MMT/spacer's open bore, the thrust ring, the fin can's forward opening and the
-open deployment bay: the **same printed lock nubs** (`PD_PetalLocks`) the spring's primary
-path already has to overcome — not the lock ring, not the spring, not anything servo-state
-dependent. This is genuinely more independent than the deleted design's backup (which had
-to fight a captive ball-lock detent it was borrowing structure from): the charge doesn't
-need to overcome *anything* related to the primary release mechanism, only the same light
-catch the spring pops.
+**Retracted:** earlier drafts of this spec claimed the G80T's ejection charge acts on the
+petals' own lock nubs directly, "genuinely independent of servo/lock-ring state" — a real
+mechanical backup path. That claim does not survive contact with `PD_PetalLocks()`'s own
+geometry. The nubs are a **positive lock**, not a friction catch: **2.25mm of engagement**
+between the nub and its socket, and the Ø56.4 petals sit with only **0.2mm of radial
+flare** available inside the Ø56.8 body bore they close against — there is no room for the
+petals to flex out far enough to clear a 2.25mm-deep lock under internal pressure. Gas
+pressure pushing outward on the petals loads the lock nubs in shear/bearing, the same
+direction the primary (spring) release also has to overcome, but the spring's job is to
+drive `R65_FwdSpringEnd()` far enough to physically flex the petals past that engagement —
+raw internal pressure, with nothing to react against but the petals' own 0.2mm of flare,
+cannot do the same thing. **The barometric/timer servo path is a single point of failure
+for recovery: the servo itself, its wiring, the Vega servo rail, and the lock ring it turns
+all have no backup if any one of them fails.**
+
+The deployment bay (part 3) is a plain, open, unsealed tube — there is no diaphragm
+anywhere between the motor's own forward face and the petal cage — but that only means the
+charge's gas reaches the lock nubs at all; it does not mean the gas can open them.
+
+The charge **cannot be disabled** (it is the motor's own ejection charge, not a separate,
+switchable device) and fires on its own timer, independent of the recovery system,
+**1–3 seconds after whatever separation the servo path produced** — venting straight up the
+open fin can/deployment bay toward the just-deployed main. This is a real hazard to the
+canopy and lines regardless of the retracted backup claim above: **specify a Nomex chute
+protector between the charge and the packed main, and a sleeved (Nomex or similar) shock
+cord run**, not because the charge helps deployment, but because it fires close behind it
+either way.
 
 > **A11 (carried forward) — spring force is undocumented.** No spring rate, Newton figure,
 > or vendor appears in any of the CS4323's source files. Bench-test before flight.
 >
-> **A12 (new) — ejection-charge backup force is undocumented and the bay is unsealed.**
-> Whether a G80T's ejection charge builds enough pressure, fast enough, in an open (not
-> sealed) volume to reliably pop the lock nubs before venting through the joint's own
-> clearances has not been analysed or tested. Same open-risk category as A11, and the
-> **new** largest open risk in the recovery system, replacing the shear-pin/ball-lock
-> contradiction it supersedes.
+> **A13 (new, replaces the retracted A12) — no mechanical backup exists for the primary
+> release.** If the servo, its wiring, the Vega servo rail, or the lock ring fails, the
+> petals do not open — the ejection charge cannot do it for them (see above). This is the
+> single largest open risk in the recovery system: a from-scratch redundancy analysis (a
+> second servo, a CO2/pyro backup release, or an accepted single-string design with a
+> documented failure rate) is out of this task's scope but should not be deferred silently.
 
 ---
 
@@ -326,13 +379,13 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | v@1m rail | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 907 g | 8.7 | 15.0 m/s | 126 m/s | **0.37** | 603 m | 10.8 s |
-| **H182R-14A** (29 mm DMS) | 973 g | 19.1 | 22.1 m/s | 203 m/s | **0.60** | 967 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 976 g | 12.1 | 17.0 m/s | 189 m/s | **0.56** | 1013 m | 13.2 s |
+| **G80T-14A** (owned) | 924 g | 8.6 | 14.9 m/s | 124 m/s | **0.36** | 593 m | 10.7 s |
+| **H182R-14A** (29 mm DMS) | 991 g | 18.7 | 21.9 m/s | 199 m/s | **0.59** | 960 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 994 g | 11.9 | 16.9 m/s | 186 m/s | **0.55** | 1004 m | 13.2 s |
 
 Rail-exit speed off the owner's actual Estes Pro Series II rail (1.83 m,
 not the 1.5 m this table used to assume) is reported separately in §6.1
--- **G80T-14A 20.4 m/s**, comfortably above the 15 m/s minimum.
+-- **G80T-14A 20.2 m/s**, comfortably above the 15 m/s minimum.
 
 (Figures from `tools/rocket60_model.py`'s own output, re-run after the
 petal-deployment transplant (§4) -- see §6 below for the matching
@@ -343,7 +396,10 @@ combined) and adds the petal cage, release hardware and the grown
 deployment bay tube (+~113g net) -- see `tools/rocket60_model.py`'s
 STL_VOL comment for the full per-part breakdown), then to 907/973/976g
 (10th review: the aft bulkhead's own mount fix also hollowed its
-15mm skirt, -~26g -- `R60_EBayAftBulkhead()`'s own module comment).
+15mm skirt, -~26g -- `R60_EBayAftBulkhead()`'s own module comment), then
+to 924/991/994g (11th review: the hinge subsystem, part 24 x3 + its
+springs/bolts, and the spring centering ring mount, part 25, add
+~17g net -- fixes 2/4, `tools/rocket60_model.py`'s STL_VOL comment).
 Apogee/Mach move with the mass and CP changes; margins are updated in
 §6.)
 
@@ -420,22 +476,24 @@ Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 907 g | 401.8 mm | **1.56 cal** | 380.9 mm | 1.90 cal |
-| H182R-14A | 973 g | 413.8 mm | **1.36 cal** | 383.2 mm | 1.87 cal |
-| H135W-14A | 976 g | 413.4 mm | **1.36 cal** | 392.9 mm | 1.70 cal |
+| G80T-14A | 924 g | 403.3 mm | **1.53 cal** | 382.9 mm | 1.87 cal |
+| H182R-14A | 991 g | 415.0 mm | **1.34 cal** | 385.2 mm | 1.83 cal |
+| H135W-14A | 994 g | 414.6 mm | **1.34 cal** | 394.6 mm | 1.68 cal |
 
-**The G80T-14A margin IMPROVED, 1.46→1.56 cal** (10th review: this
-figure moved again from an intermediate 1.68 cal when the aft
-bulkhead's own mass fix shifted CG, below), despite +33g of net liftoff
+**The G80T-14A margin IMPROVED, 1.46→1.53 cal** (10th/11th review: this
+figure has moved twice since, from an intermediate 1.68 cal when the
+aft bulkhead's own mass fix shifted CG, to 1.56, to 1.53 when this
+review's hinge subsystem (part 24 x3 + springs/bolts) and CS4323 seat
+(part 25) added their own mass, below), despite +50g of net liftoff
 mass over the pre-transplant figure — CP moved aft (+42.2mm) by more
 than CG did, because the deployment bay's own growth is entirely
 FORWARD of the fin can, pushing the fins (which dominate CN) further
 from the nose without adding mass there. H182R/H135W both clear 1.0 cal
-with real room (1.36 cal each). **If this had come out below 1.0 cal
+with real room (1.34 cal each). **If this had come out below 1.0 cal
 the answer would have been to stop and report it, not to force a fix**
 — it did not; no design change was needed to reach this figure. Margin
 *increases* through the burn on every configuration (burnout G80T
-margin is 1.90 cal).
+margin is 1.87 cal).
 
 ### 6.1 Stability gate: 1.0 cal minimum (unchanged), rail exit re-verified on the real rail
 
@@ -466,13 +524,13 @@ previously-published **955 m/s was wrong; the corrected figure is 589 m/s.**
 Vf=589 m/s still clears the G80T (the sizing case) with real margin, but
 not the old blanket "3× the single fastest Vmax across all motors" gate,
 which was calibrated against the inflated number — H182R (the fastest
-motor overall) sits at 2.9×, below a 3× floor. Re-scoped to a per-motor
+motor overall) sits at 3.0×, below a 3× floor. Re-scoped to a per-motor
 1.5× floor (same physical-floor-vs-engineering-margin split as the 1.0
 cal stability gate above; the true physical floor is 1.0×, Vf>Vmax):
 
-- **4.7× the G80T's ~126 m/s Vmax**
-- **2.9× the H182R's ~203 m/s Vmax**
-- **3.1× the H135W's ~189 m/s Vmax**
+- **4.8× the G80T's ~124 m/s Vmax**
+- **3.0× the H182R's ~199 m/s Vmax**
+- **3.2× the H135W's ~186 m/s Vmax**
 
 All three clear the 1.5× floor with real room. Do not make the fins
 thinner, or grow the span further, without recomputing both stability
@@ -532,17 +590,27 @@ This event is bound to servo 1's PWM channel in the configurator as part of norm
 | `enable_testing_mode` | **false** | manual §4.3.5 step 7 |
 | `battery_type` | `LI_ION` or LiPo to match the pack | affects voltage warnings |
 
-### 7.4 Timers — the second independent path
+### 7.4 Timers — the second TRIGGER, not a second path (11th review, retraction)
 
-The manual (§4.3.5 steps 13–15) offers a timer as a backup to barometric detection. With
-the G80T's own ejection charge (§4.3) as a third, mechanical path acting directly on the
-petals' own lock nubs, the design tolerates any single failure:
+**Retracted:** this section used to describe barometric detection, a timer, and the G80T's
+own ejection charge as "three independent paths" tolerating any single failure. They are
+not independent. §4.3 (retracted there in full) establishes that the ejection charge cannot
+open the petal locks at all — it is not a path. What remain, barometric and timer, are two
+different **triggers into the same single mechanism**: both fire `EV_APOGEE`/servo 1, which
+rotates the same lock ring, which releases the same spring, through the same servo, its
+same wiring, and the same Vega servo rail. A timer backs up a missed **barometric reading**
+(a sensor fault or a flight profile the algorithm reads wrong); it backs up nothing about
+the servo, wiring, rail, or lock ring themselves — if any of those fails, both triggers fail
+the same way. The manual (§4.3.5 steps 13–15) offers the timer for exactly that narrower
+purpose:
 
-| Path | Apogee separation (single event) |
+| Trigger | Apogee separation (single event) |
 |---|---|
 | 1. Barometric | `EV_APOGEE` → servo 1 |
-| 2. Timer | Timer 1: liftoff → **12.5 s** (apogee 10.7 s + margin) |
-| 3. Mechanical | G80T ejection charge acts on the petals' own lock nubs directly (§4.3) — genuinely independent of servo/lock-ring state, unlike the deleted bayonet design |
+| 2. Timer (backup for a missed/late barometric read only) | Timer 1: liftoff → **12.5 s** (apogee 10.7 s + margin) |
+
+Both drive the SAME servo 1 → lock ring → ball-chain release — see A13 (§4.3) for the
+single-point-of-failure this design still carries with no mechanical backup.
 
 Timer value is for the G80T. **It must be recomputed for an H** (apogee 12.5 s for the
 H182R, 13.2 s for the H135W) — see §9 A5.
