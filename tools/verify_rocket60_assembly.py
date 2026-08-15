@@ -73,11 +73,18 @@ PAIRS = {
     #
     # Pairs 6, 9, 12-15, 17, 19, 31 RETIRED (petal-deployment transplant --
     # tasks/lessons.md): all checked the deleted spring-carrier/tether-
-    # latch/servo-2 design. The petal cage (parts 8/13) and release
-    # hardware (15-23) are a KNOWN GAP here -- not silently dropped, see
-    # r60_assembly.scad's own pair-enumeration comment -- their binding
+    # latch/servo-2 design.
+    #
+    # 11th review: the petal cage's own mechanism (hub/petals/spring
+    # holder, parts 8/13/24) is no longer a silent gap -- Pairs 35-37
+    # cover it (lesson: "the hub went in inverted and its hinge parts
+    # were never noticed missing because no check models the mechanism
+    # as a mechanism", tasks/lessons.md). The release hardware's own
+    # INTERNAL joints (parts 16-22, the donor's proven, unmodified
+    # bearing/lock-ring/pin stack) remain a known gap -- their binding
     # dimensional question (fits inside the airframe's bore) is covered
-    # instead by verify_rocket60.py's max-radius-vs-bore check.
+    # instead by verify_rocket60.py's max-radius-vs-bore check, same as
+    # before.
     #
     # 6th review, finding 2: pairs 16 (switch vs tube), 18 (pin path vs
     # aft bulkhead) and 20 (switch vs Vega sled) are DELETED, not merely
@@ -128,6 +135,12 @@ PAIRS = {
     # writeup, and tasks/lessons.md for the mutation-test record).
     33: "release activator vs aft bulkhead (mating fit)",
     34: "release activator mounting screws sweep vs bulkhead+activator",
+    # 11th review: the hinge subsystem (tasks/lessons.md) -- dropped
+    # entirely from the first transplant attempt. See
+    # Rocket60.scad's R60_PSH_Placed() for the placement derivation.
+    35: "petal hub vs petals (upside-down-hub fix)",
+    36: "petal spring holder (hinge) vs petal hub",
+    37: "petal spring holder vs petals (bolted face)",
 }
 STROKE_PAIRS = (5,)
 # Insertion stroke sweep -- 0 (first contact) through 15 (fully seated,
@@ -164,6 +177,24 @@ INS_SWEEP = list(range(0, 16, 1))
 OBSTRUCTION_PAIRS = (10, 11)
 OVERTRAVEL_MM = 2.0
 OBSTRUCT_MIN_CM3 = 0.01
+
+# Hinge pair (11th review, the petal spring holder's own axle vs. the
+# petal hub's pivot socket -- Pair 36). NOT held to EPS_CM3 like a static
+# mating pair: this joint is a MOVING pivot, not two faces meant to sit
+# flush, and the axle/socket clearance geometry (PetalDeploymentLib.scad,
+# unmodified donor source) leaves a small, real residual at the hinge
+# boss where it meets the socket's own clearance-cut edge -- measured
+# 0.0066-0.0087 cm3 across the placements this file's own header comment
+# derives from (Rocket60.scad's R60_PSH_Placed()), two orders of
+# magnitude below every REAL defect this harness has ever found (the
+# upside-down hub alone was 1.31cm3). HINGE_MAX_CM3 is set an order of
+# magnitude above that measured range -- comfortably clears ordinary FDM
+# hinge-fit tolerance while still catching a genuinely wrong placement:
+# mutation-tested (dz=0, i.e. the holder left at the hub's own local
+# origin instead of R60_PSH_Placed()'s derived offset) reads 0.6110cm3,
+# >12x over this threshold.
+HINGE_PAIRS = (36,)
+HINGE_MAX_CM3 = 0.05
 
 
 def render_probe(pair, ins, out, push=0.0):
@@ -297,10 +328,15 @@ def main(argv):
                     print("FAIL  pair %d %-42s  render error: %s" % (p, name, e))
                     bad += 1
                     continue
-                ok = vol <= EPS_CM3
+                # HINGE_PAIRS (11th review): a moving pivot, not a static
+                # mating face -- see HINGE_MAX_CM3's own comment for why
+                # this pair alone is not held to EPS_CM3.
+                limit = HINGE_MAX_CM3 if p in HINGE_PAIRS else EPS_CM3
+                ok = vol <= limit
                 bad += 0 if ok else 1
-                print("%-4s pair %d %-42s  %.4f cm3"
-                      % ("OK" if ok else "FAIL", p, name, vol))
+                print("%-4s pair %d %-42s  %.4f cm3%s"
+                      % ("OK" if ok else "FAIL", p, name, vol,
+                         "  (hinge, limit %.4f)" % limit if p in HINGE_PAIRS else ""))
 
         print("\n%d check(s) failed" % bad)
         return 1 if bad else 0

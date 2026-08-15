@@ -176,31 +176,67 @@ SCR_OFFSET = 22.5     # parts 16-20's own mount-face offset aft of part
                        # own SCR_Z arithmetic
 SPRINGEND_OFFSET = 72.5   # part 23's own mount face, same reference (S_ACT0)
 PETALS_OFFSET = 76.5      # part 13's own base, same reference (S_ACT0)
-HUB_TAIL_OFFSET = 5.0     # part 8's own aft reach past the petal tips
-                            # (measured off its rendered mesh, Z[-5,21.5])
+# HUB_TAIL_OFFSET (11th review, upside-down-hub fix): the OLD 5.0 was
+# measured off the OLD, INVERTED part 8 (Z[-5,21.5], spigot on the same
+# +z end as the petal-mating features) -- at that placement the spigot
+# sat INSIDE the petals' own envelope (hence the 1.31cm3 collision this
+# review fixed, R60_PetalHub()'s own module comment), so a bbox measure
+# of hub+petals together never saw the hub extend past the petals at
+# all: the "5mm past the petal tips" this used to claim was measuring a
+# hub that could not have reached the fin can, not a real offset.
+# Corrected part 8 (Z[-10.5,16], spigot moved to the -z/skirt end) DOES
+# reach past the petals now -- re-measured this session, same method as
+# every other figure in this block (render both at their real relative
+# offset and read the combined mesh): `union(){translate([0,0,9.5])
+# R60_Petals(); R60_PetalHub();}` gives combined Z[-10.5,136.7], a
+# 147.2mm span. R60_Petal_Len (120) of that is the petals' own printed
+# length, so the hub's own real incremental reach past the petals' own
+# root is 147.2-120=27.2mm, not 5.
+HUB_TAIL_OFFSET = 27.2     # part 8's own aft reach past the petal root
+                            # (measured off the corrected mesh, see above)
 R60_Petal_Len = 120.0      # R60Lib.scad's own R60_Petal_Len -- restated
                              # (rule 4), see that constant's own comment
                              # for the packing-volume derivation
 
-# Closure check (10th review): the petal hub's (part 8) own aft-most
-# material -- the tip of its spigot, S_ACT0+PETALS_OFFSET+R60_Petal_Len+
-# HUB_TAIL_OFFSET -- has to land close to S_FIN (the fin can's own
-# forward tip, where R60_PetalHubSpigot_L=5.5mm of it actually engages
-# the fin can's own R60_FinCan_FwdOpen_L=6mm open annulus) for this whole
-# chain to be physically closed, not floating disconnected from what it
-# is stated to spigot into. Independent check on ACT_MOUNT_GAP itself:
-# under the OLD (zero-gap) assumption this lands 23.5mm SHORT of S_FIN --
-# unphysical, the hub could not have reached the fin can at all -- while
-# the corrected chain lands within one spigot length of it.
+# Closure check (10th review, tolerance restated 11th review): the petal
+# hub's (part 8) own aft-most material -- the tip of its spigot,
+# S_ACT0+PETALS_OFFSET+R60_Petal_Len+HUB_TAIL_OFFSET -- has to land close
+# to S_FIN (the fin can's own forward tip, where
+# R60_PetalHubSpigot_L=5.5mm of it actually engages the fin can's own
+# R60_FinCan_FwdOpen_L=6mm open annulus) for this whole chain to be
+# physically closed, not floating disconnected from what it is stated to
+# spigot into.
+#
+# 11th review: this now FAILS, and correctly so -- not a regression, a
+# real requirement the OLD, inverted part 8 hid (HUB_TAIL_OFFSET's own
+# comment above). With the hub the right way round, _hub_tail lands
+# ~17.7mm PAST S_FIN: the release stack + spring end + petals + hub, laid
+# out correctly, needs about 223.7mm of chute-bay depth past S_ACT0
+# (SPRINGEND_OFFSET/PETALS_OFFSET/R60_Petal_Len/HUB_TAIL_OFFSET, none of
+# them adjustable -- they are the donor's own proven hardware and this
+# task's own packing-volume-derived petal length) but R60_Chute_L=240
+# only budgets ~206mm past S_ACT0 (240-SKIRT_L-ACT_MOUNT_GAP). The old
+# "measured 226.5mm total span" R60_Chute_L's own comment cites was
+# measured off the SAME inverted hub this review fixed -- its spigot sat
+# inside the petals' own envelope instead of past them, so that render
+# never saw the hub extend past the petals at all, and undercounted the
+# true depth needed by roughly this same ~20mm. Left as a hard, failing
+# assert (not silently patched by growing R60_Chute_L here) because that
+# is a real airframe-length change with its own CG/stability
+# consequences, outside a station-bookkeeping script's own authority to
+# decide -- flagged for the owner, same as the packing-volume shortfall.
 R60_FinCanSpigot_L_restated = 5.5   # R60Lib.scad's R60_FinCanSpigot_L,
                                       # restated (rule 4) -- shared by
                                       # R60_PetalHubSpigot_L there
 _hub_tail = S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET
 assert abs(_hub_tail - S_FIN) <= R60_FinCanSpigot_L_restated, (
     "rocket60_model.py: petal hub's own aft-most reach (%.1f) is not "
-    "within one spigot length (%.1f) of S_FIN (%.1f) -- the release-stack "
-    "chain does not close on the fin can it is stated to spigot into; "
-    "recheck ACT_MOUNT_GAP" % (_hub_tail, R60_FinCanSpigot_L_restated, S_FIN))
+    "within one spigot length (%.1f) of S_FIN (%.1f) -- the corrected "
+    "(right-way-round) hub needs ~%.1fmm more chute-bay depth than "
+    "R60_Chute_L currently budgets; grow R60_Chute_L (and re-check CG/"
+    "stability) or shorten another stack element -- see this block's own "
+    "comment" % (_hub_tail, R60_FinCanSpigot_L_restated, S_FIN,
+                 abs(_hub_tail - S_FIN) - R60_FinCanSpigot_L_restated))
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own

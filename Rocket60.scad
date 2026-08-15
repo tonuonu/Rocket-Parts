@@ -45,7 +45,8 @@ use<SpringEndsLib.scad>
 // 10 = Fin
 // 11 = Motor retainer
 // 12 = Motor spacer
-// 13 = Petals (bolt to part 8; flex open under spring load once released)
+// 13 = Petals (hinge to part 8 via part 24's spring holders, not bolted;
+//      flex open under spring load once released)
 // 14 = Forward thrust ring
 // 15 = Release activator (servo mount, bolts to part 5's aft face)
 // 16 = Release top retainer
@@ -55,7 +56,11 @@ use<SpringEndsLib.scad>
 // 20 = Release magnet bracket
 // 21 = Release extension rod
 // 22 = Release locking pin
-// 23 = Forward spring end (spring piston; bolts to part 8's petal cage)
+// 23 = Forward spring end (spring piston; threads onto the release
+//      stack's locking pin/extension rod and locks onto the petals
+//      directly -- not bolted to part 8, see its own module comment)
+// 24 = Petal spring holder (print 3x -- the hinge: bolts to each petal,
+//      axle rides in part 8's pivot socket, spring-preloaded open)
 Render_Part = 0;
 
 // 0 = G80T-14A (124mm), 1 = H182R-14A (203mm), 2 = H135W-14A (216mm)
@@ -798,18 +803,41 @@ module R60_Door(){
 } // R60_Door
 
 // Petal hub (part 8, replaces the spring/ball-lock carrier -- see
-// tasks/lessons.md). Bolts to the fin-can side (the section that
-// separates and pulls away at deployment -- mirrored from Rocket6551,
-// where the hub bolts to the nosecone side, because THIS design's
-// e-bay/release-catch is forward instead of aft). R60_Petals() (part
-// 13) bolts to this hub's own PD_PetalHubBoltPattern face; when servo 1
-// (inside part 15's Activator) rotates the release catch's lock ring,
-// R60_FwdSpringEnd() (part 23), captive until then, is driven forward by
-// the CS4323 spring, rams the petals open past their own printed locks,
-// and the whole fin-can+petal-hub section is pushed clear -- the
-// airframe is never held together by anything that shears (see
-// R60_ChuteTube()'s module comment: this joint replaces every shear-pin/
-// ball-lock feature the design it supersedes needed).
+// tasks/lessons.md). R65_PetalHub()'s OWN two halves are NOT
+// interchangeable ends: its skirt (local Z[-5,0], "// attaches to nose
+// cone" in R65Lib.scad's own source) is a plain OD-hugging ring with
+// PD_PetalHubBoltPattern's axial bolt-clearance holes -- a flat mounting
+// face with nothing else on it; its PD_PetalHub() call (local Z[0,16],
+// UNTRANSLATED, so it is the OTHER end) carries every petal-mating
+// feature that exists on this part -- the ledge cuts, the pivot
+// sockets the spring-holder's hinge axle rides in, and the spring
+// clearance slots -- because that is the face PD_Petals()'s own root
+// nests around once the two are placed at the donor's own relative
+// offset (petal frame = hub frame - 9.5mm, Rocket6551.scad's
+// ShowRocket(): hub at NC-5, petals at NC-14.5 -- confirmed this session
+// by rendering both at that offset and finding an EMPTY intersection
+// post-fix; pre-fix it read 1.31 cm3 at hub-local Z[16.70,21.50], the
+// exact old spigot band). So the skirt (local Z<0) is the ONLY end free
+// of petal-mating geometry, and it is also the end R65_PetalHub()'s own
+// header comment says mounts to something external -- here, the fin-can
+// side (the section that separates and pulls away at deployment --
+// mirrored from Rocket6551, where the hub bolts to the nosecone side,
+// because THIS design's e-bay/release-catch is forward instead of aft).
+// The spigot (below) belongs on THAT end so the petal-mating end stays
+// clear and points at the petals, not into the fin can's own bore.
+//
+// R60_Petals() (part 13) does NOT bolt to this hub at all -- see that
+// module's own comment for the real joint (3x PD_PetalSpringHolder,
+// bolted to each petal, hinging on the axle this hub's pivot sockets
+// carry, preloaded by a coil spring seated in this hub's own integral
+// bosses). When servo 1 (inside part 15's Activator) rotates the
+// release catch's lock ring, R60_FwdSpringEnd() (part 23), captive
+// until then, is driven forward by the CS4323 spring, rams the petals
+// open past their own printed locks, and the whole fin-can+petal-hub
+// section is pushed clear -- the airframe is never held together by
+// anything that shears (see R60_ChuteTube()'s module comment: this
+// joint replaces every shear-pin/ball-lock feature the design it
+// supersedes needed).
 //
 // use<>-included, not hand-built: R65_PetalHub()/PD_Petals() are a
 // flown mechanism (Rocket6551.scad, 2.6" single-deploy, CS4323 spring),
@@ -821,11 +849,14 @@ module R60_Door(){
 // this task), now carried here instead since the fixed deployment-bay
 // tube no longer reaches that far. R60_PetalHubSpigot_L (R60Lib.scad) is
 // shared with the constant the old joint used, not a second copy. Placed
-// at z=16, the hub's own measured top face (R65_PetalHub(OD=56.4)
-// rendered and measured this session: Z[-5,16] -- its own internal
-// geometry is a library module, not something this file's own constants
-// derive, so this is stated from the rendered mesh, same convention as
-// this repo's STL_VOL figures).
+// BELOW the skirt (local Z[-5-R60_PetalHubSpigot_L,-5], continuing the
+// skirt's own aft face outward) -- NOT at z=16 (that band is the petal-
+// mating end covered above, and is exactly where the pre-fix spigot
+// collided with the petals' own root -- see the collision figures
+// above). R65_PetalHub(OD=56.4) rendered and measured this session:
+// Z[-5,16] -- its own internal geometry is a library module, not
+// something this file's own constants derive, so this is stated from
+// the rendered mesh, same convention as this repo's STL_VOL figures.
 module R60_PetalHub(){
     $fn=90;   // use<>'d libraries' own file-scope $fn (their convention:
               // $preview?24:90 or ?36:90) never executes -- use<> only
@@ -838,7 +869,7 @@ module R60_PetalHub(){
               // that with no visible difference at this feature size).
     R65_PetalHub(OD=R60_Coupler_OD, nPetals=R60_nPetals, nBolts=R60_nPetals*2,
                  Skirt_h=5, HasWirePath=false);
-    translate([0,0,16])
+    translate([0,0,-5-R60_PetalHubSpigot_L])
         R60_Tube(R60_PetalHubSpigot_L, od=R60_Coupler_OD, wall=R60_Wall_T);
 } // R60_PetalHub
 
@@ -1054,13 +1085,26 @@ module R60_ThrustRing(){
 } // R60_ThrustRing
 
 // Petals (part 13, replaces the tether latch -- see tasks/lessons.md).
-// Bolts to R60_PetalHub() (part 8) via PD_Petals()'s own
-// PD_PetalHubBoltPattern-matched holes. HasLocks=true prints the small
-// integral catch nubs (PD_PetalLocks()) that hold the petals shut
-// against a light load; the CS4323 spring, once released, drives them
-// open past those nubs. This part IS the separable joint -- there is no
-// second, independent shear feature anywhere else in this design any
-// more (see R60_ChuteTube()'s module comment).
+// Does NOT bolt to R60_PetalHub() (part 8) -- PD_Petals() has no axial
+// holes at all (its own mesh starts at local Z=7.2, no base flange to
+// put them in); the ONLY holes it has are the 2x radial #4-40 holes per
+// petal at Z=17.25/25.25 (PD_Petals()'s own Bolt1_Z), which take
+// R60_PetalSpringHolder() (part 24, see that module's own comment) --
+// the real joint to the hub is that printed hinge, not a bolted flange.
+// HasLocks=true prints the small integral catch nubs (PD_PetalLocks())
+// that hold the petals shut against a light load; the CS4323 spring,
+// once released and driving R60_FwdSpringEnd() into the petals, forces
+// them open past those nubs and past R60_PetalSpringHolder()'s own
+// hinge preload. This part IS the separable joint -- there is no second,
+// independent shear feature anywhere else in this design any more (see
+// R60_ChuteTube()'s module comment).
+//
+// Lock_Span_a=30 (donor's own Rocket6551.scad changelog, 0.9.5: "Petal
+// locks now 30deg" -- deliberate, not the library default): PD_PetalLocks'
+// own default (0) means Lock_Span_a=0 -> full-circumference lock ridge,
+// about 4x the donor's actual flown engagement arc. Left un-set here
+// before this review, silently inheriting the library default instead
+// of the donor's own deliberately narrowed one.
 //
 // R60_Petal_Len (R60Lib.scad) derivation -- packing volume for a 24in
 // main + Nomex protector + shroud lines, ~250 cm^3 at a stated ~0.2
@@ -1069,7 +1113,8 @@ module R60_ThrustRing(){
 module R60_Petals(){
     $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     PD_Petals(OD=R60_Coupler_OD, Len=R60_Petal_Len, nPetals=R60_nPetals,
-              Wall_t=R60_Wall_T, AntiClimber_h=0, HasLocks=true);
+              Wall_t=R60_Wall_T, AntiClimber_h=0, HasLocks=true,
+              Lock_Span_a=30);
 } // R60_Petals
 
 // ============================================
@@ -1207,14 +1252,80 @@ module R60_ReleaseLockingPin(){
 
 // Forward spring end (part 23). The moving piston: captive on the
 // locking pin (part 22) until the servo releases it, then driven forward
-// by the CS4323 spring into the petals (part 13), popping them open.
-// Bolts inside R60_PetalHub()'s (part 8) own petal cage.
+// by the CS4323 spring into the petals (part 13), popping them open. Not
+// bolted to R60_PetalHub() at all -- R65_FwdSpringEnd()'s own module
+// comment is "This locks onto the bottom of the petals": it threads onto
+// part 22's own extension (the ExternalThread center hole) and its own
+// "Petal Locks" cut seats directly against part 13's lock feature, both
+// independent of part 8.
 module R60_FwdSpringEnd(){
     $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
     rotate([180,0,0])
         R65_FwdSpringEnd(OD=R60_Coupler_OD, ID=R60_Coupler_OD-1.8, LockPin_d=R60_LockPin_d,
                          nRopes=6, Skirt_h=25, HasServoConnector=false);
 } // R60_FwdSpringEnd
+
+// Petal spring holder (part 24). THE hinge -- dropped entirely from the
+// first transplant attempt (tasks/lessons.md). PD_PetalSpringHolder() is
+// a separate print, bolted to EACH petal (part 13) with 2x #4-40 through
+// the petal's own only holes (radial, at petal-local Z=17.25/25.25 --
+// see R60_Petals()'s own module comment), carrying a printed hinge axle
+// that rides in R60_PetalHub()'s (part 8) own pivot socket, preloaded
+// open by a 5/16" OD coil spring seated in this same part's own integral
+// spring receiver. 3x printed (one per petal) -- see R60_PSH_Placed()
+// below for where each one sits once assembled.
+//
+// Donor geometry, un-parameterised (PD_PetalSpringHolder() takes no
+// arguments at all) -- nothing here to derive from R60_Coupler_OD; the
+// part is sized for the donor's own PetalWidth/Bolt4Inset constants,
+// both shared file-scope constants this design already uses unchanged.
+// Rocket6551 prints this: Rocket6551_petalspringholder.3mf is a flown
+// artifact.
+module R60_PetalSpringHolder(){
+    $fn=90;   // see R60_PetalHub()'s own comment for why this is needed
+    PD_PetalSpringHolder();
+} // R60_PetalSpringHolder
+
+// R60_PSH_Placed(j): where petal spring holder j (0..R60_nPetals-1)
+// sits, assembled, in R60_PetalHub()'s OWN local frame (same frame
+// R60_PetalHub() itself renders in, Render_Part==8) -- shared by the
+// standalone-part convenience preview below and by
+// tools/r60_assembly.scad's own pairs, so the placement is derived once,
+// not restated (rule 4).
+//
+// Derivation (mesh-verified, not eyeballed -- see tasks/lessons.md's
+// own "follow the donor, don't narrate it" lesson this fix exists to
+// close): PD_Petals()'s 2 bolt holes are at petal-local
+// Z=Bolt1_Z=17.25 and Bolt1_Z+Bolt4Inset*2=25.25, radial, entering at
+// petal-local Y=OD/2 (PD_Petals()'s own source). PD_PetalSpringHolder()'s
+// own 2 matching Bolt4Hole()s are at ITS local Z=20 and
+// 20+Bolt4Inset*2=28, also radial, entering at ITS local Y=0 -- SAME
+// Bolt4Inset*2=8mm spacing, and BOTH already built with the identical
+// rotate([-90,0,0]) hole axis, so no relative ROTATION is needed between
+// the two parts, only a translate: petal-local (0,OD/2,-2.75) (20-17.25=
+// 2.75=28-25.25, the one constant offset consistent with both holes at
+// once -- the only pairing that keeps the two parts' own fixed 8mm hole
+// spacing equal). Converted to R60_PetalHub()'s own frame with this
+// transplant's own established petal-to-hub offset (R60_PetalHub()'s own
+// module comment: petal frame = hub frame - 9.5mm): hub-local
+// (0, R60_Coupler_OD/2, 6.75).
+//
+// Checked against the OTHER mating interface too (the axle vs. the
+// hub's own pivot-socket cut, PD_PetalHub()'s own source): this places
+// the holder's axle centre within ~1mm of the socket's own stated seated
+// position (hub-local Y=21.2,Z=7) -- intersection(R60_PetalHub(),
+// R60_PSH_Placed(0)) measures ~0.007cm3 (tools/r60_assembly.scad Pair
+// 36), a sub-mm hinge-boss/clearance-cut residual at this scale (two
+// orders of magnitude below the 1.31cm3 upside-down-hub defect this
+// review fixed), consistent with ordinary FDM print-fit tolerance on a
+// moving joint, not a placement error -- the bolt-hole alignment above
+// is exact (matched to the tenth of a mm from both parts' own source
+// constants), and is the harder, non-negotiable constraint of the two.
+module R60_PSH_Placed(j=0){
+    rotate([0,0,360/R60_nPetals*j])
+        translate([0, R60_Coupler_OD/2, 6.75])
+            R60_PetalSpringHolder();
+} // R60_PSH_Placed
 
 // ============================================
 // DISPATCH
@@ -1243,3 +1354,4 @@ if (Render_Part==20) R60_ReleaseMagnetBracket();
 if (Render_Part==21) R60_ReleaseExtensionRod();
 if (Render_Part==22) R60_ReleaseLockingPin();
 if (Render_Part==23) R60_FwdSpringEnd();
+if (Render_Part==24) R60_PetalSpringHolder();

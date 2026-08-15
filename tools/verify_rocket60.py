@@ -19,7 +19,7 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "deployment bay tube",
          17: "release lock ring", 18: "release outer bearing retainer",
          19: "release trigger post", 20: "release magnet bracket",
          21: "release extension rod", 22: "release locking pin",
-         23: "forward spring end"}
+         23: "forward spring end", 24: "petal spring holder"}
 
 # Door aperture (R60_EBayTube()) / cover (R60_Door()) -- defect 1d fix.
 # R60_Door() used to be a flush plug 2*DOOR_GAP smaller than the aperture
@@ -159,9 +159,15 @@ GENUS[7] = 5
 #   carrier). R65_PetalHub() (R65Lib.scad) plus this task's own added aft
 #   spigot into the fin can -- library geometry, not feature-counted by
 #   hand here the way this file's own hand-built parts are (see file
-#   docstring: measured off the rendered mesh, not inferred). Rendered
-#   `Genus: 19`.
-GENUS[8] = 19
+#   docstring: measured off the rendered mesh, not inferred).
+#   RE-DERIVED (11th review, critical fix 1): the spigot moved off the
+#   petal-mating face onto the skirt/-z face (tasks/lessons.md -- the
+#   OLD placement put the spigot inside the petals' own envelope, a
+#   1.31cm3 collision, not merely a different genus). The spigot now
+#   welds onto the skirt's OWN existing bolt-hole face instead of the
+#   plain PD_PetalHub() body, changing which topological holes merge --
+#   re-rendered, `Genus: 16`.
+GENUS[8] = 16
 
 #   part 9: fin can. Rendered 4 (1 MMT bore + 3 fin slots) after the
 #   retainer bolt bosses were added (confirmed blind via top/bottom/
@@ -209,6 +215,14 @@ GENUS[21] = 1    # release extension rod
 GENUS[22] = 1    # release locking pin
 GENUS[23] = 7    # forward spring end
 
+#   part 24: petal spring holder (11th review, critical fix 2 -- the
+#   hinge subsystem, missing entirely from the first transplant attempt,
+#   tasks/lessons.md). `use<>`-instantiated from PetalDeploymentLib.scad's
+#   own PD_PetalSpringHolder(), un-parameterised library geometry --
+#   measured off the rendered mesh, same treatment as parts 8/13/15-23
+#   above. Rendered `Genus: 3`.
+GENUS[24] = 3    # petal spring holder
+
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
 
@@ -247,9 +261,13 @@ FINCAN_SPIGOT_BAND  = (227.5, 228.01)   # part 9: fin can's forward-open bore
 FINCAN_SPIGOT_R_LO  = 20.0               # excludes the MMT (r<=16.15)
 # Petal hub's own aft spigot (petal-deployment transplant -- this joint
 # used to be made by the chute tube's own spigot, now by part 8 instead,
-# R60Lib.scad's R60_PetalHubSpigot_L comment): translate([0,0,16]) +
-# R60_PetalHubSpigot_L(5.5) = tip at z=21.5, part 8's own measured height.
-PETALHUB_SPIGOT_BAND = (21.0, 21.51)
+# R60Lib.scad's R60_PetalHubSpigot_L comment). 11th review: moved off the
+# petal-mating face (was translate([0,0,16]), the same band the petals'
+# own root collided with -- tasks/lessons.md) onto the skirt/-z face:
+# translate([0,0,-5-R60_PetalHubSpigot_L(5.5)]) = tip at z=-10.5, part 8's
+# own measured minimum Z (R60_PetalHub() re-rendered this session:
+# Z[-10.5,16]).
+PETALHUB_SPIGOT_BAND = (-10.51, -10.0)
 R60_Coupler_OD = 56.4   # restated literal (rule 4), matching R60Lib.scad
 # Slot Z-extent inside R60_FinCan() is Slot_Z=8-IDXtra .. Slot_Z+Slot_L=
 # 7.8..98.2 (not exposed as R60Lib constants; IDXtra=0.2 is the length

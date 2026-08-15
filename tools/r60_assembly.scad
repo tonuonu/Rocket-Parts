@@ -345,10 +345,50 @@ module Pair34_B(){
     }
 }
 
+// Pair 35: petal hub (part 8) <-> petals (part 13) -- 11th review,
+// critical fix 1 (the upside-down hub, tasks/lessons.md). Confirms the
+// donor's own relative offset (R60_PetalHub()'s own module comment:
+// petal frame = hub frame - 9.5mm, Rocket6551.scad ShowRocket()'s hub
+// at NC-5/petals at NC-14.5) no longer collides now the spigot has moved
+// off the petal-mating face.
+//
+// Mutation-tested: at the OLD (pre-fix) spigot placement this read a
+// real, measured 1.3094cm3 at hub-local Z[16.70,21.50] -- exactly the
+// spigot band, confirming the review's own defect report. At the
+// corrected placement (this file, as committed) it renders empty,
+// 0.0000cm3.
+module Pair35_A(){ translate([0,0,9.5]) R60_Petals(); }
+module Pair35_B(){ R60_PetalHub(); }
+
+// Pair 36: petal spring holder (part 24) <-> petal hub (part 8) -- 11th
+// review, critical fix 2 (the missing hinge, tasks/lessons.md).
+// R60_PSH_Placed()'s own module comment (Rocket60.scad) has the full
+// placement derivation. NOT held to EPS_CM3 like every other pair here:
+// this is a moving hinge joint (the holder's axle rides in the hub's
+// pivot socket), not two static faces meant to sit flush -- a small,
+// real residual at the hinge boss/clearance-cut interface is ordinary
+// FDM print-fit tolerance, not a placement defect, and this pair's own
+// threshold (HINGE_MAX_CM3, verify_rocket60_assembly.py) is set an order
+// of magnitude above the measured ~0.007-0.009cm3 range for exactly that
+// reason -- see that constant's own comment for the mutation test
+// proving it still catches a genuinely wrong placement.
+module Pair36_A(){ R60_PSH_Placed(0); }
+module Pair36_B(){ R60_PetalHub(); }
+
+// Pair 37: petal spring holder (part 24) <-> petals (part 13) -- the
+// OTHER half of Pair 36's own joint, the bolted (not hinged) interface.
+// Held to the normal EPS_CM3 tolerance (a bolted flush face, not a
+// moving joint): measured 6.8e-17cm3 (floating-point noise, genuinely
+// zero) at the placement R60_PSH_Placed() uses -- confirms the bolt-hole
+// alignment derivation (Rocket60.scad's own module comment) independent
+// of Pair 36's hinge-side residual.
+module Pair37_A(){ translate([0,0,9.5]) R60_Petals(); }
+module Pair37_B(){ R60_PSH_Placed(0); }
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
-// (0..23) is listed below with what it physically mates with, so a missing
+// (0..24) is listed below with what it physically mates with, so a missing
 // pair is a visible gap in this table, not a silent omission.
 //
 //  0  test ring       -- standalone print-fit GAUGE, not a flight part.
@@ -942,7 +982,7 @@ module Pair32_B(){ R60_VegaSled(); }
 // transplant, see tasks/lessons.md) -- removed from this list too, not
 // just their own `if` dispatch line below, per this comment's own rule.
 KNOWN_PAIRS = [0,1,2,3,4,5,7,8,10,11,21,22,23,24,
-               25,26,27,28,29,30,32,33,34];
+               25,26,27,28,29,30,32,33,34,35,36,37];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -971,3 +1011,6 @@ if (Pair==30) intersection(){ Pair30_A(); Pair30_B(); }
 if (Pair==32) intersection(){ Pair32_A(); Pair32_B(); }
 if (Pair==33) intersection(){ Pair33_A(); Pair33_B(); }
 if (Pair==34) intersection(){ Pair34_A(); Pair34_B(); }
+if (Pair==35) intersection(){ Pair35_A(); Pair35_B(); }
+if (Pair==36) intersection(){ Pair36_A(); Pair36_B(); }
+if (Pair==37) intersection(){ Pair37_A(); Pair37_B(); }
