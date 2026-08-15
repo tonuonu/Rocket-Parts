@@ -181,44 +181,42 @@ Door_Z0_ = (R60_EBay_L - R60_Door_Open_H) / 2;
 module Pair4_A(){ translate([0,0,Door_Z0_ - R60_Door_Overlap]) R60_Door(); }
 module Pair4_B(){ R60_EBayTube(); }
 
-// Pair 5: e-bay aft bulkhead's SKIRT (part 5) <-> deployment bay tube
-// (part 3), along the insertion stroke -- a plain glue joint (petal-
-// deployment transplant: no carrier/pins any more, see R60_ChuteTube()'s
-// own module comment). Stack frame: stack_z=0 at the skirt's own start
-// (bulkhead local z=T=12), running to stack_z=Skirt_L=15 (skirt tip) --
-// same derivation as the pre-transplant frame, just without the 65mm
-// carrier span appended. chute_z = stack_z+Ins-15 = (bulkhead_z-12)+Ins-15
-// = bulkhead_z+Ins-27 (Ins=0 first contact, Ins=15 fully seated). Both
-// parts being plain, featureless cylinders now (R60_EBayAftBulkhead()'s
-// skirt is a bare OD, R60_ChuteTube() has no internal cuts left at all),
-// this pair necessarily reads a clean 0.0 across the whole stroke -- it
-// is a sanity check on the frame math, not a defect-finding probe any
-// more (that role moved to verify_rocket60.py's own OD/bore checks and
-// the max-radius-vs-bore check for the petal cage/release stack).
+// Pair 5: e-bay aft bulkhead's SKIRT (part 5) <-> deployment bay tube,
+// forward piece (part 3), along the insertion stroke -- a plain glue
+// joint (petal-deployment transplant: no carrier/pins any more, see
+// R60_ChuteTubeFwd()'s own module comment). Stack frame: stack_z=0 at
+// the skirt's own start (bulkhead local z=T=12), running to
+// stack_z=Skirt_L=15 (skirt tip) -- same derivation as the pre-
+// transplant frame, just without the 65mm carrier span appended.
+// chute_z = stack_z+Ins-15 = (bulkhead_z-12)+Ins-15 = bulkhead_z+Ins-27
+// (Ins=0 first contact, Ins=15 fully seated). Both parts being plain,
+// featureless cylinders at this joint (R60_EBayAftBulkhead()'s skirt is
+// a bare OD, R60_ChuteTubeFwd()'s own forward rim -- the split's own
+// spigot/socket is far aft of here, R60_ChuteSplit_Z=137mm in -- has no
+// internal cuts either), this pair necessarily reads a clean 0.0 across
+// the whole stroke -- it is a sanity check on the frame math, not a
+// defect-finding probe any more (that role moved to verify_rocket60.py's
+// own OD/bore checks and the max-radius-vs-bore check for the petal
+// cage/release stack). 12th review: R60_ChuteTube() renamed
+// R60_ChuteTubeFwd() (the tube split) -- part 3 keeps this joint
+// unchanged, it is entirely inside the forward piece.
 module Pair5_A(){ translate([0,0,Ins-27]) R60_EBayAftBulkhead(); }
-module Pair5_B(){ R60_ChuteTube(); }
+module Pair5_B(){ R60_ChuteTubeFwd(); }
 
-// Pair 7: chute tube (part 3) <-> fin can (part 9).
-// Plain butt joint (assembly step 11: "Bond the chute bay tube to the
-// fin can's forward end"). Fin can z=0 is its AFT (retainer) end (fin
-// slots/retainer bosses near z=0, forward centring ring near
-// z=R60_FinCan_L); chute tube z=R60_Chute_L is ITS aft end (bonds to the
-// fin can) -- i.e. the fin can's own "more aft" direction is DECREASING
-// local z, while the chute tube's is INCREASING local z (opposite
-// conventions, like Pair 0/2's neck/bulkhead), so this needs the same
-// end-for-end-rotation idiom (7th review, finding 5), not a plain
-// translate (a first draft used a plain translate here and got a 51.8
-// cm3 "overlap" -- the two tubes' ENTIRE bodies stacked on the same
-// axial span instead of meeting at one boundary plane, caught by
-// sanity-checking the reported volume against the physical joint, which
-// is a razor-thin butt joint, not a 51.8 cm3 interference), and NOT a
-// Z-only mirror (same chirality bug as Pairs 0/2/23 -- a mirror is not a
-// rotation any real print can undergo). rotate([0,180,0]) reverses the
-// fin can's own +z growth direction so it runs aft from the chute tube's
-// own aft rim, matching physical reality: chute_z = R60_Chute_L+R60_FinCan_L
-// - fincan_z, with X also correctly flipping this time.
-module Pair7_A(){ translate([0,0,R60_Chute_L+R60_FinCan_L]) rotate([0,180,0]) R60_FinCan(); }
-module Pair7_B(){ R60_ChuteTube(); }
+// Pair 7: RETIRED (12th review -- found broken by the tube split, which
+// is what exposed that this pair had already gone stale before it: its
+// own comment described "Bond the chute bay tube to the fin can's
+// forward end", a joint the 11th review's petal-hub fix (tasks/
+// lessons.md) already replaced with R60_PetalHub()'s own glued spigot,
+// without retiring this pair at the same time. The deployment bay tube
+// no longer touches the fin can at all -- its own open aft end slides
+// over the RETRACTED PETAL CAGE, R60-PrintSettings.md's own step 11 --
+// so there is no joint left here for this pair to test. That sliding
+// fit is covered elsewhere: verify_rocket60.py's own max-radius-vs-bore
+// check (the cage's OD against the tube's bore) and Pair 35 (hub vs
+// petals) for the geometry, this file's own Pair 41 + verify_rocket60_
+// assembly.py's check_closure() for the axial reach. Was: chute tube
+// (part 3) <-> fin can (part 9), a plain butt joint.
 
 // Pair 8: motor spacer (part 12) <-> fin can's MMT (part 9, built into
 // R60_FinCan()). "Forward spacer so a motor shorter than R60_MMT_L still
@@ -414,10 +412,73 @@ module Pair38_B(){ R60_ReleaseTopRetainer(); }
 module Pair39_A(){ translate([0,0,9.5]) R60_Petals(); }
 module Pair39_B(){ R60_PetalHub(); }
 
+// Pair 40: deployment bay tube, forward piece (part 3) <-> aft piece
+// (part 26) -- 12th review, the tube split (owner's ruling: 275mm
+// exceeds the print envelope as one piece, tasks/lessons.md). The
+// spigot/socket in-wall joint, at its real relative offset
+// (R60_ChuteSplit_Z, R60Lib.scad). Mutation-tested: the FIRST version of
+// this joint (spigot the full R60_ChuteSplit_Engage=7mm long, the same
+// as the socket's own straight-plus-taper zone) collided with the
+// socket's own tapered mouth, 0.058cm3 -- >1000x EPS_CM3, a real,
+// measured defect this pair caught before it shipped. Fixed by stopping
+// the spigot Taper mm short of the socket's own taper (Rocket60.scad's
+// R60_ChuteTubeFwd()/R60_ChuteTubeAft(), both Taper=1); re-rendered,
+// empty, 0.0000cm3.
+module Pair40_A(){ R60_ChuteTubeFwd(); }
+module Pair40_B(){ translate([0,0,R60_ChuteSplit_Z]) R60_ChuteTubeAft(); }
+
+// Pair 41: NOT a collision probe, same idiom as Pair 39 -- unions the
+// deployment bay tube's own two pieces (part 3 fwd + part 26 aft) at
+// their real relative offset so verify_rocket60_assembly.py's own
+// check_closure() can measure the ASSEMBLED tube's real length
+// (mesh-derived, not R60_Chute_L restated) -- since the tube is no
+// longer one printed part, reading part 3's own rendered height alone
+// would silently miss whatever the aft piece adds or the joint's own
+// overlap removes.
+module Pair41_A(){ R60_ChuteTubeFwd(); }
+module Pair41_B(){ translate([0,0,R60_ChuteSplit_Z]) R60_ChuteTubeAft(); }
+
+// Pairs 42/43: NOT mating-fit probes -- volume probes for
+// verify_rocket60_assembly.py's own check_packing() (12th review,
+// promoting this session's own /tmp bore-probe measurement into the
+// harness as a checked figure, not just a doc comment -- R60_Petal_Len's
+// own module comment, R60Lib.scad, has the full derivation). "A" is the
+// real printed geometry that intrudes into the packed-chute volume at
+// each end of the petal cage's own bore; "B" is a synthetic probe
+// cylinder at the SAME diameter PD_Petals' own bore uses
+// (R60_Coupler_OD-2*R60_Wall_T=53.2mm), NOT a printed part -- this is
+// the one place in this file that intersects a real part against a
+// bare primitive instead of another real part, because the question
+// being asked ("how much of this part's own material sits inside the
+// would-be chute's own bore") has no second printed part to pair it
+// against.
+//
+// Pair 42: petal hub (part 8) + all 3 petal spring holders (part 24,
+// R60_PSH_Placed()) <-> the bore, from the petal-base plane (hub-local
+// Z=9.5, same as Pair 35's own translate) forward -- the hub's own
+// internal floor plus the 3 hinge bosses, together, not the ~18mm
+// full-diameter slab this repo used to assume before it was measured.
+module Pair42_A(){
+    union(){
+        R60_PetalHub();
+        for (j=[0:2]) R60_PSH_Placed(j);
+    }
+}
+module Pair42_B(){ translate([0,0,9.5]) cylinder(d=53.2, h=50, $fn=90); }
+
+// Pair 43: forward spring end (part 23, the piston) <-> the bore, full
+// part height -- position along Z does not matter for a volume-within-
+// diameter measurement (R65_FwdSpringEnd()'s own skirt, Tube(ID=54.6),
+// is already wider than the 53.2mm probe and so never intersects it,
+// which is the point: the skirt is a guide sleeve around the packed
+// chute, not inside it).
+module Pair43_A(){ R60_FwdSpringEnd(); }
+module Pair43_B(){ translate([0,0,-30]) cylinder(d=53.2, h=35, $fn=90); }
+
 // ===========================================================================
 // Pair enumeration (4th review, harden-the-harness item 2; UPDATED for the
 // petal-deployment transplant -- see tasks/lessons.md). Every part
-// (0..24) is listed below with what it physically mates with, so a missing
+// (0..26) is listed below with what it physically mates with, so a missing
 // pair is a visible gap in this table, not a silent omission.
 //
 //  0  test ring       -- standalone print-fit GAUGE, not a flight part.
@@ -426,14 +487,21 @@ module Pair39_B(){ R60_PetalHub(); }
 //  2  e-bay tube      -- neck(1)[0], fwd bulkhead(4)[1], aft bulkhead(5)[2],
 //                         Vega sled(6)[3], door(7)[4]; arming switch's own
 //                         envelope[22]; Vega board's own envelope[21].
-//  3  deployment bay tube -- aft bulkhead skirt(5)[5, stroke]. Plain
-//                         featureless tube now (R60_ChuteTube()'s own
-//                         module comment) -- no other mating feature; the
-//                         petal cage (8/13) SLIDES inside it as a plain
-//                         clearance fit, not a bonded joint, so there is no
-//                         meaningful interference pair to enumerate there
-//                         (covered instead by verify_rocket60.py's max-
-//                         radius-vs-bore check).
+//  3  deployment bay tube, FWD piece -- aft bulkhead skirt(5)[5, stroke];
+//                         aft piece(26)[40, the split's own spigot/socket
+//                         joint, 12th review]. Plain featureless tube
+//                         otherwise (R60_ChuteTubeFwd()'s own module
+//                         comment) -- no other mating feature; the petal
+//                         cage (8/13) SLIDES inside the ASSEMBLED tube (not
+//                         this piece alone) as a plain clearance fit, not a
+//                         bonded joint, so there is no meaningful
+//                         interference pair to enumerate there (covered
+//                         instead by verify_rocket60.py's max-radius-vs-
+//                         bore check, and axially by pair 41 + check_
+//                         closure()). Pair 7 (this part vs the fin can)
+//                         RETIRED, see below -- that joint does not exist
+//                         any more (part 8's own spigot replaced it, 11th
+//                         review, tasks/lessons.md).
 //  4  fwd bulkhead    -- e-bay tube(2)[1]. EXCLUDED as a direct pair vs.
 //                         the neck skirt above it: both round, axis-
 //                         centred profiles, no off-axis feature.
@@ -498,11 +566,22 @@ module Pair39_B(){ R60_PetalHub(); }
 //     envelope (pair 21's BoardProbe).
 // 23  Vega sled's FEET (part 6) vs. the aft bulkhead (part 5) they bolt to.
 // 24  same feet vs. the forward bulkhead (part 4).
+// 26  deployment bay tube, AFT piece (12th review, the tube split) --
+//     fwd piece(3)[40, the split's own spigot/socket joint]. Otherwise
+//     the same "no other mating feature" note as part 3 above: the
+//     petal cage slides inside the ASSEMBLED tube, covered the same way.
 //
 // RETIRED (petal-deployment transplant): pairs 6, 9, 12, 13, 14, 15, 17,
 // 19, 31 -- all checked the deleted spring-carrier/tether-latch/servo-2
 // design (parts 8/13's own predecessors, plus the servo-2 horn/pin path).
 // See tasks/lessons.md.
+//
+// RETIRED (12th review): pair 7 (deployment bay tube vs fin can) -- the
+// joint it tested (a direct bond between them) was replaced by R60_
+// PetalHub()'s own glued spigot in the 11th review but not retired here
+// at the same time; found stale by this session's own tube split (a
+// render error against the now-renamed R60_ChuteTube(), not a silent
+// pass). See Pair 7's own comment, above, for the full account.
 //
 // RETIRED (6th review, finding 2 -- probes that cannot fail, kept here for
 // history): pairs 16 (switch vs tube) and 20 (switch vs sled) were
@@ -1010,8 +1089,9 @@ module Pair32_B(){ R60_VegaSled(); }
 // Pairs 6, 9, 12, 13, 14, 15, 17, 19, 31 RETIRED (petal-deployment
 // transplant, see tasks/lessons.md) -- removed from this list too, not
 // just their own `if` dispatch line below, per this comment's own rule.
-KNOWN_PAIRS = [0,1,2,3,4,5,7,8,10,11,21,22,23,24,
-               25,26,27,28,29,30,32,33,34,35,36,37,38,39];
+KNOWN_PAIRS = [0,1,2,3,4,5,8,10,11,21,22,23,24,
+               25,26,27,28,29,30,32,33,34,35,36,37,38,39,
+               40,41,42,43];
 assert(search([Pair], KNOWN_PAIRS)[0] != [],
     str("r60_assembly.scad: Pair=", Pair, " has no dispatch entry below ",
         "(or was deleted and should be removed from verify_rocket60_",
@@ -1023,7 +1103,7 @@ if (Pair==2) intersection(){ Pair2_A(); Pair2_B(); }
 if (Pair==3) intersection(){ Pair3_A(); Pair3_B(); }
 if (Pair==4) intersection(){ Pair4_A(); Pair4_B(); }
 if (Pair==5) intersection(){ Pair5_A(); Pair5_B(); }
-if (Pair==7) intersection(){ Pair7_A(); Pair7_B(); }
+// Pair 7: RETIRED (12th review) -- see the pair-enumeration comment above.
 if (Pair==8) intersection(){ Pair8_A(); Pair8_B(); }
 if (Pair==10) intersection(){ Pair10_A(); Pair10_B(); }
 if (Pair==11) intersection(){ Pair11_A(); Pair11_B(); }
@@ -1046,3 +1126,8 @@ if (Pair==37) intersection(){ Pair37_A(); Pair37_B(); }
 if (Pair==38) intersection(){ Pair38_A(); Pair38_B(); }
 // Pair 39: UNION, not intersection -- see Pair39_A/B's own comment above.
 if (Pair==39) union(){ Pair39_A(); Pair39_B(); }
+if (Pair==40) intersection(){ Pair40_A(); Pair40_B(); }
+// Pair 41: UNION, not intersection -- see Pair41_A/B's own comment above.
+if (Pair==41) union(){ Pair41_A(); Pair41_B(); }
+if (Pair==42) intersection(){ Pair42_A(); Pair42_B(); }
+if (Pair==43) intersection(){ Pair43_A(); Pair43_B(); }

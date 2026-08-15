@@ -1,6 +1,6 @@
 # Rocket 60 — printable meshes
 
-Ø60 mm camera rocket, 744 mm, built around the user's own CAD nosecone.
+Ø60 mm camera rocket, 779 mm, built around the user's own CAD nosecone.
 Regenerated from `Rocket60.scad` at branch HEAD after the petal-deployment
 transplant (the invented spring/ball-lock carrier + shear-pin + servo-
 tether design replaced by a flown design's own petal-deployment + cable-
@@ -10,17 +10,17 @@ after export and checked against the geometry that part is supposed to
 have.
 
 Verify with `python3 tools/verify_rocket60.py`, the assembly harness
-(`verify_rocket60_assembly.py`, 28 pairs incl. the deployment-bay closure
-check), and `verify_docs_sync.py`. **The assembly harness and
-`tools/rocket60_model.py` currently exit 1 by design**: both report the
-same honest, already-documented finding that the corrected (right-way-
-round) petal cage is 12.2 mm longer than the deployment bay tube fits --
-see "Known gaps" in `R60-PrintSettings.md` and spec sec 4.1. That is an
-owner decision (lengthen `03_DeploymentBayTube.stl` / `R60_Chute_L`, or
-shrink the cage), not a broken build; do not print `03_DeploymentBayTube.stl`
-or the petal cage (parts 8/13/24) until it's made, since it is a one-line
-constant on either side of the same decision the packing-volume options
-below also turn on.
+(`verify_rocket60_assembly.py`, 31 pairs incl. the deployment-bay closure
+and net-packing-volume checks), and `verify_docs_sync.py` — all three
+exit 0. Two owner rulings this round (spec sec 4.1 has the record):
+**`R60_Petal_Len` grown 120→140mm** for real (not tangent) packing
+margin, and **the deployment bay tube split into two printed pieces**
+(`03_DeploymentBayTubeFwd.stl` + `26_DeploymentBayTubeAft.stl`, joined
+by a glued in-wall spigot/socket) because the corrected length the first
+ruling exposed, 275mm, exceeds both this project's own "fits 250mm Z"
+convention and the Bambu P1S's own 256mm build volume as one piece — see
+"Known gaps" in `R60-PrintSettings.md` for the load this joint is sized
+against.
 
 ## Print part 0 first, and stop there
 
@@ -45,7 +45,7 @@ circle must meet inserts in a PCB that does not shrink.
 | `NoseCone.stl` | — | 94.05 | 59.99 | 29.4 cm³ | PETG |
 | `01_Neck.stl` | 1 | 24.00 | 60.00 | 16.2 cm³ | PETG |
 | `02_EBayTube.stl` | 2 | 177.00 | 60.00 | 47.1 cm³ | PETG |
-| `03_DeploymentBayTube.stl` | 3 | 240.00 | 60.00 | 70.4 cm³ | PETG |
+| `03_DeploymentBayTubeFwd.stl` | 3 | 143.00 | 60.00 | 41.1 cm³ | PETG |
 | `04_EBayFwdBulkhead.stl` | 4 | 7.70 | 56.40 | 12.7 cm³ | PETG |
 | `05_EBayAftBulkhead.stl` | 5 | 27.00 | 56.40 | 39.4 cm³ | PETG |
 | `06_VegaSled.stl` | 6 | 8.00 | 133.1×45.6 flat | 23.8 cm³ | PETG |
@@ -55,13 +55,16 @@ circle must meet inserts in a PCB that does not shrink.
 | `10_Fin.stl` | 10 | 4.00 | flat | 15.8 cm³ | PETG, print 3 |
 | `11_MotorRetainer.stl` | 11 | 6.00 | 60.00 | 13.4 cm³ | **PC** |
 | `12_MotorSpacer.stl` | 12 | 98.00 | 29.00 | 16.6 cm³ | **PC** |
-| `13_Petals.stl` | 13 | 120.00 | 56.40 | 33.8 cm³ | PETG |
+| `13_Petals.stl` | 13 | 140.00 | 56.40 | 39.3 cm³ | PETG |
 | `14_ThrustRing.stl` | 14 | 6.00 | 28.90 | 0.6 cm³ | **PC** |
 | `24_PetalSpringHolder.stl` | 24 | 36.70 | 28.00 | 2.2 cm³ | PETG, print 3 |
+| `26_DeploymentBayTubeAft.stl` | 26 | 138.00 | 60.00 | 39.3 cm³ | PETG |
 
-Airframe total 442.1 cm³ (parts 0-14 + 3× part 24). Tallest part 228 mm,
-inside the 250 mm envelope with 22 mm to spare. `NoseCone.stl` is the
-user's `Nose Cone.STEP` converted, not regenerated.
+Airframe total 481.9 cm³ (parts 0-14, 26 + 3× part 24). Tallest part
+228 mm (fin can, part 9), inside the 250 mm envelope with 22 mm to spare
+— parts 3/26 (143/138 mm) are comfortably under it too, the reason the
+tube split into two pieces at all (275 mm assembled). `NoseCone.stl` is
+the user's `Nose Cone.STEP` converted, not regenerated.
 
 `12_MotorSpacer.stl` is the G80T spacer (`Motor_Class = 0`); set
 `Motor_Class` to 1 or 2 and re-export for the H182R or H135W.
@@ -122,9 +125,9 @@ Re-run after the petal-deployment transplant (spec sec 4).
 
 | Motor | Liftoff | Margin | Rail exit (1.83 m) |
 |---|---|---|---|
-| G80T-14A | 924 g | 1.53 cal | 20.2 m/s |
-| H182R-14A | 991 g | 1.34 cal | 30.1 m/s |
-| H135W-14A | 994 g | 1.34 cal | 23.2 m/s |
+| G80T-14A | 940 g | 1.69 cal | 20.0 m/s |
+| H182R-14A | 1006 g | 1.48 cal | 29.8 m/s |
+| H135W-14A | 1009 g | 1.49 cal | 23.0 m/s |
 
 Fin flutter Vf = 589 m/s (root-chord t/c, NAR/TIR-33 form). Per-motor
 margin against each motor's own Vmax, floor 1.5×: G80T 4.8×, H182R 3.0×,
@@ -138,7 +141,7 @@ from `RailGuide.scad` fits directly. Axial placement (task 7): azimuth
 180°, aft button Z=630mm (fin can, forward of the fins), forward button
 Z=242mm (e-bay tube) — `R60Lib.scad`'s `R60_RailButton_*` constants.
 
-Rail exit on that rail: **G80T 20.4 m/s**, H182R 30.4, H135W 23.4 — all
+Rail exit on that rail: **G80T 20.0 m/s**, H182R 29.8, H135W 23.0 — all
 comfortably above the ~15 m/s minimum.
 
 The 3 mm rod is not usable at this mass. The TSP E20-P is excluded: 8.9 m/s

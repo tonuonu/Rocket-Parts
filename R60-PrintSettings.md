@@ -17,9 +17,9 @@ were "deliberately incomplete"), and its pin-load spec was self-
 contradictory. Replaced by transplanting a flown design's own libraries
 (`Rocket6551.scad`'s petal deployment + `CableReleaseBBMicro.scad`'s
 release catch) instead of re-deriving a mechanism from scratch a second
-time — see spec §4 and `tasks/lessons.md`. All 26 printable parts (test
-ring through the spring centering ring mount, part 25) plus the fixed
-`NoseCone.stl` exist as meshes and are covered below.
+time — see spec §4 and `tasks/lessons.md`. All 27 printable parts (test
+ring through the deployment bay tube's own aft piece, part 26) plus the
+fixed `NoseCone.stl` exist as meshes and are covered below.
 
 - The separation path (spec §4) is now the **petal cage itself**:
   `08_PetalHub.stl` spigots (glued, not bolted) into the fin can's
@@ -40,10 +40,15 @@ ring through the spring centering ring mount, part 25) plus the fixed
   CenteringRingMount.stl` (seats the CS4323) close the two gaps the
   first transplant attempt left: the hinge subsystem was missing
   entirely, and the spring had nothing to seat on.
-- `03_ChuteBayTube.stl` is now `03_DeploymentBayTube.stl` — a plain,
-  feature-free 240mm tube (grown from 180mm). It never separates; it
-  houses the release stack + spring + forward spring end, with an open
-  aft end the petal cage telescopes through.
+- `03_ChuteBayTube.stl` is now two pieces, `03_DeploymentBayTubeFwd.stl`
+  + `26_DeploymentBayTubeAft.stl` (grown 180→240→275mm, then split —
+  12th review, owner's ruling: the corrected length exceeds the print
+  envelope as one piece, see spec §4.1). Neither piece ever separates
+  from the other, or from the e-bay section — they are glued together
+  (in-wall spigot/socket, `R60_ChuteSplit_Z`=137mm) and stay with the
+  e-bay/nosecone section for good; together they house the release
+  stack + spring + forward spring end, with an open aft end the petal
+  cage telescopes through.
 - `05_EBayAftBulkhead.stl` carries one servo mount instead of two servo
   pockets — single deploy has no second (tumble-release) servo. **10th
   review, critical fix:** the mount is 2× #10-24 through-bolts into
@@ -62,32 +67,37 @@ ring through the spring centering ring mount, part 25) plus the fixed
   **unchanged by this task** (nine prior review rounds hardened them;
   this transplant does not touch them).
 
-**Open finding, owner decision needed before you print the cage.**
-`tools/verify_rocket60_assembly.py` and `tools/rocket60_model.py` both
-exit 1 right now, and by design: fixing the hub's orientation (above)
-also fixed its length, and the corrected petal cage needs 12.2mm more
-axial room than `03_DeploymentBayTube.stl` currently gives it (257.7mm
-needed vs 240mm built) — see §9 "Known gaps" for the numbers and the
-same decision's tie to the packing-volume shortfall below. Until
-`R60_Chute_L` (or the cage) changes, **do not print
-`03_DeploymentBayTube.stl` or the petal cage (parts 8/13/24)** —
-everything else in this document is unaffected and safe to print now.
+**Resolved (12th review) — both owner rulings applied, all three
+verification suites exit 0.** Fixing the hub's orientation (above) also
+fixed its own length requirement, exposing that the deployment bay tube
+needed to grow to 275mm for a correct spigot engagement (not the 12.2mm
+originally measured short at 240mm) — the owner's ruling grew
+`R60_Petal_Len` to 140 (real packing margin, not a tangent fit) and
+`R60_Chute_L` to 275 (derived from that), then split the tube into two
+printed pieces since 275mm exceeds the print envelope as one — see spec
+§4.1 for the full record and §9 "Known gaps" for the load the new joint
+is sized against. Print `03_DeploymentBayTubeFwd.stl`,
+`26_DeploymentBayTubeAft.stl` and the petal cage (parts 8/13/24) as
+normal; nothing here is held back any more.
 
 **Motors:** AeroTech G80T-14A (owned, 29 mm) is the sizing motor. The
-petal-deployment transplant grew the deployment bay (180→240mm) and
-moved the fin can (and CP) 60mm further aft; re-run, the G80T's static
-margin **IMPROVED to 1.53 cal** (was 1.46 cal pre-transplant; 11th
-review's hinge-subsystem mass addition, below, moved the margin again,
-from 1.56 to 1.53 — the mesh that CG figure is measured off changed,
-not the airframe stations) — CP moved aft more than CG did, since the
-added length sits forward of the fin can. Clears the physical minimum,
-**1.0 cal** (standard high-power practice's accepted 1.0–2.0 cal band),
-with real room. See spec §6/§6.1 for the full reasoning. Airframe is
-sized for a 29 mm H DMS (H182R-14A or H135W-14A) so Mach 0.60 is
-available later with no reprint (spec §1.1, §5); both clear the same
-1.0 cal minimum (§9) at **1.34 cal** each.
+petal-deployment transplant grew the deployment bay (180→240→275mm,
+the last step the 12th review's tube-split/packing-margin ruling) and
+moved the fin can (and CP) further aft; re-run, the G80T's static margin
+**IMPROVED to 1.69 cal** (was 1.46 cal pre-transplant, 1.53 after the
+11th review's hinge-subsystem fix — the 12th review's own R60_Chute_L
+275/R60_Petal_Len 140 growth moved the margin again, to 1.69) — CP
+moved aft more than CG did, since the added length sits forward of the
+fin can. Clears the physical minimum, **1.0 cal** (standard high-power
+practice's accepted 1.0–2.0 cal band), with real room. See spec §6/§6.1
+for the full reasoning. Airframe is sized for a 29 mm H DMS (H182R-14A
+or H135W-14A) so Mach 0.60 is available later with no reprint (spec
+§1.1, §5); both clear the same 1.0 cal minimum (§9), H182R at
+**1.48 cal**, H135W at **1.49 cal**.
 **Envelope:** tallest printed part is the fin can at 228 mm, inside the
-Bambu P1S's 256 mm Z with 28 mm to spare (spec §8).
+Bambu P1S's 256 mm Z with 22 mm to spare (spec §8) — the deployment bay
+tube (275mm assembled) is split into two pieces (143/138mm) for the
+same reason, each with more spare than the fin can.
 
 ---
 
@@ -195,7 +205,7 @@ correction; this paragraph used to cite the SUPERSEDED 955 m/s figure
 here, two sections before its own correction, a live instance of the
 exact "restated literal drifts from the source" defect §9's own note
 warns about), gated per-motor at a stated 1.5× floor, not a single "3×
-the fastest motor" check — 3.0× against the H182R's own ~199 m/s Vmax
+the fastest motor" check — 3.0× against the H182R's own ~197 m/s Vmax
 (§9's fin-sizing note has the full per-motor table). Moving the fins to
 PC would change that shear modulus and orphan the documented margin
 without a recompute, and neither
@@ -230,7 +240,7 @@ this document, not a design-spec number — and the reasoning is given.
 | 0 | Test ring | PETG | 4 (§8) | 25–30% gyroid **[practice default]** — 16 mm radial cross-section needs real infill, not just walls | 0.2 mm (§8) | Flange down (bed), spigot up — matches modeled Z, puts the mating face against the bed for best flatness | Optional — small footprint, PETG bed adhesion is normally adequate; add if the first layer lifts |
 | 1 | Neck | PETG | 4 (§8) | 25–30% gyroid on the 5 mm flange disc **[practice default]**; skirt is a 1.6 mm tube, solid from walls alone | 0.2 mm (§8) | Flange down (bed) — this is the face that bolts to the camera and bears on the nosecone base; skirt points up | Optional, same reasoning as test ring |
 | 2 | E-bay tube | PETG | 4 (§8) | N/A — 1.6 mm tube wall, solid from perimeters | 0.2 mm (§8) | Vertical, as modeled (§8: "all tubes print vertically") | No |
-| 3 | Chute bay tube | PETG | 4 (§8) | N/A — same as e-bay tube | 0.2 mm (§8) | Vertical, as modeled | No |
+| 3 | Deployment bay tube, fwd (12th review, the tube split) | PETG | 4 (§8) | N/A — same as e-bay tube | 0.2 mm (§8) | Vertical, as modeled, spigot end up | No |
 | 4 | E-bay fwd bulkhead | PETG | 4 (§8) | 25–30% gyroid **[practice default]** — 17 mm radial disc, not flight-critical (harness pass-through only) | 0.2 mm (§8) | Flat, either face down | No |
 | 5 | E-bay aft bulkhead | PETG | 4 (§8) | **≥50% gyroid, or solid, near the 2 activator-mount screw bosses and cord-anchor region [practice default, deliberately conservative]** | 0.2 mm (§8) | Flat, aft (skirt) face **up** — this face carries the 2 activator mounting holes and the now-mostly-hollow skirt's own internal ceiling (its 3mm aft web); printing it up gives the slicer a bridge/support target instead of an unsupported overhang on the down face | **Yes — supports required under the skirt's internal ceiling** (10th review: the skirt is now a hollow tube + a 3mm web at the tip, not a solid slug — R60_EBayAftBulkhead()'s own module comment). Tree/normal supports touching build plate only, so they don't fuse into the skirt's own hollow interior |
 | 6 | Vega sled | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, standoffs up | No |
@@ -253,6 +263,7 @@ this document, not a design-spec number — and the reasoning is given.
 | 23 | Forward spring end | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, skirt face down | No |
 | 24 | Petal spring holder (×3, one per petal — 11th review, fix 2, the missing hinge) | PETG | 4 (§8) | 25–30% gyroid **[practice default]** — small part, mostly walls | 0.2 mm (§8) | Flat, bolt-hole face down (best flatness on the face that bears against the petal wall) | Yes, under the hinge boss overhang |
 | 25 | Spring centering ring mount (11th review, fix 4 — seats the CS4323) | PETG | 4 (§8) | 25–30% gyroid **[practice default]** | 0.2 mm (§8) | Flat, spring-seat face down | Yes, under the spoke/rope-boss overhangs |
+| 26 | Deployment bay tube, aft (12th review, the tube split) | PETG | 4 (§8) | N/A — same as e-bay tube | 0.2 mm (§8) | Vertical, as modeled, socket end down | No |
 
 **Parts 15–23 (10th review):** these 9 release-hardware prints were
 already exported and listed in `STL Files/Rocket60/README.md` but were
@@ -301,11 +312,11 @@ rail only — the 3 mm launch rod is not usable at this mass**; at this
 length a 3 mm rod would whip badly and rail exit would be unstable
 (spec §9).
 
-At the as-built liftoff mass (924 g on the G80T, from
+At the as-built liftoff mass (940 g on the G80T, from
 `tools/rocket60_model.py`'s measured-mesh masses — see §9's fin-sizing
-note) the rocket leaves the owner's 1.83 m rail at **20.2 m/s**, comfortably
+note) the rocket leaves the owner's 1.83 m rail at **20.0 m/s**, comfortably
 clear of the ~15 m/s minimum needed for the fins to stabilize the vehicle
-(spec §5, §6). The H182R is unaffected (30.1 m/s). Confirm actual rail
+(spec §5, §6). The H182R is unaffected (29.8 m/s). Confirm actual rail
 exit before flying (spec §11 item 6).
 
 **Axial station (task 7, previously unspecified; 10th review: forward
@@ -398,12 +409,18 @@ Build order for what exists today:
    with the rocket vertical on the rail (spec §7.1). The door is a cover
    that overlaps the tube's opening on every side; 4× M2.5 into the
    tube's own bosses, not a flush plug.
-9. **Bond `03_DeploymentBayTube.stl`'s forward rim to
-   `05_EBayAftBulkhead.stl`'s aft skirt** (same OD, flush joint) —
-   PERMANENTLY: this is no longer a separable, serviceable joint (the
-   spring-carrier/shear-pin design this step used to describe is
-   deleted — see Status). The release stack (step 4) now sits inside
-   this tube. Bolt `25_CenteringRingMount.stl` to `16_
+9. **Glue `03_DeploymentBayTubeFwd.stl`'s aft spigot into
+   `26_DeploymentBayTubeAft.stl`'s forward socket** (12th review, the
+   tube split — spec §4.1): a snug, located joint (0.4mm clearance,
+   this design's own standard spigot convention), NOT a bare butt bond
+   — 6mm of real engagement, sized against the ejection charge's own
+   pressure pulse (spec §4.1 has the load and glue-area numbers). Then
+   **bond the assembled tube's own forward rim (part 3's own forward
+   end) to `05_EBayAftBulkhead.stl`'s aft skirt** (same OD, flush
+   joint) — PERMANENTLY: this is no longer a separable, serviceable
+   joint (the spring-carrier/shear-pin design this step used to
+   describe is deleted — see Status). The release stack (step 4) now
+   sits inside this tube. Bolt `25_CenteringRingMount.stl` to `16_
    ReleaseTopRetainer.stl` (11th review, fix 4 — same
    `CRBBm_MountingBoltPattern` hardware class as the release stack's
    other internal joints), THEN thread the locking pin + extension rod
@@ -436,14 +453,14 @@ Build order for what exists today:
     `23_ForwardSpringEnd.stl` (already captive on the release stack's
     pin, step 9) so it seats against the petals directly (it "locks
     onto the bottom of the petals" — `R65_FwdSpringEnd()`'s own module
-    comment — not onto the hub). Bond `03_DeploymentBayTube.stl` to the
+    comment — not onto the hub). Bonding the deployment bay tube to the
     fin can is NOT a step here any more: the two halves simply
-    telescope together — the deployment bay tube's own open aft end
-    slides over the petal cage as a plain sliding fit (its natural bore
-    already gives the same clearance every other internal joint in this
-    design uses), with no bond and no pins. Nothing in the airframe
-    shears; the petals themselves hold the two halves together until
-    the servo releases them (spec §4.2).
+    telescope together — `26_DeploymentBayTubeAft.stl`'s own open aft
+    end slides over the petal cage as a plain sliding fit (its natural
+    bore already gives the same clearance every other internal joint in
+    this design uses), with no bond and no pins. Nothing in the
+    airframe shears; the petals themselves hold the two halves together
+    until the servo releases them (spec §4.2).
 12. Route the permanent shock cord: tie off at `05_
     EBayAftBulkhead.stl`, through `23_ForwardSpringEnd.stl`'s own rope
     holes, through `08_PetalHub.stl`'s own Ø5 centre hole, tie off on
@@ -550,12 +567,12 @@ Copied from spec §11, with one adaptation flagged below.
 4. Bench-test the full Vega sequence on the ground: arm → apogee servo.
 5. Swing test or measured CG/CP check with the real, loaded rocket.
 6. **Weigh the fully assembled rocket and compare against
-   `tools/rocket60_model.py`'s own liftoff-mass figure (907 g, G80T
-   config) before flying.** Rail exit is what mass actually threatens on
-   this rocket (20.4 m/s off the owner's 1.83 m rail against a ~15 m/s
-   minimum, spec §6.1) — NOT stability, which clears its own
-   1.0 cal minimum with real room (spec §6.1, 1.56 cal). Roughly a
-   quarter of the modelled 907 g is flat-gram hardware ESTIMATES, not
+   `tools/rocket60_model.py`'s own liftoff-mass figure (940 g, G80T
+   config, 12th review) before flying.** Rail exit is what mass actually
+   threatens on this rocket (20.0 m/s off the owner's 1.83 m rail
+   against a ~15 m/s minimum, spec §6.1) — NOT stability, which clears
+   its own 1.0 cal minimum with real room (spec §6.1, 1.69 cal). Roughly
+   a quarter of the modelled 940 g is flat-gram hardware ESTIMATES, not
    measured mesh volumes, so the real liftoff mass could differ
    meaningfully:
    - camera assembly (60 g), 1× MG90S servo + small release hardware
@@ -570,7 +587,7 @@ Copied from spec §11, with one adaptation flagged below.
      stated, unverified assumption applied across every PETG part alike,
      not per-part infill actually measured off a scale (§3's own
      infill % differs 25–62% per part).
-   - If the weighed rocket comes in meaningfully over 907 g, re-check
+   - If the weighed rocket comes in meaningfully over 940 g, re-check
      rail exit against the ~15 m/s minimum before flying — a shorter or
      lower-thrust rail exit is the actual failure mode a heavier-than-
      modelled rocket produces, not a stability problem.
@@ -617,36 +634,66 @@ Copied from spec §11, with one adaptation flagged below.
   whatever separation the servo path produces, venting up the open fin
   can/deployment bay toward the just-deployed main — fit a Nomex chute
   protector and sleeve the shock cord (spec §4.3, assembly step 12).
-- **Chute-bay depth shortfall** (11th review, exposed by fixing the
-  upside-down petal hub) — `tools/rocket60_model.py`'s own closure
-  check now correctly FAILS: the corrected (right-way-round) release
-  stack + spring end + petals + hub needs ~12.2mm more depth than
-  `R60_Chute_L`=240 currently budgets. Not silently patched — see that
-  script's own assert message and `R60_Petal_Len`'s comment
-  (R60Lib.scad) for the numbers; growing `R60_Chute_L` changes overall
-  airframe length/CG and needs a stability re-check, outside this
-  task's scope.
-- **Deployment-bay axial closure is now checked, mutation-tested — and
-  the neighbouring blind spots it does NOT cover are named, not
-  silently left** (11th review, fix 7 — `tools/verify_rocket60_assembly.py`'s
-  own `check_closure()`, mesh-based, independently confirms
-  `tools/rocket60_model.py`'s closure assert; mutation-tested against
-  `R60_Petal_Len`=200, shortfall grows 12.2mm→92.2mm, proving it tracks
-  the mutation's magnitude, not just a static failure). Still
-  uncovered: spring throw vs. the piston's real insertion travel; the
-  lock nubs' own engagement FORCE (needs the still-undocumented CS4323
+- **Chute-bay depth shortfall — RESOLVED (12th review, owner's
+  ruling)** — the 11th review's ~12.2mm shortfall (measured at the
+  then-current `R60_Petal_Len`=120/`R60_Chute_L`=240) was the correct
+  finding, but growing `R60_Chute_L` in place turned out not to be a
+  "give it more room" fix: the release stack's own footprint and the
+  hub's own reach past the petal root do not depend on `R60_Chute_L` at
+  all, so a longer tube pushes the fin can further AWAY from the hub's
+  fixed reach, growing the gap rather than closing it (confirmed by
+  mutation, below). The real fix is landing `R60_Chute_L` on the
+  station the hub's own spigot actually needs (277.7mm minus a chosen
+  2.7mm of real engagement = **275mm**, not tangent, not bottomed out)
+  — see `R60Lib.scad`'s own `R60_Chute_L` comment for the full
+  derivation. 275mm exceeds this project's own "fits 250mm Z" rule and
+  the Bambu P1S's own 256mm build volume as one piece (true at either
+  120mm or 140mm `R60_Petal_Len` — the 120mm minimum was already
+  ~255mm), so the tube is now **two printed pieces**,
+  `03_DeploymentBayTubeFwd.stl` + `26_DeploymentBayTubeAft.stl`, joined
+  by a glued in-wall spigot/socket (spec §4.1 has the load this joint
+  is sized against and the glue-area numbers).
+- **Deployment-bay axial closure check — now genuinely two-sided, both
+  directions mutation-tested** (11th/12th review —
+  `tools/verify_rocket60_assembly.py`'s own `check_closure()`; mesh-
+  based, independently confirms `tools/rocket60_model.py`'s own closure
+  assert, which was already two-sided). The 11th-review version of this
+  check was itself one-sided — it could only fail on a tube too SHORT,
+  and would have silently PASSED a tube grown too LONG (the hub's
+  spigot then never reaches the fin can at all, a real gap, the same
+  defect class from the other direction) — found by this session's own
+  attempt to "just add slack" to `R60_Chute_L`, which the check should
+  have caught and did not. Fixed to compare `abs(over)`, matching
+  `rocket60_model.py`'s own formula; mutation-tested both directions
+  (`R60_Petal_Len`=200: SHORT by 57.2mm; `R60_Chute_L`=290: GAP of
+  6.8mm, tube too long — both correctly FAIL). Scanned every
+  neighbouring check in both harness files for the same one-sided-
+  formula defect shape (not just "checks one direction by nature", a
+  different, non-bug case) — none found; see
+  `verify_rocket60_assembly.py`'s own "Neighbouring one-sidedness scan"
+  comment for the full accounting. Still uncovered, unrelated to this
+  fix: spring throw vs. the piston's real insertion travel; the lock
+  nubs' own engagement FORCE (needs the still-undocumented CS4323
   spring rate, spec A11); the hinge's clearance through its full open
   swing, not just at rest; the 3x hinge-preload springs' own geometry;
+  a hinge fit that is too LOOSE (not just too tight — an intersection-
+  volume probe cannot see missing material, only colliding material);
   and the shock-cord route's clearance past the hinges/release stack —
   see `check_closure()`'s own module comment for the full list.
-- **Packing volume is short, not "+7% margin"** (11th review) — net of
-  the hub's own internal floor/spring-holder bosses and the piston's
-  6mm face, usable cage volume is ~215–220 cm³ against the ~250 cm³
-  the stated 24in-main packing assumption needs, a ~13% shortfall. Spec
-  §4.1 gives three numbered options (longer cage / smaller canopy /
-  thinner-fabric pack) — not decided here, and the "longer cage" option
-  compounds the chute-bay depth shortfall above rather than fixing it
-  independently.
+- **Packing volume — RESOLVED (12th review), and the 11th review's own
+  "~13% shortfall" figure retracted as an overestimate.** That figure
+  was itself never measured — an assumed ~24mm fixed obstruction
+  (hub floor + spring-holder bosses "~18mm", piston face "6mm", both
+  eyeballed off the source). Mesh-probed this session
+  (`check_packing()`, Pairs 42/43): the real obstruction is 16.3 cm³,
+  not the ~53 cm³ the estimate implied. At the OLD `R60_Petal_Len`=120,
+  net packing is 250.4 cm³ against the ~250 cm³ requirement — tangent,
+  zero real margin, not a 13% shortfall, but not a margin either. Owner
+  ruling: grow `R60_Petal_Len` to 140 (Rocket6551.scad's own stated
+  ceiling for a single CS4323 spring) for a real, checked 294.9 cm³,
+  ~18% margin — see spec §4.1 for the full record; the smaller-canopy
+  and thinner-fabric-pack options once listed here are superseded, not
+  still live alternatives.
 - **Release-hardware mounting interference** — PARTIALLY resolved (10th
   review): part 15's own mount to the aft bulkhead (part 5) now has a
   mesh-against-mesh mating-fit AND fastener-reach check
@@ -668,18 +715,20 @@ Copied from spec §11, with one adaptation flagged below.
 **Fin sizing (unchanged by this task — parts 9/10 are protected).** The
 fin planform (Cr 90/Ct 35/span 63/sweep 45/t 4.0mm) is exactly as it
 was before the petal-deployment transplant; only the AIRFRAME'S overall
-length changed (deployment bay 180→240mm), moving both CP and the fin
-can 60mm aft. Re-run with the transplant's new geometry, the G80T-14A
-margin **IMPROVED from 1.46 cal to 1.53 cal** (10th/11th review: this
-figure has moved twice since, from an intermediate 1.68 cal when the
-aft bulkhead's own mass fix shifted CG, to 1.56, to 1.53 when the hinge
-subsystem's own mass was added this round — same station audit
-discipline this section's own history already follows) — CP moved aft
-by more than CG did, since the added length sits entirely forward of
-the fin can. Clears the physical minimum, **1.0 cal**, with real room.
-H182R-14A and H135W-14A both give **1.34 cal** on the same fins —
-comfortably above 1.0 cal, no ballast needed. **Flutter formula fixed,
-not just re-run**: `flutter_Vf()`
+length changed (deployment bay 180→240→275mm, the last step the 12th
+review's own tube-split/packing-margin ruling), moving both CP and the
+fin can further aft each time. Re-run with the transplant's new
+geometry, the G80T-14A margin **IMPROVED from 1.46 cal to 1.69 cal**
+(10th/11th/12th review: this figure has moved several times since, from
+an intermediate 1.68 cal when the aft bulkhead's own mass fix shifted
+CG, to 1.56, to 1.53 when the hinge subsystem's own mass was added, to
+1.69 when R60_Chute_L grew to 275 and R60_Petal_Len to 140 this round —
+same station audit discipline this section's own history already
+follows) — CP moved aft by more than CG did each time, since the added
+length sits entirely forward of the fin can. Clears the physical
+minimum, **1.0 cal**, with real room. H182R-14A gives **1.48 cal**,
+H135W-14A **1.49 cal** on the same fins — comfortably above 1.0 cal, no
+ballast needed. **Flutter formula fixed, not just re-run**: `flutter_Vf()`
 computed t/c on the exposed panel's MEAN chord; the NAR/TIR-33 form it
 implements (from NACA TN 4197) defines t/c on the exposed ROOT chord.
 The previously-published 955 m/s was wrong by a factor of
@@ -688,5 +737,5 @@ the G80T (the sizing case) at 4.8× its Vmax; the flutter gate itself was
 re-scoped from a single "3× the fastest motor overall" check (calibrated
 against the wrong 955 m/s number) to a per-motor 1.5× floor — G80T 4.8×,
 H182R 3.0×, H135W 3.2×, all clear. Rail exit on the G80T on the owner's
-1.83 m rail is 20.2 m/s, comfortably above the ~15 m/s minimum. See
+1.83 m rail is 20.0 m/s, comfortably above the ~15 m/s minimum. See
 `tools/rocket60_model.py`'s own output for the full sweep.

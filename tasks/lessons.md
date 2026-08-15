@@ -484,3 +484,62 @@ that was never checked against the parts it names. The donor's own
 assembly IS the specification for how its parts fit together -- follow
 it (render it, measure it, mutation-test the result), don't narrate
 what a module comment says it does and stop there.
+
+## 13. An unmeasured "conservative" estimate is not conservative -- it
+## can be wrong in either direction, and "grow the downstream dimension"
+## is not a fix if the two ends of the chain don't share a reference
+
+The 11th review's own "~13% packing shortfall" figure (lesson 12's
+session) was corrected once from an overstated "+7% margin" -- but the
+correction was itself never measured, only estimated (an eyeballed
+"~24mm of fixed obstruction" read off two module comments, not
+rendered). The 12th review mesh-probed the same real geometry this
+project's own established technique (intersect the actual assembled
+parts against a bore-diameter probe cylinder, same idiom as every
+mating-fit pair in `tools/r60_assembly.scad`) and found the true
+obstruction was 16.3cm3, not the ~53cm3 the estimate implied -- the
+"correction" had itself overshot by roughly 3x, in the SAME direction
+both times (pessimistic), which is exactly how an unchecked estimate
+survives two review rounds: nothing ever measured it, so nothing ever
+caught it drifting further from reality, only closer to a "safer-
+sounding" number.
+
+Separately, fixing the deployment-bay closure gap by growing
+`R60_Chute_L` (the obvious-looking fix -- "the cage needs more room, so
+give the tube more length") made the SAME check fail WORSE on the first
+attempt, not better: `R60_Chute_L` sets where the tube's own aft end
+(and the fin can bonded past it) sits, but the petal cage's own station
+is anchored to the tube's FORWARD end (via the release stack's fixed
+footprint) and does not move when the tube grows. Past the correct
+length, more tube pushes the fin can further AWAY from the cage's fixed
+reach, growing the gap instead of closing it -- confirmed by mutation
+(`R60_Chute_L`=288 read a 10.3mm gap, worse than the 240mm baseline's
+own shortfall). This is only obvious once you trace which STATION each
+constant actually controls; it is invisible if you reason from "shorter
+gap, so add length" without checking which end of the gap the
+constant you're changing actually moves.
+
+That same wrong-direction mutation exposed a real bug in the closure
+check itself: `verify_rocket60_assembly.py`'s own `check_closure()`
+compared a SIGNED quantity (`over = needed - chute_len`) against a
+tolerance in only ONE direction -- it could fail a tube too SHORT, but
+a tube grown too LONG (the same physical defect, opposite sign) read as
+a silent PASS. `rocket60_model.py`'s own independent restatement of the
+same check already used `abs()` and was never wrong; the mesh-based
+check was the one-sided sibling, and nothing had ever mutation-tested
+it in the direction that would have caught it.
+
+**Guard against this**: (1) never publish an estimate as if it were a
+measurement, even a "corrected" one -- if the number matters enough to
+put in a spec with a percentage sign on it, render the real geometry
+and measure it, the same technique this project already uses for every
+mating-fit claim. An estimate that has already been "corrected" once is
+not thereby trustworthy; it has just as much reason to be wrong again.
+(2) Before changing a constant to close a gap, trace which STATION it
+actually controls and which end of the gap moves when it changes --
+"grow the thing near the gap" is not the same question as "does this
+constant move the boundary I need to move". (3) Any check built from a
+signed difference (`a - b`) needs its OWN mutation test in BOTH
+directions before it can be trusted, not just the direction the review
+that added it happened to be looking at -- a one-sided formula bug is
+invisible to a mutation test that only ever pushes the value one way.

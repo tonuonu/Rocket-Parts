@@ -67,7 +67,10 @@ PAIRS = {
     3: "vega sled vs e-bay tube",
     4: "access door vs e-bay tube",
     5: "aft bulkhead skirt vs deployment bay tube (stroke)",
-    7: "deployment bay tube vs fin can",
+    # Pair 7 (was "deployment bay tube vs fin can") RETIRED, 12th review --
+    # see tools/r60_assembly.scad's own Pair 7 comment: that joint does
+    # not exist any more (part 8's own glued spigot replaced it, 11th
+    # review), found stale by this session's own tube split.
     8: "motor spacer vs MMT (fin can)",
     10: "thrust ring obstructs motor+spacer (forward trap)",
     11: "motor retainer obstructs motor (aft trap)",
@@ -147,6 +150,13 @@ PAIRS = {
     36: "petal spring holder (hinge) vs petal hub",
     37: "petal spring holder vs petals (bolted face)",
     38: "spring centering ring mount vs release top retainer",
+    # 12th review: the deployment bay tube split (owner's ruling -- 275mm
+    # exceeds the print envelope as one piece). Pairs 39/41/42/43 are NOT
+    # in this dict -- like 39 before them, they are union/volume probes
+    # for check_closure()/check_packing(), not expect-empty mating pairs,
+    # and are driven directly by those functions in main(), not this
+    # loop.
+    40: "deployment bay tube fwd (part 3) vs aft (part 26) joint",
 }
 STROKE_PAIRS = (5,)
 # Insertion stroke sweep -- 0 (first contact) through 15 (fully seated,
@@ -260,40 +270,185 @@ CLOSURE_TOL_MM = 5.5   # R60_FinCanSpigot_L (R60Lib.scad), same spigot-
 
 def check_closure(tmp):
     """Deployment-bay axial closure: renders Pair 39 (the ACTUAL hub+
-    petals union, r60_assembly.scad) fresh and measures its own real
-    span, then checks CLOSURE_RESERVE_MM + that span fits inside part
-    3's own rendered length (R60_Chute_L), within CLOSURE_TOL_MM.
+    petals union) and Pair 41 (the ACTUAL deployment-bay tube union, both
+    pieces -- 12th review, the tube split) fresh and measures each one's
+    own real span, then checks CLOSURE_RESERVE_MM + the cage's span lands
+    within CLOSURE_TOL_MM of the tube's own assembled length -- BOTH
+    directions (12th review, fix: this used to be one-sided).
 
-    Returns (ok, message). Mutation-tested (this session): at the
-    CURRENT R60_Petal_Len=120 this already reads a real, honest FAIL --
-    see the printed message -- the corrected (right-way-round) hub needs
-    more chute-bay depth than R60_Chute_L=240 currently budgets (same
-    finding tools/rocket60_model.py's own closure assert makes,
-    independently). At R60_Petal_Len=200 (`-D R60_Petal_Len=200`,
-    R60Lib.scad) the SAME check's own shortfall grows from ~12mm to
-    ~92mm -- proving this check's magnitude tracks the mutation, not
-    just a static failure that would fail identically either way."""
-    out3 = os.path.join(tmp, "part3.stl")
-    render(SCAD_MAIN, 3, out3)
-    chute_len = measure(out3)["height"]
+    12th review, trap avoided: part 3 alone is no longer the whole tube
+    (the split added part 26) -- reading part 3's own rendered height,
+    the way this function used to, would silently measure the FORWARD
+    piece only and report a ~138mm-short false failure after a genuinely
+    correct split. Pair 41 unions both pieces at their real relative
+    offset instead, so this reads the assembled tube's real length
+    regardless of how many pieces it is printed as.
+
+    Returns (ok, message). Symmetric now (12th review, fix 3 -- the one-
+    sided defect this session's own advisory found): `over` used to only
+    fail when POSITIVE (tube too short); a tube grown too LONG (over
+    strongly negative) used to read as "clears" even though the hub's
+    spigot then falls short of ever reaching the fin can at all -- the
+    SAME physical defect from the other direction, and rocket60_model.py's
+    own abs()-based closure assert already caught it independently (a
+    288mm tube read a genuine 10.3mm gap there, TWO 5.5mm-tolerances past
+    tangent) while this check would have passed it silently. Fixed by
+    comparing abs(over) instead of over, matching that script exactly.
+
+    Mutation-tested, both directions (this session, actually run --
+    both figures below are measured, not estimated):
+      - too SHORT: R60_Petal_Len=200 (edit R60Lib.scad, R60_Chute_L
+        unchanged) grows the cage span 167.2->227.2mm (+80mm, the SAME
+        constant this file's own HINGE_MAX_CM3 comment and tasks/
+        lessons.md's own finding used) with the tube fixed at 275 --
+        needed grows to 337.7, reads SHORT by 57.2mm net of the 5.5mm
+        tolerance. Correctly FAILs.
+      - too LONG: R60_Chute_L=290 (edit R60Lib.scad, R60_Petal_Len
+        unchanged) leaves needed at 277.7 but chute_len at 290 -- over =
+        277.7-290 = -12.3, GAP of 6.8mm net of the 5.5mm tolerance.
+        Correctly FAILs on the abs() check; the OLD one-sided formula
+        (`ok = over <= CLOSURE_TOL_MM`, no abs()) would have silently
+        PASSED this exact mutation (-12.3 <= 5.5 is true) -- this is the
+        specific defect fix 3 closes, confirmed by re-deriving the old
+        formula against this same mutation, not just asserted."""
+    out41 = os.path.join(tmp, "pair41.stl")
+    render_probe(41, None, out41)
+    chute_len = measure(out41)["height"]
 
     out39 = os.path.join(tmp, "pair39.stl")
     render_probe(39, None, out39)
     cage_span = measure(out39)["height"]
 
     needed = CLOSURE_RESERVE_MM + cage_span
-    over = needed - chute_len   # raw distance past the chute tube's own length
-    ok = over <= CLOSURE_TOL_MM
-    # "short by" reported net of CLOSURE_TOL_MM -- matches
-    # tools/rocket60_model.py's own closure assert convention (its own
-    # spigot-length tolerance is not itself part of the shortfall the
-    # rocket needs to grow by; only the part past it is).
-    msg = ("cage span %.1f + reserve %.1f = %.1f needed vs chute length "
-           "%.1f -- %s" % (cage_span, CLOSURE_RESERVE_MM, needed, chute_len,
-                            ("clears" if ok else
-                             "SHORT by %.1fmm net of %.1fmm spigot tolerance"
-                             % (over - CLOSURE_TOL_MM, CLOSURE_TOL_MM))))
+    over = needed - chute_len   # + : cage reaches PAST the tube (too short
+                                  # a tube / too long a cage); - : cage
+                                  # falls SHORT of the tube's own end (too
+                                  # long a tube) -- both are real defects
+    ok = abs(over) <= CLOSURE_TOL_MM
+    msg = ("cage span %.1f + reserve %.1f = %.1f needed vs assembled tube "
+           "length %.1f -- %s" % (cage_span, CLOSURE_RESERVE_MM, needed,
+                                    chute_len,
+                            ("clears (%.1fmm %s tangent)"
+                             % (abs(over), "past" if over >= 0 else "short of")
+                             if ok else
+                             ("SHORT by %.1fmm net of %.1fmm spigot tolerance"
+                              % (over - CLOSURE_TOL_MM, CLOSURE_TOL_MM)
+                              if over > 0 else
+                              "GAP of %.1fmm net of %.1fmm spigot tolerance "
+                              "-- tube too LONG, hub spigot does not reach "
+                              "the fin can"
+                              % (-over - CLOSURE_TOL_MM, CLOSURE_TOL_MM)))))
     return ok, msg
+
+
+# Packing-volume net check (12th review, promoting this session's own
+# /tmp bore-probe measurement into the harness -- R60_Petal_Len's own
+# module comment, R60Lib.scad, has the full derivation and is the
+# authority for the numbers restated here). Pairs 42/43 (r60_assembly.
+# scad) measure how much of the hub/spring-holder/piston's own real
+# material sits inside the SAME 53.2mm-diameter bore PD_Petals() itself
+# uses -- this function nets that off the gross bore volume and checks
+# the stated ~250 cm^3 requirement (24in main + Nomex protector + shroud
+# lines, ~50g at ~0.20 g/cm^3).
+PACKING_BORE_D_MM = 53.2   # PD_Petals' own tube ID at Wall_t=1.6,
+                            # R60_Coupler_OD-2*1.6 -- restated (rule 4),
+                            # matches r60_assembly.scad's own Pair 42/43
+PACKING_REQUIRED_CM3 = 250.0
+
+
+def check_packing(tmp):
+    """Net packing volume: bore cross-section area (from PACKING_BORE_D_MM)
+    times R60_Petal_Len, minus Pairs 42+43's own measured obstruction
+    volume, checked against PACKING_REQUIRED_CM3.
+
+    Mutation-tested (this session, actually run): at R60_Petal_Len=100
+    (edit R60Lib.scad) net drops to 206.0 cm^3 -- correctly FAILs, 44.0
+    cm^3 under the requirement (and check_closure() ALSO correctly fails
+    at this same mutation, from the other direction -- a shorter cage
+    leaves the tube too long relative to it, the same too-long defect
+    class fix 3 added coverage for). At the current R60_Petal_Len=140
+    (owner's ruling) net is 294.9 cm^3, correctly PASSes with ~18% real
+    margin."""
+    import math
+    # R60_Petal_Len itself is not carried in this file (rule 4 would
+    # otherwise duplicate it a third time, after R60Lib.scad and
+    # tools/rocket60_model.py) -- read it straight off part 13's own
+    # rendered height instead, since PD_Petals()'s own printed length IS
+    # R60_Petal_Len by construction (Rocket60.scad's R60_Petals()).
+    out13 = os.path.join(tmp, "part13.stl")
+    render(SCAD_MAIN, 13, out13)
+    petal_len_mm = measure(out13)["height"]
+
+    bore_area_cm2 = math.pi * (PACKING_BORE_D_MM / 20.0) ** 2
+    gross_cm3 = bore_area_cm2 * (petal_len_mm / 10.0)
+
+    out42 = os.path.join(tmp, "pair42.stl")
+    render_probe(42, None, out42)
+    hub_end_cm3 = volume(out42)
+
+    out43 = os.path.join(tmp, "pair43.stl")
+    render_probe(43, None, out43)
+    piston_end_cm3 = volume(out43)
+
+    net_cm3 = gross_cm3 - hub_end_cm3 - piston_end_cm3
+    ok = net_cm3 >= PACKING_REQUIRED_CM3
+    msg = ("Petal_Len %.0fmm: gross %.1f - hub/PSH %.1f - piston %.1f = "
+           "net %.1f cm3 vs %.0f cm3 required -- %s"
+           % (petal_len_mm, gross_cm3, hub_end_cm3, piston_end_cm3, net_cm3,
+              PACKING_REQUIRED_CM3,
+              "clears (%.0f%% margin)" % (100.0 * (net_cm3 / PACKING_REQUIRED_CM3 - 1.0))
+              if ok else
+              "SHORT by %.1f cm3" % (PACKING_REQUIRED_CM3 - net_cm3)))
+    return ok, msg
+
+
+# Neighbouring one-sidedness scan (12th review, fix 3's own "say whether
+# any neighbouring check has the same one-sidedness" instruction). The
+# closure bug had a specific shape: a SIGNED quantity (over = needed -
+# chute_len) where BOTH signs are real, physical, opposite defects (tube
+# too short OR too long), but only one sign was ever compared. Scanned
+# every other check in this file and verify_rocket60.py for the same
+# shape:
+#   - STROKE_PAIRS/the default per-pair loop (`vol <= EPS_CM3`): one-
+#     sided BY NATURE, not a bug -- a mating fit with too much CLEARANCE
+#     is not a defect this probe exists to catch (that is a dimensional
+#     question, verify_rocket60.py's own job), only genuine interference
+#     is. No opposite sign to miss.
+#   - OBSTRUCTION_PAIRS (10, 11): already effectively two-sided --
+#     checks flush-must-be-clear (vol0<=EPS_CM3) AND overtravel-must-
+#     obstruct (vol1>=OBSTRUCT_MIN_CM3) as a PAIR, catching both "an
+#     obstruction that isn't there" and "solid material where flush
+#     travel should be clear".
+#   - HINGE_PAIRS (36, `vol <= HINGE_MAX_CM3`): one-sided, and NOT the
+#     same bug -- but a genuinely different, still-open gap, worth
+#     recording here rather than conflating with the fixed one: an
+#     intersection-volume probe structurally CANNOT see "too much
+#     clearance" at all (a sloppy, oversized hinge fit still reads
+#     ~0cm3, identical to a snug one), so there is no discarded sign to
+#     restore -- this would need a different check entirely (e.g. a
+#     stated max-play dimension read off the axle/socket edge loops,
+#     bore()-style), not a formula fix. Related to, but distinct from,
+#     the closure check's own "Neighbouring blind spots" item 3 above
+#     (hinge SWING clearance) -- this is REST-position fit slop, not
+#     swing-arc clearance.
+#   - check_packing() (`net_cm3 >= PACKING_REQUIRED_CM3`): one-sided by
+#     nature, same as MAX_Z below -- more usable volume is never a
+#     defect, so there is no opposite sign to check.
+#   - verify_rocket60.py's own dimensional checks: the main loop compares
+#     every (label, actual, expected, tol) tuple via `abs(actual-
+#     expected) <= tol` -- already symmetric, including the spigot-
+#     clearance checks that share this file's own 0.4mm convention.
+#     overshoot()/shortfall() (scad_verify.py) are used only for
+#     genuinely one-directional physical constraints (MAX_Z: shorter is
+#     never bad; a stated minimum clearance: more is never bad) -- one-
+#     sided by nature, not the closure bug's shape.
+#   - rocket60_model.py's own closure assert (`abs(_hub_tail - S_FIN) <=
+#     R60_FinCanSpigot_L_restated`) was ALREADY symmetric before this
+#     review -- the bug was an inconsistency between this file's mesh-
+#     based check and that one's restated-constants check, not a
+#     systemic pattern repeated across the codebase.
+# Conclusion: the closure fix was the only instance of this specific
+# defect shape found in this repo's own verification tooling.
 
 
 def render_probe(pair, ins, out, push=0.0):
@@ -450,6 +605,20 @@ def main(argv):
         else:
             bad += 0 if ok else 1
             print("%-4s closure deployment-bay axial closure (fix 7)  %s"
+                  % ("OK" if ok else "FAIL", msg))
+
+        # Net packing volume (12th review) -- see check_packing()'s own
+        # docstring. Not gated on `pairs`, same reasoning as check_closure()
+        # above: this is the checked version of a number the spec now
+        # cites, not an optional extra.
+        try:
+            ok, msg = check_packing(tmp)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  packing  net chute-packing volume (12th review)  render error: %s" % e)
+            bad += 1
+        else:
+            bad += 0 if ok else 1
+            print("%-4s packing net chute-packing volume (12th review)  %s"
                   % ("OK" if ok else "FAIL", msg))
 
         print("\n%d check(s) failed" % bad)

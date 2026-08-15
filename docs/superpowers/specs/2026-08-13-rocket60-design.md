@@ -267,42 +267,65 @@ end's own centre bore is a #10-24 threaded stud (`Thread1024_d`, `R65_FwdSpringE
 `ExternalThread()` boss) — that is how the piston threads onto the locking pin/extension
 rod (parts 21/22), not a cord attachment.
 
-**Chute packing (11th review, corrected — was overstated as "+7% margin").** The 24in main
-is packed **inside the petal cage itself** — `PD_Petals`' own tube between the hub and the
-forward spring end. `Petal_Len`=120mm, bore ID at `Wall_t`=1.6mm is
-`R60_Coupler_OD`-2×1.6=53.2mm, area 22.24 cm²/cm → at 120mm, **267 cm³ gross bore volume**.
-That figure was previously published as the usable packing volume. It is not — it is the
-volume of a plain, unobstructed cylinder the same size as the bore, and the real cage is
-not unobstructed: the hub's own internal floor and 3x `PD_PetalSpringHolder()` bosses (part
-24, fix 2 — absent from the design 267 cm³ was originally computed against, since the hinge
-subsystem did not exist yet) occupy roughly the first 18mm of the cage's own length, and
-`R65_FwdSpringEnd()`'s own base disk (the piston pressing in from the other end) is a solid
-6mm-thick face, not a knife-edge (confirmed against source: `cylinder(d=OD, h=6, ...)`,
-`R65Lib.scad`). Net of both: **usable length ~95–100mm, ~215–220 cm³** — against the
-stated ~250 cm³ requirement (ripstop nylon + Nomex protector + shroud lines, ~50g at
-~0.20 g/cm³ packing density), that is a **~13% shortfall**, not a 7% margin.
+**Chute packing (12th review — retracts the 11th review's own "~13% shortfall" figure,
+which was itself never measured).** The 24in main is packed **inside the petal cage
+itself** — `PD_Petals`' own tube between the hub and the forward spring end. Bore ID at
+`Wall_t`=1.6mm is `R60_Coupler_OD`-2×1.6=53.2mm, area 22.24 cm²/cm — at the (then) 120mm
+length, 267 cm³ gross bore volume, first corrected from an over-published "+7% margin" to
+an ESTIMATED "~13% shortfall" (~24mm of assumed fixed obstruction: "~18mm" for the hub
+floor + 3x spring-holder bosses, "6mm" for the piston's own base disk, both eyeballed off
+the source, not rendered). Mesh-probed this session instead of estimated
+(`tools/verify_rocket60_assembly.py`'s own `check_packing()`, Pairs 42/43,
+`r60_assembly.scad`): intersect the SAME 53.2mm bore against the real assembled geometry —
+hub + 3x `R60_PSH_Placed()` occupy **9.3 cm³** of it (not a full-diameter ~18mm slab; 3
+discrete hinge bosses, mostly open between them), `R65_FwdSpringEnd()` occupies **6.9 cm³**
+— **16.3 cm³ total, not the ~53 cm³ the ~24mm estimate implied.** At the OLD 120mm:
+net 266.7-16.3=**250.4 cm³ against the stated ~250 cm³ requirement** (ripstop nylon +
+Nomex protector + shroud lines, ~50g at ~0.20 g/cm³ packing density) — **tangent, zero
+real margin**, not a 13% shortfall, but not a margin either.
 
 "Same as Rocket6551's own flown 120mm" does not rescue this: that comparison used the same
 LENGTH on a DIFFERENT bore. Rocket6551's own cage ID is 61.6mm (its own `Coupler_OD` is
 larger than this design's 56.4mm), so its 120mm holds 357 cm³ gross, not 267 — the two
 designs are not interchangeable at the same length just because the length matches.
 
-**Options, with numbers, not a silent pick:**
+**Decision (12th review, owner's ruling) — length, not canopy or fabric.** `R60_Petal_Len`
+120→**140mm**: Rocket6551.scad's own stated ceiling ("140 is max for a single 4323 spring")
+and its own preferred/flown value. Net at 140: 311.2-16.3=**294.9 cm³, ~18% real margin**.
+A tangent fit on the one system whose job is getting the camera back is not a margin, and
+the closure fix below needs the tube's own length to grow regardless of which packing
+option was picked — so there was nothing to buy by shrinking the canopy or the fabric pack
+instead. Do not re-litigate this without a real reason: the smaller-canopy and thinner-
+fabric options once documented here are superseded, not still live.
 
-| Option | Change | Result |
-|---|---|---|
-| Longer cage | `Petal_Len` 120→~137mm (usable volume scales at 22.24 cm³/cm net of the same ~24mm fixed obstruction: (250+24×2.224)/22.24≈13.6cm) | Closes the packing shortfall, but **grows the same station chain fix 1's rocket60_model.py closure check found already ~12.2mm short of `R60_Chute_L`=240** (§ below) — this option makes that shortfall worse by the same ~17mm, not better. Any `R60_Chute_L` growth to fix the closure gap should be sized to cover this too, not decided twice. |
-| Smaller canopy | 24in → ~22in main | Packed-volume requirement scales ~(D/D₀)² ≈0.84× → ~210 cm³ needed, inside the current 215–220 cm³ usable **without** changing `Petal_Len` or `R60_Chute_L` at all. |
-| Thinner fabric / tighter pack | 0.20→~0.23 g/cm³ effective packing density (higher-thread-count ripstop, tighter roll) | 50g/0.23≈217 cm³ needed, at the edge of the current 215–220 cm³ usable range — the least design-disruptive option but the smallest margin of the three. |
-
-No option is applied here silently — this is a packing-volume/canopy-size/cage-length
-tradeoff for whoever is sewing and packing the actual chute, not a dimension this task
-should pick unilaterally.
+**Consequence: the deployment bay tube no longer fits the print envelope as one piece,
+and is split (12th review).** `R60_Chute_L`'s own required length for a correct (not
+tangent, not bottomed-out) hub-to-fin-can spigot engagement is **275mm** (see §4.1's
+closure discussion below and `R60Lib.scad`'s own `R60_Chute_L` comment for the full
+derivation) — this exceeds both this project's own "fits 250mm Z" convention and the Bambu
+P1S's own 256mm build volume in every orientation, as one piece, at EITHER 120mm or 140mm
+`R60_Petal_Len` (the minimum at 120 is already ~255mm). Split into
+`R60_ChuteTubeFwd()`/`R60_ChuteTubeAft()` (parts 3/26, `Rocket60.scad`), joined by a glued
+in-wall spigot/socket at `R60_ChuteSplit_Z`=137mm — NOT a bore-reducing internal sleeve:
+the release stack (parts 15-23) and the retracted petal cage already fill this tube's
+56.8mm bore through most of its own length (`verify_rocket60.py`'s own max-radius-vs-bore
+checks on parts 15-23 prove it), so any joint that narrows the CLEAR bore anywhere along it
+collides with something real. Splitting the 1.6mm WALL itself instead (the tube's own inner
+half as a spigot, the receiving piece's own outer half as a socket) keeps both the bore and
+the OD unbroken through the joint, so the split can land anywhere. Sized against the
+post-separation ejection charge's own pressure pulse (the governing case, ~8x the CS4323's
+own estimated max force) at a conservative, stated 15psi assumption (the charge itself is
+undocumented, same gap class as spec A11's spring rate) — ~200mm² of glue area required, a
+6mm real engagement around the ~57.6mm mean glue diameter gives ~1086mm², >5x margin. Same
+gluing-flange technique as `NoseCone.scad`'s own field-proven `GluingflangeHeight`
+(the owner's own printed 3-slice Peregrine nosecone), applied within the wall instead of
+across the whole shell since this tube, unlike a nosecone, is a plain constant-diameter
+cylinder.
 
 **Descent estimate (stated calculation, not a model output — `tools/rocket60_model.py` has
 no descent/drift simulator).** Terminal velocity under the 24in main, V=√(2mg/(ρ·Cd·A)):
-burnout mass 870g, Cd≈0.75 (typical round/hemispherical chute), A=0.292 m² (24in dia.) →
-**V≈8.0 m/s**. From 588m apogee: **~74 s to ground**, drift ≈370m at 5 m/s wind (5×74s).
+burnout mass 877g, Cd≈0.75 (typical round/hemispherical chute), A=0.292 m² (24in dia.) →
+**V≈8.0 m/s**. From 584m apogee: **~73 s to ground**, drift ≈365m at 5 m/s wind (5×73s).
 CATS Vega transmits GNSS position at 10 Hz on 2.4 GHz FHSS (flight-tested to 10 km), so
 recovery is "walk to the last fix", not a search, regardless of drift distance.
 
@@ -379,13 +402,13 @@ transonic rise above M 0.75, A = 28.27 cm².
 
 | Motor | Liftoff | T/W | v@1m rail | Vmax | Mach | Apogee | t(apogee) |
 |---|---|---|---|---|---|---|---|
-| **G80T-14A** (owned) | 924 g | 8.6 | 14.9 m/s | 124 m/s | **0.36** | 593 m | 10.7 s |
-| **H182R-14A** (29 mm DMS) | 991 g | 18.7 | 21.9 m/s | 199 m/s | **0.59** | 960 m | 12.5 s |
-| H135W-14A (29 mm DMS) | 994 g | 11.9 | 16.9 m/s | 186 m/s | **0.55** | 1004 m | 13.2 s |
+| **G80T-14A** (owned) | 940 g | 8.4 | 14.7 m/s | 122 m/s | **0.36** | 584 m | 10.7 s |
+| **H182R-14A** (29 mm DMS) | 1006 g | 18.4 | 21.8 m/s | 197 m/s | **0.58** | 953 m | 12.5 s |
+| H135W-14A (29 mm DMS) | 1009 g | 11.7 | 16.7 m/s | 184 m/s | **0.54** | 996 m | 13.2 s |
 
 Rail-exit speed off the owner's actual Estes Pro Series II rail (1.83 m,
 not the 1.5 m this table used to assume) is reported separately in §6.1
--- **G80T-14A 20.2 m/s**, comfortably above the 15 m/s minimum.
+-- **G80T-14A 20.0 m/s**, comfortably above the 15 m/s minimum.
 
 (Figures from `tools/rocket60_model.py`'s own output, re-run after the
 petal-deployment transplant (§4) -- see §6 below for the matching
@@ -459,41 +482,47 @@ current mass source.
 **Re-run after the petal-deployment transplant (§4).** Fins, nose and body
 diameter are unchanged (parts 9/10 are protected — this task does not
 touch them); the transplant's mass/length changes (deployment bay tube
-180→240mm, spring carrier/tether latch/pins deleted, petal cage + release
-hardware added) move both CP (the fin can — and everything on it — sits
-144mm further aft than the pre-2026-08-15 60mm-airframe baseline had it)
-and CG.
+180→240→275mm, the last step the 12th review's own tube-split/packing-
+margin ruling; spring carrier/tether latch/pins deleted, petal cage +
+release hardware added) move both CP (the fin can — and everything on
+it — sits ~179mm further aft than the pre-2026-08-15 60mm-airframe
+baseline had it, 144mm through the 11th review plus this round's own
+further +35mm growth) and CG.
 
 Barrowman on the EXPOSED fin panel (root 77.9 / tip 35 / span 49.1 / sweep
 35.1 mm, measured at the body OD, r=30mm — see `tools/rocket60_model.py`'s
 `exposed_geom()`), 3 fins:
 
-- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.73 at ~686 mm
-- **CP = 495.2 mm** from the nose tip (shifted +42.2mm from 453.0: CP
-  moves with `S_finLE`, which tracks `TOTAL` — the deployment bay's own
-  +60mm growth pushes the whole fin-can/motor stack, and therefore CP,
-  aft by CN(fins)/CN of that 60mm)
+- CN(nose) = 2.00 at 43.8 mm; CN(fins) = 4.73 at ~721 mm
+- **CP = 519.8 mm** from the nose tip (shifted +24.6mm this round from
+  495.2, +66.8mm cumulative from 453.0: CP moves with `S_finLE`, which
+  tracks `TOTAL` — the deployment bay's own growth pushes the whole
+  fin-can/motor stack, and therefore CP, aft by CN(fins)/CN of that
+  growth each time)
 
 | Motor | Liftoff g | CG loaded | Margin | CG burnout | Margin burnout |
 |---|---|---|---|---|---|
-| G80T-14A | 924 g | 403.3 mm | **1.53 cal** | 382.9 mm | 1.87 cal |
-| H182R-14A | 991 g | 415.0 mm | **1.34 cal** | 385.2 mm | 1.83 cal |
-| H135W-14A | 994 g | 414.6 mm | **1.34 cal** | 394.6 mm | 1.68 cal |
+| G80T-14A | 940 g | 418.1 mm | **1.69 cal** | 396.6 mm | 2.05 cal |
+| H182R-14A | 1006 g | 431.0 mm | **1.48 cal** | 399.2 mm | 2.01 cal |
+| H135W-14A | 1009 g | 430.6 mm | **1.49 cal** | 409.3 mm | 1.84 cal |
 
-**The G80T-14A margin IMPROVED, 1.46→1.53 cal** (10th/11th review: this
-figure has moved twice since, from an intermediate 1.68 cal when the
-aft bulkhead's own mass fix shifted CG, to 1.56, to 1.53 when this
-review's hinge subsystem (part 24 x3 + springs/bolts) and CS4323 seat
-(part 25) added their own mass, below), despite +50g of net liftoff
-mass over the pre-transplant figure — CP moved aft (+42.2mm) by more
-than CG did, because the deployment bay's own growth is entirely
-FORWARD of the fin can, pushing the fins (which dominate CN) further
-from the nose without adding mass there. H182R/H135W both clear 1.0 cal
-with real room (1.34 cal each). **If this had come out below 1.0 cal
-the answer would have been to stop and report it, not to force a fix**
-— it did not; no design change was needed to reach this figure. Margin
+**The G80T-14A margin IMPROVED, 1.46→1.69 cal** (10th/11th/12th review:
+this figure has moved several times since, from an intermediate 1.68
+cal when the aft bulkhead's own mass fix shifted CG, to 1.56, to 1.53
+when the 11th review's hinge subsystem (part 24 x3 + springs/bolts) and
+CS4323 seat (part 25) added their own mass, to 1.69 when the 12th
+review's owner ruling grew R60_Chute_L to 275 (the tube split, printed
+as two pieces) and R60_Petal_Len to 140 (real packing margin) — see §4.1
+for that decision's own record), despite the added liftoff mass over
+every prior figure — CP moved aft by more than CG did at every step,
+because the deployment bay's own growth is entirely FORWARD of the fin
+can, pushing the fins (which dominate CN) further from the nose without
+adding mass there. H182R clears 1.0 cal at 1.48 cal, H135W at 1.49 cal
+— both with real room. **If this had come out below 1.0 cal the answer
+would have been to stop and report it, not to force a fix** — it did
+not; no design change was needed to reach this figure. Margin
 *increases* through the burn on every configuration (burnout G80T
-margin is 1.87 cal).
+margin is 2.05 cal).
 
 ### 6.1 Stability gate: 1.0 cal minimum (unchanged), rail exit re-verified on the real rail
 
@@ -501,15 +530,15 @@ The stability gate in `tools/rocket60_model.py` remains **1.0 cal** — the
 physical minimum for the accepted 1.0-2.0 cal high-power-rocketry band,
 not a re-litigated target (see git history for the 5th-round ruling that
 retired an earlier 1.5 cal comfort target; that reasoning is unchanged
-and not repeated here). G80T (1.56 cal), H182R (1.36 cal) and H135W
-(1.36 cal) all clear it with real room.
+and not repeated here). G80T (1.69 cal), H182R (1.48 cal) and H135W
+(1.49 cal) all clear it with real room.
 
 **Rail exit, on the owner's actual rail.** `tools/rocket60_model.py`'s
 rail-exit sim used to hardcode a 1.5m rail no one owns; fixed to
 `RAIL_LEN`=1.83m (Estes Pro Series II, 1010-compatible, the rail actually
-used). At the current 907g liftoff mass, the G80T leaves the
-rail at **20.4 m/s**, comfortably above the 15 m/s minimum (H182R
-30.4 m/s, H135W 23.4 m/s). Roughly a quarter of liftoff mass is still
+used). At the current 940g liftoff mass, the G80T leaves the
+rail at **20.0 m/s**, comfortably above the 15 m/s minimum (H182R
+29.8 m/s, H135W 23.0 m/s). Roughly a quarter of liftoff mass is still
 unweighed hardware ESTIMATES, not measured mesh volumes — see
 `R60-PrintSettings.md`'s own pre-flight weigh-in step.
 
@@ -528,9 +557,9 @@ motor overall) sits at 3.0×, below a 3× floor. Re-scoped to a per-motor
 1.5× floor (same physical-floor-vs-engineering-margin split as the 1.0
 cal stability gate above; the true physical floor is 1.0×, Vf>Vmax):
 
-- **4.8× the G80T's ~124 m/s Vmax**
-- **3.0× the H182R's ~199 m/s Vmax**
-- **3.2× the H135W's ~186 m/s Vmax**
+- **4.8× the G80T's ~122 m/s Vmax**
+- **3.0× the H182R's ~197 m/s Vmax**
+- **3.2× the H135W's ~184 m/s Vmax**
 
 All three clear the 1.5× floor with real room. Do not make the fins
 thinner, or grow the span further, without recomputing both stability

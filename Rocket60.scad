@@ -344,20 +344,79 @@ module R60_EBayTube(){
 // telescope OUT of that open end when the spring fires. See
 // R60_PetalHub()/R60_Petals()'s own module comments for the mechanism.
 //
-// Length (R60Lib.scad's R60_Chute_L comment): measured this session by
-// rendering the complete release-stack + spring-end + petal-cage stack
-// at OD=R60_Coupler_OD, using CableReleaseBBMicro.scad (not the flown
-// CableReleaseBBMini.scad -- see R60_ReleaseActivator()'s module comment
-// for the mesh-measured reason) -- total span 226.5mm, +14mm margin.
+// Length: see R60Lib.scad's R60_Chute_L comment for the derivation
+// (275mm, target 2.7mm of hub-spigot-into-fin-can engagement at
+// R60_Petal_Len=140).
 //
-// No internal features: nothing in the old design's list (shear pins,
-// spring reaction tabs, tether tie-off lug, tether relief channel) has
-// anything to attach to any more -- the spring reacts between
-// R60_FwdSpringEnd() (part 23, inside the petal cage) and the release
-// stack (parts 15-23, on part 5's aft face); this tube touches neither.
-module R60_ChuteTube(){
-    R60_Tube(R60_Chute_L);
-} // R60_ChuteTube
+// SPLIT IN TWO (12th review): 275mm exceeds this project's own "fits
+// 250mm Z" convention and the printer's own build volume as a single
+// piece -- see R60_Chute_L's own comment for why (and why a longer tube
+// does not fix the closure gap the way it looks like it should). Joined
+// by an in-wall spigot/socket (R60Lib.scad's R60_ChuteSplit_* constants,
+// same comment for the load this joint is sized against) rather than an
+// internal sleeve, because the release stack (parts 15-23) and the
+// retracted petal cage already fill this tube's 56.8mm bore through
+// most of its own length -- nothing may narrow that bore anywhere along
+// it. R60_ChuteTubeFwd() (part 3, keeps the tube's own forward-rim
+// identity -- still bonds to the e-bay aft bulkhead exactly as before)
+// carries the spigot at its own aft end; R60_ChuteTubeAft() (part 26,
+// new) carries the matching socket at its own forward end and reaches
+// the tube's own true aft/open end, where the petal cage telescopes
+// through. No internal features beyond the joint: nothing in the old
+// design's list (shear pins, spring reaction tabs, tether tie-off lug,
+// tether relief channel) has anything to attach to any more -- the
+// spring reacts between R60_FwdSpringEnd() (part 23, inside the petal
+// cage) and the release stack (parts 15-23, on part 5's aft face);
+// neither tube piece touches either.
+module R60_ChuteTubeFwd(){
+    Engage = R60_ChuteSplit_Engage;
+    SpigotOD = R60_ChuteSplit_SpigotOD;
+    Taper = 1;   // matches R60_ChuteTubeAft()'s own Taper -- the spigot
+                  // must stop SHORT of the socket's own tapered mouth
+                  // (Engage-Taper, not the full Engage), or its constant-
+                  // OD tip pushes into the socket's own narrowing bore
+                  // and the two collide (found by this session's own
+                  // mating-fit probe: 0.058cm3 before this fix, 0.4mm
+                  // clearance's own tolerance band is nowhere near that
+                  // large).
+    union(){
+        R60_Tube(R60_ChuteSplit_Z);
+        // Spigot: the tube's own inner half-wall only, extended past the
+        // nominal cut -- the bore (R60_Body_ID) stays open all the way
+        // through it, so nothing that needs the full 56.8mm bore ever
+        // sees this feature.
+        translate([0,0,R60_ChuteSplit_Z])
+            difference(){
+                cylinder(d=SpigotOD, h=Engage-Taper);
+                translate([0,0,-Overlap])
+                    cylinder(d=R60_Body_ID, h=Engage-Taper+Overlap*2);
+            }
+    }
+} // R60_ChuteTubeFwd
+
+module R60_ChuteTubeAft(){
+    Engage = R60_ChuteSplit_Engage;
+    SocketID = R60_ChuteSplit_SocketID;
+    Taper = 1;   // 1mm chamfer so the socket's own ID step (58.8->56.8)
+                  // prints without support -- same "taper so no support
+                  // is needed" idiom NoseCone.scad's own gluing flange
+                  // uses for its matching step.
+    AftLen = R60_Chute_L - R60_ChuteSplit_Z;
+    difference(){
+        R60_Tube(AftLen);
+        // Socket: bore the receiving piece's own first Engage mm out to
+        // SpigotOD+clearance, leaving only its outer half-wall there --
+        // the fwd piece's spigot nests inside this, both halves
+        // together making up the full 1.6mm wall through the joint, so
+        // the OD (60mm) is unbroken too, same as the bore.
+        union(){
+            translate([0,0,-Overlap])
+                cylinder(d=SocketID, h=Engage-Taper+Overlap);
+            translate([0,0,Engage-Taper])
+                cylinder(d1=SocketID, d2=R60_Body_ID, h=Taper);
+        }
+    }
+} // R60_ChuteTubeAft
 
 // Forward bulkhead: closes the top of the e-bay, passes the camera harness.
 //
@@ -421,7 +480,7 @@ module R60_EBayFwdBulkhead(){
 // reaching through it. Old servo 2 (tether release) is deleted outright.
 //
 // AFT SKIRT: unchanged in concept from the pre-transplant design (bonds
-// into R60_ChuteTube()'s forward bore, 56.4mm OD, same 0.4mm-clearance
+// into R60_ChuteTubeFwd()'s forward bore, 56.4mm OD, same 0.4mm-clearance
 // convention as every internal joint here) but no longer carries shear
 // pins -- there is no separable joint at this skirt any more (that moved
 // entirely to the petal cage, parts 8/13/24, far aft -- see
@@ -471,7 +530,7 @@ module R60_EBayFwdBulkhead(){
 module R60_EBayAftBulkhead(){
     T         = R60_AftBulk_T;   // shared with R60_EBayTube()'s Vega
                                    // rails (3rd review, defect 2)
-    Skirt_L   = 15;               // aft skirt engagement into R60_ChuteTube()'s
+    Skirt_L   = 15;               // aft skirt engagement into R60_ChuteTubeFwd()'s
                                    // forward bore -- a plain glue joint now
                                    // (no pins), local since nothing else derives
                                    // from it any more
@@ -836,7 +895,7 @@ module R60_Door(){
 // until then, is driven forward by the CS4323 spring, rams the petals
 // open past their own printed locks, and the whole fin-can+petal-hub
 // section is pushed clear -- the airframe is never held together by
-// anything that shears (see R60_ChuteTube()'s module comment: this
+// anything that shears (see R60_ChuteTubeFwd()'s module comment: this
 // joint replaces every shear-pin/ball-lock feature the design it
 // supersedes needed).
 //
@@ -846,7 +905,7 @@ module R60_Door(){
 // rationale.
 //
 // Aft spigot into the fin can's forward opening -- SAME joint
-// R60_ChuteTube() used to make onto the fin can (part 9, UNCHANGED by
+// R60_ChuteTubeFwd() used to make onto the fin can (part 9, UNCHANGED by
 // this task), now carried here instead since the fixed deployment-bay
 // tube no longer reaches that far. R60_PetalHubSpigot_L (R60Lib.scad) is
 // shared with the constant the old joint used, not a second copy. Placed
@@ -1052,7 +1111,9 @@ module R60_MotorSpacer(){
 // ring (z=FwdRing_Z..R60_FinCan_L-6) so it bonds against existing
 // structure rather than an unsupported span of MMT wall. It glues in
 // from the fin can's still-open forward end -- the last step before
-// bonding R60_ChuteTube() on, per R60-PrintSettings.md.
+// bonding R60_PetalHub() (part 8, its own glued spigot -- NOT this
+// tube, which stays with the e-bay section -- see that part's own
+// module comment) on, per R60-PrintSettings.md.
 // R60_MotorSpacer()'s own length is derived to stop R60_ThrustRing_T
 // short of R60_MMT_L for exactly this reason (see that module's own
 // comment) -- whatever is forward-most in the motor+spacer stack, the
@@ -1098,7 +1159,7 @@ module R60_ThrustRing(){
 // them open past those nubs and past R60_PetalSpringHolder()'s own
 // hinge preload. This part IS the separable joint -- there is no second,
 // independent shear feature anywhere else in this design any more (see
-// R60_ChuteTube()'s module comment).
+// R60_ChuteTubeFwd()'s module comment).
 //
 // Lock_Span_a=30 (donor's own Rocket6551.scad changelog, 0.9.5: "Petal
 // locks now 30deg" -- deliberate, not the library default): PD_PetalLocks'
@@ -1385,7 +1446,7 @@ module R60_CenteringRingMount(){
 if (Render_Part==0) R60_TestRing();
 if (Render_Part==1) R60_Neck();
 if (Render_Part==2) R60_EBayTube();
-if (Render_Part==3) R60_ChuteTube();
+if (Render_Part==3) R60_ChuteTubeFwd();
 if (Render_Part==4) R60_EBayFwdBulkhead();
 if (Render_Part==5) R60_EBayAftBulkhead();
 if (Render_Part==6) R60_VegaSled();
@@ -1408,3 +1469,4 @@ if (Render_Part==22) R60_ReleaseLockingPin();
 if (Render_Part==23) R60_FwdSpringEnd();
 if (Render_Part==24) R60_PetalSpringHolder();
 if (Render_Part==25) R60_CenteringRingMount();
+if (Render_Part==26) R60_ChuteTubeAft();

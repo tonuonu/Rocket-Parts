@@ -57,18 +57,109 @@ R60_EBay_L   = 177;   // fits Vega 100 + upright MG90S 29 + slack
 // and R60Lib.scad's "PETAL DEPLOYMENT" section below for the release-
 // catch and petal-length derivations this length depends on.
 //
-// Measured this session by rendering the complete stack (all 9 release
-// parts + FwdSpringEnd + R60_Petals(Len=R60_Petal_Len) + R60_PetalHub) at
-// their real relative offsets, taken from Rocket6551.scad's own
-// ShowRocket()/ShowCableRelease() Z arithmetic (mirrored fwd<->aft,
-// since this design's e-bay is forward instead of aft): total span
-// 226.5mm. Grown to 240 for a stated ~14mm margin (skirt/adapter
-// clearance at the fin-can joint, forward mounting lip) over that
-// measured figure, same "measured, then margin" idiom as R60_EBay_L's
-// own history above.
-R60_Chute_L  = 240;   // was 180 ("spring mechanism 80 + 24in main 100",
-                        // the abandoned ball-lock design) -- see comment
+// DERIVED (12th review), not "measured, then margin" any more -- the
+// prior 226.5mm-stack-plus-14mm-margin figure was measured off the OLD,
+// inverted part 8 (HUB_TAIL_OFFSET's own comment, tools/rocket60_model.py:
+// that render never saw the hub reach past the petals at all), so it
+// undercounted by roughly the same ~20mm the 11th review's closure
+// check caught. The real constraint is the hub's OWN spigot needing to
+// land inside the fin can's 6mm-deep forward socket (R60_FinCan_FwdOpen_L)
+// by some real, non-tangent, non-bottomed-out engagement -- not "give
+// the tube extra slack": since the release stack's own footprint
+// (SKIRT_L+ACT_MOUNT_GAP+PETALS_OFFSET, tools/rocket60_model.py) and the
+// hub's own reach past the petal root (HUB_TAIL_OFFSET) do NOT depend on
+// this tube's length at all, a LONGER tube pushes the fin can (bonded
+// immediately past this tube's own aft end) further AWAY from the
+// hub's fixed reach, growing the gap, not closing it -- confirmed by
+// mutation (275mm+13mm=288mm renders a 10.3mm gap, past the 5.5mm
+// spigot's own length; too-long is exactly as real a defect as
+// too-short, see tools/verify_rocket60_assembly.py's own check_closure()
+// comment). Target: 2.7mm of engagement (roughly mid-way through the
+// spigot's own 5.5mm length and the socket's 6mm depth -- not tangent,
+// not bottomed out) at R60_Petal_Len=140: (SKIRT_L+ACT_MOUNT_GAP+
+// PETALS_OFFSET+R60_Petal_Len+HUB_TAIL_OFFSET) - 2.7 =
+// (15+19+76.5+140+27.2) - 2.7 = 277.7-2.7 = 275.
+//
+// 275mm exceeds this project's own "fits 250mm Z" convention AND the
+// Bambu P1S's own raw 256mm build volume in every orientation (checked:
+// this tube's own OD, 60mm, is well under either bed axis too, so lying
+// it flat does not help) -- a one-piece part 3 cannot be printed at all,
+// regardless of R60_Petal_Len (even the old 120mm's own honest minimum,
+// ~255mm, already exceeds 250). Split into R60_ChuteTubeFwd()/
+// R60_ChuteTubeAft() (Rocket60.scad, parts 3/26) below, joined by an
+// in-WALL spigot/socket, not a bore-reducing internal sleeve: parts
+// 15-23's own hardware and the retracted petal cage already fill this
+// tube's 56.8mm bore through most of its own length (verify_rocket60.py's
+// own "max radius clears the coupler bore" checks on parts 15-23 prove
+// it), so any joint that narrows the CLEAR bore anywhere along this
+// tube collides with something real, wherever it is placed. Splitting
+// the 1.6mm WALL itself instead -- R60_ChuteSplit_SpigotOD keeps the
+// tube's own inner half (0.8mm) of wall for R60_ChuteSplit_Engage past
+// the cut, R60_ChuteSplit_SocketID keeps only the outer half (0.6mm,
+// after the same 0.4mm clearance every other spigot joint in this
+// design uses) on the receiving piece -- both the bore (56.8mm) and the
+// OD (60mm) stay unbroken THROUGH the joint, so the split can land
+// anywhere along the tube's length without touching the release stack
+// or the retracted cage at all.
+R60_Chute_L  = 275;   // was 180 ("spring mechanism 80 + 24in main 100",
+                        // the abandoned ball-lock design), then 240 (the
+                        // undercounted figure above) -- see comment
 R60_FinCan_L = 228;
+
+// Deployment bay tube split (12th review, fix: "one-piece part 3 exceeds
+// the print envelope"). R60_ChuteSplit_Z is the FORWARD piece's own
+// nominal cut length (not counting its own spigot, which extends past
+// it) -- chosen near the middle of R60_Chute_L=275 for balance (both
+// pieces end up nowhere near the 250mm/256mm ceiling regardless of
+// exactly where this lands, since the joint no longer needs to dodge
+// any internal hardware -- see R60_Chute_L's own comment above).
+//
+// Loads this joint is sized against (task: "state what load you sized
+// it for"): (1) the CS4323 spring's own max possible force, estimated
+// from its stated OD/ID/coil-bound-length (SpringEndsLib.scad) via the
+// standard round-wire compression-spring formula (wire d=(OD-ID)/2=1.9mm,
+// mean coil d=(OD+ID)/2=42.4mm, N_active=(CBL/d)-2=~9.6, G=79300 N/mm^2
+// spring steel) -- k=G*d^4/(8*D^3*N)=~0.177 N/mm, and the spring can
+// never exert more force than at its own coil-bound length (200-22=
+// 178mm max compression): ~31.5N. (2) the post-separation ejection
+// charge's own pressure pulse against this tube's own bore cross-
+// section -- UNDOCUMENTED in this repo (same gap class as the CS4323's
+// own spring rate, spec A11): sized against a stated, conservative
+// assumption of 15psi/103kPa (a commonly-used ceiling for a small hobby
+// deployment charge, not a measured or specified figure -- flag this
+// the same way A11 is flagged if a real charge gets specified later),
+// giving ~262N on the 56.8mm bore's own 2534mm^2 cross-section -- the
+// governing case, ~8x the spring load. At a conservative 1.5 N/mm^2
+// (MPa) epoxy-to-PETG shear-strength assumption (well under literature
+// values for a prepped bond, to cover an as-printed FDM surface), ~300N
+// (rounded up) needs ~200mm^2 of glue area; R60_ChuteSplit_Engage=7mm
+// (matching NoseCone.scad's own GluingflangeHeight=7, field-proven --
+// the owner's own printed 3-slice Peregrine nosecone uses this exact
+// value), less a 1mm taper each end (Rocket60.scad's own R60_ChuteTubeFwd/
+// Aft()'s Taper -- the spigot has to stop short of the socket's own
+// tapered mouth or the two collide, found by this session's own mating-
+// fit probe before the fix) -- 6mm of REAL straight engagement around a
+// ~57.6mm mean glue diameter gives ~1086mm^2, >5x the requirement.
+R60_ChuteSplit_Z = 137;
+R60_ChuteSplit_Engage = 7;
+R60_ChuteSplit_SpigotOD = R60_Body_ID + R60_Wall_T;   // 58.4 -- inner
+                                                        // half of the
+                                                        // 1.6mm wall
+R60_ChuteSplit_SocketID = R60_ChuteSplit_SpigotOD + 0.4;   // 58.8 -- same
+                                                              // 0.4mm
+                                                              // diametral
+                                                              // clearance
+                                                              // every
+                                                              // other
+                                                              // internal
+                                                              // spigot in
+                                                              // this
+                                                              // design
+                                                              // uses
+                                                              // (R60_
+                                                              // Coupler_OD
+                                                              // 's own
+                                                              // convention)
 
 // Chute-bay-to-fin-can spigot (3rd review, should-fix 6). Every OTHER
 // internal airframe joint in this design gets a Ø56.4 (R60_Coupler_OD)
@@ -647,27 +738,41 @@ R60_Act_Clock_a = 90;
 // Petal count and length. nPetals=3 matches every precedent this
 // transplant draws from (Rocket6551's own nPetals=3).
 //
-// Petal_Len derivation (task: "derive from volume rather than scaling
-// [Rocket6551's 120-140mm] blindly, state the packing assumption"):
-// PD_Petals' own tube ID at Wall_t=1.6 is R60_Coupler_OD-2*1.6=53.2mm,
-// bore area pi*26.6^2/100 = 22.24 cm^2/cm. At Len=120mm: 22.24*12=267
-// cm^3 -- this is GROSS bore volume, not usable packing volume (11th
-// review, correcting a "+7% margin" this repo used to publish here).
-// Net of the hub's own internal floor + 3x PD_PetalSpringHolder() bosses
-// (part 24, fix 2 -- absent when 267 was first computed) at the root end
-// (~18mm) and R65_FwdSpringEnd()'s own solid 6mm base disk at the other,
-// usable is ~95-100mm, ~215-220 cm^3 -- against the stated ~250 cm^3
-// requirement (ripstop nylon 24in main + Nomex protector + shroud lines,
-// ~50g at ~0.20 g/cm^3 packing density, no per-chute figure of this
-// repo's own to check it against), a ~13% SHORTFALL, not a margin.
-// "Matches Rocket6551's own flown 120mm" does not rescue this: that
-// design's own cage ID is 61.6mm (its Coupler_OD is larger), so its
-// 120mm holds 357 cm^3 gross, not 267 -- comparing the LENGTH across two
-// different bores, not the volume. See docs/superpowers/specs/
-// 2026-08-13-rocket60-design.md sec 4.1 for the three numbered options
-// (longer cage / smaller canopy / thinner-fabric pack) this is left to
-// the owner to choose between, not decided here.
-R60_Petal_Len = 120;
+// Petal_Len derivation (12th review, retracting THIS comment's own prior
+// "~13% shortfall" claim): that figure was itself never measured -- an
+// assumed ~24mm fixed obstruction (hub floor + 3x spring-holder bosses
+// "~18mm" + FwdSpringEnd's base disk "6mm", both eyeballed off the
+// source, not rendered). Mesh-probed this session (intersect the SAME
+// 53.2mm-diameter bore -- OD-2*Wall_t, Wall_t=1.6 -- against the real
+// assembled geometry, same technique as this repo's own mating-fit
+// pairs): hub + 3x R60_PSH_Placed() together occupy 9.35 cm^3 of that
+// bore from the petal-base plane forward (not a full-diameter ~18mm
+// slab -- 3 discrete hinge bosses, mostly open between them), and
+// R60_FwdSpringEnd() (part 23) occupies 6.95 cm^3 of it -- 16.3 cm^3
+// total, not ~53 cm^3. Bore area 22.24 cm^2/cm (unchanged): at the OLD
+// Len=120, net is 266.7-16.3=250.4 cm^3 against the stated ~250 cm^3
+// requirement (ripstop nylon 24in main + Nomex protector + shroud
+// lines, ~50g at ~0.20 g/cm^3 packing density) -- TANGENT, zero real
+// margin, not the 13% shortfall previously published here, but not a
+// margin either: the probe excludes the Lock_Span_a=30 nubs, the 3x
+// hinge-preload coil springs, and the shock cord's own route through
+// this same bore, each a small real intrusion the probe doesn't charge
+// for.
+//
+// 140 (12th review, owner's ruling): Rocket6551.scad's own stated
+// ceiling ("140 is max for a single 4323 spring", that file's own
+// Petal_Len comment) and its own preferred/flown value. Net at 140:
+// 311.2-16.3=294.9 cm^3, ~18% real margin -- not free (grows the
+// deployment-bay tube's own required length by the same amount, see
+// R60_Chute_L below) but the tangent fit at 120 is not a margin on the
+// one system whose job is getting the camera back, and the tube split
+// that length now requires (R60_Chute_L below) is needed at 120 too, so
+// there is nothing to buy by staying short. See docs/superpowers/specs/
+// 2026-08-13-rocket60-design.md sec 4.1 for the record of this decision
+// and tools/verify_rocket60_assembly.py's own check_packing()
+// (Pairs 41/42) for the checked, mesh-measured, mutation-tested version
+// of these numbers -- not just this comment.
+R60_Petal_Len = 140;
 R60_nPetals   = 3;
 
 // Petal cartridge's own aft spigot into the fin can (part 9, UNCHANGED --

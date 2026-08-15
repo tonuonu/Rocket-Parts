@@ -53,15 +53,38 @@ L_NOSE = 94.0
 # e-bay tube's forward rim -- its 19mm skirt telescopes INSIDE L_EBAY
 # (already counted there) and adds no further length, but the flange
 # itself is real, additional airframe length TOTAL used to omit entirely.
-# Physical stack: 94 (nose) + 5 (flange) + 177 (e-bay) + 240 (deployment
-# bay) + 228 (fin can) = 744mm -- this is that other 5mm.
+# Physical stack: 94 (nose) + 5 (flange) + 177 (e-bay) + 275 (deployment
+# bay, 12th review -- grown 240->275, see L_CHUTE below) + 228 (fin can)
+# = 779mm -- this is that other 5mm.
 L_NECK_FLANGE = 5.0
 L_EBAY = 177.0
-# L_CHUTE (petal-deployment transplant): R60Lib.scad's R60_Chute_L, grown
-# 180->240 to house the release stack + spring + petal cage -- see that
-# constant's own comment for the measured 226.5mm stack + margin this
-# comes from.
-L_CHUTE= 240.0
+# L_CHUTE (12th review, owner's ruling): R60Lib.scad's own R60_Chute_L --
+# restated (rule 4). Grown again, 240->275: the 226.5mm-stack-plus-margin
+# figure the OLD 240 came from was measured off the pre-fix, inverted
+# petal hub (HUB_TAIL_OFFSET's own comment below); the corrected hub
+# needs the tube's own assembled length to land within one spigot length
+# (5.5mm) of the hub's own fixed reach, not just "give it extra room" --
+# see R60_Chute_L's own comment, R60Lib.scad, for the full derivation
+# (target 2.7mm of engagement, not tangent, not bottomed out). 275mm
+# exceeds this project's own "fits 250mm Z" rule and the printer's own
+# 256mm build volume as ONE piece -- split into R60_ChuteTubeFwd()/
+# R60_ChuteTubeAft() (parts 3/26, Rocket60.scad), joined by an in-wall
+# spigot/socket that does not change the assembled tube's own total
+# length at all -- L_CHUTE stays the single, real, physical airframe
+# figure regardless of how many pieces it prints as.
+L_CHUTE= 275.0
+CHUTE_SPLIT_Z = 137.0   # R60Lib.scad's own R60_ChuteSplit_Z -- restated
+                          # (rule 4). Part 3 (fwd) spans S_CHUTE+0 ..
+                          # S_CHUTE+143 (incl. its own 6mm spigot); part
+                          # 26 (aft) spans S_CHUTE+137 .. S_CHUTE+275
+                          # (incl. its own 7mm socket) -- the two overlap
+                          # over the 6mm spigot's own real engagement,
+                          # same as the assembled mesh (r60_assembly.
+                          # scad's own Pair 41).
+CHUTE_FWD_L = 143.0   # part 3's own printed height, CHUTE_SPLIT_Z + 6mm
+                        # spigot (Engage-Taper, Rocket60.scad's own
+                        # R60_ChuteTubeFwd()) -- restated (rule 4),
+                        # matches STL_VOL[3]'s own measured mesh height
 L_FINCAN=228.0
 TOTAL  = L_NOSE+L_NECK_FLANGE+L_EBAY+L_CHUTE+L_FINCAN
 
@@ -135,10 +158,15 @@ NOSECONE_VOL = 29.4                 # NoseCone.stl
 # subsystem and the CS4323 seat, fixes 2/4) -- all four measured off the
 # freshly re-exported meshes, same divergence-theorem method as every
 # other figure in this dict.
-STL_VOL = {1: 16.2, 2: 47.1, 3: 70.4, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
-           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 33.8, 14: 0.6,
+# 3, 13, 26: re-measured this session (12th review, tube split +
+# Petal_Len=140) off the actual rendered mesh, not scaled/estimated --
+# 3: 41.1 (was 70.4 at Chute_L=240 one-piece; now the fwd piece only,
+# 143mm incl. spigot), 26: 39.3 (new, the aft piece, 138mm incl. socket),
+# 13: 39.3 (was 33.8 at Petal_Len=120; now 140mm).
+STL_VOL = {1: 16.2, 2: 47.1, 3: 41.1, 4: 12.7, 5: 39.4, 6: 23.8, 7: 11.3,
+           8: 24.8, 9: 114.0, 10: 15.8, 11: 13.4, 12: 16.6, 13: 39.3, 14: 0.6,
            15: 7.3, 16: 5.4, 17: 3.6, 18: 1.6, 19: 0.3, 20: 0.4, 21: 1.1,
-           22: 1.5, 23: 10.5, 24: 2.2, 25: 4.1}
+           22: 1.5, 23: 10.5, 24: 2.2, 25: 4.1, 26: 39.3}
 MMT_L = 228.0   # R60_MMT_L = R60_FinCan_L (R60Lib.scad, post fix)
 THRUST_RING_T = 6.0   # R60_ThrustRing_T (R60Lib.scad) -- the spacer now
                         # stops this much short of MMT_L, see build()
@@ -202,37 +230,36 @@ PETALS_OFFSET = 76.5      # part 13's own base, same reference (S_ACT0)
 # root is 147.2-120=27.2mm, not 5.
 HUB_TAIL_OFFSET = 27.2     # part 8's own aft reach past the petal root
                             # (measured off the corrected mesh, see above)
-R60_Petal_Len = 120.0      # R60Lib.scad's own R60_Petal_Len -- restated
+R60_Petal_Len = 140.0      # R60Lib.scad's own R60_Petal_Len -- restated
                              # (rule 4), see that constant's own comment
-                             # for the packing-volume derivation
+                             # for the packing-volume derivation (12th
+                             # review: 120->140, owner's ruling -- real
+                             # 18% packing margin, not the 120mm tangent
+                             # fit; donor's own stated ceiling for a
+                             # single CS4323, Rocket6551.scad)
 
-# Closure check (10th review, tolerance restated 11th review): the petal
-# hub's (part 8) own aft-most material -- the tip of its spigot,
-# S_ACT0+PETALS_OFFSET+R60_Petal_Len+HUB_TAIL_OFFSET -- has to land close
-# to S_FIN (the fin can's own forward tip, where
+# Closure check (10th review, tolerance restated 11th review, FIXED 12th
+# review): the petal hub's (part 8) own aft-most material -- the tip of
+# its spigot, S_ACT0+PETALS_OFFSET+R60_Petal_Len+HUB_TAIL_OFFSET -- has
+# to land close to S_FIN (the fin can's own forward tip, where
 # R60_PetalHubSpigot_L=5.5mm of it actually engages the fin can's own
 # R60_FinCan_FwdOpen_L=6mm open annulus) for this whole chain to be
 # physically closed, not floating disconnected from what it is stated to
 # spigot into.
 #
-# 11th review: this now FAILS, and correctly so -- not a regression, a
-# real requirement the OLD, inverted part 8 hid (HUB_TAIL_OFFSET's own
-# comment above). With the hub the right way round, _hub_tail lands
-# ~17.7mm PAST S_FIN: the release stack + spring end + petals + hub, laid
-# out correctly, needs about 223.7mm of chute-bay depth past S_ACT0
-# (SPRINGEND_OFFSET/PETALS_OFFSET/R60_Petal_Len/HUB_TAIL_OFFSET, none of
-# them adjustable -- they are the donor's own proven hardware and this
-# task's own packing-volume-derived petal length) but R60_Chute_L=240
-# only budgets ~206mm past S_ACT0 (240-SKIRT_L-ACT_MOUNT_GAP). The old
-# "measured 226.5mm total span" R60_Chute_L's own comment cites was
-# measured off the SAME inverted hub this review fixed -- its spigot sat
-# inside the petals' own envelope instead of past them, so that render
-# never saw the hub extend past the petals at all, and undercounted the
-# true depth needed by roughly this same ~20mm. Reported as a FAIL (not
-# silently patched by growing R60_Chute_L here) because that is a real
-# airframe-length change with its own CG/stability consequences, outside
-# a station-bookkeeping script's own authority to decide -- flagged for
-# the owner, same as the packing-volume shortfall.
+# 11th review found this FAILING (a real requirement the OLD, inverted
+# part 8 hid, HUB_TAIL_OFFSET's own comment above) and reported it rather
+# than silently growing R60_Chute_L, since that is a real airframe-length
+# change with its own CG/stability consequences, outside a station-
+# bookkeeping script's own authority to decide. 12th review: the owner's
+# own ruling (R60_Petal_Len=140 for packing margin, R60_Chute_L grown to
+# 275 -- see that constant's own comment, R60Lib.scad, for the full
+# derivation: target 2.7mm of engagement, not tangent, not bottomed out)
+# makes this PASS now, for the reason it is supposed to, not because the
+# check was loosened -- verified by mutation (this session): reverting
+# either constant alone (Petal_Len=120 with Chute_L=275, or Chute_L=240
+# with Petal_Len=140) reproduces a real, honest FAIL in the direction
+# that mutation breaks.
 #
 # bad()-tracked (11th review), not a hard `assert` (this used to be one,
 # and a real, honest failure here crashed the WHOLE script with a raw
@@ -246,15 +273,29 @@ R60_FinCanSpigot_L_restated = 5.5   # R60Lib.scad's R60_FinCanSpigot_L,
                                       # restated (rule 4) -- shared by
                                       # R60_PetalHubSpigot_L there
 _hub_tail = S_ACT0 + PETALS_OFFSET + R60_Petal_Len + HUB_TAIL_OFFSET
-_closure_ok = abs(_hub_tail - S_FIN) <= R60_FinCanSpigot_L_restated
+_over = _hub_tail - S_FIN   # + : hub reaches PAST S_FIN (engagement,
+                              # good, up to R60_FinCanSpigot_L_restated);
+                              # - : hub falls SHORT of S_FIN (a gap, the
+                              # spigot never reaches the fin can) -- BOTH
+                              # signs are real defects past the tolerance
+                              # (12th review, fix 3's own two-sidedness
+                              # fix, mirrored here -- this check was
+                              # already abs()-based before that review;
+                              # verify_rocket60_assembly.py's OWN mesh
+                              # closure check was the one-sided sibling)
+_closure_ok = abs(_over) <= R60_FinCanSpigot_L_restated
 print("%s closure: petal hub's own aft-most reach (%.1f) vs S_FIN (%.1f), "
       "within one spigot length (%.1f)%s"
       % (bad(_closure_ok), _hub_tail, S_FIN, R60_FinCanSpigot_L_restated,
-         "" if _closure_ok else
-         (" -- SHORT by %.1fmm; the corrected (right-way-round) hub needs "
-          "more chute-bay depth than R60_Chute_L currently budgets, see "
-          "this block's own comment"
-          % (abs(_hub_tail - S_FIN) - R60_FinCanSpigot_L_restated))))
+         (" -- clears (%.1fmm %s tangent)"
+          % (abs(_over), "past" if _over >= 0 else "short of")
+          if _closure_ok else
+          (" -- SHORT by %.1fmm; the hub needs more chute-bay depth than "
+           "R60_Chute_L currently budgets, see this block's own comment"
+           % (_over - R60_FinCanSpigot_L_restated) if _over > 0 else
+           " -- GAP of %.1fmm; R60_Chute_L is too LONG, the spigot does "
+           "not reach the fin can, see this block's own comment"
+           % (-_over - R60_FinCanSpigot_L_restated)))))
 
 # Full station audit (coordinator override, same round): every OTHER
 # station in build() below is now likewise derived from where its own
@@ -488,10 +529,16 @@ def build(motor):
      # R60_Door_Overlap cancels in the midpoint) -- so the door's own true
      # centre is ALWAYS the e-bay tube's own overall midpoint.
      ('access door + switch',  petg(STL_VOL[7]) + 8.0,   S_EBAY+L_EBAY/2),
-     # Plain uniform tube -- geometric midpoint. Now a plain, feature-free
-     # tube (R60_ChuteTube()'s own module comment) -- no internal mass
-     # asymmetry to correct for any more.
-     ('deployment bay tube',   petg(STL_VOL[3]),         S_CHUTE+L_CHUTE/2),
+     # Plain uniform tube -- geometric midpoint, each piece separately
+     # (12th review, the tube split -- owner's ruling). Both plain,
+     # feature-free tubes apart from the joint itself (R60_ChuteTubeFwd()/
+     # R60_ChuteTubeAft()'s own module comments) -- no internal mass
+     # asymmetry to correct for either, same as the one-piece tube before
+     # the split.
+     ('deployment bay tube fwd', petg(STL_VOL[3]),
+      S_CHUTE+CHUTE_FWD_L/2),   # CHUTE_FWD_L=143 (137+6mm spigot) below
+     ('deployment bay tube aft', petg(STL_VOL[26]),
+      S_CHUTE+CHUTE_SPLIT_Z+(L_CHUTE-CHUTE_SPLIT_Z)/2),
      # Petal-deployment transplant: the release stack (parts 15-22) +
      # CS4323 spring + R60_FwdSpringEnd() (part 23) occupy the
      # deployment bay's own forward span; the packed parachute is now

@@ -11,7 +11,8 @@ from scad_verify import REPO, render, measure, bore, volume, tris, components, o
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
-NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "deployment bay tube",
+NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube",
+         3: "deployment bay tube fwd",
          4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
          7: "access door", 8: "petal hub", 9: "fin can", 10: "fin",
          11: "motor retainer", 12: "motor spacer", 13: "petals",
@@ -20,7 +21,7 @@ NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "deployment bay tube",
          19: "release trigger post", 20: "release magnet bracket",
          21: "release extension rod", 22: "release locking pin",
          23: "forward spring end", 24: "petal spring holder",
-         25: "spring centering ring mount"}
+         25: "spring centering ring mount", 26: "deployment bay tube aft"}
 
 # Door aperture (R60_EBayTube()) / cover (R60_Door()) -- defect 1d fix.
 # R60_Door() used to be a flush plug 2*DOOR_GAP smaller than the aperture
@@ -113,7 +114,10 @@ GENUS[2] = 5
 #   tube's wall for it -- shear pins, the tether lug/lashing hole, the
 #   weld ring/spigot) moved entirely to the petal cage (parts 8/13); this
 #   is now a genuinely plain tube -- R60_Tube() alone, one bore, no other
-#   feature. Rendered `Genus: 1`.
+#   feature. Rendered `Genus: 1`. 12th review: now the FORWARD piece of
+#   the split tube (R60_ChuteTubeFwd(), part 26 is the aft piece) -- the
+#   spigot at its own aft end is still topologically a plain hollow tube
+#   (no added holes/handles), genus unchanged, confirmed by re-rendering.
 GENUS[3] = 1
 
 #   part 5: e-bay aft bulkhead (petal-deployment transplant). Servo 2's
@@ -239,6 +243,12 @@ GENUS[24] = 3    # petal spring holder
 #   `Genus: 22`, `components()`==1.
 GENUS[25] = 22   # spring centering ring mount
 
+#   part 26: deployment bay tube, AFT piece (12th review, the tube
+#   split -- owner's ruling, R60_Chute_L=275 exceeds the print envelope
+#   as one piece). Same topology as part 3 (a plain hollow tube, socket
+#   bored into one end): rendered `Genus: 1`.
+GENUS[26] = 1
+
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
 
@@ -256,6 +266,18 @@ TESTRING_SPIGOT_BAND = (5.5, 10.01)  # part 0: coupler OD against a tube bore
 NECK_FLANGE_BAND = (-0.01, 0.5)    # part 1: base face - flange OD and bore
 NECK_SKIRT_BAND  = (23.5, 24.01)   # part 1: skirt top face - skirt OD
 TUBE_BAND = (-0.01, 0.5)   # parts 2,3: base face carries both OD and bore
+# 12th review, the tube split: part 3's spigot (near its own top, not its
+# base -- R60_ChuteSplit_Z=137 in) and part 26's socket (at its own base)
+# and true aft-end tube cross-section (past the socket+taper). Bands
+# reach real edge loops (spigot tip Z=143, socket taper end Z=7) per this
+# section's own convention above.
+CHUTE_SPIGOT_BAND = (142.5, 143.01)     # part 3: spigot OD near its tip
+CHUTE_SOCKET_BAND = (-0.01, 0.5)        # part 26: socket ID/OD at its base
+CHUTE_AFT_TOP_BAND = (137.5, 138.01)    # part 26: true aft-end, past the
+                                          # socket+taper -- normal tube
+R60_ChuteSplit_SocketID_restated = 58.8   # R60Lib.scad's own
+                                            # R60_ChuteSplit_SocketID --
+                                            # restated (rule 4)
 BULK_BAND = (-0.01, 0.5)   # parts 4,5: base face of the disc
 # Part 9's base face carries BOTH the outer tube (60/56.8) and the MMT
 # (32/29.3), so one band yields both measurements: bore() returns
@@ -610,10 +632,13 @@ def checks(m):
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
-    # Part 3's own length is now the plain R60_Chute_L=240 (petal-
-    # deployment transplant): no spigot any more (that joint moved to
-    # part 8), so its measured height is the tube's own length outright.
-    for p, want_len in ((2, 177.0), (3, 240.0)):
+    # Part 2's own length is the plain R60_EBay_L=177. Part 3 (12th
+    # review, the tube split -- owner's ruling, R60_Chute_L=275 exceeds
+    # the print envelope as one piece): no longer R60_Chute_L outright --
+    # it is R60_ChuteSplit_Z + (R60_ChuteSplit_Engage-Taper), the fwd
+    # piece's own length INCLUDING its spigot (137+6=143), restated (rule
+    # 4) matching Rocket60.scad's own R60_ChuteTubeFwd()/R60_ChuteTubeAft().
+    for p, want_len in ((2, 177.0), (3, 143.0)):
         if p in m:
             tube_id, tube_od = safe(bore, a(p, "stl"), *TUBE_BAND, nvals=2)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
@@ -624,6 +649,32 @@ def checks(m):
                 _, skirt_od = safe(bore, a(1, "stl"), *NECK_SKIRT_BAND, nvals=2)
                 c += [("part %d bore clears neck skirt" % p,
                        tube_id - skirt_od, 0.4, 0.15)]
+
+    # Part 26: deployment bay tube, AFT piece (12th review, the tube
+    # split). Its own base (Z~0) is the SOCKET, not a plain tube cross-
+    # section -- TUBE_BAND would read the wrong numbers there, so this
+    # gets its own bands: CHUTE_SOCKET_BAND at the base (bore=
+    # R60_ChuteSplit_SocketID, not 56.8 -- the socket is bored out to
+    # receive part 3's own spigot) and CHUTE_AFT_TOP_BAND at the piece's
+    # own true aft/open end (past the socket+taper, a normal tube cross-
+    # section again, same 56.8/60.0 as everywhere else).
+    if 26 in m:
+        socket_id, socket_od = safe(bore, a(26, "stl"), *CHUTE_SOCKET_BAND, nvals=2)
+        top_id, top_od = safe(bore, a(26, "stl"), *CHUTE_AFT_TOP_BAND, nvals=2)
+        c += [("part 26 length", a(26, "height"), 138.0, 0.1),
+              ("part 26 socket ID", socket_id, R60_ChuteSplit_SocketID_restated, 0.1),
+              ("part 26 socket OD", socket_od, 60.0, 0.1),
+              ("part 26 aft-end OD", top_od, 60.0, 0.1),
+              ("part 26 aft-end bore", top_id, 56.8, 0.1)]
+        # The joint's own mating clearance -- same 0.4+-0.15mm convention
+        # as every other internal spigot in this design (the petal hub
+        # spigot into the fin can, the neck skirt into the e-bay tube):
+        # socket ID minus spigot OD, mesh-against-mesh, not two restated
+        # literals compared to each other.
+        if 3 in m:
+            spigot_id, spigot_od = safe(bore, a(3, "stl"), *CHUTE_SPIGOT_BAND, nvals=2)
+            c += [("part 26 socket clears part 3 spigot",
+                   socket_id - spigot_od, 0.4, 0.15)]
 
     if 2 in m:
         # Door boss OD stations -- defect 2a. TUBE_BAND (z~0) never sees
