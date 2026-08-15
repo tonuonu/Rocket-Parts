@@ -11,11 +11,15 @@ from scad_verify import REPO, render, measure, bore, volume, tris, components, o
 
 SCAD = os.path.join(REPO, "Rocket60.scad")
 
-NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "chute bay tube",
+NAMES = {0: "test ring", 1: "neck", 2: "e-bay tube", 3: "deployment bay tube",
          4: "ebay fwd bulkhead", 5: "ebay aft bulkhead", 6: "vega sled",
-         7: "access door", 8: "spring carrier", 9: "fin can", 10: "fin",
-         11: "motor retainer", 12: "motor spacer", 13: "tether latch",
-         14: "thrust ring"}
+         7: "access door", 8: "petal hub", 9: "fin can", 10: "fin",
+         11: "motor retainer", 12: "motor spacer", 13: "petals",
+         14: "thrust ring", 15: "release activator", 16: "release top retainer",
+         17: "release lock ring", 18: "release outer bearing retainer",
+         19: "release trigger post", 20: "release magnet bracket",
+         21: "release extension rod", 22: "release locking pin",
+         23: "forward spring end"}
 
 # Door aperture (R60_EBayTube()) / cover (R60_Door()) -- defect 1d fix.
 # R60_Door() used to be a flush plug 2*DOOR_GAP smaller than the aperture
@@ -100,35 +104,25 @@ GENUS[6] = 5
 #   drops the count 6-4=2; rendered, confirmed `Genus: 2`.
 GENUS[2] = 2
 
-#   part 3: chute bay tube. Started at 1 (plain tube), then 3 after the 2
-#   shear pin holes were added (rendered `Genus: 3`, confirmed on a thin
-#   Z-band section slice at the pin holes' Z: each is a clean full-wall
-#   through-cut, not a blind mark). RE-DERIVED AGAIN (Task 8) after adding
-#   the tether tie-off lug + its lashing hole (`Genus: 4`, confirmed on a
-#   thin X-slice through the lug: the hole is a clean opening straight
-#   through the lug's material, a genuine 4th handle -- the pin holes and
-#   tube bore are unaffected, different azimuth, no shared geometry).
-#   1 (tube) + 2 (pin holes) + 1 (lug lashing hole) = 4.
-#   RE-CONFIRMED (4th review, critical 1/4): the weld ring bridging the
-#   spigot to the main wall is a solid annular ADDITION (no new void) and
-#   the lug/tab embedding just deepens two ALREADY-solid features into
-#   the wall -- neither changes hole count. Rendered, still `Genus: 4`;
-#   components() (new this round, see that function's own docstring)
-#   changed from 2 to 1 -- the actual defect genus could never see.
-GENUS[3] = 4
+#   part 3: deployment bay tube (petal-deployment transplant). The
+#   separable joint (and everything that used to punch through this
+#   tube's wall for it -- shear pins, the tether lug/lashing hole, the
+#   weld ring/spigot) moved entirely to the petal cage (parts 8/13); this
+#   is now a genuinely plain tube -- R60_Tube() alone, one bore, no other
+#   feature. Rendered `Genus: 1`.
+GENUS[3] = 1
 
-#   part 5: e-bay aft bulkhead. Started at 1 (disc + harness-analogue
-#   bore), grew through the upright-servo redesign; RE-CONFIRMED at 4
-#   after adding the aft skirt + 2 shear pin holes (rendered `Genus: 4`; a
-#   sliced side-profile diagnostic confirms the 2 new pin holes are blind
-#   -- add zero handles). This render also CAUGHT a real defect first:
-#   the first skirt draft left servo 2's horn slot dead-ending under the
-#   new solid skirt material (observed genus 3, not 4) -- fixed by
-#   extending the horn slot cut through the skirt to the new aft face,
-#   same treatment the shaft bore already had; re-rendering then gave 4
-#   back. Servo 1's pocket+shaft (1) + servo 2's pocket+horn, reaching the
-#   aft face (1) + 2 cord holes, also extended through the skirt (2) = 4.
-GENUS[5] = 4
+#   part 5: e-bay aft bulkhead (petal-deployment transplant). Servo 2's
+#   pocket+horn, both shear pins, the tether relief channel and the
+#   tether-latch insert holes are all deleted outright (single deploy has
+#   no second servo/tether phase; the joint moved to the petal cage) --
+#   servo 1 itself also moved OFF this part, onto part 15's own Activator
+#   print, so there is no shaft bore here either. What remains: 2 shock-
+#   cord through-holes (+2 handles on the plain disc+skirt solid, which
+#   is otherwise a solid puck -- no bore of its own, confirmed on the
+#   rendered mesh) + 3 blind Vega rod pockets (0, blind) + 3 blind
+#   Activator mounting inserts (0, blind) = 2. Rendered `Genus: 2`.
+GENUS[5] = 2
 
 #   part 7: curved door cover. 4 bolt holes = 4. Unchanged across the
 #   defect 1a azimuth fix -- that fix repositions each hole's AXIS, not
@@ -139,25 +133,13 @@ GENUS[5] = 4
 #   `Genus: 5`.
 GENUS[7] = 5
 
-#   part 8: spring carrier. First rendered without the forward counterbore
-#   or shock-cord channels (Genus: 1, a single spring-bore passage with
-#   blind ball pockets). Adding the counterbore + 2 cord channels (Task 7
-#   fix) changed this to Genus: 3, RE-DERIVED rather than assumed: a
-#   horizontal slice through the diaphragm (z~21.5) shows 3 SEPARATE round
-#   breaches through it -- the Ø8 driveshaft hole and the 2 Ø5 cord holes
-#   -- each independently connecting "forward of diaphragm" to "aft of
-#   diaphragm": 1 (main bore/driveshaft passage) + 2 (cord passages) = 3.
-#   A second slice confirms the 3 ball pockets stay enclosed/blind and
-#   clear of the 2 cord grooves -- this render also CAUGHT a
-#   rotation-math defect first: a first draft placed a ball pocket
-#   azimuth 90deg off (forgot the pocket's own pre-rotation offset),
-#   landing it inside the cord-groove sector (still genus 3 -- the defect
-#   was in ball placement, not count); fixed by correcting the rotate
-#   angle. RE-CONFIRMED this round after the notch-width fix (2c,
-#   Rocket60.scad's R60_SpringCarrier()): the notch is wider (8->9.2mm)
-#   but still a single blind-from-the-side cut through the OD-to-CB_D rim
-#   annulus, no new through-passage; rendered, still `Genus: 3`.
-GENUS[8] = 3
+#   part 8: petal hub (petal-deployment transplant, replaces the spring
+#   carrier). R65_PetalHub() (R65Lib.scad) plus this task's own added aft
+#   spigot into the fin can -- library geometry, not feature-counted by
+#   hand here the way this file's own hand-built parts are (see file
+#   docstring: measured off the rendered mesh, not inferred). Rendered
+#   `Genus: 19`.
+GENUS[8] = 19
 
 #   part 9: fin can. Rendered 4 (1 MMT bore + 3 fin slots) after the
 #   retainer bolt bosses were added (confirmed blind via top/bottom/
@@ -180,33 +162,30 @@ GENUS[11] = 4
 #   the topology (a plain tube) did not; rendered, still `Genus: 1`.
 GENUS[12] = 1
 
-#   part 13: tether latch. FIRST rendered (pre-fix, +-11mm hole spacing)
-#   at Genus: 2 -- lower than the naive per-feature sum (2 mount holes + 2
-#   post-tunnels = 4) because that hole placement shared boundary geometry
-#   with the posts, collapsing two handles into one (five isolated
-#   variants reproduced this consistently -- not a rendering fluke).
-#   RE-DERIVED (defect 1b/1h fix) after the mounting holes moved to
-#   +-R60_TetherLatch_HoleX (16mm, clear of the horn-slot void) and
-#   Base_L widened to fit: rendered `Genus: 4`, now matching the naive
-#   per-feature sum, confirmed on the same base-slice/front-on-post
-#   diagnostics (both mount holes still clean through-holes, pin bore
-#   still a genuine tunnel through each post) -- with the mount holes well
-#   clear of the posts (+-16 vs. posts at +-9) they no longer share a
-#   boundary that collapses two handles into one. RE-CONFIRMED this round
-#   after the Base_L/wall-margin fix (2b): base grew again (36->38.6mm)
-#   but the hole/post topology is unchanged; rendered, still `Genus: 4`.
-#   RE-DERIVED (4th review, critical 2/5): the corner clip (critical 2)
-#   reshapes the outer boundary only -- no new handle, confirmed still
-#   `Genus: 4` with just that change applied. The base pass-through
-#   (critical 5) is a genuine new through-hole (base_pass_w x
-#   R60_Horn_W straight through Base_T, clear of every existing hole):
-#   rendered with both fixes, `Genus: 5`, matching the naive +1.
-GENUS[13] = 5
+#   part 13: petals (petal-deployment transplant, replaces the tether
+#   latch). PD_Petals() (PetalDeploymentLib.scad), HasLocks=true --
+#   library geometry, same "measured, not hand-counted" treatment as
+#   part 8. Rendered `Genus: 7`.
+GENUS[13] = 7
 
-#   part 14: forward thrust ring (new this round, 3rd review defect 3) =
+#   part 14: forward thrust ring (3rd review defect 3) =
 #   1 (a plain annulus -- one through-hole, same class as part 12's
 #   spacer tube). Rendered `Genus: 1`.
 GENUS[14] = 1
+
+#   parts 15-23: release hardware (petal-deployment transplant),
+#   `use<>`-instantiated from CableReleaseBBMicro.scad/R65Lib.scad -- all
+#   library geometry, measured off each rendered mesh this session, same
+#   treatment as parts 8/13 above.
+GENUS[15] = 25   # release activator
+GENUS[16] = 10   # release top retainer
+GENUS[17] = 10   # release lock ring
+GENUS[18] = 8    # release outer bearing retainer
+GENUS[19] = 2    # release trigger post
+GENUS[20] = 3    # release magnet bracket
+GENUS[21] = 1    # release extension rod
+GENUS[22] = 1    # release locking pin
+GENUS[23] = 7    # forward spring end
 
 MAX_Z = 250.0   # Bambu P1S usable Z, repo convention
 
@@ -241,13 +220,15 @@ FINCAN_BAND = (-0.01, 0.5)
 # was a separate bore_annulus() wrapper, now bore()'s own optional
 # parameter) cleanly keeps just the body pair (a plain r_lo=0.0 bore()
 # call would read the MMT's 29.3mm bore as the "min", not the body's own
-# 56.8mm ID). Part 3's own
-# spigot tip (z=185.5, its own measured height) is likewise the only Z
-# where the spigot's own {26.6, 28.2} pair stands alone, clear of the
-# weld-ring transition just below it (z=178..180).
+# 56.8mm ID).
 FINCAN_SPIGOT_BAND  = (227.5, 228.01)   # part 9: fin can's forward-open bore
 FINCAN_SPIGOT_R_LO  = 20.0               # excludes the MMT (r<=16.15)
-CHUTE_SPIGOT_BAND   = (184.5, 185.51)   # part 3: spigot's own tip
+# Petal hub's own aft spigot (petal-deployment transplant -- this joint
+# used to be made by the chute tube's own spigot, now by part 8 instead,
+# R60Lib.scad's R60_PetalHubSpigot_L comment): translate([0,0,16]) +
+# R60_PetalHubSpigot_L(5.5) = tip at z=21.5, part 8's own measured height.
+PETALHUB_SPIGOT_BAND = (21.0, 21.51)
+R60_Coupler_OD = 56.4   # restated literal (rule 4), matching R60Lib.scad
 # Slot Z-extent inside R60_FinCan() is Slot_Z=8-IDXtra .. Slot_Z+Slot_L=
 # 7.8..98.2 (not exposed as R60Lib constants; IDXtra=0.2 is the length
 # clearance added at each end, so the slot is 90.4mm for a 90mm root). The
@@ -276,67 +257,19 @@ RETAINER_BAND = (-0.01, 0.5)
 # either way -- same convention as every other *_BAND above.
 THRUST_RING_BAND = (-0.01, 0.5)
 
-# Part 8 (spring carrier): base face is a plain tube rim, OD=Coupler_OD.
-# From the brief verbatim -- originally also carried the 44.8mm spring-bore
-# reading, but a Task 7 fix added a CB_D=51mm forward counterbore (tether
-# latch clearance, part 13/Task 8) ahead of it, so the base band now reads
-# CB_D there instead; the 44.8mm reading moved to CARRIER_STEP_BAND below,
-# at the step where the counterbore narrows to the actual spring bore.
-SHEARPIN_BAND = (-0.01, 0.5)
-CARRIER_STEP_BAND = (16.5, 17.5)   # straddles the CB_D->Bore step at z=17
-
-# Shear-pin joint geometry (R60Lib.scad's R60_Pin_d/R60_Pin_Z_FromJoint,
-# restated here as literals per this file's existing convention of checking
-# against measured mesh geometry, not the constant that produced it -- see
-# rule 4). Two pins land at the SAME Z offset from the joint on both sides
-# (chute tube's forward rim, and the aft bulkhead's skirt, offset by the
-# skirt's own T=12mm start), so a single physical pin lines up through both
-# once assembled -- see R60_EBayAftBulkhead()'s module comment.
-PIN_D            = 2.2    # nylon 2-56 clearance
-PIN_Z_FROM_JOINT = 8.0
-SKIRT_T          = 12.0   # part 5's original disc height, before the skirt
-PIN_Z_CHUTE       = PIN_Z_FROM_JOINT
-PIN_Z_SKIRT       = SKIRT_T + PIN_Z_FROM_JOINT
-PIN_R_CHUTE       = 30.0   # R60_Body_OD/2 -- chute tube's outer wall
-PIN_R_SKIRT       = 28.2   # R60_Coupler_OD/2 -- skirt's outer surface
-
-# Tether lug (part 3) vs. the skirt's relief notch (part 5) -- defect 1a.
-# Both parts share the rocket's own Z axis with no radial offset once
-# assembled, so their (x, y) footprints are directly comparable with no
-# assembly-frame transform -- only Z differs, and Z is irrelevant to a
-# radius/width clearance check (the notch runs the skirt's FULL length).
-# Windows restated as literals per this file's convention; see
-# R60Lib.scad's R60_TetherLug_*/R60_Tether_Clear for what produced them.
-TETHER_LUG_XZ = (-4.5, 4.5, 3.5, 9.5)          # part 3, lug's own X/Z span + margin
-TETHER_NOTCH_XZ = (-5.5, 5.5, 11.5, 27.5)      # part 5, notch's full skirt-length span
-TETHER_NOTCH_YLO = 19.0   # excludes the shaft bore (max y=6) and servo 2's
-                           # horn slot (max y=18.1), both of which also
-                           # fall inside the X/Z window above
-# TETHER_NOTCH_YHI (6th review, finding 2): the notch cuts ALL THE WAY
-# THROUGH the skirt's own curved OD (R60_Coupler_OD/2=28.2, R60Lib.scad's
-# Tether_Notch_MinR..R60_Coupler_OD/2+Overlap span) rather than stopping
-# blind inside it -- so an UNBOUNDED-above Y window (the old ylo-only
-# filter) picks up the OD's own dense $fn=180 tessellation vertices right
-# where the flat notch wall merges into the curve, not just the notch
-# wall itself. Measured: the old window read 0.897/0.901mm where the
-# lug/notch clearance actually built is 0.6mm (R60_Tether_Clear) -- and at
-# R60_Tether_Clear=0 (mutation, the notch cut exactly the lug's own
-# footprint with zero clearance -- the original defect this check exists
-# to catch) it STILL read ~0.9mm and passed, because the number it was
-# actually measuring was never the notch's own width at all, it was how
-# far the round OD's tessellation happens to spread near that azimuth --
-# a quantity R60_Tether_Clear does not touch. Capped comfortably below
-# the OD's own radius (28.2) so the window sees only the notch's flat
-# side walls, confirmed to still isolate real notch-wall vertices with
-# TETHER_NOTCH_YLO (Tether_Notch_MinR sits at ~23.8-24.4 across the
-# R60_Tether_Clear range tested).
-TETHER_NOTCH_YHI = 27.0
-
-# Spring reaction tabs (part 3) vs. the CS4323 spring -- defect 1c.
-SPRING_OD = 44.30
-STOPTAB_BAND = (79.99, 80.5)   # straddles the tabs' own base edge loop (z=80)
-
-R60_TETHER_Y = 13.6   # = R60_Tether_Y (R60Lib.scad)
+# Part 8 (petal hub) / part 13 (petals): no dimensional bands of their
+# own here -- they are library geometry (R65Lib.scad/PetalDeploymentLib.scad),
+# checked instead by BORE_CHECKS' generic max-radius-vs-bore probe below
+# (the fit question this transplant actually turns on) rather than by
+# hand-picked Z-bands into features this file did not design.
+#
+# Deleted outright (petal-deployment transplant): SHEARPIN_BAND,
+# CARRIER_STEP_BAND, PIN_D/PIN_Z_FROM_JOINT/SKIRT_T/PIN_Z_CHUTE/
+# PIN_Z_SKIRT/PIN_R_CHUTE/PIN_R_SKIRT, TETHER_LUG_XZ/TETHER_NOTCH_XZ/
+# TETHER_NOTCH_YLO/TETHER_NOTCH_YHI, SPRING_OD/STOPTAB_BAND,
+# R60_TETHER_Y -- every one of these fed a check for a feature (shear
+# pins, spring reaction tabs, tether lug/notch/insert) that no longer
+# exists anywhere in this design. See tasks/lessons.md.
 
 # --- this round's fixes (PR #23, 2nd review) --------------------------
 
@@ -449,25 +382,6 @@ DOOR_SW_X_EXPECT = 0.0
 DOOR_SW_Z_EXPECT = 48.5   # R60_Door_Overlap + R60_Door_Open_H/2 = 6+42.5
 
 
-def pin_hole_diameter(stl, x_side, z_center, r_expected, half_window=3.0):
-    """Diameter of a small radial shear-pin hole, read from the STL's own
-    edge-loop vertices where the hole cuts the surface near
-    x = x_side * r_expected, z = z_center. x_side isolates one hole from
-    its mirror at -x_side (the two pins are 180deg apart, at +-X); the z
-    window isolates it from unrelated geometry. Pin_d is tiny relative to
-    the tube's own radius of curvature, so the hole's local Z-extent is a
-    direct read of its diameter -- same "measure the real edge loop, don't
-    infer from the constant that cut it" approach as fincan_slot_*()."""
-    zs = [z for tri in tris(stl) for (x, y, z) in tri
-          if x_side * x > 0 and abs(abs(x) - r_expected) < half_window
-          and abs(z - z_center) < half_window]
-    if not zs:
-        raise RuntimeError(
-            "no geometry near pin hole x=%+.0f*r, z=%.1f of %s"
-            % (x_side, z_center, stl))
-    return max(zs) - min(zs)
-
-
 def fincan_slot_width(stl):
     """Measured width of the un-rotated (i=0) fin slot, read directly off
     the z=FINCAN_SLOT_TOP_Z edge loop where the cut meets the outer wall.
@@ -497,40 +411,6 @@ def fincan_slot_length(stl):
     if not zs:
         raise RuntimeError("no geometry at fin can slot side edges")
     return max(zs) - min(zs)
-
-
-def xy_extent_in_window(stl, xlo, xhi, zlo, zhi, ylo=-1e9, yhi=1e9):
-    """(xmin, xmax, ymin, ymax) of vertices within an X/Z window (and an
-    optional Y prefilter) -- isolates one small feature (a lug, a notch, a
-    boss) from the rest of a part's mesh, same idea as pin_hole_diameter()
-    and fincan_slot_*() above."""
-    xs, ys = [], []
-    for tri in tris(stl):
-        for (x, y, z) in tri:
-            if xlo <= x <= xhi and zlo <= z <= zhi and ylo <= y <= yhi:
-                xs.append(x); ys.append(y)
-    if not xs:
-        raise RuntimeError(
-            "no geometry in window x=%.1f..%.1f z=%.1f..%.1f of %s"
-            % (xlo, xhi, zlo, zhi, stl))
-    return min(xs), max(xs), min(ys), max(ys)
-
-
-def hole_max_reach(stl, cx, cy, z_at, search_r, zwin=0.5):
-    """Max in-plane distance from (cx, cy) of any vertex within search_r of
-    it, at the Z-plane z_at (an exposed hole edge). A hole that is fully
-    surrounded by solid material out to search_r reads close to its own
-    true radius -- nothing else is close enough to contribute a vertex. A
-    hole that breaks into an adjacent void (a slot, a pocket) reads much
-    larger, because the merged opening's edge is that void's own, farther
-    -out boundary instead (defect 1b: the old +-11mm tether latch insert
-    holes broke into the horn slot's void this way)."""
-    ds = [math.hypot(x - cx, y - cy) for tri in tris(stl) for (x, y, z) in tri
-          if abs(z - z_at) <= zwin and math.hypot(x - cx, y - cy) <= search_r]
-    if not ds:
-        raise RuntimeError(
-            "no geometry near hole (%.1f,%.1f) z=%.1f of %s" % (cx, cy, z_at, stl))
-    return max(ds)
 
 
 def hole_azimuth_at_r(stl, cx, cy, z_at, r_target, search_r=4.0, zwin=2.0,
@@ -654,7 +534,10 @@ def checks(m):
             c += [("neck skirt matches test ring spigot",
                    skirt_od, ring_spigot, 0.10)]
 
-    for p, want_len in ((2, 177.0), (3, 185.5)):
+    # Part 3's own length is now the plain R60_Chute_L=240 (petal-
+    # deployment transplant): no spigot any more (that joint moved to
+    # part 8), so its measured height is the tube's own length outright.
+    for p, want_len in ((2, 177.0), (3, 240.0)):
         if p in m:
             tube_id, tube_od = safe(bore, a(p, "stl"), *TUBE_BAND, nvals=2)
             c += [("part %d length" % p, a(p, "height"), want_len, 0.1),
@@ -893,96 +776,49 @@ def checks(m):
                 c += [("part %d fits e-bay bore" % p,
                        tube_id - bulk_od, 0.4, 0.15)]
 
-    # Shear pins bridge the ACTUAL separable joint: chute tube (part 3) and
-    # the aft bulkhead's skirt (part 5), not the spring carrier (part 8).
-    # Both holes are read straight off the rendered mesh at the Z each part
-    # was cut at, so a hole that silently didn't break through, or landed
-    # off-target, fails here rather than in the report.
-    if 3 in m:
-        for x_side in (1, -1):
-            d = safe(pin_hole_diameter, a(3, "stl"), x_side, PIN_Z_CHUTE, PIN_R_CHUTE)
-            c += [("chute tube shear pin dia (x=%+d side)" % x_side,
-                   d, PIN_D, 0.3)]
-    if 5 in m:
-        for x_side in (1, -1):
-            d = safe(pin_hole_diameter, a(5, "stl"), x_side, PIN_Z_SKIRT, PIN_R_SKIRT)
-            c += [("aft bulkhead skirt shear pin dia (x=%+d side)" % x_side,
-                   d, PIN_D, 0.3)]
+    # Release hardware (parts 8, 13, 15-23) clears the deployment bay's own
+    # bore -- petal-deployment transplant, replaces every shear-pin/tether
+    # check above (deleted outright, see tasks/lessons.md: the feature
+    # they checked no longer exists in this design).
+    #
+    # This IS the load-bearing finding of the whole transplant: the task's
+    # own choice between CableReleaseBBMini (the family the donor design
+    # actually flies) and CableReleaseBBMicro turned entirely on whether
+    # each family's own Activator (part 15) fits this airframe's bore --
+    # BBMini's does not (measures r=31.8mm, past R60_Body_ID/2=28.4mm; its
+    # own file warns "Designed and works for Loc65 tube, may not scale" on
+    # this exact module), BBMicro's does (r=28.2mm, landing exactly on
+    # R60_Coupler_OD/2). This check is what a regression to BBMini (or any
+    # future change that grows a release part past the bore) actually
+    # fails on -- mutation-tested: pointing this check's own tolerance
+    # window to include BBMini's measured r=31.8mm (i.e. relaxing max_r_ok
+    # to 32.0) is the only way to make it pass BBMini, confirming the
+    # check is genuinely discriminating between the two, not a tautology.
+    max_r_ok = R60_Coupler_OD / 2.0 + 0.05   # +0.05mm tessellation slack
+    for p in (8, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23):
+        if p in m:
+            xs = [x for tri in tris(a(p, "stl")) for (x, y, z) in tri]
+            ys = [y for tri in tris(a(p, "stl")) for (x, y, z) in tri]
+            max_r = max(math.hypot(x, y) for x, y in zip(xs, ys))
+            # Same "overage past a ceiling" idiom as the build-volume
+            # check below (overshoot()): 0 for anything that fits, the
+            # actual excess in mm otherwise, against a tight tolerance --
+            # not a wide equality window a real defect could hide inside.
+            c += [("part %d max radius clears the coupler bore" % p,
+                   overshoot(max_r, max_r_ok), 0.0, 0.01)]
 
-        # Cross-part interference (defect 1a): part 3's tether lug vs.
-        # part 5's relief notch through the skirt it inserts into. This
-        # class of defect -- both parts individually correct, colliding
-        # only once mated -- is invisible to any single-part measurement
-        # above, which is exactly why it shipped once already.
-        if 3 in m:
-            lug_xmin, lug_xmax, lug_ymin, _ = safe(xy_extent_in_window,
-                a(3, "stl"), *TETHER_LUG_XZ, nvals=4)
-            notch_xmin, notch_xmax, notch_ymin, _ = safe(xy_extent_in_window,
-                a(5, "stl"), *TETHER_NOTCH_XZ, ylo=TETHER_NOTCH_YLO,
-                yhi=TETHER_NOTCH_YHI, nvals=4)
-            # Radial: the notch's back wall (smaller y) must sit farther
-            # in than the lug's own tip (larger y) -- a POSITIVE gap.
-            c += [("tether lug clears skirt notch (radius)",
-                   lug_ymin - notch_ymin, 0.6, 0.4)]
-            # Width: the notch must be wider than the lug on both sides.
-            c += [("tether lug clears skirt notch (-X width)",
-                   lug_xmin - notch_xmin, 0.6, 0.5),
-                  ("tether lug clears skirt notch (+X width)",
-                   notch_xmax - lug_xmax, 0.6, 0.5)]
-
-        # Bore fully surrounded (defect 1b): the tether latch's mounting
-        # inserts must land in solid material, not the horn slot's void.
-        # A hole that breaks into an adjacent void reads a much larger
-        # max-reach than its own true radius -- see hole_max_reach()'s
-        # docstring; TETHER_INSERT_R/D restated as literals matching
-        # R60Lib.scad's R60_TetherLatch_HoleX/R60_TetherInsert_d, and
-        # SKIRT_T+R60_Pin_Skirt_L(15)=27 (part 5's own Total_H) is where
-        # the insert holes open, on the aft face.
-        insert_x = 16.0
-        insert_r = 2.0
-        total_h = 27.0
-        # search_r (defect 3e): the horn slot's nearest corner to the
-        # insert hole centre is R60_Horn_L/2=12 in X and Horn_W/2=4.5 in Y
-        # from (R60_TetherLatch_HoleX, R60_Tether_Y) = (16, 13.6), i.e.
-        # hypot(4, 4.5) = 6.02mm away -- search_r=6.0 left only 0.02mm of
-        # margin before the search circle would itself reach into the
-        # horn slot's own void and read a false-positive large "reach"
-        # (one stray tessellation vertex from a spurious FAIL, not a real
-        # defect). NARROWED to 5.0 (5th review, finding 13: this comment
-        # used to say "widened", the wrong direction for the 6.0->5.0
-        # change it describes -- a reader trusting "widened" would push it
-        # back up and reintroduce the 0.02mm near-miss), giving ~1mm of
-        # real margin (6.02-5.0) before the search circle reaches the horn
-        # slot's own void, while still comfortably bigger than the insert
-        # hole's own Ø4 (radius 2.0) edge loop.
-        for x_side in (1, -1):
-            reach = safe(hole_max_reach, a(5, "stl"), x_side * insert_x,
-                         R60_TETHER_Y, total_h, search_r=5.0)
-            c += [("tether insert hole fully surrounded (x=%+d side)"
-                   % x_side, reach, insert_r, 0.3)]
-
-    # Spring reaction tabs (defect 1c) actually reached by the CS4323
-    # spring: radial overlap between the tabs' measured inner radius and
-    # the spring's own OD, not merely that both parts exist. bore()'s
-    # corner-vs-true-edge bias on a flat cube tab reads slightly larger
-    # than the tab's true inner radius (confirmed ~0.4mm on this
-    # geometry) -- tolerance is widened to cover that, not to hide a
-    # regression: the old (broken) value misses by 0.6-0.85mm, well
-    # outside it.
-    if 3 in m:
-        tab_inner_r, _ = safe(bore, a(3, "stl"), *STOPTAB_BAND, nvals=2)
-        tab_inner_r /= 2.0
-        c += [("spring tab overlaps spring OD (radial)",
-               SPRING_OD / 2.0 - tab_inner_r, 2.0, 1.3)]
-
-    if 8 in m:
-        _, carrier_od = safe(bore, a(8, "stl"), *SHEARPIN_BAND, nvals=2)
-        carrier_bore, _ = safe(bore, a(8, "stl"), *CARRIER_STEP_BAND, nvals=2)
-        c += [("spring carrier OD", carrier_od, 56.40, 0.15),
-              ("spring carrier bore takes CS4323", carrier_bore, 44.80, 0.30)]
-        if 3 in m:
-            tube_id, _ = safe(bore, a(3, "stl"), *TUBE_BAND, nvals=2)
-            c += [("carrier clears chute bore", tube_id - carrier_od, 0.4, 0.15)]
+    if 8 in m and 9 in m:
+        # Petal hub's own aft spigot into the fin can's forward-open bore
+        # -- the SAME joint the chute tube used to make before this
+        # transplant, now carried by part 8 instead (R60Lib.scad's
+        # R60_PetalHubSpigot_L comment). Mesh-against-mesh, same
+        # 0.4+-0.15mm convention as every other internal spigot-into-bore
+        # joint in this file.
+        fincan_bore, _ = safe(bore, a(9, "stl"), *FINCAN_SPIGOT_BAND,
+                               r_lo=FINCAN_SPIGOT_R_LO, nvals=2)
+        _, spigot_od = safe(bore, a(8, "stl"), *PETALHUB_SPIGOT_BAND, nvals=2)
+        c += [("petal hub spigot clears fin can forward bore",
+               fincan_bore - spigot_od, 0.4, 0.15)]
 
     if 9 in m:
         mmt_id, can_od = safe(bore, a(9, "stl"), *FINCAN_BAND, nvals=2)
@@ -994,20 +830,9 @@ def checks(m):
         c += [("fin can length", a(9, "height"), 228.0, 0.2),
               ("fin can OD", can_od, 60.0, 0.1),
               ("MMT bore takes 29mm motor", mmt_id, 29.3, 0.15)]
-
-        # Chute-tube-to-fin-can spigot (5th review, finding 9) -- the only
-        # internal coupler joint that had no measured clearance check.
-        # Mesh-against-mesh, same 0.4+-0.15mm convention as every other
-        # internal spigot-into-bore joint in this file (e.g. "part %d bore
-        # clears neck skirt" above): the fin can's own forward-open bore
-        # (its body ID, isolated from the full-length MMT by
-        # bore_annulus()) measured against the chute tube's own spigot OD.
-        if 3 in m:
-            fincan_bore, _ = safe(bore, a(9, "stl"), *FINCAN_SPIGOT_BAND,
-                                   r_lo=FINCAN_SPIGOT_R_LO, nvals=2)
-            _, spigot_od = safe(bore, a(3, "stl"), *CHUTE_SPIGOT_BAND, nvals=2)
-            c += [("chute tube spigot clears fin can forward bore",
-                   fincan_bore - spigot_od, 0.4, 0.15)]
+        # Chute-tube-to-fin-can spigot check moved: that joint is now made
+        # by the petal hub (part 8), not the chute tube -- see the
+        # "petal hub spigot clears fin can forward bore" check above.
     if 10 in m:
         # Span (3rd review, should-fix 7): nothing checked this before --
         # root chord and thickness were, but the dimension the flutter/
@@ -1096,31 +921,10 @@ def checks(m):
             c += [("thrust ring bore obstructs spacer OD",
                    spacer_od - ring_bore, 2.2, 0.3)]
 
-    if 13 in m:
-        # FIXED (defect 1b/1h): base length grew to fit the mounting holes'
-        # new +-R60_TetherLatch_HoleX spacing (was 26mm/+-11mm, landing the
-        # inserts in the horn slot's void); hole diameter is checked
-        # against part 5's insert holes below, not restated here.
-        # FIXED AGAIN (defect 2b): base length grew again, from
-        # 2*(R60_TetherLatch_HoleX+2) [a hole-CENTRE-to-edge margin] to
-        # 2*(R60_TetherLatch_HoleX + Mount_Hole_d/2 + Mount_Wall_Min) [a
-        # real edge-of-hole-to-edge-of-part wall] -- 16+1.7+1.6=19.3 each
-        # side, 38.6 total; restated here as a literal per this file's
-        # convention, matching R60_TetherLatch()'s own derivation.
-        c += [("latch base length", a(13, "xmax") - a(13, "xmin"), 38.6, 0.2),
-              ("latch height", a(13, "height"), 16.0, 0.2),
-              ("latch zmin", a(13, "zmin"), 0.0, 0.05)]
-        # Wall beyond the mounting hole's own edge (defect 2b): must clear
-        # a stated print-safe minimum, not just a hole-centre margin.
-        # Measured directly off the rendered mesh at the hole's own Z band
-        # (the base is a plain slab 0..Base_T, so a low band reads its
-        # full X extent) rather than re-deriving the same arithmetic the
-        # SCAD file already got wrong once.
-        base_xmax = a(13, "xmax")
-        insert_x_latch = 16.0    # R60_TetherLatch_HoleX
-        mount_hole_r = 1.7       # Mount_Hole_d/2
-        c += [("latch wall beyond mounting hole edge",
-               base_xmax - (insert_x_latch + mount_hole_r), 1.6, 0.2)]
+    # Old part-13 (tether latch) dimensional checks deleted outright --
+    # petal-deployment transplant, see tasks/lessons.md. Part 13 is now
+    # R60_Petals() (PetalDeploymentLib.scad), covered by the max-radius-
+    # vs-bore check above, same as parts 8/15-23.
 
     # Build volume, every part -- 6th review, finding 4: this used to
     # derive its own "expected" FROM the measurement (min(height, MAX_Z)),
