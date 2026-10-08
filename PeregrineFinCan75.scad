@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.7.0  10/8/2026
+// Revision: 0.8.0  10/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -66,6 +66,17 @@
 // 0.7.0  10/8/2026   Fin slot 8.0 -> 9.0mm. Fin_Thickness still assumed
 //                     the L2 6.35mm core; PeregrineFin75 is a 7.0mm core
 //                     with 0.75mm CF per side carried onto the tab = 8.5mm.
+// 0.8.0  10/8/2026   Solid_Fill: annulus between MMT and outer wall is
+//                     solid from the aft CR up to the ribbon band, so the
+//                     slicer infills it (3% gyroid) and the thin outer wall
+//                     keeps its shape. Ribbon band, forward CR and the four
+//                     vertical tubes stay open. Second cord hole at 202.5°
+//                     to fish the ribbon around each half of the band.
+//                     Solid_Fill=false gives the v0.7.0 hollow can.
+//                     Alignment pins moved 45° -> 22.5°: at 45° they sat in
+//                     the open middle of the vertical tubes with nothing
+//                     to grip. Lower-half pin hole now 10mm deep (was 5).
+//                     Hollow can gets a printed boss around each pin.
 //
 // ***********************************
 
@@ -130,6 +141,11 @@ Coupler_Screw_d = 4.2;    // #8 screw clearance
 Cord_Slot_a = 45;         // midway between fins (360/4/2)
 Cord_Pass_H = 16;         // ribbon passage height in ribs
 
+// Solid fill: model the annulus solid below the ribbon band and let the
+// slicer infill it (3% gyroid). The forward CR and the retainer thread
+// still need denser infill - see L3-Design.md §8.1 height-range modifiers.
+Solid_Fill = true;
+
 // Centering rings
 CR_Thickness = 5;         // ring axial thickness
 nCR = 4;                  // 4 centering rings for longer body
@@ -151,6 +167,7 @@ Joint_Clearance = 0.3;    // fit clearance on step
 nAlign_Pins = 4;          // between fins (one per quadrant)
 Align_Pin_d = 4.2;        // 4mm carbon rod + 0.2mm clearance
 Align_Pin_Depth = 10;     // depth into each half
+Align_Pin_a = 22.5;       // between fin rib (0°) and vertical tube (45°)
 
 // ========== COMPUTED ==========
 
@@ -179,6 +196,9 @@ Rib_Margin = 3;
 Rib_Z_Start = Slot_Start - Rib_Margin;
 Rib_Z_End = CR_Positions[3];  // ribs touch forward CR
 
+// Solid fill stops at the floor of the ribbon band under the forward CR
+Fill_Top = Rib_Z_End - Cord_Pass_H;
+
 Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
@@ -197,6 +217,7 @@ echo(str("Slot Z: ", Slot_Start, " to ", Slot_End, "mm"));
 echo(str("CR positions: ", CR_Positions));
 echo(str("Rib Z: ", Rib_Z_Start, " to ", Rib_Z_End, "mm"));
 echo(str("Coupler base at Z=", Coupler_Z, "mm"));
+echo(str("Solid fill: ", Solid_Fill ? str("Z=", Thread_H, " to ", Fill_Top, "mm (ribbon band ", Fill_Top, "-", Rib_Z_End, "mm)") : "off"));
 
 // Alignment pin radial position (midway in annular gap, between fins)
 Align_Pin_R = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
@@ -256,9 +277,9 @@ module LowerHalf(){
 
 		// Alignment pin holes (blind, into top face)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
-				translate([Align_Pin_R, 0, Split_Z + Joint_Step_H - Align_Pin_Depth])
-					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
+				translate([Align_Pin_R, 0, Split_Z - Align_Pin_Depth])
+					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + Joint_Step_H + 1);
 
 		// Fin slots through male step ring (so fins can span both halves)
 		for (i=[0:Fin_Count-1])
@@ -304,7 +325,7 @@ module UpperHalf(){
 
 		// Alignment pin holes (blind, into bottom face)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
 				translate([Align_Pin_R, 0, Split_Z - 1])
 					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
 
@@ -350,7 +371,7 @@ module FinCanAssembly(){
 	// Show alignment pins
 	if ($preview)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
 				translate([Align_Pin_R, 0, Split_Z - Align_Pin_Depth])
 					color("DarkGray") cylinder(d=4, h=Align_Pin_Depth*2);
 }
@@ -421,6 +442,11 @@ module FinCan(){
 			// Coupler shoulder (forward end)
 			translate([0, 0, Coupler_Z])
 				Coupler();
+
+			if (Solid_Fill) SolidFill();
+			else for (i=[0:nAlign_Pins-1])
+				rotate([0, 0, i * Fin_Angle + Align_Pin_a])
+					PinBoss();
 		}
 
 		// MMT bore through everything
@@ -451,7 +477,10 @@ module FinCan(){
 		// Cord route: retainer eyebolt → up through annular gap
 		//   (via ribbon passages in ribs) → through this hole
 		//   → coupler interior → body tube.
-		rotate([0, 0, Fin_Angle/4]){  // 22.5° — midway between fin and tube
+		// With Solid_Fill a second hole at 202.5° lets the ribbon be fished
+		// around each half of the band.
+		for (a=Solid_Fill ? [0, 180] : [0])
+		rotate([0, 0, Fin_Angle/4 + a]){  // 22.5° — midway between fin and tube
 			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 6;  // 6mm toward MMT
 			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
 			Cord_Hole_L = 14;     // radial
@@ -535,6 +564,49 @@ module CenteringRing(z_pos){
 						translate([R_Mid, 0, -1])
 							cylinder(d=Hole_D, h=CR_Thickness + 2);
 				}
+		}
+}
+
+// ========== SOLID FILL ==========
+
+// Annulus from the aft CR to the ribbon band floor, minus the interiors of
+// the four vertical tubes (kept as open conduits). Fin slots, ribbon
+// passages and pin holes are cut later by FinCan / the split modules.
+module SolidFill(){
+	Fill_R_Inner = MMT_OD/2 + Wall - 0.05;
+	Fill_R_Outer = Body_OD/2 - Wall + 0.05;
+	difference(){
+		translate([0, 0, Thread_H])
+			rotate_extrude(convexity=4)
+				polygon([
+					[Fill_R_Inner, 0],
+					[Fill_R_Inner, Fill_Top - Thread_H],
+					[Fill_R_Outer, Fill_Top - Thread_H],
+					[Fill_R_Outer, 0]
+				]);
+		for (i=[0:Fin_Count-1])
+			rotate([0, 0, i * Fin_Angle + Fin_Angle/2]){
+				R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
+				Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
+				Tube_Wall = 0.8;
+				translate([R_Mid, 0, Thread_H - 1])
+					cylinder(d=Hole_D - Tube_Wall*2, h=Fill_Top - Thread_H + 2);
+			}
+	}
+}
+
+// ========== ALIGNMENT PIN BOSS ==========
+
+// Hollow can only: solid post around each pin across the split line,
+// built on the 22.5° support web. 45° cones at both ends print without
+// support in either half's orientation.
+module PinBoss(){
+	Boss_D = Align_Pin_d + Wall*2;
+	Boss_H = Align_Pin_Depth*2 + 6;
+	translate([Align_Pin_R, 0, Split_Z - Boss_H/2])
+		hull(){
+			translate([0, 0, Boss_D/2]) cylinder(d=Boss_D, h=Boss_H - Boss_D);
+			cylinder(d=0.1, h=Boss_H);
 		}
 }
 
@@ -633,6 +705,6 @@ module Coupler(){
 
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
 echo(str("Joint: step=", Joint_Step_D, "mm deep x ", Joint_Step_H, "mm tall, clearance=", Joint_Clearance, "mm"));
-echo(str("Alignment: ", nAlign_Pins, " pins, ", Align_Pin_d, "mm holes at R=", Align_Pin_R, "mm, depth=", Align_Pin_Depth, "mm"));
+echo(str("Alignment: ", nAlign_Pins, " pins, ", Align_Pin_d, "mm holes at R=", Align_Pin_R, "mm, ", Align_Pin_a, "°, depth=", Align_Pin_Depth, "mm"));
 echo(str("Lower half fits P1S: ", Lower_H <= 250 ? "YES" : "NO"));
 echo(str("Upper half fits P1S: ", Upper_H <= 250 ? "YES" : "NO"));
