@@ -78,9 +78,10 @@ Drogue_Z = EBay_Z + EBay_Len;
 Nose_Z = Drogue_Z + Drogue_Len;
 Tip_Z = Nose_Z + Nose_L;
 
-// Rail buttons (1515) between fins, on the main tube
+// Rail buttons (1515) between fins. The aft button sits low on the fin can:
+// rail exit is when it leaves the rail (tools/l3_motor_survey.py AFT_BUTTON 0.2 m).
 Rail_a = 45;
-Rail_Z = [Main_Z + 40, EBay_Z - 40];
+Rail_Z = [200, EBay_Z - 40];
 
 // Motors: [name, case dia, length]  (ThrustCurve.org)
 Motors = [
