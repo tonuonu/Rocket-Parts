@@ -73,6 +73,10 @@
 //                     vertical tubes stay open. Second cord hole at 202.5°
 //                     to fish the ribbon around each half of the band.
 //                     Solid_Fill=false gives the v0.7.0 hollow can.
+//                     Alignment pins moved 45° -> 22.5°: at 45° they sat in
+//                     the open middle of the vertical tubes with nothing
+//                     to grip. Lower-half pin hole now 10mm deep (was 5).
+//                     Hollow can gets a printed boss around each pin.
 //
 // ***********************************
 
@@ -163,6 +167,7 @@ Joint_Clearance = 0.3;    // fit clearance on step
 nAlign_Pins = 4;          // between fins (one per quadrant)
 Align_Pin_d = 4.2;        // 4mm carbon rod + 0.2mm clearance
 Align_Pin_Depth = 10;     // depth into each half
+Align_Pin_a = 22.5;       // between fin rib (0°) and vertical tube (45°)
 
 // ========== COMPUTED ==========
 
@@ -272,9 +277,9 @@ module LowerHalf(){
 
 		// Alignment pin holes (blind, into top face)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
-				translate([Align_Pin_R, 0, Split_Z + Joint_Step_H - Align_Pin_Depth])
-					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
+				translate([Align_Pin_R, 0, Split_Z - Align_Pin_Depth])
+					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + Joint_Step_H + 1);
 
 		// Fin slots through male step ring (so fins can span both halves)
 		for (i=[0:Fin_Count-1])
@@ -320,7 +325,7 @@ module UpperHalf(){
 
 		// Alignment pin holes (blind, into bottom face)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
 				translate([Align_Pin_R, 0, Split_Z - 1])
 					cylinder(d=Align_Pin_d, h=Align_Pin_Depth + 1);
 
@@ -366,7 +371,7 @@ module FinCanAssembly(){
 	// Show alignment pins
 	if ($preview)
 		for (i=[0:nAlign_Pins-1])
-			rotate([0, 0, i * Fin_Angle + Fin_Angle/2])
+			rotate([0, 0, i * Fin_Angle + Align_Pin_a])
 				translate([Align_Pin_R, 0, Split_Z - Align_Pin_Depth])
 					color("DarkGray") cylinder(d=4, h=Align_Pin_Depth*2);
 }
@@ -439,6 +444,9 @@ module FinCan(){
 				Coupler();
 
 			if (Solid_Fill) SolidFill();
+			else for (i=[0:nAlign_Pins-1])
+				rotate([0, 0, i * Fin_Angle + Align_Pin_a])
+					PinBoss();
 		}
 
 		// MMT bore through everything
@@ -587,6 +595,21 @@ module SolidFill(){
 	}
 }
 
+// ========== ALIGNMENT PIN BOSS ==========
+
+// Hollow can only: solid post around each pin across the split line,
+// built on the 22.5° support web. 45° cones at both ends print without
+// support in either half's orientation.
+module PinBoss(){
+	Boss_D = Align_Pin_d + Wall*2;
+	Boss_H = Align_Pin_Depth*2 + 6;
+	translate([Align_Pin_R, 0, Split_Z - Boss_H/2])
+		hull(){
+			translate([0, 0, Boss_D/2]) cylinder(d=Boss_D, h=Boss_H - Boss_D);
+			cylinder(d=0.1, h=Boss_H);
+		}
+}
+
 // ========== SUPPORT WEB ==========
 
 module SupportWeb(){
@@ -682,6 +705,6 @@ module Coupler(){
 
 echo(str("Thread: ", Thread_Minor_D, "/", Thread_Major_D, "mm, pitch ", Thread_Pitch, "mm, H=", Thread_H, "mm"));
 echo(str("Joint: step=", Joint_Step_D, "mm deep x ", Joint_Step_H, "mm tall, clearance=", Joint_Clearance, "mm"));
-echo(str("Alignment: ", nAlign_Pins, " pins, ", Align_Pin_d, "mm holes at R=", Align_Pin_R, "mm, depth=", Align_Pin_Depth, "mm"));
+echo(str("Alignment: ", nAlign_Pins, " pins, ", Align_Pin_d, "mm holes at R=", Align_Pin_R, "mm, ", Align_Pin_a, "°, depth=", Align_Pin_Depth, "mm"));
 echo(str("Lower half fits P1S: ", Lower_H <= 250 ? "YES" : "NO"));
 echo(str("Upper half fits P1S: ", Upper_H <= 250 ? "YES" : "NO"));
