@@ -26,7 +26,7 @@ The fin can itself is sound.
 | M3 | Major | No shear pins or bay vent holes | BP / Both |
 | M4 | Major | Short couplers: fin can 0.25 cal, nose shoulder 0.6 cal | Both |
 | M5 | Major | Aft rail button at 45° lands on a vertical tube in the fin can | Both |
-| M6 | Major | Open 9 × 21 mm pocket ahead of each fin leading edge | Both |
+| M6 | Major | Open 9 × 25 mm pocket ahead of each fin leading edge | Both |
 | m1 | Minor | ~10 inconsistencies in L3-Design.md (§7) | — |
 | T | TAP | Design package incomplete (§8) | — |
 
@@ -263,8 +263,9 @@ tubes in the fin can. Filling those tubes (3 % infill like the rest) would give 
 screw something to bite and saves an estimated 100–150 g of tube walls.
 
 **M6 — Open pocket ahead of the fins.** `FinSlot()` cuts the slot up to
-`CR_Positions[3]` (265 mm), but the fin tab ends at `Slot_End` (240 mm). That
-leaves a 9 × 21 mm open pocket ahead of each fin leading edge. It is sealed
+`CR_Positions[3]` (Z = 285.9 mm), but the 240 mm fin tab ends at `Slot_End`
+(Z = 260.9 mm). That leaves a 9 × 25 mm open pocket ahead of each fin
+leading edge. It is sealed
 from the band, so not a leak; fill it with epoxy at assembly or end the cut
 at `Slot_End`.
 

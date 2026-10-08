@@ -6,8 +6,6 @@ Rules learned from corrections. Read at session start.
 - This repo is a fork with an `upstream` remote (DavidMFlynn/Rocket-Parts).
   Always pass `--repo tonuonu/Rocket-Parts` to `gh pr` commands. Without it,
   `gh pr create` once opened a PR on the parent repo (closed at once).
-- "Do what is right" is not an instruction to merge. Merge only on an
-  explicit "merge".
 
 ## Simulation
 - Calibrate a model against OpenRocket with **identical** inputs (mass,
