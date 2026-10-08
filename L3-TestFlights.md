@@ -252,6 +252,6 @@ land under the main.
 - [ ] Build `PeregrineL3.ork`: stability margin with the test motors and M1297W
 - [ ] Weigh parts as they are built; re-run both scripts
 - [ ] Size and ground-test ejection charges for the BT137 bays
-- [ ] Fix `L3-Design.md`: §2 sub-scale line, §5 mass budget (calculated
-      9.9 kg + ballast on the M exceeds 10 kg)
+- [ ] Fix `L3-Design.md` §2: remove the sub-scale line
+- [x] `L3-Design.md` §5: calculated mass budget (M flight exceeds 10 kg)
 - [ ] After the test flights: formal design package with the TRA Flight Log
