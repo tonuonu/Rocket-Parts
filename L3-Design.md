@@ -65,14 +65,14 @@ Alternative motors (same case): M1500G-PS (Mojave Green, 5220 N·s).
 | Section | Length (mm) | Notes |
 |---|---|---|
 | Motor retainer | 16 | Male threaded, protrudes aft |
-| Fin can body | 310 | Split print: 171 + 155 mm |
-| Main body tube | 500 | Motor extends 293mm into this |
+| Fin can body | 275 | 310 printed (split 171 + 155 mm); top 35 is the coupler inside the main tube |
+| Main body tube | 500 | 75/5120 motor extends ~300–310 mm into this |
 | Electronics bay | 200 | Dual redundant altimeters |
 | Drogue section | 350 | Drogue chute + shock cord |
 | Nose cone | 450 | 3.2:1 ogive, 85mm shoulder |
-| **Total** | **~1741** | **68.5" / 1.74m** |
+| **Total** | **~1791** | **70.5" / 1.79 m** (exposed lengths; nose shoulder and fin can coupler overlap the tubes) |
 
-Length-to-diameter ratio: 12.4:1
+Length-to-diameter ratio: 12.8:1
 
 ### 4.3 Fin Can — PeregrineFinCan75.scad v0.7.0
 
