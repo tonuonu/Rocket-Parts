@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.7.0  10/8/2026
+// Revision: 0.8.0  10/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -66,6 +66,13 @@
 // 0.7.0  10/8/2026   Fin slot 8.0 -> 9.0mm. Fin_Thickness still assumed
 //                     the L2 6.35mm core; PeregrineFin75 is a 7.0mm core
 //                     with 0.75mm CF per side carried onto the tab = 8.5mm.
+// 0.8.0  10/8/2026   Solid_Fill: annulus between MMT and outer wall is
+//                     solid from the aft CR up to the ribbon band, so the
+//                     slicer infills it (3% gyroid) and the thin outer wall
+//                     keeps its shape. Ribbon band, forward CR and the four
+//                     vertical tubes stay open. Second cord hole at 202.5°
+//                     to fish the ribbon around each half of the band.
+//                     Solid_Fill=false gives the v0.7.0 hollow can.
 //
 // ***********************************
 
@@ -130,6 +137,11 @@ Coupler_Screw_d = 4.2;    // #8 screw clearance
 Cord_Slot_a = 45;         // midway between fins (360/4/2)
 Cord_Pass_H = 16;         // ribbon passage height in ribs
 
+// Solid fill: model the annulus solid below the ribbon band and let the
+// slicer infill it (3% gyroid). The forward CR and the retainer thread
+// still need denser infill - see L3-Design.md §8.1 height-range modifiers.
+Solid_Fill = true;
+
 // Centering rings
 CR_Thickness = 5;         // ring axial thickness
 nCR = 4;                  // 4 centering rings for longer body
@@ -179,6 +191,9 @@ Rib_Margin = 3;
 Rib_Z_Start = Slot_Start - Rib_Margin;
 Rib_Z_End = CR_Positions[3];  // ribs touch forward CR
 
+// Solid fill stops at the floor of the ribbon band under the forward CR
+Fill_Top = Rib_Z_End - Cord_Pass_H;
+
 Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
@@ -197,6 +212,7 @@ echo(str("Slot Z: ", Slot_Start, " to ", Slot_End, "mm"));
 echo(str("CR positions: ", CR_Positions));
 echo(str("Rib Z: ", Rib_Z_Start, " to ", Rib_Z_End, "mm"));
 echo(str("Coupler base at Z=", Coupler_Z, "mm"));
+echo(str("Solid fill: ", Solid_Fill ? str("Z=", Thread_H, " to ", Fill_Top, "mm (ribbon band ", Fill_Top, "-", Rib_Z_End, "mm)") : "off"));
 
 // Alignment pin radial position (midway in annular gap, between fins)
 Align_Pin_R = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
@@ -421,6 +437,8 @@ module FinCan(){
 			// Coupler shoulder (forward end)
 			translate([0, 0, Coupler_Z])
 				Coupler();
+
+			if (Solid_Fill) SolidFill();
 		}
 
 		// MMT bore through everything
@@ -451,7 +469,10 @@ module FinCan(){
 		// Cord route: retainer eyebolt → up through annular gap
 		//   (via ribbon passages in ribs) → through this hole
 		//   → coupler interior → body tube.
-		rotate([0, 0, Fin_Angle/4]){  // 22.5° — midway between fin and tube
+		// With Solid_Fill a second hole at 202.5° lets the ribbon be fished
+		// around each half of the band.
+		for (a=Solid_Fill ? [0, 180] : [0])
+		rotate([0, 0, Fin_Angle/4 + a]){  // 22.5° — midway between fin and tube
 			R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2 - 6;  // 6mm toward MMT
 			Cord_Hole_W = 18;     // circumferential (fits 1" tubular nylon)
 			Cord_Hole_L = 14;     // radial
@@ -536,6 +557,34 @@ module CenteringRing(z_pos){
 							cylinder(d=Hole_D, h=CR_Thickness + 2);
 				}
 		}
+}
+
+// ========== SOLID FILL ==========
+
+// Annulus from the aft CR to the ribbon band floor, minus the interiors of
+// the four vertical tubes (kept as open conduits). Fin slots, ribbon
+// passages and pin holes are cut later by FinCan / the split modules.
+module SolidFill(){
+	Fill_R_Inner = MMT_OD/2 + Wall - 0.05;
+	Fill_R_Outer = Body_OD/2 - Wall + 0.05;
+	difference(){
+		translate([0, 0, Thread_H])
+			rotate_extrude(convexity=4)
+				polygon([
+					[Fill_R_Inner, 0],
+					[Fill_R_Inner, Fill_Top - Thread_H],
+					[Fill_R_Outer, Fill_Top - Thread_H],
+					[Fill_R_Outer, 0]
+				]);
+		for (i=[0:Fin_Count-1])
+			rotate([0, 0, i * Fin_Angle + Fin_Angle/2]){
+				R_Mid = (MMT_OD/2 + Wall + Body_OD/2 - Wall) / 2;
+				Hole_D = (Body_OD/2 - Wall) - (MMT_OD/2 + Wall) - 8;
+				Tube_Wall = 0.8;
+				translate([R_Mid, 0, Thread_H - 1])
+					cylinder(d=Hole_D - Tube_Wall*2, h=Fill_Top - Thread_H + 2);
+			}
+	}
 }
 
 // ========== SUPPORT WEB ==========

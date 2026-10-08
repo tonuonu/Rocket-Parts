@@ -244,7 +244,7 @@ shear area for fin-to-body attachment.
 | Top/bottom layers | 5 | Solid faces on centering rings |
 | Layer height | 0.12 mm | High Quality profile, thread + step joint |
 | Infill pattern | Gyroid | Isotropic, good shear, epoxy wicking |
-| Infill density | 50% | Slot edges carry fin shear loads |
+| Infill density | 3% (fill body); 50% in dense zones | See note: height-range modifiers |
 | Supports | None | Designed for supportless printing |
 | Print orientation | Split face down | Each half on flat split face |
 | Bed adhesion | Brim 5mm | Large footprint, PC tends to warp |
@@ -256,10 +256,22 @@ overwrap adds thermal insulation between the motor and printed core.
 The retainer thread at the aft end sees the most heat — PC at 147°C Tg
 is adequate since the aft closure and motor casing provide thermal mass.
 
-**Note:** Most of the fin can geometry (outer wall, MMT tube, ribs,
-support webs) is thin wall — effectively solid from wall loops alone.
-Infill only affects the thicker sections: centering rings, retainer
-thread zone, coupler gussets, and rib flanks around fin slots.
+**Note:** From v0.8.0 (`Solid_Fill = true`) the annulus between the MMT
+and the outer wall is modeled solid from the aft end up to the ribbon band
+(Z 15.9–269.9 mm). At 3% gyroid the infill keeps the thin outer wall in
+shape for ~60 g. The slicer wraps 6 wall loops around every remaining
+opening: the fin slots, the four vertical tubes and the pin holes.
+
+Two zones carry real load and need **50%** via height-range modifiers.
+The heights below are fin can Z; convert them to each half's print
+orientation.
+- **Z 0–21 mm:** retainer thread and aft end.
+- **Z ≥ 270 mm:** the ribbon band floor, the forward CR that takes the
+  shock cord load, and the coupler with its screw gussets.
+
+With `Solid_Fill = false` (v0.7.0 hollow can) the walls are effectively
+solid from wall loops alone, and infill only affects the centering rings,
+thread zone, gussets and rib flanks. Use 50% throughout.
 
 ### 8.2 Fins — PeregrineFin75 (4×, split print per fin = 8 halves)
 
