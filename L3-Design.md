@@ -74,7 +74,7 @@ Alternative motors (same case): M1500G-PS (Mojave Green, 5220 N·s).
 
 Length-to-diameter ratio: 12.8:1
 
-### 4.3 Fin Can — PeregrineFinCan75.scad v0.7.0
+### 4.3 Fin Can — PeregrineFinCan75.scad v0.8.0
 
 Split-print design for Bambu P1S (250mm max with AMS).
 
@@ -416,7 +416,7 @@ Example: 2× Mission Control V3, or 1× MCV3 + 1× PerfectFlite StratoLogger.
 
 | File | Description | Version |
 |---|---|---|
-| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.7.0 |
+| PeregrineFinCan75.scad | Fin can for BT137/75mm | v0.8.0 |
 | PeregrineFin75.scad | Fin core for BT137/75mm | v0.2.0 |
 | (TBD) PeregrineNose75.scad | Nose cone for BT137 | — |
 | (TBD) PeregrineEbay75.scad | Electronics bay for BT137 | — |
