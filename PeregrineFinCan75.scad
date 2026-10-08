@@ -3,7 +3,7 @@
 // Filename: PeregrineFinCan75.scad
 // by Tõnu Samuel
 // Created: 2/12/2026
-// Revision: 0.6.0  2/13/2026
+// Revision: 0.7.0  10/8/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -63,6 +63,9 @@
 // 0.6.0  2/13/2026   Cord passage: rectangular hole (18×14mm) through
 //                     top surface at 22.5° (solid CR, no tube below).
 //                     6mm radial offset toward MMT.
+// 0.7.0  10/8/2026   Fin slot 8.0 -> 9.0mm. Fin_Thickness still assumed
+//                     the L2 6.35mm core; PeregrineFin75 is a 7.0mm core
+//                     with 0.75mm CF per side carried onto the tab = 8.5mm.
 //
 // ***********************************
 
@@ -85,7 +88,7 @@ Motor_L = 602.5;          // AeroTech 75/5120 case length
 
 // Fins (same planform as PeregrineFin.scad v0.7.0)
 Fin_Count = 4;
-Fin_Thickness = 7.5;      // 6.35mm printed core + 2×0.5mm composite overlay
+Fin_Thickness = 8.5;      // 7.0mm printed core + 2×0.75mm CF overlay (covers the tab)
 Fin_Slot_Clearance = 0.5; // total extra width in slot
 Fin_Slot_W = Fin_Thickness + Fin_Slot_Clearance;
 
@@ -180,7 +183,7 @@ Total_H = Thread_H + Body_Len;
 Lower_H = Split_Z;
 Upper_H = Total_H - Split_Z;
 
-echo(str("=== PeregrineFinCan75 v0.6.0 ==="));
+echo(str("=== PeregrineFinCan75 v0.7.0 ==="));
 echo(str("Total height: ", Total_H, "mm (split print required)"));
 echo(str("Split at Z=", Split_Z, "mm"));
 echo(str("Lower half: ", Lower_H, "mm"));
