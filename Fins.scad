@@ -3,7 +3,7 @@
 // Filename: Fins.scad
 // by David M. Flynn
 // Created: 6/11/2022 
-// Revision: 1.1.8  11/9/2025
+// Revision: 1.1.9  5/24/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -12,8 +12,9 @@
 //
 //  ***** History *****
 //
-function FinsRev()="Fins 1.1.8";
+function FinsRev()="Fins 1.1.9";
 echo(FinsRev());
+// 1.1.9  5/24/2026  Worked on blunt tip for TrapFin3Shape().
 // 1.1.8  11/9/2025  Fixed Fin_BluntOgiveShape() to put the tip at the correct length.
 // 1.1.7  9/21/2025  Changed TrapFin3Slots tighter by 0.2mm
 // 1.1.6  8/31/2025  Added TipBase parameter for rockets that sit on their fins.
@@ -494,51 +495,51 @@ module TrapFin3Shape(Post_h=5, Root_L=150, Tip_L=100, Root_W=10, Tip_W=4.0, Span
 				translate([0,Root_L/2-Chamfer_L,0]) Fin_BluntOgiveShape(L=Chamfer_L, W=Root_W, Tip_R=Edge_r);
 				translate([0,-Root_L/2+Chamfer_L,0]) rotate([0,0,180]) Fin_BluntOgiveShape(L=Chamfer_L, W=Root_W, Tip_R=Edge_r);
 			} // hull
-			
-	/*
-	hull(){
-		translate([0,-Root_L/2+Edge_r,0]) cylinder(r=Edge_r, h=Post_h);
-		translate([0,-Root_L/2+Chamfer_L,0]) cylinder(d=Root_W, h=Post_h);
-		translate([0,Root_L/2-Chamfer_L,0]) cylinder(d=Root_W, h=Post_h);
-		translate([0,Root_L/2-Edge_r,0]) cylinder(r=Edge_r, h=Post_h);
-	} // hull
-	/**/
 	
 	// Tip Post, embeds into pod fin can
-	/*
-	if (HasBluntTip && TipPost_h>0) translate([0,TipOffset,Post_h+Span-Overlap])
-	hull(){
-		translate([0,-Tip_L/2+Edge_r,0]) cylinder(r=Edge_r, h=TipPost_h);
-		translate([0,-Tip_L/2+Tip_Chamfer,0]) cylinder(d=Tip_W, h=TipPost_h);
-		translate([0,Tip_L/2-Tip_Chamfer,0]) cylinder(d=Tip_W, h=TipPost_h);
-		translate([0,Tip_L/2-Edge_r,0]) cylinder(r=Edge_r, h=TipPost_h);
-	} // hull
-	/**/
+	if (HasBluntTip && TipPost_h>0) translate([0,TipOffset,Post_h+Span-Overlap]) linear_extrude(height=TipPost_h)
+		hull(){
+			translate([0,Tip_L/2-Tip_Chamfer,0]) Fin_BluntOgiveShape(L=Tip_Chamfer, W=Tip_W, Tip_R=Edge_r);
+			translate([0,-Tip_L/2+Tip_Chamfer,0]) rotate([0,0,180]) Fin_BluntOgiveShape(L=Tip_Chamfer, W=Tip_W, Tip_R=Edge_r);
+		} // hull
 	
 	hull(){
+		
+		// Fin Root
 		translate([0, 0, Post_h]) linear_extrude(height=Overlap)
 			hull(){
 				translate([0,Root_L/2-Chamfer_L,0]) Fin_BluntOgiveShape(L=Chamfer_L, W=Root_W, Tip_R=Edge_r);
 				translate([0,-Root_L/2+Chamfer_L,0]) rotate([0,0,180]) Fin_BluntOgiveShape(L=Chamfer_L, W=Root_W, Tip_R=Edge_r);
 			} // hull
 	
+		// Fin Tip
+		if (HasBluntTip)
+		translate([0,TipOffset,Post_h+Span-Tip_Chamfer_Z-TipInset]) linear_extrude(height=Overlap)
+		hull(){
+			translate([0,Tip_L/2-Tip_Chamfer,0]) Fin_BluntOgiveShape(L=Tip_Chamfer, W=Tip_W, Tip_R=Edge_r);
+			translate([0,-Tip_L/2+Tip_Chamfer,0]) rotate([0,0,180]) Fin_BluntOgiveShape(L=Tip_Chamfer, W=Tip_W, Tip_R=Edge_r);
+		} // hull
+		
+		
 		translate([0, -Tip_L/2+Edge_r+TipOffset, Post_h+Span-Edge_r-TipInset]) sphere(r=Edge_r);
 		translate([0, Tip_L/2-Edge_r+TipOffset, Post_h+Span-Edge_r]) sphere(r=Edge_r);
 		
 		// for rockets that sit on their fins
 		if (TipBase>0){
-			translate([0, Tip_L/2-Tip_Chamfer+TipOffset, Post_h+Span-TipBase]) #cylinder(d=Tip_W, h=Overlap);
-			translate([0, Tip_L/2-Edge_r+TipOffset, Post_h+Span-TipBase]) #cylinder(r=Edge_r, h=Overlap);
+			translate([0, Tip_L/2-Tip_Chamfer+TipOffset, Post_h+Span-TipBase]) cylinder(d=Tip_W, h=Overlap);
+			translate([0, Tip_L/2-Edge_r+TipOffset, Post_h+Span-TipBase]) cylinder(r=Edge_r, h=Overlap);
 		}
 	} // hull
 	
 	/*
 	hull(){
+		// Fin Root
 		translate([0, -Root_L/2+Edge_r, Post_h-Overlap]) cylinder(r=Edge_r, h=Overlap);
 		translate([0, -Root_L/2+Chamfer_L, Post_h-Overlap]) cylinder(d=Root_W, h=Overlap);
 		translate([0, Root_L/2-Chamfer_L, Post_h-Overlap]) cylinder(d=Root_W, h=Overlap);
 		translate([0, Root_L/2-Edge_r, Post_h-Overlap]) cylinder(r=Edge_r, h=Overlap);
 		
+		// Fin Tip
 		translate([0, -Tip_L/2+Edge_r+TipOffset, Post_h+Span-Tip_Chamfer_Z-TipInset]) cylinder(r=Edge_r, h=Overlap);
 		translate([0, -Tip_L/2+Tip_Chamfer+TipOffset, Post_h+Span-Tip_Chamfer_Z-TipInset]) cylinder(d=Tip_W, h=Overlap);
 		translate([0, Tip_L/2-Tip_Chamfer+TipOffset, Post_h+Span-Tip_Chamfer_Z]) cylinder(d=Tip_W, h=Overlap);

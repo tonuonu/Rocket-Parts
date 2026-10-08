@@ -3,7 +3,7 @@
 // Filename: AltBay.scad
 // by David M. Flynn
 // Created: 6/23/2022 
-// Revision: 0.9.20  7/15/2025
+// Revision: 0.9.21  6/11/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -11,8 +11,9 @@
 // Altimeter Bay for my MissionControl V3
 //
 //  ***** History *****
-function AltBayRev()="AltBay 0.9.20";
+function AltBayRev()="AltBay 0.9.21";
 echo(AltBayRev());
+// 0.9.21  6/11/2026  Added parameters BlankDoor and EndFlat_t to AltDoor54().
 // 0.9.20  7/15/2025  Fixed door frame bolt boss size, now changes w/ extra Y.
 // 0.9.19  10/29/2023 Extended bolt boss to edge of frame.
 // 0.9.18  9/16/2023  Added DeepHole_t to Alt_BayFrameHole
@@ -41,7 +42,7 @@ echo(AltBayRev());
 
 AltBay54(Tube_OD=PML98Body_OD, Tube_ID=PML98Body_ID, Tube_Len=136, DoorXtra_X=2, DoorXtra_Y=2, ShowDoor=false);
 
-// rotate([-90,0,0]) AltDoor54(Tube_OD=PML98Body_OD, IsLoProfile=false, DoorXtra_X=2, DoorXtra_Y=2, ShowAlt=true);
+// rotate([-90,0,0]) AltDoor54(Tube_OD=PML98Body_OD, IsLoProfile=false, DoorXtra_X=2, DoorXtra_Y=2, ShowAlt=true, BlankDoor=false, EndFlat_t=0.3);
 
 // rotate([90,0,0]) AltHolder();
 // AltBayBottom(CT_Len=75);
@@ -64,7 +65,7 @@ AltBay54(Tube_OD=PML98Body_OD, Tube_ID=PML98Body_ID, Tube_Len=136, DoorXtra_X=2,
 //  Alt_BayDoorFrame(Tube_OD=PML98Body_OD, Tube_ID=PML98Body_ID, DoorXtra_X=0, DoorXtra_Y=0, ShowDoor=false);
 //
 //  AltBay54(Tube_OD=PML54Body_OD, Tube_ID=PML54Body_ID, Tube_Len=136, DoorXtra_X=0, DoorXtra_Y=0, ShowDoor=false);
-//  AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=0, DoorXtra_Y=0, ShowAlt=true);
+//  AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=0, DoorXtra_Y=0, ShowAlt=true, BlankDoor=false, EndFlat_t=0.3);
 //
 //  UpperRailButtonPost(Body_OD=PML54Body_OD, Body_ID=PML54Body_ID, MtrTube_OD=PML38Body_OD, Extend=5);
 //  Electronics_Bay(Tube_OD=PML54Body_OD, Tube_ID=PML54Body_ID, Fairing_ID=Fairing_ID, HasCablePuller=true);
@@ -281,7 +282,7 @@ module AltBay54(Tube_OD=PML54Body_OD, Tube_ID=PML54Body_ID, Tube_Len=136, DoorXt
 //AltBay54(ShowDoor=false);
 //AltBay54(Tube_OD=PML75Body_OD, Tube_ID=PML75Body_ID, Tube_Len=136, DoorXtra_X=2, DoorXtra_Y=2, ShowDoor=true);
 
-module AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=0, DoorXtra_Y=0, ShowAlt=true, BlankDoor=false){
+module AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=0, DoorXtra_Y=0, ShowAlt=true, BlankDoor=false, EndFlat_t=0.3){
 	Door_Y=Alt54Door_Y+DoorXtra_Y;
 	Door_X=Alt54Door_X+DoorXtra_X;
 	Door_t=AltDoorThickness-0.7;
@@ -293,7 +294,7 @@ module AltDoor54(Tube_OD=PML54Body_OD, IsLoProfile=false, DoorXtra_X=0, DoorXtra
 	difference(){
 		union(){
 			Door(Door_X=Door_X, Door_Y=Door_Y, Door_t=Door_t, Tube_OD=Tube_OD,
-					HasSixBolts=true, HasBoltHoles=false);
+					HasSixBolts=true, HasBoltHoles=false, EndFlat_t=EndFlat_t);
 		
 			if (!BlankDoor)
 			intersection(){

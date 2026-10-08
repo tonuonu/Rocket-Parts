@@ -3,7 +3,7 @@
 // Filename: DoorLib.scad
 // by David M. Flynn
 // Created: 4/29/2023 
-// Revision: 1.0.4  12/30/2024
+// Revision: 1.0.5  6/11/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -12,9 +12,10 @@
 //
 //  ***** History *****
 //
-function DoorLibRev()="DoorLib 1.0.4";
+function DoorLibRev()="DoorLib 1.0.5";
 echo(DoorLibRev());
 //
+// 1.0.5  6/11/2026   Added EndFlat_t parameter to Door() for better printing.
 // 1.0.4  12/30/2024  Changed slope of door frame to improve no-support printing.
 // 1.0.3  3/19/2024   Fixed a co-planer bug in DoorFrame()
 // 1.0.2  7/4/2023    Made door sill smaller 1.5mm vs 2mm
@@ -26,7 +27,7 @@ echo(DoorLibRev());
 // ***********************************
 //  ***** for STL output *****
 //
-// rotate([-90,0,0]) Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=true);
+// rotate([-90,0,0]) Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=true, EndFlat_t=0.3);
 //
 // ***********************************
 //  ***** Routines *****
@@ -250,8 +251,7 @@ module DoorFrame(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBol
 } // DoorFrame
 
 //DoorFrame();
-//
-DoorFrame(Door_X=53, Door_Y=74, Door_t=3, Tube_OD=LOC65Body_OD, HasSixBolts=false);
+//DoorFrame(Door_X=53, Door_Y=74, Door_t=3, Tube_OD=LOC65Body_OD, HasSixBolts=false);
 //
 //
 module TestCode1(){
@@ -293,10 +293,11 @@ module DoorBoltPattern(Door_X=30, Door_Y=50, Tube_OD=PML98Body_OD, HasSixBolts=t
 
 // DoorBoltPattern() Bolt4ButtonHeadHole();
 
-module Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=true, HasBoltHoles=true){
+module Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=true, HasBoltHoles=true, EndFlat_t=0.3){
 	DY=Door_Y;
 	DX=Door_X;
 	DR=4;
+	
 	
 	difference(){
 		hull(){
@@ -305,6 +306,15 @@ module Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=tr
 			rotate([0,0,-DoorEdge_a(Door_X=Door_X, Tube_OD=Tube_OD)]) translate([0,-Tube_OD/2,0])
 				rotate([90,0,0]) translate([Door_X/2-DR,0,-10]) RoundRect(X=DX-DR*2, Y=DY, Z=20, R=DR);
 		} // hull
+		
+		if (EndFlat_t>0){
+			rotate([0,0,DoorEdge_a(Door_X=Door_X, Tube_OD=Tube_OD)]) translate([0,-Tube_OD/2+Door_t,0])
+				rotate([0,0,-DoorEdge_a(Door_X=Door_X, Tube_OD=Tube_OD)]) 
+					cube([10,EndFlat_t*2,DY+1],center=true);
+			rotate([0,0,-DoorEdge_a(Door_X=Door_X, Tube_OD=Tube_OD)]) translate([0,-Tube_OD/2+Door_t,0])
+				rotate([0,0,DoorEdge_a(Door_X=Door_X, Tube_OD=Tube_OD)]) 
+					cube([10,EndFlat_t*2,DY+1],center=true);
+		} // EndFlat_t
 		
 		// Inner surface
 		translate([0,0,-DY/2-Overlap]) 
@@ -326,8 +336,8 @@ module Door(Door_X=30, Door_Y=50, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=tr
 } // Door
 
 // Door();
-
-
+// 
+Door(Door_X=40, Door_Y=60, Door_t=3, Tube_OD=PML98Body_OD, HasSixBolts=true, HasBoltHoles=true);
 
 
 

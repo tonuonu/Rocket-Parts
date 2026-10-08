@@ -178,7 +178,7 @@ FC2_FinCan(Body_OD=Body_OD, Body_ID=Body_ID, Can_Len=Can_Len,
 include<TubesLib.scad>
 use<R98Lib.scad>
 use<FinCan2Lib.scad> echo(FinCan2LibRev());
-use<AT-RMS-Lib.scad>
+use<AT_RMS_Lib.scad>
 use<RailGuide.scad>
 use<Fins.scad>
 use<NoseCone.scad>
@@ -464,7 +464,8 @@ module LampHolder(){
 	} // difference
 } // LampHolder
 
-//LampHolder();
+//
+LampHolder();
 
 module R98_NightLaunchNC_Base(Tube_OD=Body_OD, Tube_ID=Body_ID, nRivets=3){
 

@@ -59,9 +59,11 @@ EB_Electronics_BayUniversal(Tube_OD=BT137Body_OD, Tube_ID=BT137Body_ID, DoorAngl
 /**/
 //
 //  *** Doors ***
-// rotate([-90,0,0]) EB_AltDoor(Tube_OD=BT98Body_OD, BlankDoor=false, IsLoProfile=false);
-// rotate([-90,0,0]) EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=false, DoubleBatt=false, BlankDoor=false);
-// rotate([-90,0,0]) EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=true, DoubleBatt=false, BlankDoor=false);
+// rotate([-90,0,0]) EB_RocketServo2Door(Tube_OD=ULineH75Body_OD, HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3);
+// rotate([-90,0,0]) EB_AltDoor(Tube_OD=BT98Body_OD, BlankDoor=false, IsLoProfile=false, EndFlat_t=0.3);
+// rotate([-90,0,0]) EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=false, TallDoor=false, DoubleBatt=false, BlankDoor=false);
+// rotate([-90,0,0]) EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=true, TallDoor=false, DoubleBatt=false, BlankDoor=false);
+// rotate([-90,0,0]) EB_RocketServo2Door(Tube_OD=BT98Body_OD, HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3);
 //
 // ***********************************
 //  ***** Routines *****
@@ -100,17 +102,31 @@ AltBattTwoBattSWBay=[[0],[90],[180,270]]; //Alt, Batt, BattSW, BattSW
 function EB_BattDoor_X(Tube_OD=BT137Body_OD)=Tube_OD>70? BattDoorX():BattDoorX()-4;
 
 	
-module EB_AltDoor(Tube_OD=BT98Body_OD, BlankDoor=false, IsLoProfile=false){
-	AltDoor54(Tube_OD=Tube_OD, IsLoProfile=IsLoProfile, DoorXtra_X=Alt_DoorXtra_X, DoorXtra_Y=Alt_DoorXtra_Y, ShowAlt=true, BlankDoor=BlankDoor);
+module EB_AltDoor(Tube_OD=BT98Body_OD, BlankDoor=false, IsLoProfile=false, EndFlat_t=0.3){
+	AltDoor54(Tube_OD=Tube_OD, IsLoProfile=IsLoProfile, DoorXtra_X=Alt_DoorXtra_X, DoorXtra_Y=Alt_DoorXtra_Y, ShowAlt=true, BlankDoor=BlankDoor, EndFlat_t=EndFlat_t);
 } // EB_AltDoor
 
 //EB_AltDoor(Tube_OD=BT98Body_OD);
 
-module EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=false, DoubleBatt=false, BlankDoor=false){
-	Batt_Door(Tube_OD=Tube_OD, Door_X=EB_BattDoor_X(Tube_OD=Tube_OD), InnerTube_OD=0, HasSwitch=HasSwitch, DoubleBatt=DoubleBatt, BlankDoor=BlankDoor);
+module EB_RocketServo2Door(Tube_OD=BT98Body_OD, HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3){
+	RocketServo2Door(Tube_OD=Tube_OD, Door_X=EB_BattDoor_X(Tube_OD=Tube_OD), 
+						HasMagSwitch=HasMagSwitch, HasBatt=HasBatt, BlankDoor=BlankDoor, EndFlat_t=EndFlat_t);
+} // EB_RocketServoDoor
+
+// EB_RocketServoDoor();
+
+module EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=false, TallDoor=false, DoubleBatt=false, BlankDoor=false){
+	Batt_Door(Tube_OD=Tube_OD, Door_X=EB_BattDoor_X(Tube_OD=Tube_OD), InnerTube_OD=0, HasSwitch=HasSwitch, TallDoor=TallDoor, DoubleBatt=DoubleBatt, BlankDoor=BlankDoor);
 } // EB_BattDoor
 
 //EB_BattDoor(Tube_OD=BT98Body_OD, HasSwitch=false);
+
+module EB_RocketServo2Door(Tube_OD=BT98Body_OD, HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3){
+	RocketServo2Door(Tube_OD=Tube_OD, Door_X=EB_BattDoor_X(Tube_OD=Tube_OD), 
+						HasMagSwitch=HasMagSwitch, HasBatt=HasBatt, BlankDoor=BlankDoor, EndFlat_t=EndFlat_t);
+} // EB_RocketServo2Door
+
+// EB_RocketServo2Door(Tube_OD=BT98Body_OD, HasMagSwitch=false, HasBatt=false, BlankDoor=false, EndFlat_t=0.3);
 
 module EB_BattDoorMagRS(Tube_OD=BT98Body_OD, HasRS_PCB=false, HasSwitch=false, BlankDoor=false){
 	Batt_DoorMagSW(Tube_OD=Tube_OD, Door_X=EB_BattDoor_X(Tube_OD=Tube_OD), HasRS_PCB=HasRS_PCB, HasSwitch=HasSwitch, BlankDoor=BlankDoor);
@@ -189,7 +205,7 @@ module EB_ExtensionRing(Tube_OD=BT75Body_OD, Tube_ID=BT75Body_ID, Len=21, nBolts
 //EB_ExtensionRing();
 //EB_ExtensionRing(Tube_OD=BT65Body_OD, Tube_ID=BT65Body_ID, Len=8, nBolts=4, BoltInset=7.5);
 
-module EB_IntegratedCoupler(Tube_OD=BT98Body_OD, Tube_ID=BT98Body_ID, nBolts=3, BoltInset=7.5, HasShockMount=false){
+module EB_IntegratedCoupler(Tube_OD=BT98Body_OD, Tube_ID=BT98Body_ID, nBolts=3, BoltInset=7.5, Bolt_a=0, HasShockMount=false){
 	IntegratedCoupler_OD=Tube_ID;
 	IntegratedCoupler_ID=Tube_ID-6;
 	IntegratedCoupler_Len=HasShockMount? 17:15;
@@ -227,7 +243,7 @@ module EB_IntegratedCoupler(Tube_OD=BT98Body_OD, Tube_ID=BT98Body_ID, nBolts=3, 
 				cylinder(d=Al_Tube_d, h=Tube_OD, center=true);
 				
 		//Bolt holes for nosecone and ball lock
-		if (nBolts>0) for (j=[0:nBolts-1]) rotate([0,0,360/nBolts*j]) // +180/nBolts removed
+		if (nBolts>0) for (j=[0:nBolts-1]) rotate([0,0,360/nBolts*j+Bolt_a]) // +180/nBolts removed
 			translate([0, -Tube_OD/2-1, BoltInset]) rotate([90,0,0]) Bolt4Hole();
 	} // difference
 } // EB_IntegratedCoupler
@@ -306,7 +322,7 @@ module EB_BattDoorFrame(Tube_OD=Tube_OD, HasSwitch=false, ShowDoors=false){
 } // EB_BattDoorFrame
 
 module EB_Electronics_BayUniversal(Tube_OD=BT137Body_OD, Tube_ID=BT137Body_ID, DoorAngles=OneAltBay, Len=170, 
-									nBolts=6, BoltInset=7.5, ShowDoors=false,
+									nBolts=6, BoltInset=7.5, Bolt_a=0, ShowDoors=false,
 									HasFwdIntegratedCoupler=false, HasFwdShockMount=false,
 									HasAftIntegratedCoupler=false, HasAftShockMount=false,
 									HasRailGuide=false, RailGuideLen=35,
@@ -372,11 +388,11 @@ module EB_Electronics_BayUniversal(Tube_OD=BT137Body_OD, Tube_ID=BT137Body_ID, D
 				
 			if (HasFwdIntegratedCoupler) translate([0,0,Len-15])
 				EB_IntegratedCoupler(Tube_OD=Tube_OD, Tube_ID=Tube_ID, 
-									nBolts=nBolts, BoltInset=BoltInset, HasShockMount=HasFwdShockMount);
+									nBolts=nBolts, BoltInset=BoltInset, Bolt_a=Bolt_a, HasShockMount=HasFwdShockMount);
 									
 			if (HasAftIntegratedCoupler) translate([0,0,15]) rotate([180,0,0])
 				EB_IntegratedCoupler(Tube_OD=Tube_OD, Tube_ID=Tube_ID, 
-									nBolts=nBolts, BoltInset=BoltInset, HasShockMount=HasAftShockMount);
+									nBolts=nBolts, BoltInset=BoltInset, Bolt_a=Bolt_a, HasShockMount=HasAftShockMount);
 									
 			if (Bolted)
 				difference(){
