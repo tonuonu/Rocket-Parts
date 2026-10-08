@@ -11,13 +11,16 @@ Each motor is flown in three bracketing cases:
   mid   - nominal airframe, nominal drag -> likely apogee
   heavy - heavy airframe, high drag      -> slowest rail exit
 
-The model is calibrated against the L2 flight (see `calibrate`); its rail-exit
-speed reads ~5 % higher than OpenRocket, so the heavy case is scaled by
-RAIL_CORR before classifying.
+The model is calibrated against OpenRocket on the L2 rocket with identical
+inputs (see `calibrate`): Cd 0.50 reproduces OpenRocket's apogee, rail exit
+and max velocity within 2 %. The L2 flight itself agrees with OpenRocket.
+
+Rail exit is taken when the aft rail button leaves the rail, i.e. after
+rail length minus AFT_BUTTON of travel.
 
 Usage:
   tools/l3_motor_survey.py                 # calibrate + survey + rail table
-  tools/l3_motor_survey.py survey --dry 5.2 --rail 2.4
+  tools/l3_motor_survey.py survey --dry 5.4 --spread 0.1 --rail 2.4
   tools/l3_motor_survey.py --refresh       # re-download ThrustCurve data
 
 Results are written up in L3-TestFlights.md. Standard library only.
@@ -32,25 +35,32 @@ SITE_ALT = 15.0          # m ASL
 CEILING = 1340.0         # m AGL
 MAX_LIFTOFF = 10.0       # kg
 
-# L3 airframe (L3-Design.md); dry mass excludes the M-motor nose ballast
+# L3 airframe (L3-Design.md). Dry mass from tools/l3_mass.py (4.3/5.3/6.2 kg
+# low/nominal/high), without the nose ballast that only the M motor needs.
+# Once the airframe is weighed, run with --dry <kg> --spread 0.1.
 DIA = 0.1401             # m, BT137
-DRY = 5.0                # kg, nominal
-DRY_SPREAD = 0.5         # kg, +/- for the light/heavy cases
+DRY = 5.3                # kg, nominal
+DRY_SPREAD = 0.95        # kg, +/- for the light/heavy cases
 ADAPTER_54 = 0.3         # kg added for a 75->54 mm adapter
 RAIL = 1.8               # m
+AFT_BUTTON = 0.2         # m, aft rail button above the aft end (assumed)
 
-CD = {"high": 0.45, "mid": 0.55, "heavy": 0.60}   # 0.55 fits the L2 flight
-RAIL_CORR = 0.95         # model rail exit vs OpenRocket (L2 calibration)
+CD = {"high": 0.40, "mid": 0.50, "heavy": 0.60}   # 0.50 matches OpenRocket on L2
 
 # Classification
 ROBUST_APOGEE = 1160.0   # m, high case: ~13 % under the ceiling
-ROBUST_RAIL = 24.0       # m/s, heavy case, corrected
-MIN_RAIL = 15.0          # m/s, floor
+ROBUST_RAIL = 24.0       # m/s, heavy case (~5 m/s wind at 5x)
+MIN_RAIL = 15.0          # m/s, floor (~3 m/s wind at 5x)
+ACCEL_LIMIT = 32.0       # g, CATS Vega LSM6DSO32 range (+/-32 g)
 MIN_TW = 5.0             # TUSC typical liftoff thrust-to-weight
 
-# Calibration flight: L2 Peregrine, 2026-02-22 (MyLevel1Peregrine flight log)
-L2 = dict(motor="J350W", dia=0.09906, liftoff=3.100, rail=1.2,
-          openrocket=dict(apogee=1002, v_rail=21.6, vmax=173),
+# Calibration: L2 Peregrine, 2026-02-22. Inputs are those of the OpenRocket
+# sim "Långtora Airfield 21 Feb 2026" in MyLevel1Peregrine/openrocket/
+# PeregrineL2.ork (stage mass override 2.8 kg + J350W-OLD 0.651 kg). The
+# flight log gives 3.1 kg liftoff; flight apogee is barometric, uncorrected
+# for the cold day (~938 m corrected).
+L2 = dict(motor="J350W-OLD", motor_kg=0.651, dia=0.09906, liftoff=3.451, rail=1.2,
+          openrocket=dict(apogee=1002, v_rail=21.6, vmax=173.2),
           flight=dict(apogee=986, vmax=172.6))
 
 
@@ -64,8 +74,8 @@ def _post(endpoint, body):
 
 
 def fetch():
-    """Candidate motors (AeroTech/Cesaroni reloads, 54/75 mm, J-L, regular
-    availability, avg thrust >= 300 N) plus the calibration motor."""
+    """Candidate motors (AeroTech/Cesaroni reloads and single-use, 54/75 mm,
+    J-L, regular availability, avg thrust >= 300 N) plus the calibration motor."""
     found = []
     for dia in (54, 75):
         for cls in "JKL":
@@ -85,6 +95,8 @@ def fetch():
             curves[r["motorId"]] = [(s["time"], s["thrust"]) for s in r["samples"]]
     motors = []
     for m in found:
+        if m["designation"] == L2["motor"]:
+            m = dict(m, totalWeightG=m.get("totalWeightG") or L2["motor_kg"] * 1000)
         if m["motorId"] in curves and m.get("totalWeightG") and m.get("propWeightG"):
             motors.append(dict(m, curve=curves[m["motorId"]]))
     os.makedirs(os.path.dirname(CACHE), exist_ok=True)
@@ -114,11 +126,13 @@ def cd_mach(cd0, mach):
 
 
 def fly(motor, dry_kg, dia, cd0, rail, dt=0.002):
-    """Vertical flight to apogee. Returns apogee (m AGL), rail-exit and max
-    velocity (m/s), max Mach, time to apogee (s), liftoff mass (kg),
-    avg and peak thrust-to-weight."""
-    t_c = [p[0] for p in motor["curve"]]
-    f_c = [p[1] for p in motor["curve"]]
+    """Vertical flight to apogee. `rail` is the travel until the aft rail
+    button leaves the rail. Returns apogee (m AGL), rail-exit and max velocity
+    (m/s), max Mach, time to apogee (s), liftoff mass (kg), avg thrust-to-weight
+    and peak acceleration (g)."""
+    pts = sorted(dict(motor["curve"]).items())   # some files repeat time stamps
+    t_c = [p[0] for p in pts]
+    f_c = [p[1] for p in pts]
     if t_c[0] > 0:
         t_c.insert(0, 0.0); f_c.insert(0, 0.0)
     tb = t_c[-1]
@@ -149,10 +163,11 @@ def fly(motor, dry_kg, dia, cd0, rail, dt=0.002):
         vmax = max(vmax, v); mmax = max(mmax, v / a)
         if t > tb and v <= 0:
             break
-    w = m0 * 9.81
+    # ThrustCurve's listed peak can exceed the sampled curve's; use the larger
+    peak = max(max(f_c), motor.get("maxThrustN") or 0.0)
     return dict(apogee=h, v_rail=v_rail or 0.0, vmax=vmax, mach=mmax, t_apo=t,
-                m0=m0, tw_avg=motor["avgThrustN"] / w, tw_peak=max(f_c) / w,
-                peak_n=max(f_c))
+                m0=m0, tw_avg=motor["avgThrustN"] / (m0 * 9.81), peak_n=peak,
+                peak_g=peak / (m0 * 9.81) - 1)
 
 
 # --- Commands --------------------------------------------------------------
@@ -161,9 +176,18 @@ def name(m):
     return ("CTI " if m["manufacturerAbbrev"] == "Cesaroni" else "AT ") + m["designation"]
 
 
+def kind(m):
+    """Hardware and motor ejection: 'SU 6-14' single-use with delays,
+    'RMS-54/852 P' reload, plugged (no motor ejection)."""
+    d = m.get("delays") or "?"
+    if m["type"] == "SU":
+        return f"SU {d.split(',')[0]}-{d.split(',')[-1]}" if "," in d else f"SU {d}"
+    return f"{m.get('caseInfo') or '?'} {'P' if d == 'P' else d.split(',')[0] + '-' + d.split(',')[-1] if ',' in d else d}"
+
+
 def calibrate(motors):
-    m = next(x for x in motors if x["designation"] == L2["motor"] and x["diameter"] == 38)
-    dry = L2["liftoff"] - m["totalWeightG"] / 1000
+    m = next(x for x in motors if x["designation"] == L2["motor"])
+    dry = L2["liftoff"] - L2["motor_kg"]
     r = fly(m, dry, L2["dia"], CD["mid"], L2["rail"])
     o, f = L2["openrocket"], L2["flight"]
     print(f"Calibration: L2 Peregrine, {L2['motor']}, {L2['liftoff']} kg, "
@@ -175,24 +199,25 @@ def calibrate(motors):
     print()
 
 
-def cases(m, dry, rail):
+def cases(m, dry, rail, spread):
     extra = ADAPTER_54 if m["diameter"] == 54 else 0.0
-    hi = fly(m, dry - DRY_SPREAD + extra, DIA, CD["high"], rail)
-    mid = fly(m, dry + extra, DIA, CD["mid"], rail)
-    hv = fly(m, dry + DRY_SPREAD + extra, DIA, CD["heavy"], rail)
+    travel = rail - AFT_BUTTON
+    hi = fly(m, dry - spread + extra, DIA, CD["high"], travel)
+    mid = fly(m, dry + extra, DIA, CD["mid"], travel)
+    hv = fly(m, dry + spread + extra, DIA, CD["heavy"], travel)
     return hi, mid, hv
 
 
 def classify(hi, mid, hv):
-    vr = hv["v_rail"] * RAIL_CORR
+    vr = hv["v_rail"]
     if hi["apogee"] > CEILING:
         return "out", f"apogee up to {hi['apogee']:.0f} m"
     if vr < MIN_RAIL:
         return "out", f"rail exit {vr:.1f} m/s"
     if hv["tw_avg"] < MIN_TW:
         return "out", f"avg T/W {hv['tw_avg']:.1f}"
-    if mid["m0"] > MAX_LIFTOFF:
-        return "out", f"liftoff {mid['m0']:.1f} kg"
+    if hv["m0"] > MAX_LIFTOFF:
+        return "out", f"liftoff {hv['m0']:.1f} kg"
     why = []
     if hi["apogee"] > ROBUST_APOGEE:
         why.append(f"apogee up to {hi['apogee']:.0f} m")
@@ -201,33 +226,36 @@ def classify(hi, mid, hv):
     return ("marginal", ", ".join(why)) if why else ("robust", "")
 
 
-def rank(motors, dry, rail):
+def rank(motors, dry, rail, spread):
     rows = {"robust": [], "marginal": [], "out": []}
     for m in motors:
         if m["diameter"] not in (54, 75):
             continue
-        hi, mid, hv = cases(m, dry, rail)
+        hi, mid, hv = cases(m, dry, rail, spread)
         cls, why = classify(hi, mid, hv)
         rows[cls].append((m, hi, mid, hv, why))
     return rows
 
 
-def survey(rows, dry, rail):
-    print(f"Survey: BT137, dry {dry - DRY_SPREAD:.1f}/{dry:.1f}/{dry + DRY_SPREAD:.1f} kg "
+def survey(rows, dry, rail, spread):
+    print(f"Survey: BT137, dry {dry - spread:.2f}/{dry:.2f}/{dry + spread:.2f} kg "
           f"(high/mid/heavy, +{ADAPTER_54} kg for 54 mm), Cd "
           f"{CD['high']}/{CD['mid']}/{CD['heavy']}, rail {rail} m, ceiling {CEILING:.0f} m")
     print(f"Robust: high-case apogee <= {ROBUST_APOGEE:.0f} m and heavy-case rail exit "
-          f">= {ROBUST_RAIL:.0f} m/s (x{RAIL_CORR})\n")
-    hdr = (f"  {'motor':20} {'dia':>3} {'case':14} {'N*s':>5} {'liftoff':>7} {'apo mid':>7} "
-           f"{'apo high':>8} {'rail':>5} {'peak N':>6} {'pk T/W':>6} {'Mach':>4}")
+          f">= {ROBUST_RAIL:.0f} m/s; aft button {AFT_BUTTON} m above the aft end")
+    print(f"Columns: liftoff/apo mid/peak g = mid case, apo high/Mach = high case, "
+          f"rail = heavy case; '!' = peak g over the {ACCEL_LIMIT:.0f} g altimeter range\n")
+    hdr = (f"  {'motor':20} {'dia':>3} {'hardware':18} {'N*s':>5} {'liftoff':>7} {'apo mid':>7} "
+           f"{'apo high':>8} {'rail':>5} {'peak N':>6} {'peak g':>6} {'Mach':>4}")
     for cls in ("robust", "marginal"):
         print(f"{cls.upper()} ({len(rows[cls])})")
         print(hdr + ("  why" if cls == "marginal" else ""))
         for m, hi, mid, hv, why in sorted(rows[cls], key=lambda r: (r[2]["apogee"])):
-            print(f"  {name(m):20} {m['diameter']:3} {m.get('caseInfo') or '?':14} "
+            sat = "!" if mid["peak_g"] > ACCEL_LIMIT else " "
+            print(f"  {name(m):20} {m['diameter']:3} {kind(m):18} "
                   f"{m['totImpulseNs']:5.0f} {mid['m0']:6.1f}k {mid['apogee']:7.0f} "
-                  f"{hi['apogee']:8.0f} {hv['v_rail'] * RAIL_CORR:5.1f} {mid['peak_n']:6.0f} "
-                  f"{mid['tw_peak']:6.0f} {hi['mach']:4.2f}" + (f"  {why}" if why else ""))
+                  f"{hi['apogee']:8.0f} {hv['v_rail']:5.1f} {mid['peak_n']:6.0f} "
+                  f"{mid['peak_g']:5.0f}{sat} {hi['mach']:4.2f}" + (f"  {why}" if why else ""))
         print()
     out = sorted(rows["out"], key=lambda r: (r[0]["diameter"], r[0]["totImpulseNs"]))
     print(f"OUT ({len(out)})")
@@ -236,13 +264,13 @@ def survey(rows, dry, rail):
     print()
 
 
-def rails(rows, dry, lengths=(1.8, 2.4, 3.0)):
-    print("Rail exit, heavy case, corrected (m/s)")
+def rails(rows, dry, spread, lengths=(1.8, 2.4, 3.0)):
+    print(f"Rail exit, heavy case (m/s), aft button {AFT_BUTTON} m above the aft end")
     print(f"  {'motor':20}" + "".join(f"{L:>7.1f}m" for L in lengths))
     for cls in ("robust", "marginal"):
         for m, *_ in sorted(rows[cls], key=lambda r: r[2]["apogee"]):
             extra = ADAPTER_54 if m["diameter"] == 54 else 0.0
-            vs = [fly(m, dry + DRY_SPREAD + extra, DIA, CD["heavy"], L)["v_rail"] * RAIL_CORR
+            vs = [fly(m, dry + spread + extra, DIA, CD["heavy"], L - AFT_BUTTON)["v_rail"]
                   for L in lengths]
             print(f"  {name(m):20}" + "".join(f"{v:8.1f}" for v in vs) + f"   {cls}")
     print()
@@ -253,6 +281,8 @@ def main():
     ap.add_argument("command", nargs="?", default="all",
                     choices=("all", "calibrate", "survey", "rails"))
     ap.add_argument("--dry", type=float, default=DRY, help="nominal dry mass, kg (default %(default)s)")
+    ap.add_argument("--spread", type=float, default=DRY_SPREAD,
+                    help="+/- dry mass for the light/heavy cases, kg (default %(default)s)")
     ap.add_argument("--rail", type=float, default=RAIL, help="rail length, m (default %(default)s)")
     ap.add_argument("--refresh", action="store_true", help="re-download ThrustCurve data")
     a = ap.parse_args()
@@ -261,11 +291,11 @@ def main():
         calibrate(motors)
     if a.command == "calibrate":
         return
-    rows = rank(motors, a.dry, a.rail)
+    rows = rank(motors, a.dry, a.rail, a.spread)
     if a.command in ("all", "survey"):
-        survey(rows, a.dry, a.rail)
+        survey(rows, a.dry, a.rail, a.spread)
     if a.command in ("all", "rails"):
-        rails(rows, a.dry)
+        rails(rows, a.dry, a.spread)
 
 if __name__ == "__main__":
     main()
