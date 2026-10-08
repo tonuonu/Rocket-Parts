@@ -3,7 +3,7 @@
 // Filename: Stager75BBLib.scad
 // by David M. Flynn
 // Created: 8/14/2024 
-// Revision: 1.0.6  9/29/2025
+// Revision: 1.0.7  7/1/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -29,8 +29,9 @@
 //
 //  ***** History *****
 //
-function Stager75BBLib_Rev()="Stager75BBLib Rev. 1.0.6";
+function Stager75BBLib_Rev()="Stager75BBLib Rev. 1.0.7";
 echo(Stager75BBLib_Rev());
+// 1.0.7  7/1/2026     Fixed bearing covet bolt hole intrution.
 // 1.0.6  9/29/2025    Smaller lighter bearing 6705 for 65mm version.
 // 1.0.5  9/4/2025     A little bit of cleanup for viewing.
 // 1.0.4  9/25/2024    Added servo options ServoMG90S_ID 11 gram micro servo, ServoMS75_ID 21 gram mini servo, ServoMZ996_ID 55 gram standard servo
@@ -748,6 +749,7 @@ module Stager_Sustainer_Cup(Tube_OD=DefaultBody_OD, nLocks=Default_nLocks,
 } // Stager_Sustainer_Cup
 
 // Stager_Sustainer_Cup();
+// Stager_Sustainer_Cup(Tube_OD=ULineH75Body_OD, nLocks=3, MotorTube_OD=BT54Body_OD, Motor_Len=10, nFins=5, StagerCollarLen=17);
 
 module Stager_SaucerBoltPattern(Tube_OD=DefaultBody_OD, nLocks=Default_nLocks){
 	Inset_Y=StagerLockInset_Y(Tube_OD=Tube_OD);
@@ -941,8 +943,15 @@ module Stager_Mech(Tube_OD=DefaultBody_OD, nLocks=Default_nLocks, Skirt_ID=Defau
 	
 // *******************
 
-	for (j=[0:nLocks-1]) rotate([0,0,360/nLocks*j])
-		BackStop();
+	difference(){
+		for (j=[0:nLocks-1]) rotate([0,0,360/nLocks*j])
+			BackStop();
+			
+		// bearing holder Bolts
+		nBolts=nLocks*2;
+		for (j=[0:nBolts-1]) rotate([0,0,360/nBolts*j+180/nBolts])
+				translate([0,MainBearing_OD/2+Bolt4Inset,Bearing_Z]) rotate([180,0,0]) Bolt4Hole(depth=10);
+	} // difference
 				
 	difference(){
 		union(){

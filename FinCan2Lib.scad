@@ -64,6 +64,10 @@ FC2_FinCan(Body_OD=BT75Body_OD, Body_ID=BT75Body_ID, Can_Len=160,
 //
 // FC2_FinFixture(Fin_Root_W=14, Fin_Root_L=130, Fin_Post_h=14, Fin_Chamfer_L=32);
 //
+//  ***** Tools *****
+//
+// FinCanAlignmentRing(OD=11.825);
+//
 // ***********************************
 //  ***** Routines *****
 //
@@ -90,6 +94,21 @@ MotorTubeHoleIDXtra=IDXtra*3;
 InternalThreadIDXtra=IDXtra*5;
 ThreadPitch=2.5;
 NominalThreadWall_t=ThreadPitch+1.5; // added to motor tube radius
+
+module FinCanAlignmentRing(OD=11.825){
+	H=6;
+	
+	difference(){
+		union(){
+			cylinder(d1=OD-0.75, d2=OD, h=H/2+Overlap);
+			translate([0,0,H/2]) cylinder(d2=OD-0.75, d1=OD, h=H/2);
+		} // union
+		
+		translate([0,0,-Overlap]) cylinder(d=OD-3.75, h=H+Overlap*2);
+	} // difference
+} // FinCanAlignmentRing
+
+// FinCanAlignmentRing();
 
 module FC2_FinCan(Body_OD=BT98Body_OD, Body_ID=BT98Body_ID, Coupler_ID=0, Can_Len=160,
 				MotorTube_OD=BT54Body_OD, RailGuide_h=BT98Body_OD/2+2, RailGuide_z=0,
