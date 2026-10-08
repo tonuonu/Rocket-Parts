@@ -134,24 +134,32 @@ the tip for a 4mm rod.
 
 ## 5. Mass Budget
 
-| Component | Mass (g) | Notes |
-|---|---|---|
-| Fin can (printed + overwrap) | 1350 | PPS/Nylon + GF fabric (4 fin slots) |
-| Fins 4× (core + CF cloth) | 800 | 200g each |
-| Main body tube | 325 | BT137 Blue Tube, 500mm |
-| Drogue body tube | 227 | BT137 Blue Tube, 350mm |
-| Nose cone | 500 | FG or 3D printed + FG |
-| Nose ballast | 200-400 | Lead shot for CG adjustment |
-| Electronics bay | 700 | Dual altimeters + batteries |
-| Recovery system | 600 | Main + drogue + cord + hardware |
-| Misc hardware | 350 | Rail buttons, screws, epoxy |
-| **Dry mass** | **~5050-5250** | |
-| Motor (loaded) | 4637 | M1297W-PS |
-| **Loaded mass** | **~9700-9900** | |
+Calculated by `tools/l3_mass.py` (2026-10-08). Printed parts are weighed from
+their CAD volume; tubes, layups and the nose cone come from dimensions;
+bought items are estimates. Not weighed yet.
 
-**10 kg launch site limit: PASS** with ~100-300g margin.
+| Component | Low (g) | Nominal (g) | High (g) | Notes |
+|---|---|---|---|---|
+| Fin can (printed + overwrap) | 964 | 1084 | 1203 | PC, CAD 879 cm³ (9 mm slots, v0.7.0) + GF overwrap and root fillets |
+| Fins 4× (core + CF cloth + rods) | 658 | 768 | 884 | PPS, CAD 127 cm³ per core |
+| Main body tube | 397 | 469 | 505 | BT137 Blue Tube, 500 mm, 1.1–1.4 g/cm³ |
+| Drogue body tube | 278 | 329 | 354 | BT137 Blue Tube, 350 mm |
+| Nose cone | 497 | 585 | 672 | Printed PETG ogive, 2.2 mm wall, shoulder, bulkhead |
+| Electronics bay | 434 | 542 | 691 | Printed (L2 e-bay scaled) + altimeters, batteries, switches |
+| Recovery system | 790 | 1050 | 1310 | 60" main, 24" drogue, 2 × 9 m 1" tubular nylon, protectors, links |
+| Eyebolts + misc hardware | 300 | 450 | 600 | Rail buttons, retainer cup, screws, shear pins, epoxy, paint |
+| **Dry mass (no ballast)** | **4317** | **5276** | **6219** | |
+| Nose ballast | 200 | 300 | 400 | Exact amount from ORK simulation |
+| Motor (loaded) | 4637 | 4637 | 4637 | M1297W-PS |
+| **Loaded mass** | **9154** | **10213** | **11256** | |
 
-Margin is tighter with 4 fins + ballast. Exact tuning from ORK simulation.
+**10 kg home-field limit: EXCEEDED** at the nominal mass (10.1–10.3 kg
+with ballast); only the low end of the estimate fits. The M flight goes to
+a site with a higher apogee ceiling anyway — check that site's mass limit.
+The J/K test flights (6.4–7.2 kg liftoff, `L3-TestFlights.md`) are well under.
+
+Weigh the parts as they are built and replace these estimates with the
+weighed values.
 
 ## 6. Performance Estimates
 
