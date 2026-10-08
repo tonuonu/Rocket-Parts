@@ -98,7 +98,7 @@ echo(str("=== PeregrineL3 assembly 0.1.0 ==="));
 echo(str("Motor: ", Motor_Name));
 echo(str("Sections Z: fin can 0-", FinCan_Exposed_Z, ", main ", Main_Z, "-", EBay_Z,
 	", e-bay -", Drogue_Z, ", drogue -", Nose_Z, ", nose -", Tip_Z));
-echo(str("Overall length: ", Tip_Z, " mm (L3-Design.md §4.2 states ~1741)"));
+echo(str("Overall length: ", Tip_Z, " mm (L3-Design.md §4.2: ~1791)"));
 
 $fn = $preview ? 72 : 180;
 

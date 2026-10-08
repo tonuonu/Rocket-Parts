@@ -8,7 +8,7 @@
 ## Key Parameters
 - Body: BT137 (140.1mm OD, 136.8mm ID)
 - Motor: AeroTech M1297W-PS (5417 N·s, RMS-75/5120, 4.637 kg loaded)
-- Total length: ~1741mm (68.5")
+- Total length: ~1791mm (70.5")
 - **4 fins** (was 3) — same planform each (Root=249, Tip=90, Span=137, Sweep=120)
 - Loaded mass: ~9.7-9.9 kg (under 10 kg limit, margin 100-300g)
 - Dry mass: ~5.05-5.25 kg
