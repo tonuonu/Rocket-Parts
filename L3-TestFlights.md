@@ -46,12 +46,22 @@ likely overstable rocket.
 
 ## 3. Method
 
-- **1-DOF vertical flight model** (Python): thrust-curve interpolation, mass
+Script: [`tools/l3_motor_survey.py`](tools/l3_motor_survey.py) (Python 3,
+standard library only). Motor data is cached in
+`~/.cache/rocket-parts/thrustcurve.json`.
+
+```sh
+tools/l3_motor_survey.py                          # calibration + survey + rail table
+tools/l3_motor_survey.py survey --dry 5.4 --rail 2.4   # re-run with weighed mass / club rail
+tools/l3_motor_survey.py --refresh                # re-download ThrustCurve data
+```
+
+- **1-DOF vertical flight model:** thrust-curve interpolation, mass
   decreasing with delivered impulse, ISA atmosphere, constant Cd with mild
-  rise above Mach 0.8, no wind, vertical rail.
+  rise above Mach 0.8, no wind, no rail friction, vertical rail.
 - **Motors:** all AeroTech and Cesaroni J/K/L reloads in 54 mm and 75 mm,
   regular availability, avg thrust ≥ 300 N, with thrust curves on
-  [ThrustCurve.org](https://www.thrustcurve.org) — 122 motors.
+  [ThrustCurve.org](https://www.thrustcurve.org) — 107 motors.
 - **Calibration** against the L2 flight (Peregrine 99 mm, 3.1 kg, J350W,
   1.2 m rail):
 
@@ -61,70 +71,88 @@ likely overstable rocket.
   | Rail exit | 22.8 m/s | 21.6 m/s | — |
   | Max velocity | 192 m/s | 173 m/s | 172.6 m/s |
 
-  Apogee matches at Cd ≈ 0.55. Rail exit reads ~5 % high (corrected for
-  below). Max velocity reads ~10 % high, so velocities and loads below are
-  conservative.
+  Apogee matches at Cd ≈ 0.55. Rail exit reads ~5 % high, so rail-exit
+  speeds below are multiplied by 0.95. Max velocity reads ~10 % high, so
+  velocities below are conservative.
 
 - **Test airframe:** BT137 (140.1 mm), dry mass **4.5–5.5 kg** (design
   budget 5.05–5.25 kg minus the 200–400 g nose ballast that only the M motor
   needs; real printed + overwrapped mass is unverified). 54 mm motors add
-  300 g for an adapter. Rail 1.8 m.
+  0.3 kg for an adapter. Rail 1.8 m.
 - **Cases bracketed:**
-  - *Highest apogee:* 4.5 kg dry, Cd 0.45 — upper bound for the ceiling check.
-  - *Likely apogee:* 5.0 kg dry, Cd 0.55.
-  - *Slowest rail exit:* 5.5 kg dry, Cd 0.60, rail-exit speed × 0.95.
+  - *High:* 4.5 kg dry, Cd 0.45 — upper bound on apogee (ceiling check).
+  - *Mid:* 5.0 kg dry, Cd 0.55 — likely apogee.
+  - *Heavy:* 5.5 kg dry, Cd 0.60 — slowest rail exit.
+- **Classes:**
+  - *Robust:* high-case apogee ≤ 1160 m (≥ 13 % under the ceiling) and
+    heavy-case rail exit ≥ 24 m/s.
+  - *Out:* high-case apogee > 1340 m, or rail exit < 15 m/s, or avg
+    thrust-to-weight < 5.
+  - *Marginal:* everything in between.
 
 ## 4. Results
 
+1.8 m rail, default masses. Liftoff mass and peak thrust-to-weight are for
+the mid case.
+
 ### 4.1 Robust choices
 
-Highest-case apogee ≤ ~1160 m (≥ 13 % under the ceiling) and rail exit
-≥ 24 m/s on a 1.8 m rail in the heavy case.
+| Motor | Case | Liftoff | Likely apogee | Highest apogee | Rail exit (heavy) | Peak thrust | Peak T/W | Max Mach |
+|---|---|---|---|---|---|---|---|---|
+| AeroTech J1299N | RMS-54/852 + adapter | 6.1 kg | 584 m | 681 m | 25.5 m/s | 1452 N | 24 | 0.43 |
+| AeroTech J1265T | 54 mm (case n/a) + adapter | 6.4 kg | 757 m | 877 m | 24.4 m/s | 1568 N | 25 | 0.51 |
+| AeroTech J1799N | RMS-54/1280 + adapter | 6.4 kg | 759 m | 879 m | 28.9 m/s | 2114 N | 34 | 0.53 |
+| AeroTech K1499N | **RMS-75/1280, no adapter** | 6.7 kg | 924 m | 1066 m | 25.9 m/s | 1720 N | 26 | 0.60 |
+| AeroTech K2050ST | RMS-54/1706 + adapter | 6.6 kg | 996 m | 1148 m | 29.3 m/s | 2168 N | 34 | 0.66 |
 
-| Motor | Case | Liftoff | Likely apogee | Highest apogee | Rail exit (heavy) | Peak thrust | Peak g |
-|---|---|---|---|---|---|---|---|
-| AeroTech J1299N | RMS-54/852 + adapter | 6.1 kg | ~585 m | 680 m | 25 m/s | 1468 N | ~24 g |
-| AeroTech J1265T | 54 mm + adapter | 6.4 kg | ~760 m | 880 m | 24 m/s | 1745 N | ~27 g |
-| AeroTech J1799N | RMS-54/1280 + adapter | 6.4 kg | ~760 m | 880 m | 29 m/s | 2966 N | ~46 g |
-| AeroTech K1499N | **RMS-75/1280, no adapter** | 6.7 kg | ~925 m | 1070 m | 26 m/s | 1720 N | ~26 g |
-| AeroTech K2050ST | RMS-54/1706 + adapter | 6.6 kg | ~1000 m | 1150 m | 29 m/s | 2086 N | ~32 g |
-| CTI 1408K2045-17A | Pro54-4G + adapter | 6.6 kg | ~1010 m | 1160 m | 30 m/s | 2231 N | ~34 g |
+**CTI 1408K2045-17A** (Pro54-4G + adapter) misses the robust line by 1 m
+(highest apogee 1161 m) and otherwise behaves like K2050ST (likely 1007 m,
+rail exit 29.8 m/s).
 
-All stay below ~Mach 0.6, so fin flutter is not a concern on these flights.
+All stay below Mach 0.7, so fin flutter is not a concern on these flights.
 All are far under the 10 kg limit.
 
 ### 4.2 Marginal
 
-| Motor | Problem |
+| Motor | Why |
 |---|---|
-| AeroTech J800T, CTI 1266J760-19A | Rail exit ~19 m/s (heavy, 1.8 m rail) |
-| AeroTech K695R | Rail exit ~17 m/s; highest apogee 1220 m |
-| AeroTech K1100T | Highest apogee 1308 m — 2 % under the ceiling |
+| CTI 1408K2045-17A | Highest apogee 1161 m (see above) |
+| AeroTech K1100T | Highest apogee 1308 m, rail exit 23.1 m/s |
+| AeroTech K550W | Highest apogee 1339 m, rail exit 16.0 m/s |
+| AeroTech K695R | Highest apogee 1220 m, rail exit 17.2 m/s |
+| AeroTech HP-K535W | Highest apogee 1194 m, rail exit 15.9 m/s |
+| AeroTech J800T, CTI 1266J760-19A | Rail exit ~18.7 m/s |
+| AeroTech J615ST-20A | Rail exit 17.5 m/s |
+| AeroTech J540R, K750ST, J550ST-14 | Rail exit 15–16 m/s |
 
 ### 4.3 Ruled out
 
-- **All L motors** — exceed 1340 m.
-- **Most common slow-burning J/K** (K535W, J415W, K550W, J350W, K456DM,
-  1412K530, …) — rail exit below 15 m/s on a 1.8 m rail.
+- **All L motors** — highest apogee 1970–3540 m.
+- **Most remaining K motors** — apogee over the ceiling (e.g. K1103X, K805G,
+  K780R, CTI 1633K940).
+- **Slow-burning J/K** — rail exit at or below 15 m/s (e.g. J415W, J460T, K456DM,
+  K400C, K513FJ, CTI 1412K530). The J350W flown on L2 is 38 mm and not in
+  the survey; it is far too weak for this airframe.
 
 ### 4.4 Rail length
 
-Rail exit, heavy case (m/s):
+Rail exit, heavy case, corrected (m/s):
 
 | Motor | 1.8 m | 2.4 m | 3.0 m |
 |---|---|---|---|
-| J1299N | 26.8 | 31.0 | 34.8 |
-| J1265T | 25.7 | 29.8 | 33.2 |
-| J1799N | 30.4 | 36.0 | 40.1 |
-| K1499N | 27.3 | 31.7 | 35.7 |
-| K2050ST | 30.8 | 35.9 | 40.5 |
-| 1408K2045 | 31.3 | 36.4 | 40.9 |
-| J800T | 19.6 | 22.5 | 25.2 |
-| K695R | 18.1 | 21.0 | 23.8 |
+| J1299N | 25.5 | 29.5 | 33.1 |
+| J1265T | 24.4 | 28.3 | 31.6 |
+| J1799N | 28.9 | 34.2 | 38.1 |
+| K1499N | 25.9 | 30.1 | 33.9 |
+| K2050ST | 29.3 | 34.1 | 38.4 |
+| 1408K2045 | 29.8 | 34.6 | 38.9 |
+| K1100T | 23.1 | 26.4 | 29.4 |
+| J800T | 18.6 | 21.4 | 24.0 |
+| K695R | 17.2 | 20.0 | 22.6 |
+| HP-K535W | 15.9 | 18.5 | 20.7 |
 
-(Uncorrected model values; subtract ~5 %.) The rocket is 1.74 m long, barely
-shorter than a 1.8 m rail. A longer rail is the cheapest safety gain — check
-what SMRK has.
+The rocket is 1.74 m long, barely shorter than a 1.8 m rail. A longer rail is
+the cheapest safety gain — check what SMRK has.
 
 ## 5. Open Risks
 
@@ -133,10 +161,11 @@ what SMRK has.
    rail-exit speed turns into the wind. This is the most likely failure mode
    and cannot be computed without the full OpenRocket model — **first ORK task**.
    Fast-burning motors (§4.1) are preferred for this reason.
-2. **Loads above the L3 flight.** J1799N, K2050ST and 1408K2045 exceed the
-   M1297W peak thrust (2049 N) and its ~21 g peak acceleration. Altimeter
-   sleds, battery retention and e-bay bulkheads must take 32–46 g. Gentlest
-   robust options: J1299N, K1499N, J1265T.
+2. **Loads above the L3 flight.** J1799N, K2050ST and 1408K2045 peak at
+   2.1–2.2 kN — slightly above the M1297W's 2049 N — and at a peak
+   thrust-to-weight of ~34 versus ~21 on the M flight. Altimeter sleds,
+   battery retention and e-bay bulkheads see more acceleration than on the
+   cert flight. Gentlest robust options: J1299N, J1265T, K1499N (24–26).
 3. **Motor adapter.** Every 54 mm option needs a 75→54 mm adapter that carries
    thrust and retains the motor. That part does not exist yet.
    K1499N is the only robust option with no adapter.
@@ -150,7 +179,7 @@ what SMRK has.
    is ~350 m drift. This fits the 500 m radius, with little slack above ~6 m/s
    wind. Use main at 150 m, not 300 m as in `L3-Design.md` §9.
 7. **Model limits.** Vertical, no wind, constant Cd, no rail friction. Mass
-   budget unverified. Weigh the built airframe and re-run.
+   budget unverified. Weigh the built airframe and re-run the script.
 
 ## 6. Suggested Progression
 
