@@ -4,70 +4,11 @@
 A part that does not fit still renders cleanly, so every mating dimension
 is measured from the STL rather than inferred from parameters.
 """
-import math, os, re, subprocess, sys, tempfile
+import os, subprocess, sys, tempfile
 
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+from scad_verify import REPO, render, measure, bore, volume, overshoot, safe
+
 SCAD = os.path.join(REPO, "PeregrineNoseCone.scad")
-
-
-def render(part, out):
-    """Render `part` to `out`. Returns the OpenSCAD-reported genus (int),
-    or None if the render statistics did not contain a Genus line."""
-    env = dict(os.environ, OPENSCADPATH=REPO)
-    r = subprocess.run(
-        [OPENSCAD, "--export-format", "asciistl", "-o", out, "-D", "Render_Part=%d" % part, SCAD],
-        capture_output=True, text=True, env=env)
-    err = r.stdout + r.stderr
-    if (r.returncode != 0 or "ERROR:" in err.upper()
-            or "Can't find include file" in err
-            or "Ignoring unknown module" in err
-            or not os.path.exists(out) or os.path.getsize(out) < 200):
-        raise RuntimeError("render of part %d failed:\n%s" % (part, err[-2000:]))
-    g = re.search(r"Genus:\s*(-?\d+)", err)
-    return int(g.group(1)) if g else None
-
-
-def _tris(stl):
-    vs = []
-    with open(stl) as fh:
-        for line in fh:
-            s = line.lstrip()
-            if s.startswith("vertex"):
-                vs.append(tuple(map(float, s.split()[1:4])))
-                if len(vs) == 3:
-                    yield vs
-                    vs = []
-
-
-def measure(stl):
-    zmin, zmax, dmax = 1e9, -1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            zmin = min(zmin, z); zmax = max(zmax, z)
-            dmax = max(dmax, 2 * math.hypot(x, y))
-    return {"zmin": zmin, "zmax": zmax, "height": zmax - zmin, "dmax": dmax}
-
-
-def bore(stl, zlo, zhi):
-    lo, hi = 1e9, 0.0
-    for tri in _tris(stl):
-        for x, y, z in tri:
-            if zlo <= z <= zhi:
-                d = 2 * math.hypot(x, y)
-                lo = min(lo, d); hi = max(hi, d)
-    if lo > hi:
-        raise RuntimeError("no geometry in Z band %.2f-%.2f of %s" % (zlo, zhi, stl))
-    return lo, hi
-
-
-def volume(stl):
-    v = 0.0
-    for (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) in _tris(stl):
-        v += (x1 * (y2 * z3 - y3 * z2)
-              - x2 * (y1 * z3 - y3 * z1)
-              + x3 * (y1 * z2 - y2 * z1)) / 6.0
-    return abs(v) / 1000.0
 
 
 NAMES = {0: "test ring", 1: "shoulder", 2: "bottom slice",
@@ -111,37 +52,68 @@ def checks(m):
         c += [("ring lower dia", a(5, "dmax"), 82.0, 0.2)]
     if 6 in m:
         c += [("ring upper dia", a(6, "dmax"), 52.0, 0.2)]
+    # 6th review (rocket60), finding 4: report the OVERAGE past 250mm
+    # instead of deriving "expected" from the measurement itself
+    # (min(height,250.0) is always exactly the measured height whenever it
+    # fits, so a healthy part printed a self-comparing "177.000 want
+    # 177.000" instead of the real constraint, height<=250). 0 for
+    # anything that fits, the actual excess in mm otherwise -- legible
+    # either way. overshoot() (scad_verify) instead of a bare
+    # max(0.0, ...): a nan height (a degenerate, zero-triangle mesh,
+    # measure()'s own convention) must fail this loudly, not silently
+    # compare as a 0mm overshoot -- see that helper's own docstring.
     for p in m:
-        c += [("part %d fits 250mm Z" % p, m[p]["height"], min(m[p]["height"], 250.0), 0.01)]
+        c += [("part %d fits 250mm Z" % p, overshoot(m[p]["height"], 250.0), 0.0, 0.01)]
 
     # --- interior checks: bounding box / OD alone cannot see these ---
 
     # 1. Genus per part. Catches an interior defect (e.g. a webbed
     # eyelet) that leaves every zmin/zmax/height/dmax check untouched.
+    # FIXED (defect 3a): scad_verify.measure() now always injects a
+    # "genus" key (defaulting to None when render() found no "Genus:"
+    # line), so the old `"genus" in m[p]` guard was always True regardless
+    # of whether a real value was found, and `abs(None - GENUS[p])` raised
+    # TypeError instead of failing cleanly. A missing genus is now a loud
+    # FAIL (actual=nan, never <= any tolerance) instead of a crash or a
+    # silently-skipped check -- same fix verify_rocket60.py already has.
     for p in m:
-        if "genus" in m[p] and p in GENUS:
-            c += [("part %d genus" % p, m[p]["genus"], GENUS[p], 0)]
+        if p in GENUS:
+            g = m[p].get("genus")
+            c += [("part %d genus" % p,
+                   g if g is not None else float("nan"), GENUS[p], 0)]
 
     # 2. Ring-in-flange clearance, MEASURED bore vs MEASURED ring OD
     # (never against the hardcoded 82.0/52.0 design constants, which is
     # exactly what let an interference fit pass the old gate).
+    #
+    # (9th review) bore() calls here used to sit bare: a moved ring
+    # flange or shoulder spigot (the band no longer straddles the real
+    # feature) raised RuntimeError straight out of checks(), aborting the
+    # WHOLE run with a traceback before a single row printed -- the exact
+    # "one bad row kills the whole report" class safe() (scad_verify.py)
+    # exists to fix, and the same commit gave verify_camnose.py's one
+    # bare bore() a try/except-and-count and every scanner in
+    # verify_rocket60.py the safe() wrapper. Mutation-tested: temporarily
+    # moving SHOULDER_SPIGOT_BAND off part 1's real geometry crashed this
+    # whole script with a traceback before this fix; now it is a loud,
+    # counted FAIL on just the checks that needed that measurement.
     if 2 in m and 5 in m:
         zlo, zhi = FLANGE_TOP_BAND[2]
-        flange_bore, _ = bore(a(2, "stl"), zlo, zhi)
+        flange_bore, _ = safe(bore, a(2, "stl"), zlo, zhi, nvals=2)
         c += [("ring5-in-flange clearance", flange_bore - a(5, "dmax"), 0.45, 0.15)]
     if 3 in m and 6 in m:
         zlo, zhi = FLANGE_TOP_BAND[3]
-        flange_bore, _ = bore(a(3, "stl"), zlo, zhi)
+        flange_bore, _ = safe(bore, a(3, "stl"), zlo, zhi, nvals=2)
         c += [("ring6-in-flange clearance", flange_bore - a(6, "dmax"), 0.45, 0.15)]
 
     # 3. Shoulder spigot: its own OD, and its measured clearance in the
     # bottom slice's actual coupler bore (not the Peregrine_Coupler_OD
     # constant it is only supposed to match).
     if 1 in m:
-        _, spigot_od = bore(a(1, "stl"), *SHOULDER_SPIGOT_BAND)
+        _, spigot_od = safe(bore, a(1, "stl"), *SHOULDER_SPIGOT_BAND, nvals=2)
         c += [("shoulder spigot dia", spigot_od, 96.7, 0.1)]
         if 2 in m:
-            bottom_bore, _ = bore(a(2, "stl"), *BOTTOM_SLICE_BASE_BAND)
+            bottom_bore, _ = safe(bore, a(2, "stl"), *BOTTOM_SLICE_BASE_BAND, nvals=2)
             c += [("spigot-in-bottom-bore clearance", bottom_bore - spigot_od, 0.4, 0.1)]
     return c
 
@@ -149,23 +121,40 @@ def checks(m):
 def main(argv):
     parts = [int(a) for a in argv[1:]] or [0, 1, 2, 3, 4, 5, 6]
     m, tmp = {}, tempfile.mkdtemp()
+    bad = 0
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
-            genus = render(p, out)
-        except RuntimeError as e:
+            genus = render(SCAD, p, out)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            # FIXED (defect 3c): consolidation gave render() a 900s
+            # subprocess timeout it never had before, but this handler
+            # only caught RuntimeError -- a slow render now raises
+            # subprocess.TimeoutExpired instead, and this module didn't
+            # even import subprocess to name it in an except clause. A
+            # slow render died on a raw traceback rather than this FAIL.
+            # `return 1` here (6th review, finding 4, rocket60) used to
+            # abort the WHOLE run -- any part after this one never
+            # rendered and checks() never printed at all, the identical
+            # "one bad row kills the whole report" class safe() exists to
+            # fix for individual checks. Now a counted FAIL for just this
+            # part; the loop and the report continue.
             print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
-        m[p] = measure(out)
+            bad += 1
+            continue
+        # genus passed straight to measure() (defect 3a) -- it already
+        # sets "genus": genus (None when render() found no "Genus:" line)
+        # and "stl": stl in its own return dict, so the two follow-up
+        # assignments this used to do here (`m[p]["stl"] = out`,
+        # `if genus is not None: m[p]["genus"] = genus`) were redundant at
+        # best and, for "genus", part of why a missing value was
+        # indistinguishable from a found one downstream.
+        m[p] = measure(out, genus)
         m[p]["vol"] = volume(out)
-        m[p]["stl"] = out
-        if genus is not None:
-            m[p]["genus"] = genus
         print("  part %d %-14s h=%7.2f  dia=%7.2f  z=%7.2f..%7.2f  %5.0f g PETG"
               % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
                  m[p]["zmin"], m[p]["zmax"], m[p]["vol"] * 1.27))
     print()
-    bad = 0
     for label, actual, expected, tol in checks(m):
         ok = abs(actual - expected) <= tol
         bad += not ok

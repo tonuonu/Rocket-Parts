@@ -156,6 +156,33 @@ function CRBBm_TopBoltCircle_d(LockRing_d=LockRing_d)=LockRing_d-Bolt4Inset*2;
 function CRBBm_LockRingDiameter()=LockRing_d;
 function CRBBm_LockRingBoltCircle_d()=LockRingBoltCircle_d;
 
+// Host-mount accessors (added for a caller that needs to bolt something
+// to CRBBm_Activator()'s own aft-most feature -- its nested EBay_TopPlate()
+// module, a flat ring at local Z=Servo_Z..Servo_Z+Boss_t (-19..-11 at
+// CRBBm_Activator()'s own defaults) carrying 2 AXIAL #10-24 threaded
+// bosses on a Outer_BC_d bolt circle. Servo_Z/Boss_t/ServoPos_a/Outer_BC_d
+// are all LOCAL to CRBBm_Activator() (not reachable from outside it, same
+// restriction CRBBm_BottomBoltCircle_d() etc. above exist to work around)
+// -- restated here from that module's own source, not re-measured by eye:
+// BC_d mirrors EBay_TopPlate()'s own Outer_BC_d formula exactly;
+// BossAz mirrors ServoPos_a's own formula (using the real top-level
+// StopOffset_a, not a restated copy of IT too) plus EBay_TopPlate()'s own
+// call-site rotation (ServoPos_a+77) plus 90 -- BoltBoss() itself places
+// each boss along local +Y (`translate([0,Outer_BC_d/2,0])`), i.e. ring-
+// local 90/270, not 0/180, before the `rotate([0,0,360/nOuterBolts*j])`
+// loop (j=0,1) turns that Y-anchored point to its final 2 positions.
+// Confirmed against the real rendered mesh, not just this arithmetic
+// (Rocket60.scad's Render_Part=15, z=-19 aft face: real material centred
+// at BC_r=21.775, world az 83/263 with zero additional clocking, matching
+// this function to within the render's own sampling resolution).
+function CRBBm_EBayTopPlate_BC_d(OD=LOC54Coupler_OD, MotorTube_OD=LOC29Body_OD)
+    = MotorTube_OD+(OD-MotorTube_OD)/2;
+function CRBBm_EBayTopPlate_BossAz(StopOffset_a=StopOffset_a)
+    = 360/9*3-17+StopOffset_a+77+90;
+function CRBBm_EBayTopPlate_Z0()=-19;   // Servo_Z, restated
+function CRBBm_EBayTopPlate_Z1()=-11;   // Servo_Z+Boss_t, restated
+function CRBBm_EBayTopPlate_Thread_d()=0.190*25.4;   // #10-24 major dia
+
 module ShowCableReleaseBBMicro(GuidePoint=false){
 	Point_Len=GuidePoint? GuidePoint_Len:0;
 	CT_Len=20;
@@ -1193,10 +1220,34 @@ module CRBBm_ServoMount38(OD=ULine38Body_ID-IDXtra){
 // translate([0,0,22]) ShowCableReleaseBBMicro();
 
 
-module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
+// Spring_OD/Spring_ID (11th review, Rocket 60 fix 4): added as real
+// parameters, mirroring CableReleaseBBMini.scad's own
+// CRBBm_CenteringRingMount() signature (which Rocket6551.scad calls with
+// Spring_OD=SE_Spring_CS4323_OD()) -- THIS file's copy used to hardcode
+// SE_Spring3670_OD()/_ID() with no way to override them at all (confirmed
+// this session: rendered and inspected, the spring pocket was sized for
+// a different, smaller spring than any caller in this repo that actually
+// wants BBMicro's own family). Defaults are unchanged (still
+// SE_Spring3670_*()) so this is additive-only -- no existing caller
+// (there are none in this repo yet) sees a behaviour change.
+// Spring_Clear (Rocket 60 coordinator fix 1, additive-only -- default 0
+// changes NOTHING for any existing caller of this module, including
+// this repo's other Spring_OD/Spring_ID callers that never pass it):
+// real diametral clearance applied where the spring physically meets
+// this part, not folded into the caller's own Spring_OD/Spring_ID. The
+// pocket the spring's OD must ENTER grows by +Spring_Clear (a genuine
+// entry clearance, not the previous tangent fit -- confirmed by mesh
+// measurement that a zero-clearance pocket does not reliably clear even
+// its OWN nominal spring, let alone one 0.15mm larger); the shoulder
+// bore under the spring's own ID shrinks by -Spring_Clear so the coil's
+// inner edge lands on solid support material with real margin, not
+// tangent to the support's own inner rim.
+module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6,
+			Spring_OD=SE_Spring3670_OD(), Spring_ID=SE_Spring3670_ID(),
+			Spring_Clear=0){
 	Rope_d=3;
-	
-	
+
+
 	Spring_Z=3.5;
 	Thickness=6;
 	Wall_t=1.2;
@@ -1204,8 +1255,6 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
 	myFn=floor(OD)*3;
 	CRBBm_Bolt_a=-12+30;
 	Rope_Y=OD/2-Rope_d/2-Wall_t-0.5;
-	Spring_OD=SE_Spring3670_OD();
-	Spring_ID=SE_Spring3670_ID();
 	Boss_t=2;
 	
 	difference(){
@@ -1213,9 +1262,12 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
 			// Body centering
 			Tube(OD=OD, ID=OD-Wall_t*2, Len=Thickness, myfn=$preview? 90:myFn);
 			
-			// Spring
-			Tube(OD=Spring_OD+Wall_t*2, ID=Spring_OD, Len=Thickness, myfn=$preview? 90:myFn);
-			Tube(OD=Spring_OD+Wall_t*2, ID=Spring_ID, Len=Spring_Z, myfn=$preview? 90:myFn);
+			// Spring -- OD grown by Spring_Clear on both the cavity's own
+			// inner face (matches the enlarged cut below) and the outer
+			// face (so Wall_t survives the enlarged cut instead of
+			// thinning by Spring_Clear/2)
+			Tube(OD=Spring_OD+Spring_Clear+Wall_t*2, ID=Spring_OD+Spring_Clear, Len=Thickness, myfn=$preview? 90:myFn);
+			Tube(OD=Spring_OD+Spring_Clear+Wall_t*2, ID=Spring_ID-Spring_Clear, Len=Spring_Z, myfn=$preview? 90:myFn);
 			
 			// Lock Pin Guide Hole
 			Tube(OD=LockPin_d+1+Wall_t*2, ID=LockPin_d+1, Len=Spring_Z, myfn=$preview? 90:myFn);
@@ -1240,10 +1292,13 @@ module CRBBm_CenteringRingMount(OD=LOC54Coupler_OD,nRopes=6){
 			} // hull
 		}
 	
-		// Spring
+		// Spring -- entry bore grown by +Spring_Clear (real clearance to
+		// enter), shoulder bore shrunk by -Spring_Clear (real margin to
+		// land on solid support, not the coil's own inner rim tangent to
+		// the hole edge)
 		//difference(){
-			translate([0,0,Spring_Z]) cylinder(d=Spring_OD, h=Thickness);
-			translate([0,0,Boss_t]) cylinder(d=Spring_ID, h=Thickness);
+			translate([0,0,Spring_Z]) cylinder(d=Spring_OD+Spring_Clear, h=Thickness);
+			translate([0,0,Boss_t]) cylinder(d=Spring_ID-Spring_Clear, h=Thickness);
 		//} // difference
 				
 		// Bolts to CRBB_TopRetainer
