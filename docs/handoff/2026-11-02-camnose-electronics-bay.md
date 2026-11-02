@@ -1,6 +1,6 @@
 # Handoff: Peregrine camera nosecone — electronics bay (2026-11-02)
 
-Status: **design conversation in progress, nothing built yet.** This file is
+Original status: **design conversation in progress, nothing built yet.** See section 10 for the later CAD implementation. This file is
 the complete state so another assistant can continue. Statements marked
 **(owner)** are the owner's own requirements. Statements marked **(guess)**
 are proposals the owner has NOT confirmed yet.
@@ -155,3 +155,34 @@ https://www.schurter.com/en/datasheet/typ_SWA1__Frontpl_.pdf
 `NoseCone.scad` already contains shock-cord ring / e-bay modules with a
 small battery holder (`Batt_X=25`, around lines 240 and 447) — worth
 reading for the repo's own style before drawing the bay.
+
+## 10. Continuation: owner decisions and implemented prototype
+
+The owner prioritised assembly and charging; making every joint detachable
+was optional. Cells will be in series, but the owner will solder the existing
+tabs and decide the wiring. After viewing the bay, the owner suggested
+combining the adapter with the shell if servicing still worked. **The default
+upper slice now includes the camera flange in one print** and opens at the
+middle-to-top joint with three side screws. This CAD change is not permission
+to merge a GitHub PR.
+
+`PeregrineCamBay.scad`, included by the camera source, implements:
+
+- A 4 mm carrier floor at Z=270, on a corbel-supported middle-slice seat.
+  Three scallops pass the joint bosses, retaining at least 3 mm nominal
+  seat/seal land below them.
+- Upright cells, nominal wrapped Ø18.5 × 65 body, with tab reliefs and
+  insulated annular lower supports / removable upper keeper.
+- Converter tray floor Z=347–350, component envelope Z=350–363, two flush
+  attachment screws, cable-tie tunnels and a shallow adhesive bath.
+- Integral camera flange Z=383.23–389.23, original insert pattern and
+  Ø29.56 harness bore. No adapter spigot or glue joint in the default top;
+  part 5 is legacy only.
+- Schurter keyed cutout and flat nut-bearing pad, plus three unassigned
+  mechanical M3 charging-screw seats; owner supplies the electrical work.
+
+`STL Files/PeregrineCamNose/README.md` is the current assembly guide. Parts
+3/4 replace the old middle/top; 6/7 are new. The top prints flange-down.
+Shoulder and bottom are unchanged. Actual cell/tab fit, printed tolerances,
+sealing, thermal and flight loads remain unverified. The barrier is not
+pressure-rated. No hardware operation or GitHub merge is part of this work.

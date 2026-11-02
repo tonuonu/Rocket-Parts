@@ -1,102 +1,156 @@
-# PeregrineCamNose — printable meshes
+# Peregrine camera nosecone and electronics bay
 
-Generated from `PeregrineCamNose.scad` with OpenSCAD 2026.07.09, full render,
-binary STL. Verify first with `python3 tools/verify_camnose.py`.
+Two upright tabbed 18650 cells sit below a 47 × 26 × 13 mm DC-DC converter.
+The upper shell and camera adapter are **one printed part**. Three side
+screws release that upper assembly for servicing; the camera remains
+separately bolted to its flange. The lower slice joints stay glued.
 
-**The camera does not live in these parts any more.** The generated cone is
-truncated at OD 60 and the user's own CAD nosecone -- a straight FreeCAD
-conversion of their own design, carrying the camera, the lens bore and the
-sunken screw heads exactly as drawn -- sits on top. That CAD nosecone's own
-mesh is not part of this branch (it lives on `feature/rocket60`); this repo
-only defines the adapter it bolts to (see `CN_Adapter()` in the .scad). The
-blunt spherical cap, the lens hole, the through-shell camera mounts and the
-four loose spacers that an earlier version of this part used instead are all
-gone.
+This is a CAD-verified prototype. Printed fit, inserts, mechanical loads,
+temperatures and ejection protection have not been bench-tested.
 
-| File | Part | Height | Max OD | Notes |
-|---|---|---|---|---|
-| `TestRing.stl` | 0 | 15.00 | 101.50 | Print FIRST. Gauges the tube fit; not glued into the assembly. Unchanged this pass. |
-| `Shoulder.stl` | 1 | 115.00 | 98.70 | **Changed** — spigot 96.90→96.70 (`Glue_Gap` default corrected from 0.2, which matched an adhesive the print notes say not to use, to 0.4). Bulkhead + strap slots. |
-| `SliceBottom.stl` | 2 | 154.15 | 101.50 | Skirt sits on the tube. Gluing flange on top. Unchanged this pass. |
-| `SliceMiddle.stl` | 3 | 154.13 | 96.11 | **Changed** — clip plane 147.14→147.15 (`Cut1_Z` is now derived from `Cut1_d` instead of a separate hardcoded literal); geometrically the same part otherwise. |
-| `SliceTop.stl` | 4 | 88.95 | 77.62 | Truncated at OD 60, all camera features removed. Unchanged this pass. |
-| `Adapter.stl` | 5 | 21.00 | 60.00 | **Changed** — the three flange holes are now Ø4.0 for ruthex M3×5.7 heat-set inserts (were Ø3.4 M3 clearance holes). Spigot tapered to track the shell bore; flange 6.0 mm, enough for the 5.7 mm insert. |
+![Bay cutaway: blue cells, green converter, orange carrier](BayCutaway.png)
 
-Tallest piece 154 mm, inside the 250 mm envelope.
+The camera itself is the owner's existing CAD design, not the grey flange
+in this view. Its mesh is on `feature/rocket60` at
+`STL Files/Rocket60/NoseCone.stl`.
 
-## Already printed a slice? It is still good.
+## Print these parts
 
-From the graft pass (the CAD-nosecone truncation, not this fix pass):
-`SliceBottom` and `SliceMiddle` were byte-different from the export before
-that graft but **geometrically identical** — verified by comparing the
-meshes, not by assuming, at the then-current cuts of 147.14 and 294.29:
+| Part | Mesh | Height | Bed orientation |
+|---|---|---:|---|
+| 0 | `TestRing.stl` | 15 mm | Flat; optional tube-fit check |
+| 1 | `Shoulder.stl` | 115 mm | Bulkhead down |
+| 2 | `SliceBottom.stl` | 154.15 mm | Wide end down |
+| 3 | `SliceMiddle.stl` | 154.13 mm | Wide end down; includes floor seat and service-joint bosses |
+| 4 | `SliceTop.stl` | 94.95 mm | **Camera flange down**; rotate 180° about X or Y |
+| 6 | `BatteryCarrier.stl` | 77 mm | Solid floor down |
+| 7 | `ConverterTray.stl` | 15.4 mm | Bath opening down; rotate 180°; support the bath and keeper overhangs |
 
+**Do not print or install `Adapter.stl` with this bay top.** Part 5 is kept
+only for the previous separate-adapter design (`Bay_Enabled=false`). The
+new top has an integral flange, with no spigot or adapter-to-shell glue joint.
+
+Repository meshes retain their assembly coordinates: orient, then drop to
+bed. The downloadable print pack is already oriented at Z=0. Parts 1 and 2
+keep their previous shape. **Reprint parts 3 and 4** for this bay. Part 8
+is a cutaway view, not a printable part.
+
+Use PETG or ASA as before. Start with 0.2 mm layers and at least four
+perimeters; use local solid-infill modifiers for the floor, flange, posts
+and insert seats. Inspect the slicer's paths. Support the tray bath and
+keeper overhangs; check whether the top shell's internal panel pads need
+local support. Clear all tab reliefs and cable-tie tunnels after printing.
+
+## Hardware
+
+| Item | Quantity | Use |
+|---|---:|---|
+| ruthex RX-M3×5.7 inserts, Ø4.0 pockets | 11 | 3 camera, 3 service joint, 3 floor, 2 carrier posts |
+| M3×8 button-head screws | 6 | 3 shell side screws, 3 carrier-floor screws |
+| M3×8 **90° countersunk** screws, head ≤6.0 mm | 2 | Converter tray; heads flush |
+| Camera's existing M3 screws | 3 | Match actual camera base; ≤5.7 mm insert engagement |
+| Schurter 0033.4513 + 0098.0043 nut | 1 each | Switch; nut may be a separate order |
+| M3 countersunk screws, nuts and terminations | As wired | Three unassigned charging-contact seats |
+| 2.5 mm cable ties | 2 | Converter restraint |
+| Insulating liners/end pads, sealant, optional epoxy | As fitted | Insulation, floor seal, optional converter bond |
+
+The owner supplies series wiring, charging, polarity and tab connections.
+There are no battery spring contacts. The three exterior screw seats are
+mechanical provisions, not a circuit or charger specification; unused
+seats can be closed with insulating plugs.
+
+## Check before the large prints
+
+- Cell envelope: **18.5 mm wrapped diameter × 65 mm body**, excluding tabs.
+  Cup ID 19.5 mm; 2 mm lower tab relief, at least 5 mm above the body,
+  and 6 mm-wide exits. Measure actual cells and tabs; adjust `Bay_Cell_D`
+  and `Bay_Cell_Body_L` if needed, then regenerate and recheck the model.
+- The keeper has 0.6 mm axial clearance, taken up with an insulating
+  annular pad. Ø14.5 mm centre openings and split exits leave terminals
+  accessible. Bear on the insulated rim, not solder tabs or the vent.
+  Do not fill these reliefs with epoxy.
+- Converter envelope: 47 × 26 × 13 mm; bath footprint 47.8 × 26.8 mm.
+  Support surface Z=350. Allow at most about 1 mm adhesive underneath
+  without rechecking. Real terminals, wiring and cooling still need a fit check.
+- Switch: nominal Ø12.7 hole plus R1.2 key relief, overall keyed height
+  13.6 mm, in a 6 mm flat panel. Finish to the actual part; drawing range
+  is 12.6–12.7 mm. A conservative Ø16 × 23.5 mm rear envelope was checked.
+  The flat back supports the nut. Datasheets are in `docs/datasheets/`.
+
+Print the carrier and tray first to check the real cells, tabs, pads and
+converter. The nominal values are an envelope, not measurements of the
+owner's cells. Tray ears have relatively little shell clearance: dry-fit
+the complete assembly in the actual top before bonding.
+
+## Assembly and service
+
+1. Fit all inserts with the parts empty; let them cool before adding
+   electronics. The three service inserts go into the middle slice from
+   outside with the top removed, not into the thin top-shell screw holes.
+2. Dry-fit the carrier through the middle slice's upper opening, aligning
+   its three scallops with the joint bosses. The floor rests on the seat
+   at Z=270. Its screws are offset 60° from the joint screws. A long driver
+   reaches the floor screws from above.
+3. Seal the full floor-to-seat perimeter, including beneath the scallops
+   and around the floor fasteners. Nominal seal land is at least 3 mm at
+   the scallops. Use a thin bedding layer, keeping the designed floor
+   height. Epoxy makes this floor permanent; a suitable removable seal
+   preserves removal. Seat insert pockets are blind. No wire hole passes
+   through the barrier; all current wiring stays above it.
+4. Install insulated cells, route lower tabs through the reliefs and fit
+   the upper keeper/tray with two flush countersunk M3×8 screws. Confirm
+   retention without loading tabs. The keeper provides axial retention;
+   potting cells is unnecessary. Leave vents and terminals unobstructed.
+5. Secure the converter using both ties through the 3.2 × 1.2 mm tunnels.
+   Optional epoxy can supplement restraint where the real converter
+   permits it. Keep solder joints, hot components and screw paths clear.
+6. Fit the switch and desired charging hardware. Provide strain relief
+   and service slack or a disconnect so the top can lift clear. Switch
+   is on +Y, contact seats on −Y; no rail-button clocking is assumed.
+7. Bolt the camera to the integral flange. Its Ø37.96 bolt circle remains
+   **52.2°, −52.2°, 180°**, preserving the original camera orientation.
+   The harness passes through the Ø29.56 central bore.
+8. Attach the top with three M3×8 side screws. **Do not glue this service
+   joint.** After trial assembly, epoxy shoulder-to-bottom and
+   bottom-to-middle as before. The shoulder's 98.7 mm outer body remains
+   removable from the body tube.
+
+For normal service, remove the three side screws and lift the top with
+its camera attached. Remove two tray screws for cell access. The entire
+carrier can also pass through the opening if its floor seal is removable.
+The integral flange does not obstruct these operations.
+
+The supported, sealed 4 mm floor is a **proposed debris/gas barrier**, not
+an established pressure vessel or validated blast shield. Charge location,
+size, temperature and printed-part response remain unverified. The selected
+Schurter switch is rated 6.3 A/250 VAC and 300 no-load cycles in its datasheet;
+no DC rating is given. Retaining it does not establish a DC rating.
+
+## Verification and regeneration
+
+```sh
+python3 tools/verify_camnose.py --output-dir /tmp/camnose-meshes
+python3 -m venv /tmp/camnose-venv
+/tmp/camnose-venv/bin/pip install -r tools/requirements-camnose.txt
+/tmp/camnose-venv/bin/python tools/verify_camnose_bay.py /tmp/camnose-meshes
 ```
-volume    106.229763 -> 106.229763 cc   (delta 1.7e-13)
-z span    unchanged
-max radius difference over the whole profile:  0.000000 mm
+
+The first check renders meshes and measures dimensions, topology, overlaps
+and camera holes. The second checks connected/watertight solids, component,
+tab and hardware intersections, blind insert seats, a continuous carrier
+insertion envelope and shell/switch removal at 1 mm intervals. It must reject
+an oversized converter and an unscalloped floor. `verification.json` records
+the latest default-model results. Tests do not simulate print tolerances,
+strength, heat, leaks or flexible wiring.
+
+Sources: `PeregrineCamNose.scad`, `PeregrineCamBay.scad` and repository
+libraries. Keep `Render_Part=0` committed. Export an individual part with:
+
+```sh
+OPENSCADPATH="$PWD" /Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD \
+  --render --export-format binstl -o part.stl -D Render_Part=6 PeregrineCamNose.scad
 ```
 
-The 10 and 2 missing facets are CGAL retriangulating the flat cut face. Both
-cuts sat far below the truncation at 383.23, so nothing in the retained
-ogive moved. `Cut_Z` never depended on `Tip_R` either.
-
-This fix pass moves `SliceMiddle`'s own clip plane from 147.14 to 147.15
-(`Cut1_Z` is now derived instead of a separate hardcoded literal -- see the
-table above) -- 0.005mm, far below print resolution. A slice printed from
-the previous export is still fine to use.
-
-## Adapter spigot is now tapered
-
-The shell's bore at Cut3 is a station on an ogive, not a cylinder -- it
-widens measurably over the 15mm the adapter's spigot enters. A straight
-spigot sized to the tight end (the rim) only actually engaged the bore for
-about the first 1mm; the rest of the 15mm was a widening, unglued void up
-to several mm across at the deep end. The spigot is now turned to the same
-taper as the bore (see `Ogive_OD_At_Z()` in the .scad), so the diametral
-epoxy gap stays close to `Adapter_Epoxy_Gap` (0.4) along the whole
-engagement instead of only at the rim.
-
-## Assembly
-
-1. Print the test ring, confirm it against the tube before anything else.
-2. Glue the shoulder spigot into the bottom slice bore.
-3. Glue the bottom slice flange into the middle slice, hold until set.
-4. Glue the middle slice flange into the top slice, hold until set.
-5. Melt three ruthex M3×5.7 heat-set inserts into the adapter flange from its
-   top (mating) face, flush. Bolt the CAD nosecone onto the flange with three
-   M3 screws down through its sunken-head holes into those inserts — Ø37.96
-   bolt circle at 52.2°, −52.2°, 180°. The angles are deliberately not 120°
-   apart; that asymmetry keys the camera's clocking.
-6. Epoxy the adapter's spigot into the truncated shell bore (Cut3) and hold
-   until set. This joint is always epoxy, regardless of `Glue_Gap` (it
-   carries the whole CAD nosecone + camera in flight) — unlike steps 2-4,
-   which follow whatever `Glue_Gap` is set to, and unlike the shoulder
-   (step 1's spigot), which is slip-fit and never glued because it comes
-   apart every flight.
-
-Adhesive gap for steps 2-4 is `Glue_Gap` in the .scad: 0.4 (default) for gel
-CA or epoxy, 0.2 for thin CA on a small part. The shoulder body deliberately
-does not use it — that joint is slip-fit because it comes apart every
-flight.
-
-**Print the adapter flange-down**, rotated 180° from how it's modeled
-(spigot up instead of hanging below). As modeled, the flange's underside is
-a horizontal shelf bridging the open spigot hollow, carrying the 3 screw
-holes — unsupported, it droops or needs support material on the exact face
-the screw heads bear on. Rotated 180°, every overhang is self-supporting.
-
-## Expect a slope change at the joint
-
-The Peregrine ogive arrives at the cut at about 6.5° half-angle; the CAD cone
-leaves its base at about 0.4°, rising to ~3° by 25 mm up. About **6° of kink**,
-visible as a slight shoulder. That is inherent to grafting two cones designed
-for different base diameters, not a defect — and it is the cost of using the
-real camera housing instead of a generated approximation of one.
-
-## Regenerating
-
-```
-OPENSCADPATH=<repo> /Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD \
-  --render --export-format binstl -o out.stl -D Render_Part=N PeregrineCamNose.scad
-```
+Use full render (F6), never the library's F5 cutaway. Part 8 is an inspection
+view only. The original camera-to-ogive slope change remains; the camera
+housing itself is unchanged.
