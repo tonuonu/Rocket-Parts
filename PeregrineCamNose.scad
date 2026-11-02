@@ -76,6 +76,7 @@ Cut2_d = 77.66;   // -> Z = 294.29
 // bottom slice's own cut plane without moving this one, silently breaking
 // the middle slice's clip.
 Cut1_Z = NC_Base_L + Ogive_Cut_Z(Ogive_L=NC_Length, R=Peregrine_Body_OD/2, End_R=Cut1_d/2);   // -> 147.15
+Cut2_Z = NC_Base_L + Ogive_Cut_Z(Ogive_L=NC_Length, R=Peregrine_Body_OD/2, End_R=Cut2_d/2);
 
 // Third cut: where the generated ogive hands off to the CAD nosecone,
 // at the station where this ogive's OD is 60.00 (the CAD cone's own base
@@ -117,6 +118,9 @@ function Ogive_OD_At_Z(Z, Wall=0) =
 // ============================================
 // ADAPTER -- joins the truncated shell to the CAD nosecone
 // ============================================
+// Bay_Enabled uses these flange dimensions directly in the top slice.
+// The separate spigot/adapter (part 5) is retained only for the older,
+// non-bay shell. Do not add it to the new integrated top.
 // The CAD nosecone's interior is filled by the camera assembly, flush
 // with its base plane, so nothing plugs into its bore -- it attaches
 // only by three M3 screws. The screws come down through the CAD
@@ -199,6 +203,12 @@ Shoulder_Spigot_L  = 15;
 Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
 
+// The bay is local to this camera variant; do not change NoseCone.scad's
+// shared gluing flanges for all the other rockets. False reproduces the
+// previous shell for comparison or for an already-glued nosecone.
+Bay_Enabled = true;
+include<PeregrineCamBay.scad>
+
 // ============================================
 // RENDER SELECTION -- change this value!
 // ============================================
@@ -206,8 +216,11 @@ Shoulder_Bulk_T    = 4;
 // 1 = Shoulder + bulkhead + parachute anchor
 // 2 = Bottom slice
 // 3 = Middle slice
-// 4 = Top slice (truncated at OD 60 -- no camera features)
-// 5 = Adapter (flange + spigot, joins the shell to the CAD nosecone)
+// 4 = Top slice + integral camera flange (removable service shell)
+// 5 = Legacy separate adapter (only for Bay_Enabled=false)
+// 6 = Battery carrier / sealed floor (print base-down, translate to bed)
+// 7 = DC-DC tray / battery keeper (print upside-down, supports under rim)
+// 8 = Bay cutaway assembly, for inspection only (not a printable part)
 Render_Part = 0;
 
 // ============================================
@@ -222,7 +235,7 @@ module CN_Cone(Cut_d=0, Lower=false){
 
 module CN_Slice_Bottom(){ CN_Cone(Cut_d=Cut1_d, Lower=true); }
 
-module CN_Slice_Middle(){
+module CN_Slice_Middle_Shell(){
     // Everything below cut 2 (with its gluing flange), clipped above cut 1.
     intersection(){
         CN_Cone(Cut_d=Cut2_d, Lower=true);
@@ -231,7 +244,12 @@ module CN_Slice_Middle(){
     } // intersection
 } // CN_Slice_Middle
 
-module CN_Slice_Top(){
+module CN_Slice_Middle(){
+    if (Bay_Enabled) CN_Bay_Middle();
+    else CN_Slice_Middle_Shell();
+}
+
+module CN_Slice_Top_Shell(){
     // Plain frustum shell, cut 2 to cut 3 (OD 60) -- no lens hole, no
     // camera mounts. The camera now lives entirely in the CAD nosecone
     // that glues onto this shell's open top via CN_Adapter().
@@ -240,6 +258,11 @@ module CN_Slice_Top(){
         cylinder(d=Peregrine_Body_OD+2, h=Cut3_Z, $fn=$preview? 90:360);
     } // intersection
 } // CN_Slice_Top
+
+module CN_Slice_Top(){
+    if (Bay_Enabled) CN_Bay_Top();
+    else CN_Slice_Top_Shell();
+}
 
 module CN_Adapter(){
     // Flange butts the CAD nosecone's base and carries its 3 mounting
@@ -311,6 +334,9 @@ if (Render_Part == 2) CN_Slice_Bottom();
 if (Render_Part == 3) CN_Slice_Middle();
 if (Render_Part == 4) CN_Slice_Top();
 if (Render_Part == 5) CN_Adapter();
+if (Render_Part == 6) CN_Battery_Carrier();
+if (Render_Part == 7) CN_Converter_Tray();
+if (Render_Part == 8) CN_Bay_Assembly();
 
 // ============================================
 // PRINT NOTES
@@ -321,20 +347,25 @@ if (Render_Part == 5) CN_Adapter();
 //   1  Shoulder        115mm
 //   2  Bottom slice    147mm
 //   3  Middle slice    147mm
-//   4  Top slice        89mm   -- truncated at OD 60, no camera features
-//   5  Adapter          21mm   -- flange + spigot, joins shell to the CAD nosecone
+//   4  Bay top          95mm   -- integral camera flange, print flange-down
+//   5  Legacy adapter   21mm   -- not used with the bay top
+//   6  Battery carrier  77mm   -- print floor-down
+//   7  Converter tray   15mm   -- includes upper battery keeper
 //
 // Assembly, bottom to top:
 //   1. Print part 0. Check it sits flush on the tube and accepts the spigot.
 //   2. Glue the shoulder spigot into the bottom slice bore.
 //   3. Glue the bottom slice flange into the middle slice, hold until set.
-//   4. Glue the middle slice flange into the top slice, hold until set.
-//   5. Melt three ruthex M3x5.7 inserts into the adapter flange from its
+//   4. With Bay_Enabled, fit the carrier and seal its seat, then fasten the
+//      top slice with three M3x8 screws. Do NOT glue that service joint.
+//      See STL Files/PeregrineCamNose/README.md for the bay build sequence.
+//      With Bay_Enabled=false only, glue the middle-to-top flange.
+//   5. Melt three ruthex M3x5.7 inserts into the camera flange from its
 //      top (mating) face, flush. Bolt the CAD nosecone (camera already
 //      installed in it) onto the flange with three M3 screws down through
 //      its sunken-head holes into those inserts.
-//   6. Epoxy the adapter's spigot into the top slice's open bore (Cut3)
-//      and hold until set. This joint is permanent, unlike the shoulder.
+//   6. With Bay_Enabled there is no separate adapter or glue joint here.
+//      For the legacy Bay_Enabled=false shell only, epoxy part 5 into it.
 //
 // Parts 3 and 4 export at Z=147.15 and 294.29 rather than 0 -- drop to
 // plate in the slicer.
