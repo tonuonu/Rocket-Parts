@@ -5,8 +5,33 @@ The upper shell and camera adapter are **one printed part**. Three side
 screws release that upper assembly for servicing; the camera remains
 separately bolted to its flange. The lower slice joints stay glued.
 
-This is a CAD-verified prototype. Printed fit, inserts, mechanical loads,
-temperatures and ejection protection have not been bench-tested.
+This is a CAD-verified prototype, with the initial 04/06 trial fit reported
+below. Full assembly fit, insert strength, mechanical loads, temperatures
+and ejection protection have not been bench-tested.
+
+## How 04 and 06 fit together
+
+**06 does not go completely inside 04.** Its bottom is supposed to remain
+**24.28 mm below the wide lower edge of 04**. The carrier floor sits in
+**03**, which surrounds that lower portion. Insert 06 posts-first through
+04's wide end for a trial fit; do not force the carrier floor up to the
+04 rim. The holder posts must face the shell sides away from the switch
+and charging pads. Part 07 attaches to the tops of the posts.
+
+The owner printed 04/06/07 and reported approximately 24 mm remaining
+outside, which matches this arrangement. That observation does not require
+those parts to be reprinted. Print 03 next for the actual carrier seat.
+
+![Centre section showing the carrier floor 24.28 mm below part 04](AssemblyPosition.png)
+
+## Recovery ribbon
+
+The recovery strap goes through **01-Shoulder**, not through the electronics
+barrier. Its two existing rounded slots are **16 × 4 mm**, suitable as a
+nominal opening for the owner's approximately 15 mm-wide ribbon. The
+exported STL measures 16.000 × 3.998 mm and clears a solid 15 × 3 mm test
+gauge; actual ribbon thickness and printed clearance still need checking.
+No slot or mesh change was needed for the reported width.
 
 ![Bay cutaway: blue cells, green converter, orange carrier](BayCutaway.png)
 

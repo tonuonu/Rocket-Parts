@@ -186,3 +186,16 @@ to merge a GitHub PR.
 Shoulder and bottom are unchanged. Actual cell/tab fit, printed tolerances,
 sealing, thermal and flight loads remain unverified. The barrier is not
 pressure-rated. No hardware operation or GitHub merge is part of this work.
+
+### First printed parts and clarified fit
+
+Owner printed 04, 06 and 07. When trying 06 inside 04, its bottom remained
+roughly 24 mm outside. This is the intended placement: floor bottom Z=270,
+04 lower edge Z=294.2803. The floor mounts to the seat in 03. The holder
+does not disappear entirely into 04; those printed parts need no revision
+for this observation. `AssemblyPosition.png` in the print folder illustrates
+the relationship. Full physical assembly with 03 is not yet reported.
+
+Owner measured the recovery ribbon at about 15 mm wide. The existing
+01 shoulder slots already measure 16.000 × 3.998 mm in the exported mesh;
+a modeled 15 × 3 mm solid gauge clears both. No geometry change was made.
