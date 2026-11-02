@@ -119,14 +119,15 @@ function Ogive_OD_At_Z(Z, Wall=0) =
 // ============================================
 // The CAD nosecone's interior is filled by the camera assembly, flush
 // with its base plane, so nothing plugs into its bore -- it attaches
-// only by three M3 screws into heat-set inserts in the camera's own
-// bottom face. Bolt circle and hole spec measured from that mesh, not
-// assumed.
-CAD_Bolt_R   = 18.98;                  // bolt circle radius, Ø37.96
-CAD_Bolt_A   = [52.2, -52.2, 180.0];   // NOT 120 deg apart -- keys the camera's clocking, preserve exactly
-M3_Clear     = 3.4;                    // clearance hole dia, no counterbore
-M3_Screw_L   = 10;                     // M3x10...
-Insert_Depth = 5.7;                    // ...into ruthex RX-M3x5.7 heat-set inserts
+// only by three M3 screws. The screws come down through the CAD
+// nosecone's sunken-head holes into heat-set inserts in THIS flange.
+// (An earlier version assumed the inserts were in the camera's bottom
+// face and gave the flange plain M3 clearance holes; that was wrong.)
+// Bolt circle measured from the CAD mesh, not assumed.
+CAD_Bolt_R    = 18.98;                  // bolt circle radius, Ø37.96
+CAD_Bolt_A    = [52.2, -52.2, 180.0];   // NOT 120 deg apart -- keys the camera's clocking, preserve exactly
+Insert_Hole_D = 4.0;                    // ruthex RX-M3x5.7 heat-set insert, maker's recommended hole dia
+Insert_Depth  = 5.7;                    // insert length; must fit inside Adapter_Flange_T
 
 // This joint carries the whole CAD nosecone + camera in flight, so it is
 // always epoxied -- independent of Glue_Gap below, which is the user's
@@ -156,29 +157,22 @@ Adapter_Spigot_OD_Top = Cut3_Bore_ID - Adapter_Epoxy_Gap;                       
 Adapter_Spigot_OD_Bot = Ogive_OD_At_Z(Cut3_Z-Adapter_Spigot_L, NC_Wall_T) - Adapter_Epoxy_Gap;  // -> 58.50, at full depth
 Adapter_Spigot_ID   = Adapter_Spigot_OD_Top - Adapter_Spigot_Wall*2;   // -> 50.77, hollow for the harness (straight bore -- no fit requirement inside, sized off the narrow end so the wall stays >= NC_Wall_T everywhere)
 
-// Flange thickness: an M3x10 screw crossing the flange must still reach
-// enough of the insert's 5.7mm depth to hold, without its tip bottoming
-// out in the insert before the head seats. margin = Flange_T - (Screw_L -
-// Insert_Depth): the screw's head bears on the flange's outer face, so its
-// shank crosses Flange_T of flange before it starts eating into the
-// insert at all -- a THICKER flange leaves LESS of the screw free to go
-// into the insert, and so MORE margin, not less (sign-checked against that
-// formula, not assumed). The previous 4.5mm was arithmetically fine by
-// this formula (0.2mm margin) but thin against FDM layer-height scatter;
-// a code-review recommendation to fix that by THINNING the flange to
-// 4.0mm had the direction backwards -- by this same formula that gives a
-// NEGATIVE margin, guaranteed bottoming, not a safer one. Thickened
-// instead: 6.0mm leaves 4.0mm of engagement with 1.7mm to spare.
+// Flange thickness: the flange carries the three heat-set inserts, so it
+// must be at least Insert_Depth thick. 6.0mm holds the 5.7mm insert with
+// 0.3mm to spare; the holes go right through, so a slightly proud insert
+// or melt-displaced plastic has somewhere to go. Screw length is set by
+// the CAD nosecone's base thickness at its sunken-head holes plus at most
+// Insert_Depth of thread into the insert -- pick it against that part.
 Adapter_Flange_T = 6.0;
+assert(Adapter_Flange_T >= Insert_Depth, "flange too thin for the heat-set inserts");
 
 // The flange's OWN bore is narrower than the spigot's hollow above --
 // this leaves a solid shelf inside the flange, between the two bore
-// radii, for the 3 screw holes to pass through solid material. The screw
-// heads seat on that shelf's underside, with the wider spigot hollow
-// open beneath them for a screwdriver and for the camera harness to
-// route through. Sized to clear the bolt circle by a wall as thick as
-// the shell's own (NC_Wall_T) around each screw hole.
-Adapter_Bore_D = 2*(CAD_Bolt_R - M3_Clear/2 - NC_Wall_T);   // -> 30.16, well inside Adapter_Spigot_ID (50.77)
+// radii, for the 3 insert holes to sit in solid material, with the wider
+// spigot hollow open beneath for the camera harness to route through.
+// Sized to leave a wall as thick as the shell's own (NC_Wall_T) between
+// each insert hole and the bore.
+Adapter_Bore_D = 2*(CAD_Bolt_R - Insert_Hole_D/2 - NC_Wall_T);   // -> 29.56, well inside Adapter_Spigot_ID (50.77)
 
 // ============================================
 // SHOULDER -- stepped, printed, all-in-one
@@ -266,15 +260,14 @@ module CN_Adapter(){
             cylinder(d=Adapter_Bore_D, h=Adapter_Flange_T+Overlap*2, $fn=$preview? 60:180);
 
         // spigot's hollow -- through the spigot only, wider than the bore
-        // above, so the screw heads have a shelf to seat on (see comment
-        // on Adapter_Bore_D)
+        // above, leaving the insert shelf (see comment on Adapter_Bore_D)
         translate([0,0,-Adapter_Spigot_L-Overlap])
             cylinder(d=Adapter_Spigot_ID, h=Adapter_Spigot_L+Overlap, $fn=$preview? 60:180);
 
-        // screw clearance holes, through the flange only
+        // heat-set insert holes, through the flange only
         for (a=CAD_Bolt_A)
             translate([CAD_Bolt_R*cos(a), CAD_Bolt_R*sin(a), -Overlap])
-                cylinder(d=M3_Clear, h=Adapter_Flange_T+Overlap*2, $fn=$preview? 18:36);
+                cylinder(d=Insert_Hole_D, h=Adapter_Flange_T+Overlap*2, $fn=$preview? 18:36);
     } // difference
 } // CN_Adapter
 
@@ -336,8 +329,10 @@ if (Render_Part == 5) CN_Adapter();
 //   2. Glue the shoulder spigot into the bottom slice bore.
 //   3. Glue the bottom slice flange into the middle slice, hold until set.
 //   4. Glue the middle slice flange into the top slice, hold until set.
-//   5. Bolt the CAD nosecone (camera already installed in it) onto the
-//      adapter's flange with three M3x10 screws into its own inserts.
+//   5. Melt three ruthex M3x5.7 inserts into the adapter flange from its
+//      top (mating) face, flush. Bolt the CAD nosecone (camera already
+//      installed in it) onto the flange with three M3 screws down through
+//      its sunken-head holes into those inserts.
 //   6. Epoxy the adapter's spigot into the top slice's open bore (Cut3)
 //      and hold until set. This joint is permanent, unlike the shoulder.
 //

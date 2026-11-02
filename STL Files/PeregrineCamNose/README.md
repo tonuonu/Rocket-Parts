@@ -20,7 +20,7 @@ gone.
 | `SliceBottom.stl` | 2 | 154.15 | 101.50 | Skirt sits on the tube. Gluing flange on top. Unchanged this pass. |
 | `SliceMiddle.stl` | 3 | 154.13 | 96.11 | **Changed** — clip plane 147.14→147.15 (`Cut1_Z` is now derived from `Cut1_d` instead of a separate hardcoded literal); geometrically the same part otherwise. |
 | `SliceTop.stl` | 4 | 88.95 | 77.62 | Truncated at OD 60, all camera features removed. Unchanged this pass. |
-| `Adapter.stl` | 5 | 21.00 | 60.00 | **Changed** — spigot is now tapered (was a straight cylinder that only engaged the tapered shell bore for the top ~1mm of its 15mm length; see below); flange thickened 4.5→6.0mm for a safer screw-bottoming margin (a code-review recommendation to thin it to 4.0mm instead had the direction backwards; see the .scad comment). |
+| `Adapter.stl` | 5 | 21.00 | 60.00 | **Changed** — the three flange holes are now Ø4.0 for ruthex M3×5.7 heat-set inserts (were Ø3.4 M3 clearance holes). Spigot tapered to track the shell bore; flange 6.0 mm, enough for the 5.7 mm insert. |
 
 Tallest piece 154 mm, inside the 250 mm envelope.
 
@@ -63,8 +63,10 @@ engagement instead of only at the rim.
 2. Glue the shoulder spigot into the bottom slice bore.
 3. Glue the bottom slice flange into the middle slice, hold until set.
 4. Glue the middle slice flange into the top slice, hold until set.
-5. Bolt the adapter to the camera's three M3 heat-set inserts — Ø37.96 bolt
-   circle at 52.2°, −52.2°, 180°, M3×10. The angles are deliberately not 120°
+5. Melt three ruthex M3×5.7 heat-set inserts into the adapter flange from its
+   top (mating) face, flush. Bolt the CAD nosecone onto the flange with three
+   M3 screws down through its sunken-head holes into those inserts — Ø37.96
+   bolt circle at 52.2°, −52.2°, 180°. The angles are deliberately not 120°
    apart; that asymmetry keys the camera's clocking.
 6. Epoxy the adapter's spigot into the truncated shell bore (Cut3) and hold
    until set. This joint is always epoxy, regardless of `Glue_Gap` (it

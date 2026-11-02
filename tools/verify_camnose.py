@@ -23,11 +23,11 @@ CUT1_Z, CUT2_Z, CUT3_Z = 147.15, 294.29, 383.23
 WALL = 2.2
 CAD_BOLT_R = 18.98            # bolt circle radius on the CAD nosecone, measured
 CAD_BOLT_A = (52.2, -52.2, 180.0)   # clocking, deliberately not 120 deg apart
-M3_CLEAR = 3.4
+INSERT_HOLE = 4.0             # heat-set insert hole, Insert_Hole_D in the .scad
 EPOXY_GAP = 0.4                # adapter spigot vs shell bore, diametral (target)
 SPIGOT_L = 15.0                 # Adapter_Spigot_L: engagement depth into the bore
 
-GENUS = {0: 1, 1: 2, 4: 1, 5: 4}   # 5 = adapter: 1 harness bore + 3 screw holes
+GENUS = {0: 1, 1: 2, 4: 1, 5: 4}   # 5 = adapter: 1 harness bore + 3 insert holes
 
 
 def render(part, out):
@@ -197,7 +197,7 @@ def main(argv):
         # holes, and passes identically whether they are at the right
         # radius and angles or not.
         holes = bolt_pattern(stls[5], m[5]["zmax"] * 0.3, m[5]["zmax"] * 0.7,
-                              CAD_BOLT_R, M3_CLEAR)
+                              CAD_BOLT_R, INSERT_HOLE)
         checks += [("adapter bolt pattern hole count", len(holes), 3, 0)]
         if len(holes) == 3:
             for exp_a in CAD_BOLT_A:
@@ -209,7 +209,7 @@ def main(argv):
                 checks += [
                     ("adapter hole @%.1fdeg radius" % exp_a, r, CAD_BOLT_R, 0.15),
                     ("adapter hole @%.1fdeg angle" % exp_a, a_norm, exp_a, 1.0),
-                    ("adapter hole @%.1fdeg diameter" % exp_a, d, M3_CLEAR, 0.15),
+                    ("adapter hole @%.1fdeg diameter" % exp_a, d, INSERT_HOLE, 0.15),
                 ]
     if 2 in m and 3 in m:
         checks += [("joint 1 overlap", m[2]["zmax"] - m[3]["zmin"], 7.0, 0.2)]
