@@ -195,17 +195,21 @@ Shoulder_L         = 100;
 // long: a 7mm gauge ring slides happily at 0.25mm, but over 100mm any
 // ovality or bow in the tube accumulates and a tighter fit binds partway
 // home, which is worse than loose.
-// The owner requested +1 mm on the tube-fitting diameter on 2026-11-03.
-// Keep this correction local: scaling Body_OD would invalidate the slices
-// already printed. Test the short ring before committing to the full length;
-// the current tube ID has not been measured directly.
-Shoulder_Tube_Fit_Adjust = 1.0; // DIAMETRAL correction, not per-side
+// The +1 mm trial (99.7 mm OD) did not enter the owner's tube. Restore
+// the original shoulder while the stepped gauge brackets the printed fit.
+// Keep any eventual correction local: scaling Body_OD would invalidate
+// the slices already printed. The current tube ID is not directly measured.
+Shoulder_Tube_Fit_Adjust = 0.0; // DIAMETRAL correction, pending gauge trial
 Shoulder_Nominal_OD = Peregrine_Body_ID - 0.4; // original slip-fit OD, 98.7
-Shoulder_OD        = Shoulder_Nominal_OD + Shoulder_Tube_Fit_Adjust; // 99.7
+Shoulder_OD        = Shoulder_Nominal_OD + Shoulder_Tube_Fit_Adjust; // 98.7
 // Add material outside only; retain the validated bore, ribbon slots and
 // internal chamfer. The bay-facing spigot also keeps its original diameter.
 Shoulder_Bore_D    = Shoulder_Nominal_OD - NC_Wall_T*2;
-Shoulder_Fit_Ring_H = 7; // quick tube-fit check before the 100 mm shoulder
+// Five 3 mm bands bracket the original fit instead of guessing another
+// single diameter. Print largest end down; insert the smallest end first.
+Shoulder_Fit_Gauge_Ds = [98.3, 98.5, 98.7, 98.9, 99.1];
+Shoulder_Fit_Gauge_Step_H = 3;
+Shoulder_Fit_Gauge_Lead = 0.3; // relief at the bed and the insertion tip
 assert(Shoulder_OD >= Shoulder_Bore_D + NC_Wall_T*2,
        "tube-fit correction must not thin the original shoulder wall");
 Shoulder_Spigot_L  = 15;
@@ -342,13 +346,25 @@ module CN_Shoulder(){
 } // CN_Shoulder
 
 module TestRing(){
-    // This now tests the actual shoulder-to-tube fit. The old 101.5 mm
-    // ring tested the shell's outside profile and was not an insertion gauge.
-    // Match both shoulder walls, but omit its bulkhead to save print time.
+    // The old 101.5 mm ring tested the outside profile; the subsequent
+    // 99.7 mm insertion ring was too large. These five bands give a range
+    // in one short print. Keep every test surface free of raised labels.
+    // The bottom relief keeps first-layer flare off the largest test band.
+    n = len(Shoulder_Fit_Gauge_Ds);
+    h = n*Shoulder_Fit_Gauge_Step_H;
+    lead = Shoulder_Fit_Gauge_Lead;
     difference(){
-        cylinder(d=Shoulder_OD, h=Shoulder_Fit_Ring_H, $fn=$preview?90:360);
+        rotate_extrude($fn=$preview?90:360)
+            polygon(points=concat(
+                [[0,0], [Shoulder_Fit_Gauge_Ds[n-1]/2-lead,0],
+                 [Shoulder_Fit_Gauge_Ds[n-1]/2,lead]],
+                [for (i=[0:n-2]) each [
+                    [Shoulder_Fit_Gauge_Ds[n-1-i]/2,(i+1)*Shoulder_Fit_Gauge_Step_H],
+                    [Shoulder_Fit_Gauge_Ds[n-2-i]/2,(i+1)*Shoulder_Fit_Gauge_Step_H]]],
+                [[Shoulder_Fit_Gauge_Ds[0]/2,h-lead],
+                 [Shoulder_Fit_Gauge_Ds[0]/2-lead,h], [0,h]]));
         translate([0,0,-Overlap])
-            cylinder(d=Shoulder_Bore_D, h=Shoulder_Fit_Ring_H+Overlap*2,
+            cylinder(d=Shoulder_Bore_D, h=h+Overlap*2,
                      $fn=$preview?90:360);
     } // difference
 } // TestRing

@@ -251,3 +251,22 @@ Home `00-TestRing.stl` and `01-Shoulder.stl` are updated. All existing 3MF
 projects, including `01-Shoulder-Chamfered.3mf`, predate this diameter
 correction. Import the new STL instead. The previous verification reports
 remain historical evidence, not verification of these latest meshes.
+
+### Ø99.7 trial rejected; stepped gauge — 2026-11-03
+
+The owner printed the Ø99.7 mm 00 ring and reports that it does not enter
+the tube and is much too large. The +1 mm correction is therefore rejected.
+Do not infer the tube ID from the earlier outside-diameter comparison.
+
+Part 00 is now one stepped insertion gauge: Ø98.3, 98.5, 98.7, 98.9 and
+99.1 mm, each band 3 mm tall. Print largest end down, insert smallest end
+first and report the largest band that enters freely. Top and bottom
+0.3 mm bevels ease entry and isolate the largest test surface from bed
+flare. Do not measure fit using only the tip bevel.
+
+`Shoulder_Tube_Fit_Adjust` is restored to zero. Part 01 is back to the
+original chamfered Ø98.7 geometry, pending the gauge result; no new final
+diameter is asserted. The other printed parts are unchanged. Current
+mesh verification is in `fit-gauge-verification.json`. Bambu Studio was
+not used. Home 00/01 STLs and print instructions are updated; old 3MFs
+and the Ø99.7 CAD report are historical, not current print instructions.

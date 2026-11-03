@@ -202,14 +202,19 @@ def main(argv):
                  m[p]["zmin"], m[p]["zmax"], volume(out) * 1.27))
     checks = []
     if 0 in m:
-        inner, outer = bore(stls[0],3.49,3.51)
-        checks += [("tube-fit ring height",m[0]["height"],7.0,0.01),
-                   ("tube-fit ring outer diameter",outer,99.7,0.02),
-                   ("tube-fit ring bore",inner,94.3,0.02),
-                   ("tube-fit ring unsupported face area mm2",unsupported_area(stls[0]),0.0,0.01)]
+        checks += [("stepped fit gauge height",m[0]["height"],15.0,0.01),
+                   ("fit gauge unsupported face area mm2",unsupported_area(stls[0]),0.0,0.01)]
+        for z, expected in [(1.5,99.1),(4.5,98.9),(7.5,98.7),(10.5,98.5),(13.5,98.3)]:
+            inner, outer = bore(stls[0],z-.01,z+.01)
+            checks += [("fit gauge OD at Z=%.1f" % z,outer,expected,0.02),
+                       ("fit gauge bore at Z=%.1f" % z,inner,94.3,0.02)]
+        for z, expected in [(.15,98.8),(14.85,98.0)]:
+            _, outer = bore(stls[0],z-.01,z+.01)
+            checks += [("fit gauge lead relief at Z=%.2f" % z,outer,expected,0.02)]
         if 1 in m:
+            _, outer = bore(stls[0],7.49,7.51)
             _, shoulder_outer = bore(stls[1],49.99,50.01)
-            checks += [("tube-fit ring matches shoulder OD",outer-shoulder_outer,0.0,0.01)]
+            checks += [("central gauge band matches shoulder OD",outer-shoulder_outer,0.0,0.01)]
     if 2 in m:
         checks += [("bottom zmin", m[2]["zmin"], 0.0, 0.1),
                    ("bottom outer dia", m[2]["dmax"], 101.5, 0.3)]
@@ -259,13 +264,13 @@ def main(argv):
         checks += [("joint 2 overlap", m[3]["zmax"] - m[4]["zmin"], 7.0, 0.2)]
     if 1 in m:
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
-                   ("shoulder body dia", m[1]["dmax"], 99.7, 0.02),
+                   ("shoulder body dia", m[1]["dmax"], 98.7, 0.02),
                    ("shoulder unsupported face area mm2", unsupported_area(stls[1]), 0.0, 0.01)]
         for z, expected in [(97.5,94.3),(98.5,93.8),(99,93.3),
                             (99.5,92.8),(100.5,92.3)]:
             inner, outer = bore(stls[1],z-0.01,z+0.01)
             checks += [("shoulder bore at Z=%.1f" % z,inner,expected,0.02),
-                       ("shoulder OD at Z=%.1f" % z,outer,99.7 if z<100 else 96.7,0.02)]
+                       ("shoulder OD at Z=%.1f" % z,outer,98.7 if z<100 else 96.7,0.02)]
     if 6 in m:
         checks += [("carrier floor z", m[6]["zmin"], 270.0, 0.01),
                    ("carrier height", m[6]["height"], 77.0, 0.01),
