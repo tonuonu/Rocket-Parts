@@ -202,6 +202,15 @@ Shoulder_Spigot_L  = 15;
 // still be tightened to 0.2 for thin CA on a small part.
 Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
+// The smaller spigot bore used to start with a horizontal 1 mm ledge at
+// Z=100. That ledge caused tall tree supports inside the otherwise open
+// shoulder. Bring the bore inward over 2 mm instead: at 0.2 mm layers the
+// wall advances only 0.1 mm per layer. External mating surfaces stay put.
+Shoulder_Bore_Chamfer_H = 2;
+assert(Shoulder_Bore_Chamfer_H >= (Shoulder_OD-Shoulder_Spigot_OD)/2,
+       "shoulder bore chamfer must be at least as tall as the radial step");
+assert(Shoulder_Bore_Chamfer_H < Shoulder_L-Shoulder_Bulk_T,
+       "shoulder bore chamfer must stay above the bulkhead");
 
 // The bay is local to this camera variant; do not change NoseCone.scad's
 // shared gluing flanges for all the other rockets. False reproduces the
@@ -302,12 +311,17 @@ module CN_Shoulder(){
                 cylinder(d=Shoulder_Spigot_OD, h=Shoulder_Spigot_L,
                          $fn=$preview? 90:360);
         } // union
-        translate([0,0,Shoulder_Bulk_T])
-            cylinder(d=Shoulder_OD-NC_Wall_T*2,
-                     h=Shoulder_L-Shoulder_Bulk_T+Overlap, $fn=$preview? 90:360);
-        translate([0,0,Shoulder_L])
-            cylinder(d=Shoulder_Spigot_OD-NC_Wall_T*2,
-                     h=Shoulder_Spigot_L+Overlap, $fn=$preview? 90:360);
+        // One continuous revolved bore avoids overlap between subtractive
+        // cylinders leaving a residual horizontal lip at the transition.
+        rotate_extrude($fn=$preview? 90:360)
+            polygon(points=[
+                [0, Shoulder_Bulk_T],
+                [Shoulder_OD/2-NC_Wall_T, Shoulder_Bulk_T],
+                [Shoulder_OD/2-NC_Wall_T, Shoulder_L-Shoulder_Bore_Chamfer_H],
+                [Shoulder_Spigot_OD/2-NC_Wall_T, Shoulder_L],
+                [Shoulder_Spigot_OD/2-NC_Wall_T, Shoulder_L+Shoulder_Spigot_L+Overlap],
+                [0, Shoulder_L+Shoulder_Spigot_L+Overlap]
+            ]);
         translate([0, Shoulder_OD/2-NC_Wall_T-4, -Overlap])
             RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
         translate([0, -Shoulder_OD/2+NC_Wall_T+4, -Overlap])

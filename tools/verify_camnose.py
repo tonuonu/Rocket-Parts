@@ -153,6 +153,26 @@ def volume(stl):
     return abs(v) / 1000.0
 
 
+def unsupported_area(stl):
+    """Area of downward faces shallower than 45 degrees, excluding the bed.
+
+    This catches horizontal ledges that dimensions/topology alone miss.
+    It is a geometry screen; the actual slicer still decides support paths.
+    """
+    area = 0.0
+    for a, b, c in _tris(stl):
+        if max(a[2], b[2], c[2]) < 0.01:
+            continue
+        u = [b[i]-a[i] for i in range(3)]
+        v = [c[i]-a[i] for i in range(3)]
+        n = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2],
+             u[0]*v[1]-u[1]*v[0]]
+        length = math.sqrt(sum(x*x for x in n))
+        if length and n[2]/length < -math.sqrt(0.5)-1e-6:
+            area += length/2
+    return area
+
+
 NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
          4:"integrated top", 5:"legacy adapter", 6:"battery carrier", 7:"converter tray"}
 
@@ -230,7 +250,13 @@ def main(argv):
         checks += [("joint 2 overlap", m[3]["zmax"] - m[4]["zmin"], 7.0, 0.2)]
     if 1 in m:
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
-                   ("shoulder body dia", m[1]["dmax"], 98.7, 0.2)]
+                   ("shoulder body dia", m[1]["dmax"], 98.7, 0.2),
+                   ("shoulder unsupported face area mm2", unsupported_area(stls[1]), 0.0, 0.01)]
+        for z, expected in [(97.5,94.3),(98.5,93.8),(99,93.3),
+                            (99.5,92.8),(100.5,92.3)]:
+            inner, outer = bore(stls[1],z-0.01,z+0.01)
+            checks += [("shoulder bore at Z=%.1f" % z,inner,expected,0.02),
+                       ("shoulder OD at Z=%.1f" % z,outer,98.7 if z<100 else 96.7,0.02)]
     if 6 in m:
         checks += [("carrier floor z", m[6]["zmin"], 270.0, 0.01),
                    ("carrier height", m[6]["height"], 77.0, 0.01),
