@@ -195,19 +195,46 @@ Shoulder_L         = 100;
 // long: a 7mm gauge ring slides happily at 0.25mm, but over 100mm any
 // ovality or bow in the tube accumulates and a tighter fit binds partway
 // home, which is worse than loose.
-Shoulder_OD        = Peregrine_Body_ID - 0.4;   // slip fit -> 98.7
+// The owner reports four gauge bands entered (through 98.9 mm), while
+// the 99.1 mm band did not. Keep 98.7 mm for the long shoulder: 0.2 mm
+// smaller than the largest band that entered, leaving room for ovality.
+// Any correction stays local; scaling Body_OD would invalidate printed slices.
+Shoulder_Tube_Fit_Adjust = 0.0; // DIAMETRAL correction; gauge supports original OD
+Shoulder_Nominal_OD = Peregrine_Body_ID - 0.4; // original slip-fit OD, 98.7
+Shoulder_OD        = Shoulder_Nominal_OD + Shoulder_Tube_Fit_Adjust; // 98.7
+// Fit adjustment affects only the outside; retain the validated bore,
+// ribbon slots, internal chamfer and bay-facing spigot diameter.
+Shoulder_Bore_D    = Shoulder_Nominal_OD - NC_Wall_T*2;
+// Five 3 mm bands bracket the original fit instead of guessing another
+// single diameter. Print largest end down; insert the smallest end first.
+Shoulder_Fit_Gauge_Ds = [98.3, 98.5, 98.7, 98.9, 99.1];
+Shoulder_Fit_Gauge_Step_H = 3;
+Shoulder_Fit_Gauge_Lead = 0.3; // relief at the bed and the insertion tip
+assert(Shoulder_OD >= Shoulder_Bore_D + NC_Wall_T*2,
+       "tube-fit correction must not thin the original shoulder wall");
 Shoulder_Spigot_L  = 15;
 // GLUED into the bottom slice bore, so it takes Glue_Gap, not 0.4 flat --
 // they happen to agree at the default (Glue_Gap=0.4), but Glue_Gap can
 // still be tightened to 0.2 for thin CA on a small part.
 Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
+// Ease the bulkhead end into the tube without changing the full-length
+// bearing diameter. The 96.7 mm tip grows to 98.7 over 2 mm: each 0.2 mm
+// print layer advances only 0.1 mm radially. Keep the relief within the
+// solid bulkhead and outside the recovery slots.
+Shoulder_Entry_Chamfer_H = 2;
+Shoulder_Entry_Chamfer_R = 1;
+assert(Shoulder_Entry_Chamfer_H >= Shoulder_Entry_Chamfer_R &&
+       Shoulder_Entry_Chamfer_R > 0 && Shoulder_Entry_Chamfer_H < Shoulder_Bulk_T,
+       "entry chamfer must be self-supporting and stay within the bulkhead");
+assert(Shoulder_OD/2-Shoulder_Entry_Chamfer_R >= Shoulder_Bore_D/2+1,
+       "entry chamfer must retain material outside the bulkhead slots");
 // The smaller spigot bore used to start with a horizontal 1 mm ledge at
 // Z=100. That ledge caused tall tree supports inside the otherwise open
 // shoulder. Bring the bore inward over 2 mm instead: at 0.2 mm layers the
 // wall advances only 0.1 mm per layer. External mating surfaces stay put.
 Shoulder_Bore_Chamfer_H = 2;
-assert(Shoulder_Bore_Chamfer_H >= (Shoulder_OD-Shoulder_Spigot_OD)/2,
+assert(Shoulder_Bore_Chamfer_H >= (Shoulder_Bore_D-(Shoulder_Spigot_OD-NC_Wall_T*2))/2,
        "shoulder bore chamfer must be at least as tall as the radial step");
 assert(Shoulder_Bore_Chamfer_H < Shoulder_L-Shoulder_Bulk_T,
        "shoulder bore chamfer must stay above the bulkhead");
@@ -306,7 +333,12 @@ module CN_Adapter(){
 module CN_Shoulder(){
     difference(){
         union(){
-            cylinder(d=Shoulder_OD, h=Shoulder_L, $fn=$preview? 90:360);
+            rotate_extrude($fn=$preview?90:360)
+                polygon(points=[
+                    [0,0], [Shoulder_OD/2-Shoulder_Entry_Chamfer_R,0],
+                    [Shoulder_OD/2,Shoulder_Entry_Chamfer_H],
+                    [Shoulder_OD/2,Shoulder_L], [0,Shoulder_L]
+                ]);
             translate([0,0,Shoulder_L])
                 cylinder(d=Shoulder_Spigot_OD, h=Shoulder_Spigot_L,
                          $fn=$preview? 90:360);
@@ -316,26 +348,40 @@ module CN_Shoulder(){
         rotate_extrude($fn=$preview? 90:360)
             polygon(points=[
                 [0, Shoulder_Bulk_T],
-                [Shoulder_OD/2-NC_Wall_T, Shoulder_Bulk_T],
-                [Shoulder_OD/2-NC_Wall_T, Shoulder_L-Shoulder_Bore_Chamfer_H],
+                [Shoulder_Bore_D/2, Shoulder_Bulk_T],
+                [Shoulder_Bore_D/2, Shoulder_L-Shoulder_Bore_Chamfer_H],
                 [Shoulder_Spigot_OD/2-NC_Wall_T, Shoulder_L],
                 [Shoulder_Spigot_OD/2-NC_Wall_T, Shoulder_L+Shoulder_Spigot_L+Overlap],
                 [0, Shoulder_L+Shoulder_Spigot_L+Overlap]
             ]);
-        translate([0, Shoulder_OD/2-NC_Wall_T-4, -Overlap])
+        translate([0, Shoulder_Bore_D/2-4, -Overlap])
             RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
-        translate([0, -Shoulder_OD/2+NC_Wall_T+4, -Overlap])
+        translate([0, -Shoulder_Bore_D/2+4, -Overlap])
             RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
     } // difference
 } // CN_Shoulder
 
 module TestRing(){
-    // Print this FIRST. OD must sit flush on the body tube; the bore must
-    // accept the shoulder spigot (Shoulder_Spigot_OD) with a light push fit.
+    // The old 101.5 mm ring tested the outside profile; the subsequent
+    // 99.7 mm insertion ring was too large. These five bands give a range
+    // in one short print. Keep every test surface free of raised labels.
+    // The bottom relief keeps first-layer flare off the largest test band.
+    n = len(Shoulder_Fit_Gauge_Ds);
+    h = n*Shoulder_Fit_Gauge_Step_H;
+    lead = Shoulder_Fit_Gauge_Lead;
     difference(){
-        cylinder(d=Peregrine_Body_OD, h=15, $fn=90);
+        rotate_extrude($fn=$preview?90:360)
+            polygon(points=concat(
+                [[0,0], [Shoulder_Fit_Gauge_Ds[n-1]/2-lead,0],
+                 [Shoulder_Fit_Gauge_Ds[n-1]/2,lead]],
+                [for (i=[0:n-2]) each [
+                    [Shoulder_Fit_Gauge_Ds[n-1-i]/2,(i+1)*Shoulder_Fit_Gauge_Step_H],
+                    [Shoulder_Fit_Gauge_Ds[n-2-i]/2,(i+1)*Shoulder_Fit_Gauge_Step_H]]],
+                [[Shoulder_Fit_Gauge_Ds[0]/2,h-lead],
+                 [Shoulder_Fit_Gauge_Ds[0]/2-lead,h], [0,h]]));
         translate([0,0,-Overlap])
-            cylinder(d=Peregrine_Coupler_OD, h=15+Overlap*2, $fn=90);
+            cylinder(d=Shoulder_Bore_D, h=h+Overlap*2,
+                     $fn=$preview?90:360);
     } // difference
 } // TestRing
 
