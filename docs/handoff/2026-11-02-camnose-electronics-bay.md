@@ -223,3 +223,31 @@ or complete assembly validation is claimed.
 The home print folder's `01-Shoulder.stl` is updated. A separate
 `01-Shoulder-Chamfered.3mf` contains the new sliced project; the owner's
 existing `01-Shoulder.3mf` is preserved and still contains the old geometry.
+
+### Tube insertion gauge and local diameter correction — 2026-11-03
+
+The owner reported the printed 00 about 1 mm smaller in diameter than the
+tube, clarified this was against the tube's outside diameter, then asked
+to increase the bottom and make a ring to fit into the tube. The old 00
+was a Ø101.5 outside-profile ring, not an insertion gauge. The actual tube
+ID is still unknown; do not derive a confirmed inside fit from that outside
+comparison.
+
+The new 00 is a Ø99.7 × 7 mm insertion ring, matching the requested +1 mm
+diametral change to 01's original Ø98.7 body. This correction is local to
+the shoulder (`Shoulder_Tube_Fit_Adjust=1.0`); the global body/nosecone
+diameters are preserved. Material is added outside only. The Ø96.7 × 15 mm
+spigot, bore, chamfer and ribbon slots are unchanged. The owner's printed
+02/03/04/06/07 remain unchanged. Trial the ring before printing the updated
+01; no physical tube fit is yet confirmed.
+
+Twenty-two dimension/topology/overhang checks pass. Additional mesh checks
+confirm the added material is confined below the spigot, the spigot is
+unchanged, clearance to 02 remains, and both ribbon gauges pass. Results
+and hashes are in `tube-fit-verification.json`. Bambu Studio was not used
+for this revision, per the owner's instruction about overheating.
+
+Home `00-TestRing.stl` and `01-Shoulder.stl` are updated. All existing 3MF
+projects, including `01-Shoulder-Chamfered.3mf`, predate this diameter
+correction. Import the new STL instead. The previous verification reports
+remain historical evidence, not verification of these latest meshes.
