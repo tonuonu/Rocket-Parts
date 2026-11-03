@@ -266,6 +266,9 @@ def main(argv):
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
                    ("shoulder body dia", m[1]["dmax"], 98.7, 0.02),
                    ("shoulder unsupported face area mm2", unsupported_area(stls[1]), 0.0, 0.01)]
+        for z, expected in [(0.2,96.9),(0.5,97.2),(1,97.7),(1.5,98.2),(2.1,98.7)]:
+            _, outer = bore(stls[1],z-.01,z+.01)
+            checks += [("shoulder entry OD at Z=%.1f" % z,outer,expected,0.02)]
         for z, expected in [(97.5,94.3),(98.5,93.8),(99,93.3),
                             (99.5,92.8),(100.5,92.3)]:
             inner, outer = bore(stls[1],z-0.01,z+0.01)

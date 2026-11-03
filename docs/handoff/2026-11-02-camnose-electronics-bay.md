@@ -270,3 +270,25 @@ diameter is asserted. The other printed parts are unchanged. Current
 mesh verification is in `fit-gauge-verification.json`. Bambu Studio was
 not used. Home 00/01 STLs and print instructions are updated; old 3MFs
 and the Ø99.7 CAD report are historical, not current print instructions.
+
+### Gauge result and shoulder entry chamfer — 2026-11-03
+
+Owner reports that four gauge bands went in and the fifth did not:
+Ø98.9 entered; Ø99.1 did not. Retain the original Ø98.7 main shoulder
+diameter, giving 0.2 mm diametral margin relative to the largest band that
+entered. This is a printed fit observation, not a direct tube-ID measurement
+or a full-length shoulder trial.
+
+At the owner's request, 01 now has an external insertion lead-in at the
+bulkhead end: Ø96.7 at Z=0, widening smoothly to Ø98.7 at Z=2. It stays
+within the solid bulkhead and clear of the ribbon slots. The main body,
+bore, internal support-removing chamfer and upper spigot are unchanged.
+Print bulkhead-down. The gauge and all other parts remain unchanged.
+
+Twenty shoulder dimension/topology/overhang checks and twenty additional
+geometry/hash checks pass. Mesh differences are confined to the outermost
+1 mm radial band within the first 2 mm. Original upper fit and both ribbon
+gauges pass. Results are in `entry-chamfer-verification.json`. Bambu Studio
+was not used. The home 01 STL and print pack are updated; old 3MFs predate
+the external entry chamfer. The next physical check is the printed 01's
+full insertion depth, before bonding to the nosecone.

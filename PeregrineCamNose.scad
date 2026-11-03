@@ -195,15 +195,15 @@ Shoulder_L         = 100;
 // long: a 7mm gauge ring slides happily at 0.25mm, but over 100mm any
 // ovality or bow in the tube accumulates and a tighter fit binds partway
 // home, which is worse than loose.
-// The +1 mm trial (99.7 mm OD) did not enter the owner's tube. Restore
-// the original shoulder while the stepped gauge brackets the printed fit.
-// Keep any eventual correction local: scaling Body_OD would invalidate
-// the slices already printed. The current tube ID is not directly measured.
-Shoulder_Tube_Fit_Adjust = 0.0; // DIAMETRAL correction, pending gauge trial
+// The owner reports four gauge bands entered (through 98.9 mm), while
+// the 99.1 mm band did not. Keep 98.7 mm for the long shoulder: 0.2 mm
+// smaller than the largest band that entered, leaving room for ovality.
+// Any correction stays local; scaling Body_OD would invalidate printed slices.
+Shoulder_Tube_Fit_Adjust = 0.0; // DIAMETRAL correction; gauge supports original OD
 Shoulder_Nominal_OD = Peregrine_Body_ID - 0.4; // original slip-fit OD, 98.7
 Shoulder_OD        = Shoulder_Nominal_OD + Shoulder_Tube_Fit_Adjust; // 98.7
-// Add material outside only; retain the validated bore, ribbon slots and
-// internal chamfer. The bay-facing spigot also keeps its original diameter.
+// Fit adjustment affects only the outside; retain the validated bore,
+// ribbon slots, internal chamfer and bay-facing spigot diameter.
 Shoulder_Bore_D    = Shoulder_Nominal_OD - NC_Wall_T*2;
 // Five 3 mm bands bracket the original fit instead of guessing another
 // single diameter. Print largest end down; insert the smallest end first.
@@ -218,6 +218,17 @@ Shoulder_Spigot_L  = 15;
 // still be tightened to 0.2 for thin CA on a small part.
 Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
+// Ease the bulkhead end into the tube without changing the full-length
+// bearing diameter. The 96.7 mm tip grows to 98.7 over 2 mm: each 0.2 mm
+// print layer advances only 0.1 mm radially. Keep the relief within the
+// solid bulkhead and outside the recovery slots.
+Shoulder_Entry_Chamfer_H = 2;
+Shoulder_Entry_Chamfer_R = 1;
+assert(Shoulder_Entry_Chamfer_H >= Shoulder_Entry_Chamfer_R &&
+       Shoulder_Entry_Chamfer_R > 0 && Shoulder_Entry_Chamfer_H < Shoulder_Bulk_T,
+       "entry chamfer must be self-supporting and stay within the bulkhead");
+assert(Shoulder_OD/2-Shoulder_Entry_Chamfer_R >= Shoulder_Bore_D/2+1,
+       "entry chamfer must retain material outside the bulkhead slots");
 // The smaller spigot bore used to start with a horizontal 1 mm ledge at
 // Z=100. That ledge caused tall tree supports inside the otherwise open
 // shoulder. Bring the bore inward over 2 mm instead: at 0.2 mm layers the
@@ -322,7 +333,12 @@ module CN_Adapter(){
 module CN_Shoulder(){
     difference(){
         union(){
-            cylinder(d=Shoulder_OD, h=Shoulder_L, $fn=$preview? 90:360);
+            rotate_extrude($fn=$preview?90:360)
+                polygon(points=[
+                    [0,0], [Shoulder_OD/2-Shoulder_Entry_Chamfer_R,0],
+                    [Shoulder_OD/2,Shoulder_Entry_Chamfer_H],
+                    [Shoulder_OD/2,Shoulder_L], [0,Shoulder_L]
+                ]);
             translate([0,0,Shoulder_L])
                 cylinder(d=Shoulder_Spigot_OD, h=Shoulder_Spigot_L,
                          $fn=$preview? 90:360);

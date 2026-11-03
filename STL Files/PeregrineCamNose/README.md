@@ -9,7 +9,25 @@ This is a CAD-verified prototype, with the initial 04/06 trial fit reported
 below. Full assembly fit, insert strength, mechanical loads, temperatures
 and ejection protection have not been bench-tested.
 
-## Stepped tube-fit gauge — 2026-11-03
+## Shoulder insertion chamfer and tube fit — 2026-11-03
+
+**The owner reports four gauge bands entered, while the fifth did not:**
+Ø98.9 mm entered and Ø99.1 mm did not. The current 01 therefore retains
+its **Ø98.7 mm body**, 0.2 mm smaller than the largest band that entered,
+to allow some margin along the 100 mm insertion length.
+
+**Print the updated 01 bulkhead-down.** Its insertion end now starts at
+Ø96.7 mm and tapers smoothly to Ø98.7 mm over the first 2 mm. This external
+lead-in helps centre the shoulder and avoids a square edge catching the
+tube rim. The main bore, existing internal chamfer, ribbon slots and upper
+Ø96.7 × 15 mm spigot are unchanged. The already printed parts need no
+reprint for this change. The full-length shoulder still needs a dry fit.
+
+The gauge and its measured result are documented below for reference.
+Current shoulder CAD checks are in `entry-chamfer-verification.json`;
+Bambu Studio was not used for this revision.
+
+### Stepped gauge
 
 **The owner reports that the Ø99.7 mm ring does not enter the tube.**
 That +1 mm trial is rejected. The tube's outside-profile difference did
@@ -27,21 +45,18 @@ first**, without forcing it. From that small end, each 3 mm band is:
 | 4 | 98.9 mm | 12 mm |
 | 5 | 99.1 mm | 15 mm |
 
-Report the largest band that enters freely. The tip has a 0.3 mm lead-in;
+The first four bands entered in the owner's trial. The tip has a 0.3 mm lead-in;
 judge the full cylindrical band, not just the beveled tip. A similar relief
 at the bed keeps first-layer flare away from the largest test surface.
 
-01 is restored to its original **Ø98.7 mm** body as a reference, pending
-the gauge trial. Its complete geometry matches the earlier chamfered
-shoulder; the bore, ribbon slots and Ø96.7 × 15 mm spigot are preserved.
-02/03/04/06/07 are unchanged. A short gauge does not prove that a full
-100 mm-long shoulder will fit an oval or bowed tube; confirm the gauge
-result before printing 01.
+The gauge supports retaining the original **Ø98.7 mm** shoulder body.
+A short gauge does not prove that a full 100 mm-long shoulder will fit
+an oval or bowed tube. Parts 02/03/04/06/07 remain unchanged.
 
 Use the current numbered STLs. The initial Ø101.5 outside-profile ring and
 the subsequent Ø99.7 insertion ring are superseded. Existing 3MF projects
-may contain earlier geometry. No slicer was run for this revision, per
-the owner's request. Mesh results are in `fit-gauge-verification.json`.
+contain earlier shoulder geometry; import the current STL. The gauge's
+original CAD check is recorded in `fit-gauge-verification.json`.
 
 ## How 04 and 06 fit together
 
@@ -107,7 +122,7 @@ new top has an integral flange, with no spigot or adapter-to-shell glue joint.
 
 Repository meshes retain their assembly coordinates: orient, then drop to
 bed. The downloadable print pack is already oriented at Z=0. Part 2 keeps
-its previous shape; part 1 retains the chamfer at its original diameter. Parts
+its previous shape; part 1 has both internal and entry chamfers at Ø98.7. Parts
 3 and 4 replace the pre-bay versions; the owner's already printed bay
 versions remain current. Part 8 is a cutaway view, not a printable part.
 
@@ -188,8 +203,8 @@ the complete assembly in the actual top before bonding.
    The harness passes through the Ø29.56 central bore.
 8. Attach the top with three M3×8 side screws. **Do not glue this service
    joint.** After trial assembly, epoxy shoulder-to-bottom and
-   bottom-to-middle as before. The shoulder's 98.7 mm outer body is the
-   reference size; confirm the new gauge result before printing the shoulder.
+   bottom-to-middle as before. Dry-fit the shoulder's 98.7 mm outer body
+   through the full insertion depth before bonding it to the nosecone.
 
 For normal service, remove the three side screws and lift the top with
 its camera attached. Remove two tray screws for cell access. The entire
@@ -219,8 +234,11 @@ an oversized converter and an unscalloped floor. `verification.json` records
 the 2026-11-02 bay baseline; `shoulder-verification.json` records the
 2026-11-03 chamfer checks and slicer comparison before the diameter change.
 `tube-fit-verification.json` records the subsequently rejected Ø99.7 trial's
-CAD checks. `fit-gauge-verification.json` records the current stepped gauge
-and restored Ø98.7 shoulder, checked without a slicer. To repeat dimensions and
+CAD checks. `fit-gauge-verification.json` records the stepped gauge and
+restored Ø98.7 shoulder before the external lead-in was added.
+`entry-chamfer-verification.json` records the current shoulder with its
+external lead-in, the owner's gauge result, and unchanged mating geometry.
+No slicer was used for these later revisions. To repeat dimensions and
 overhang regression, use
 `python3 tools/verify_camnose.py 0 1 --output-dir /tmp/camnose-shoulder`.
 Tests do not simulate print tolerances, strength, heat, leaks or flexible wiring.
