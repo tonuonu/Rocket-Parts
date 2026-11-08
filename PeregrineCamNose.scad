@@ -132,6 +132,11 @@ CAD_Bolt_R    = 18.98;                  // bolt circle radius, Ø37.96
 CAD_Bolt_A    = [52.2, -52.2, 180.0];   // NOT 120 deg apart -- keys the camera's clocking, preserve exactly
 Insert_Hole_D = 4.0;                    // ruthex RX-M3x5.7 heat-set insert, maker's recommended hole dia
 Insert_Depth  = 5.7;                    // insert length; must fit inside Adapter_Flange_T
+// BLIND pockets: ruthex specifies hole depth >= L + 1 mm, so the plastic
+// the knurl displaces has somewhere to go (~/mdoc/Fasteners/RUTHEX). The
+// first bay pockets were L + 0.2: melt ran into the thread and the inserts
+// were unusable. L + 2 leaves margin for the knurl (5.95 mm measured).
+Insert_Pocket_L = Insert_Depth + 2;     // -> 7.7
 
 // This joint carries the whole CAD nosecone + camera in flight, so it is
 // always epoxied -- independent of Glue_Gap below, which is the user's
@@ -218,6 +223,10 @@ Shoulder_Spigot_L  = 15;
 // still be tightened to 0.2 for thin CA on a small part.
 Shoulder_Spigot_OD = Peregrine_Coupler_OD - Glue_Gap;   // -> 96.7 at the default
 Shoulder_Bulk_T    = 4;
+// Stem of each T-shaped ribbon slot: runs from the middle of the 16 x 4
+// bar toward the axis, Ribbon_Guide_L beyond the bar's inner edge.
+Ribbon_Guide_W     = 4;     // same width as the bar
+Ribbon_Guide_L     = 8;
 // Ease the bulkhead end into the tube without changing the full-length
 // bearing diameter. The 96.7 mm tip grows to 98.7 over 2 mm: each 0.2 mm
 // print layer advances only 0.1 mm radially. Keep the relief within the
@@ -254,8 +263,8 @@ include<PeregrineCamBay.scad>
 // 3 = Middle slice
 // 4 = Top slice + integral camera flange (removable service shell)
 // 5 = Legacy separate adapter (only for Bay_Enabled=false)
-// 6 = Battery carrier / sealed floor (print base-down, translate to bed)
-// 7 = DC-DC tray / battery keeper (print upside-down, supports under rim)
+// 6 = Battery carrier / sealed floor / cell sleeves (print base-down, translate to bed)
+// 7 = DC-DC tray / battery keeper (print upside-down, supports under the bath)
 // 8 = Bay cutaway assembly, for inspection only (not a printable part)
 Render_Part = 0;
 
@@ -354,10 +363,16 @@ module CN_Shoulder(){
                 [Shoulder_Spigot_OD/2-NC_Wall_T, Shoulder_L+Shoulder_Spigot_L+Overlap],
                 [0, Shoulder_L+Shoulder_Spigot_L+Overlap]
             ]);
-        translate([0, Shoulder_Bore_D/2-4, -Overlap])
+        // Recovery ribbon slots, T-shaped: the 16 x 4 bar takes the ribbon,
+        // the stem toward the axis takes a copper guide wire. With the
+        // nosecone assembled the ribbon is threaded blind: push the wire
+        // through the stem, then pull the ribbon through the bar with it.
+        for (s=[-1,1]) translate([0, s*(Shoulder_Bore_D/2-4), -Overlap]){
             RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
-        translate([0, -Shoulder_Bore_D/2+4, -Overlap])
-            RoundRect(X=16, Y=4, Z=Shoulder_Bulk_T+1, R=1.5);
+            translate([0, -s*(2+Ribbon_Guide_L)/2, 0])
+                RoundRect(X=Ribbon_Guide_W, Y=2+Ribbon_Guide_L,
+                          Z=Shoulder_Bulk_T+1, R=Ribbon_Guide_W/2-0.01);
+        }
     } // difference
 } // CN_Shoulder
 
