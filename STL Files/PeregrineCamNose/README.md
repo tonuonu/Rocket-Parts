@@ -9,6 +9,44 @@ This is a CAD-verified prototype, with the initial 04/06 trial fit reported
 below. Full assembly fit, insert strength, mechanical loads, temperatures
 and ejection protection have not been bench-tested.
 
+## Revision 2026-11-08 — sleeves, insert pockets, flush screws, ribbon slots
+
+Changes from the owner's first full print:
+
+- **06 carrier:** the cell cups are now **full-height sleeves** and the two
+  tray screw bosses are moulded into their outer ends along the whole
+  height. The free-standing 8 mm posts are gone. Each sleeve has one
+  full-height 6 mm slot, both on **−Y**, so a cell with soldered tabs (or a
+  pair already joined at the bottom) slides in from above with its lower tab
+  running down the slot.
+- **07 tray:** the short cups around the cell tops are gone (the sleeves
+  locate the cells); the keeper ring and its ribs remain. The bath rim is
+  notched where the countersunk tray screws go in — before, the rim
+  overhung each head by 1.8 mm, so the screw could not be inserted.
+- **All blind heat-set pockets are 7.7 mm deep** (insert 5.7 + 2). ruthex
+  specifies at least L + 1 mm; the old 5.9 mm pockets left the displaced
+  plastic nowhere to go, and it ran into the thread. Tray bosses also have a
+  Ø3.4 relief below the pocket for the screw tip.
+- **04 top shell:** the three service-joint screws are **countersunk**, flush
+  with the shell (M3 90°, head ≤6.2 mm). The seat is 1.4 mm deep in the
+  2.2 mm wall — do not over-tighten.
+- **01 shoulder:** each recovery slot is **T-shaped**: a 4 mm stem runs 8 mm
+  from the middle of the 16 × 4 mm slot toward the axis, for a copper guide
+  wire to pull the ribbon through after assembly.
+
+**Reprint 01, 06 and 07.** The printed 03 and 04 can be reworked instead:
+
+- 03, three floor-seat pockets (on the seat face at Z=270): drill Ø4.0 mm to
+  7.7 mm deep before fitting inserts. The CAD keeps ≥1 mm of corbel under
+  that depth.
+- 03, three service-joint bosses: drill Ø4.0 mm to 7.7 mm deep from the
+  boss face (was 6.0 mm); a Ø3.4 hole already continues beyond.
+- 04, three side holes: countersink 90° to Ø6.2 mm.
+
+02 is unchanged. The board stays with its 47 mm side along X: turned 90°,
+it blocks the switch body when the top shell lifts off. CAD checks for this
+revision: `sleeve-revision-verification.json` (113/113).
+
 ## Shoulder insertion chamfer and tube fit — 2026-11-03
 
 **The owner reports four gauge bands entered, while the fifth did not:**
@@ -62,10 +100,10 @@ original CAD check is recorded in `fit-gauge-verification.json`.
 
 **06 does not go completely inside 04.** Its bottom is supposed to remain
 **24.28 mm below the wide lower edge of 04**. The carrier floor sits in
-**03**, which surrounds that lower portion. Insert 06 posts-first through
+**03**, which surrounds that lower portion. Insert 06 sleeves-first through
 04's wide end for a trial fit; do not force the carrier floor up to the
-04 rim. The holder posts must face the shell sides away from the switch
-and charging pads. Part 07 attaches to the tops of the posts.
+04 rim. The screw bosses (±X) must face the shell sides away from the
+switch (+Y) and charging pads (−Y). Part 07 screws to the tops of the bosses.
 
 The owner printed 04/06/07 and reported approximately 24 mm remaining
 outside, which matches this arrangement. That observation does not require
@@ -77,11 +115,13 @@ required part except 01; full assembly fit has not yet been reported.
 ## Recovery ribbon
 
 The recovery strap goes through **01-Shoulder**, not through the electronics
-barrier. Its two existing rounded slots are **16 × 4 mm**, suitable as a
-nominal opening for the owner's approximately 15 mm-wide ribbon. The
-exported STL measures 16.000 × 3.998 mm and clears a solid 15 × 3 mm test
-gauge; actual ribbon thickness and printed clearance still need checking.
-No slot or mesh change was needed for the reported width.
+barrier. Its two rounded slots are **16 × 4 mm**, suitable as a nominal
+opening for the owner's approximately 15 mm-wide ribbon; they clear a solid
+15 × 3 mm test gauge. Since 2026-11-08 each slot is **T-shaped**: a 4 mm
+stem runs 8 mm from the middle of the slot toward the axis (both stems point
+at each other). With the nosecone assembled, push a copper wire through the
+stem, hook the ribbon, and pull it through the slot. Actual ribbon thickness
+and printed clearance still need checking.
 
 ## Shoulder chamfer — 2026-11-03
 
@@ -113,8 +153,8 @@ in this view. Its mesh is on `feature/rocket60` at
 | 2 | `SliceBottom.stl` | 154.15 mm | Wide end down |
 | 3 | `SliceMiddle.stl` | 154.13 mm | Wide end down; includes floor seat and service-joint bosses |
 | 4 | `SliceTop.stl` | 94.95 mm | **Camera flange down**; rotate 180° about X or Y |
-| 6 | `BatteryCarrier.stl` | 77 mm | Solid floor down |
-| 7 | `ConverterTray.stl` | 15.4 mm | Bath opening down; rotate 180°; support the bath and keeper overhangs |
+| 6 | `BatteryCarrier.stl` | 77 mm | Solid floor down; sleeves and bosses print upright, no supports |
+| 7 | `ConverterTray.stl` | 11.4 mm | Bath opening down; rotate 180°; support under the bath floor |
 
 **Do not print or install `Adapter.stl` with this bay top.** Part 5 is kept
 only for the previous separate-adapter design (`Bay_Enabled=false`). The
@@ -127,18 +167,18 @@ its previous shape; part 1 has both internal and entry chamfers at Ø98.7. Parts
 versions remain current. Part 8 is a cutaway view, not a printable part.
 
 Use PETG or ASA as before. Start with 0.2 mm layers and at least four
-perimeters; use local solid-infill modifiers for the floor, flange, posts
-and insert seats. Inspect the slicer's paths. Support the tray bath and
-keeper overhangs; check whether the top shell's internal panel pads need
+perimeters; use local solid-infill modifiers for the floor, flange, screw
+bosses and insert seats. Inspect the slicer's paths. Support the tray bath
+floor; check whether the top shell's internal panel pads need
 local support. Clear all tab reliefs and cable-tie tunnels after printing.
 
 ## Hardware
 
 | Item | Quantity | Use |
 |---|---:|---|
-| ruthex RX-M3×5.7 inserts, Ø4.0 pockets | 11 | 3 camera, 3 service joint, 3 floor, 2 carrier posts |
-| M3×8 button-head screws | 6 | 3 shell side screws, 3 carrier-floor screws |
-| M3×8 **90° countersunk** screws, head ≤6.0 mm | 2 | Converter tray; heads flush |
+| ruthex RX-M3×5.7 inserts, Ø4.0 × 7.7 mm pockets | 11 | 3 camera, 3 service joint, 3 floor, 2 tray bosses |
+| M3×8 button-head screws | 3 | Carrier-floor screws |
+| M3×8 **90° countersunk** screws, head ≤6.2 mm | 5 | 3 shell side screws, 2 converter tray; all heads flush |
 | Camera's existing M3 screws | 3 | Match actual camera base; ≤5.7 mm insert engagement |
 | Schurter 0033.4513 + 0098.0043 nut | 1 each | Switch; nut may be a separate order |
 | M3 countersunk screws, nuts and terminations | As wired | Three unassigned charging-contact seats |
@@ -156,8 +196,9 @@ seats can be closed with insulating plugs.
   Cup ID 19.5 mm; 2 mm lower tab relief, at least 5 mm above the body,
   and 6 mm-wide exits. Measure actual cells and tabs; adjust `Bay_Cell_D`
   and `Bay_Cell_Body_L` if needed, then regenerate and recheck the model.
-- The keeper has 0.6 mm axial clearance, taken up with an insulating
-  annular pad. Ø14.5 mm centre openings and split exits leave terminals
+- The sleeves (ID 19.5 mm) locate the cells; each has a 6 mm loading slot
+  on −Y. The keeper ring on 07 has 0.6 mm axial clearance, taken up with an
+  insulating annular pad. Ø14.5 mm centre openings and split exits leave terminals
   accessible. Bear on the insulated rim, not solder tabs or the vent.
   Do not fill these reliefs with epoxy.
 - Converter envelope: 47 × 26 × 13 mm; bath footprint 47.8 × 26.8 mm.
@@ -188,8 +229,9 @@ the complete assembly in the actual top before bonding.
    height. Epoxy makes this floor permanent; a suitable removable seal
    preserves removal. Seat insert pockets are blind. No wire hole passes
    through the barrier; all current wiring stays above it.
-4. Install insulated cells, route lower tabs through the reliefs and fit
-   the upper keeper/tray with two flush countersunk M3×8 screws. Confirm
+4. Slide the insulated cells into the sleeves from above, lower tabs down
+   the −Y loading slots and out through the reliefs, then fit the
+   keeper/tray with two flush countersunk M3×8 screws into the bosses. Confirm
    retention without loading tabs. The keeper provides axial retention;
    potting cells is unnecessary. Leave vents and terminals unobstructed.
 5. Secure the converter using both ties through the 3.2 × 1.2 mm tunnels.
@@ -201,7 +243,8 @@ the complete assembly in the actual top before bonding.
 7. Bolt the camera to the integral flange. Its Ø37.96 bolt circle remains
    **52.2°, −52.2°, 180°**, preserving the original camera orientation.
    The harness passes through the Ø29.56 central bore.
-8. Attach the top with three M3×8 side screws. **Do not glue this service
+8. Attach the top with three countersunk M3×8 side screws, flush with the
+   shell; the seat is only 1.4 mm deep, so do not over-tighten. **Do not glue this service
    joint.** After trial assembly, epoxy shoulder-to-bottom and
    bottom-to-middle as before. Dry-fit the shoulder's 98.7 mm outer body
    through the full insertion depth before bonding it to the nosecone.
@@ -236,8 +279,12 @@ the 2026-11-02 bay baseline; `shoulder-verification.json` records the
 `tube-fit-verification.json` records the subsequently rejected Ø99.7 trial's
 CAD checks. `fit-gauge-verification.json` records the stepped gauge and
 restored Ø98.7 shoulder before the external lead-in was added.
-`entry-chamfer-verification.json` records the current shoulder with its
-external lead-in, the owner's gauge result, and unchanged mating geometry.
+`entry-chamfer-verification.json` records the shoulder with its external
+lead-in, the owner's gauge result, and unchanged mating geometry.
+`sleeve-revision-verification.json` records the 2026-11-08 revision: sleeves
+and fused bosses, 7.7 mm blind pockets, tray-screw insertion path,
+countersunk service screws and the T-slot stems. Every new check there also
+fails on the previous meshes.
 No slicer was used for these later revisions. To repeat dimensions and
 overhang regression, use
 `python3 tools/verify_camnose.py 0 1 --output-dir /tmp/camnose-shoulder`.
