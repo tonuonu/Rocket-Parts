@@ -204,6 +204,15 @@ def main():
         blocked=cylinder(64,40,[0,0,270.02])
         record("uncut floor is rejected at joint bosses",intersection_volume(blocked,m[3])>1)
 
+    # The service insert bosses must not print as floating ledges. Below
+    # the insert holes (whose arches are normal bridges) no face of the
+    # middle slice may face down flatter than 30 degrees from horizontal.
+    n,c,area=m[3].face_normals,m[3].triangles_center,m[3].area_faces
+    ledge=((n[:,2]<-math.cos(math.radians(30)))&(c[:,2]>280)&(c[:,2]<296)
+           &(np.hypot(c[:,0],c[:,1])>26))
+    record("service insert bosses have no floating underside",
+           area[ledge].sum()<1,round(float(area[ledge].sum()),2))
+
     barrier=cylinder(45,3.9,[0,0,270.05])
     record("floor has a continuous solid centre",
            intersection_volume(barrier,m[6]) > barrier.volume*0.999)

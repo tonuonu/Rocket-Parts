@@ -33,6 +33,12 @@ Changes from the owner's first full print:
 - **01 shoulder:** each recovery slot is **T-shaped**: a 4 mm stem runs 8 mm
   from the middle of the 16 × 4 mm slot toward the axis, for a copper guide
   wire to pull the ribbon through after assembly.
+- **03 middle slice:** the three service-joint insert bosses used to stick
+  7.4 mm out of the wall with a flat underside, and the slicer flagged them as
+  floating cantilevers. Each now has a gusset below it that runs down into
+  the shell wall, about 34° from vertical, so the slice prints without
+  support. The gussets stay inside the boss footprint, so the carrier floor
+  still passes them through its scallops.
 
 **Reprint 01, 06 and 07.** The printed 03 and 04 can be reworked instead:
 
@@ -43,9 +49,12 @@ Changes from the owner's first full print:
   boss face (was 6.0 mm); a Ø3.4 hole already continues beyond.
 - 04, three side holes: countersink 90° to Ø6.2 mm.
 
+A reworked 03 keeps its old bosses without gussets. That is fine if they
+printed cleanly. To print a new 03, use the current STL.
+
 02 is unchanged. The board stays with its 47 mm side along X: turned 90°,
 it blocks the switch body when the top shell lifts off. CAD checks for this
-revision: `sleeve-revision-verification.json` (113/113).
+revision: `sleeve-revision-verification.json` (114/114).
 
 ## Shoulder insertion chamfer and tube fit — 2026-11-03
 

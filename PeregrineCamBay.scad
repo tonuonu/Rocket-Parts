@@ -112,16 +112,32 @@ module Bay_Seat(){
     }
 }
 
+// Each boss stands ~7 mm proud of the lap. A gusset runs from its underside
+// down into the shell wall so it does not print as a floating ledge; the
+// underside is ~34 degrees from vertical. The anchor sits inside the wall.
+Bay_Joint_Gusset_Z = Bay_Joint_Z - 20;
+
 module Bay_Joint_Bosses(){
+    zg = Bay_Joint_Gusset_Z;
     intersection(){
-        for (a=Bay_Joint_A)
+        for (a=Bay_Joint_A) hull(){
             Bay_Radial(a,Bay_Joint_R,Bay_Joint_Z)
                 cylinder(d=9,h=9,$fn=48);
-        // The boss must not obstruct lifting the top shell off its lap.
-        translate([0,0,Cut2_Z-2])
-            cylinder(d1=Ogive_OD_At_Z(Cut2_Z-2,NC_Wall_T)-0.7,
-                     d2=Ogive_OD_At_Z(Cut2_Z+7,NC_Wall_T)-0.7,
-                     h=9,$fn=180);
+            Bay_Radial(a,Ogive_OD_At_Z(zg)/2-0.3,zg)
+                cylinder(d=2,h=1.6,$fn=24);
+        }
+        union(){
+            // The boss must not obstruct lifting the top shell off its lap.
+            translate([0,0,Cut2_Z-2])
+                cylinder(d1=Ogive_OD_At_Z(Cut2_Z-2,NC_Wall_T)-0.7,
+                         d2=Ogive_OD_At_Z(Cut2_Z+7,NC_Wall_T)-0.7,
+                         h=9,$fn=180);
+            // Below the lap the gusset stays inside the shell's outer skin.
+            translate([0,0,zg-2])
+                cylinder(d1=Ogive_OD_At_Z(zg-2)-0.4,
+                         d2=Ogive_OD_At_Z(Cut2_Z-2)-0.4,
+                         h=Cut2_Z-zg,$fn=180);
+        }
     }
 }
 

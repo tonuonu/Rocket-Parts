@@ -2,14 +2,14 @@
   "scope": "Default CAD geometry only; no physical or flight qualification",
   "source_sha256": {
     "PeregrineCamNose.scad": "1f776fd400facae9c14047a39cf5467259d13fe0ee0371e54e4ce92b806fa342",
-    "PeregrineCamBay.scad": "1626fd03f32d7a8d5f0a7fa198326c4824e51417c904a70b71c3f951d58ef3e4",
+    "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6",
     "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
   },
   "mesh_sha256": {
     "part0.stl": "a75228a09d161c2377e203cb02ba33d06b72923284a9fbb16b646839fac44ed2",
     "part1.stl": "3a57efdaa7c111962d33c964a968d8a9b6a828570f7c8918887b3a9ac367c3c9",
     "part2.stl": "16e3c8b977923b594684724e02d181eee721c59e4a0fede2006a49afb6805736",
-    "part3.stl": "eafd13418fb849aa9b74f8c15cbfb4195c910b95ef7a7e33833d9966074d7748",
+    "part3.stl": "e5dcf8232f12f261bb854b4a817fc25a7aa6024e957f135cf7c02d6bea2c7b4a",
     "part4.stl": "687eb469f1d27c1b3a3b2311d891e7fd3db51760523a14fb940482b7d9bf1b95",
     "part5.stl": "484155828282cc59a54d6bd410cf310b465d37e1096e984308ba8efeded205dc",
     "part6.stl": "9a874eace401ee8d9e50e2ade81a9fadf739698ef9bf525ac7fffb94dbe963bd",
@@ -566,6 +566,11 @@
       "check": "uncut floor is rejected at joint bosses",
       "passed": true,
       "value": null
+    },
+    {
+      "check": "service insert bosses have no floating underside",
+      "passed": true,
+      "value": 0.0
     },
     {
       "check": "floor has a continuous solid centre",
