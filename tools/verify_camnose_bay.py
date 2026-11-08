@@ -112,10 +112,11 @@ def main():
         x,y = 28*math.cos(math.radians(a)),28*math.sin(math.radians(a))
         shaft = cylinder(3.2,4.2,[x,y,269.9])
         clear("floor screw %d clears carrier" % a,shaft,m[6])
-        insert = cylinder(3.8,5.6,[x,y,264.3])
+        # ruthex: blind pocket >= L+1 (5.7+1); the design gives L+2 = 7.7.
+        insert = cylinder(3.8,7.6,[x,y,262.35])
         clear("floor insert %d has seat pocket" % a,insert,m[3])
         # A solid 1 mm layer must remain below each pocket.
-        back = cylinder(3.8,1,[x,y,262.9])
+        back = cylinder(3.8,1,[x,y,261.2])
         record("floor insert %d is blind" % a,
                intersection_volume(back,m[3]) > back.volume*0.99)
         head = cylinder(6,2.4,[x,y,274.01])
@@ -123,7 +124,15 @@ def main():
 
     for x,y in [(27,0),(-27,0)]:
         clear("tray screw clearance",cylinder(3.2,3.1,[x,y,346.9]),m[7])
-        clear("tray insert pocket",cylinder(3.8,5.6,[x,y,341.3]),m[6])
+        clear("tray insert pocket",cylinder(3.8,7.6,[x,y,339.35]),m[6])
+        clear("tray screw tip relief",cylinder(3.2,3.9,[x,y,335.35]),m[6])
+        back = cylinder(3.8,1,[x,y,334.2])
+        record("tray insert pocket is blind",
+               intersection_volume(back,m[6]) > back.volume*0.99)
+        # The boss must be fused to the sleeve, not a free-standing post.
+        web = box([0.7,4,60],[22.3 if x>0 else -23.0,-2,276])
+        record("tray boss is joined to the sleeve wall",
+               intersection_volume(web,m[6]) > web.volume*0.99)
         # Flush 90-degree head, 6.0 mm at the top and 3.2 mm at the neck.
         profile=np.array([[0,0],[1.6,0],[3,1.4],[0,1.4],[0,0]])
         head=trimesh.creation.revolve(profile,sections=96)
@@ -131,6 +140,10 @@ def main():
         clear("tray screw head clears tray",head,m[7])
         clear("tray screw head clears shell",head,m[4])
         clear("tray screw head clears converter",head,converter)
+        # The head must also be able to go in: its straight path from
+        # above, not only its seated position.
+        clear("tray screw head insertion path",
+              cylinder(6.2,20,[x,y,350.01]),m[7])
 
     # Hardware depths from the repository's Schurter drawing, with a
     # conservative 16 mm body/nut envelope behind the flat 6 mm panel.
@@ -144,6 +157,16 @@ def main():
         shaft=cylinder(3.2,8,[39*c,39*s,297.785],[-c,-s,0])
         for p in [3,4]:
             clear("service screw %d clears part %d" % (a,p),shaft,m[p])
+        # Countersunk flush: a 90-degree M3 head (6.0 mm) sits below the
+        # outer surface, and the insert pocket is L+1 deep or more.
+        r_out = od(297.79)/2
+        profile=np.array([[0,0],[1.6,0],[3,1.4],[0,1.4],[0,0]])
+        head=trimesh.creation.revolve(profile,sections=96)
+        head.apply_transform(trimesh.geometry.align_vectors([0,0,1],[c,s,0]))
+        head.apply_translation([(r_out-1.45)*c,(r_out-1.45)*s,297.785])
+        clear("service screw %d countersunk head" % a,head,m[4])
+        pocket=cylinder(3.8,6.7,[(r_out-2.2)*c,(r_out-2.2)*s,297.785],[-c,-s,0])
+        clear("service insert %d pocket >= L+1" % a,pocket,m[3])
     switch = cylinder(16,17.5,[0,face-6.01,315],(0,-1,0))
     clear("switch body/nut clears shell",switch,m[4])
     for p in [6,7]:
@@ -156,6 +179,16 @@ def main():
     for x in [-8,0,8]:
         clear("charging screw %d passes panel" % x,
               cylinder(3.2,10,[x,-charge_face-0.1,321],(0,1,0)),m[4])
+
+    # Recovery ribbon slots are T-shaped: 16 x 4 bar plus a 4 mm stem
+    # reaching 8 mm toward the axis for a copper guide wire.
+    for sy in [-1,1]:
+        yb = sy*(94.3/2-4)
+        clear("ribbon bar %+d passes bulkhead" % sy,
+              box([15,3,6],[-7.5,yb-1.5,-1]),m[1])
+        # 2 mm wire gauge; the stem's far end is rounded (R2).
+        clear("guide-wire stem %+d passes bulkhead" % sy,
+              box([2,7.7,6],[-1,yb-sy*2-(7.7 if sy>0 else 0),-1]),m[1])
 
     with tempfile.TemporaryDirectory() as tmp:
         # A continuous extrusion of the carrier's maximum plan covers every

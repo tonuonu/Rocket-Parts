@@ -279,7 +279,8 @@ def main(argv):
                    ("carrier height", m[6]["height"], 77.0, 0.01),
                    ("carrier max diameter", m[6]["dmax"], 64.0, 0.01)]
     if 7 in m:
-        checks += [("tray keeper bottom z", m[7]["zmin"], 337.6, 0.01),
+        # Keeper ring only: the carrier sleeves now locate the cells.
+        checks += [("tray keeper bottom z", m[7]["zmin"], 341.6, 0.01),
                    ("tray rim top z", m[7]["zmax"], 353.0, 0.01)]
     for p in m:
         checks += [("part %d fits 250mm Z" % p, m[p]["height"],
