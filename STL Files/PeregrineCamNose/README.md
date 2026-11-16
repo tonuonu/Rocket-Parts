@@ -9,6 +9,105 @@ This is a CAD-verified prototype, with the initial 04/06 trial fit reported
 below. Full assembly fit, insert strength, mechanical loads, temperatures
 and ejection protection have not been bench-tested.
 
+## Canard section — 2026-11-16 (branch `feature/nose-canards`, not yet printed)
+
+Four roll/tilt canards in the bottom slice (02), for CATS Vega canard control
+(stage 1 `ROLL_2`, stage 2 `FULL_4`). Source: `PeregrineCamCanards.scad`,
+switched by `Canards_Enabled` in `PeregrineCamNose.scad`. With it `false`,
+parts 01 and 02 are geometrically the committed (printed) versions: volume,
+bounds and boolean difference checked.
+
+**Mechanism.** Each canard is **direct drive**: a Savox SH-1250MG lies in
+a central cassette with its spline pointing radially out, an aluminium 25T
+disc horn sits on the spline, and the canard's root plug bolts to the horn
+with two M3 countersunk screws. There is no pushrod or ball link, so the only
+play is the servo's own gear train. The four units are identical and turned
+0/90/180/270°, so two opposite servos are 180° apart. One Y-cabled signal
+therefore turns both in the same rotational sense (roll, no reverser).
+Stage 2 drives the four independently with no mechanical change.
+
+| | Value |
+|---|---|
+| Panel | root 45, tip 25, span 25, LE sweep 12, 4 mm thick; 875 mm² each |
+| Pivot (servo axis) | Z = 50 above the nose base; 12.6 mm behind the root LE, 5% MAC **ahead of** the panel CP. A limp canard trails to neutral. |
+| Root LE / TE | Z = 62.6 / 17.6 |
+| Stops | ±11° (`Canard_Stop`); shell tab in a slot in the plug; checked free at ±10.5°, blocked at ±11.5° |
+| Firmware max | 8° (`Canard_Max_Cmd`) |
+| Added mass | about 265 g (servos 118, cassette ~56–75, canards ~32, horns/screws/inserts/harness ~50) |
+
+`python3 tools/canard_estimate.py` prints the aerodynamic numbers; `-D` overrides any SCAD value.
+
+**Static margin.** The numbers below use OpenRocket `PeregrineL2.ork`, J350 sim. That model has the kit nose, not the camera nose.
+- The canard set moves the CP **3.9 cm forward at rod exit and 5.3 cm at max speed**, about 0.4–0.5 cal.
+- OpenRocket's rod-exit margin is already 0.48 cal. It drops to 0.10 cal with the canards alone, or 0.61 cal counting their 265 g. At max speed it is 1.60 → 1.09 (1.62 with mass).
+- For 1.0 cal at rod exit with the canards, the CG must be at most 108.4 cm from the OR tip.
+- With one canard pair jammed at the 11° stop, the rocket trims at 2.6° AoA at max speed and 6.0° at rod-exit CG.
+- Span 20 mm moves the CP 2.7 / 3.7 cm instead.
+
+**Hinge moment.** At 173 m/s (q = 18 kPa) and 16° (stop plus 5° AoA) the panel carries 9 N. With the CP up to 13% MAC off the pivot that gives ≤ 0.43 kg·cm, about 11% of the servo's ~3.85 kg·cm at 5 V. The servo spline carries about 0.19 N·m of bending, similar to an ordinary horn and pushrod.
+
+### Parts
+
+| Part | Render_Part | Bed orientation |
+|---|---|---|
+| 01 canard shoulder (`Canards/Shoulder.stl`) | 1 | Bulkhead down. Insert bosses are gusseted. Index key on the OD under the shell base. Harness exit cut in the bulkhead. |
+| 02 canard slice (`Canards/SliceBottom.stl`) | 2 | Wide end down. **Support the crowns of the four Ø24.6 plug holes.** |
+| 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down. The upper tab ledges bridge 15.6 mm. |
+| 10 canard ×4 (`Canards/Canard.stl`) | 10 | Plug down, blade up. Support under the root ends of the blade. |
+
+### Hardware
+
+| Item | Qty | Use |
+|---|---:|---|
+| Savox SH-1250MG | 4 | Servos |
+| Aluminium 25T disc horn, Ø ≤ 20, two **tapped M3** holes on a 16 mm PCD | 4 | Plug interface; owner to choose the exact part |
+| ruthex RX-M2×4 inserts (Ø3.2, 6 mm pockets) + M2×8 screws | 16 | Servo tabs in the cassette |
+| ruthex RX-M3×5.7 inserts (Ø4.0, 7.7 mm pockets) | 12 | 4 cassette, 8 shoulder |
+| M3×8 90° countersunk | 12 | 4 cassette-to-slice, 8 shoulder-to-slice (all radial, flush) |
+| M3×10 90° countersunk | 8 | Canard plug to horn (slotted ±6° for trim) |
+| 6-pin breakaway connector | 1 | Bulkhead cut-out 14 × 7 mm at +X, r = 28 |
+
+### Assembly and service
+
+1. Fit the M2 inserts into the cassette, screw the four servos in through
+   their tabs (radially from outside), run each lead straight down through
+   its floor slot.
+2. With the shoulder off, slide the cassette up into 02 until its four bosses
+   line up with the shell holes between the canards. Fit 4 × M3×8 countersunk.
+3. From outside, push each disc horn onto its spline through the plug hole.
+   Centre the servo first; 25T steps are 14.4°, and the plug slots take up
+   ±6°. Fit the centre screw, then the canard with 2 × M3×10.
+4. Seal the lead slots in the cassette floor. The floor is the debris barrier
+   for the servos, not a pressure bulkhead. The shoulder bulkhead's ribbon
+   slots are open to the ejection gas.
+5. Screw the shoulder on: 8 × M3×8 countersunk through the skirt, Z = 7.5.
+   Its key goes into a notch filed in the tube rim.
+
+Canards and horns come off from outside. For the servos, remove the
+shoulder and then the cassette.
+
+![Canard section cutaway](Canards/CanardCutaway.png)
+
+### Cable route and indexing
+
+Servo leads → cassette floor slots → down through the shoulder → connector
+in the bulkhead. The harness then runs along the shock cord through the
+drogue bay → e-bay forward bulkhead → Vega.
+
+- **Y-pairing:** do it on the e-bay side. The nose connector carries 4 signals + GND + 5 V for stage 2.
+- **Separation:** the nose separates at apogee, which is drogue deployment, so the connector parts there.
+- **Firmware:** `ctrl` latches the canards to neutral at DROGUE anyway.
+
+**Index key:** 6 × 6 mm, under the shell base at `Index_Key_A` = canard 1. It
+fixes the nose to the tube within the notch clearance. The tube → e-bay
+coupler → sled → Vega chain must be fixed separately.
+
+**Rail:** keep the rail line at least 15° from any canard; 45° is best. On the rail line a 25 mm canard hits the rail.
+
+Checks: `tools/verify_camnose_canards.py` (report in `canard-verification.json`;
+meshes in `Canards/`). The servo dimensions are the SV-1250MG+
+drawing/STEP, a stand-in; measure an SH-1250MG.
+
 ## Revision 2026-11-08 — sleeves, insert pockets, flush screws, ribbon slots
 
 Changes from the owner's first full print:

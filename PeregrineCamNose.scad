@@ -254,6 +254,13 @@ assert(Shoulder_Bore_Chamfer_H < Shoulder_L-Shoulder_Bulk_T,
 Bay_Enabled = true;
 include<PeregrineCamBay.scad>
 
+// Canard control section: four direct-drive servo canards in the bottom
+// slice, a removable servo cassette, and a screwed (not glued) shoulder so
+// the cassette can come out. False reproduces parts 1 and 2 exactly as
+// before, for the parts already printed.
+Canards_Enabled = true;
+include<PeregrineCamCanards.scad>
+
 // ============================================
 // RENDER SELECTION -- change this value!
 // ============================================
@@ -266,6 +273,12 @@ include<PeregrineCamBay.scad>
 // 6 = Battery carrier / sealed floor / cell sleeves (print base-down, translate to bed)
 // 7 = DC-DC tray / battery keeper (print upside-down, supports under the bath)
 // 8 = Bay cutaway assembly, for inspection only (not a printable part)
+// 9 = Canard servo cassette (Canards_Enabled; print floor-down)
+// 10 = One canard: root plug + blade (print plug-down; print 4)
+// 11 = Canard section cutaway assembly, for inspection only
+// 20..23 = canard check envelopes for tools/verify_camnose_canards.py:
+//      20 servos, 21 disc horns, 22 canards at Canard_View_Defl, 23 shoulder
+//      in assembled position. Not printable.
 Render_Part = 0;
 
 // ============================================
@@ -278,7 +291,10 @@ module CN_Cone(Cut_d=0, Lower=false){
         Cut_d=Cut_d, LowerPortion=Lower, FillTip=false);
 } // CN_Cone
 
-module CN_Slice_Bottom(){ CN_Cone(Cut_d=Cut1_d, Lower=true); }
+module CN_Slice_Bottom(){
+    if (Canards_Enabled) CN_Canard_Slice();
+    else CN_Cone(Cut_d=Cut1_d, Lower=true);
+}
 
 module CN_Slice_Middle_Shell(){
     // Everything below cut 2 (with its gluing flange), clipped above cut 1.
@@ -340,6 +356,14 @@ module CN_Adapter(){
 } // CN_Adapter
 
 module CN_Shoulder(){
+    if (Canards_Enabled) difference(){
+        union(){ CN_Shoulder_Plain(); Canard_Shoulder_Add(); }
+        Canard_Shoulder_Cut();
+    }
+    else CN_Shoulder_Plain();
+}
+
+module CN_Shoulder_Plain(){
     difference(){
         union(){
             rotate_extrude($fn=$preview?90:360)
@@ -374,7 +398,7 @@ module CN_Shoulder(){
                           Z=Shoulder_Bulk_T+1, R=Ribbon_Guide_W/2-0.01);
         }
     } // difference
-} // CN_Shoulder
+} // CN_Shoulder_Plain
 
 module TestRing(){
     // The old 101.5 mm ring tested the outside profile; the subsequent
@@ -412,6 +436,13 @@ if (Render_Part == 5) CN_Adapter();
 if (Render_Part == 6) CN_Battery_Carrier();
 if (Render_Part == 7) CN_Converter_Tray();
 if (Render_Part == 8) CN_Bay_Assembly();
+if (Render_Part == 9) CN_Canard_Cassette();
+if (Render_Part == 10) CN_Canard_Print();
+if (Render_Part == 11) CN_Canard_Assembly();
+if (Render_Part == 20) CN_Canard_Servos();
+if (Render_Part == 21) CN_Canard_Horns();
+if (Render_Part == 22) CN_Canard_Units();
+if (Render_Part == 23) translate([0,0,-Shoulder_L]) CN_Shoulder();
 
 // ============================================
 // PRINT NOTES
@@ -426,10 +457,18 @@ if (Render_Part == 8) CN_Bay_Assembly();
 //   5  Legacy adapter   21mm   -- not used with the bay top
 //   6  Battery carrier  77mm   -- print floor-down
 //   7  Converter tray   15mm   -- includes upper battery keeper
+//   9  Servo cassette   53mm   -- Canards_Enabled; print floor-down
+//  10  Canard (x4)      34mm   -- plug down, support under the blade root ends
+//
+// With Canards_Enabled, parts 1 and 2 are the canard versions: part 2 has
+// the four plug holes and ring bosses (support the hole crowns), part 1 has
+// eight insert bosses, the index key and the harness exit. The shoulder is
+// then SCREWED to part 2 (8 x M3x8 countersunk), not glued -- skip step 2
+// below. See STL Files/PeregrineCamNose/README.md, "Canard section".
 //
 // Assembly, bottom to top:
 //   1. Print part 0. Check it sits flush on the tube and accepts the spigot.
-//   2. Glue the shoulder spigot into the bottom slice bore.
+//   2. Glue the shoulder spigot into the bottom slice bore (not with canards).
 //   3. Glue the bottom slice flange into the middle slice, hold until set.
 //   4. With Bay_Enabled, fit the carrier and seal its seat, then fasten the
 //      top slice with three M3x8 screws. Do NOT glue that service joint.

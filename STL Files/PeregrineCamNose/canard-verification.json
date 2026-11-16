@@ -1,0 +1,355 @@
+{
+ "tool": "verify_camnose_canards.py",
+ "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
+ "trimesh": "4.12.2",
+ "scad_sha256": {
+  "PeregrineCamNose.scad": "751e9bb977312cac01e3b08b674a145a526eca1b5903f95749db33b229c2fb81",
+  "PeregrineCamCanards.scad": "2d072b9de1290ba5a9dfd6d67d9cacf8118ba32dda8addf338220a017e313c6a",
+  "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
+ },
+ "passed": 65,
+ "failed": 0,
+ "results": [
+  {
+   "check": "part1 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part1 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part1 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part2 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part2 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part2 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part9 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part9 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part9 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part10 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part10 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part10 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part1_off matches committed Shoulder.stl (volume)",
+   "passed": true,
+   "value": 0.0007
+  },
+  {
+   "check": "part1_off matches committed Shoulder.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part1_off minus committed Shoulder.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part2_off matches committed SliceBottom.stl (volume)",
+   "passed": true,
+   "value": 0.0034
+  },
+  {
+   "check": "part2_off matches committed SliceBottom.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part2_off minus committed SliceBottom.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear the canard slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "disc horns clear the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "disc horns clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the disc horns",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards free at +10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards free at -10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards blocked by the stop at +11.5 deg",
+   "passed": true,
+   "value": 0.6573
+  },
+  {
+   "check": "canards blocked by the stop at -11.5 deg",
+   "passed": true,
+   "value": 0.5154
+  },
+  {
+   "check": "cassette with servos slides out of the slice",
+   "passed": true,
+   "value": {
+    "worst_mm3": 0.0,
+    "at_drop_mm": null
+   }
+  },
+  {
+   "check": "cassette screw 0 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 0 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 1 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 1 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 2 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 2 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 3 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 3 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 0 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 0 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 1 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 1 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 2 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 2 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 3 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 3 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 4 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 4 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 5 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 5 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 6 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 6 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 7 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 7 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "index key protrudes into the tube wall",
+   "passed": true,
+   "value": {
+    "mm3": 25.23,
+    "angle": 0.0
+   }
+  },
+  {
+   "check": "index key at Index_Key_A",
+   "passed": true,
+   "value": {
+    "expected": 0.0,
+    "measured": 0.0
+   }
+  },
+  {
+   "check": "part1 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 216.1
+  },
+  {
+   "check": "part2 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 448.7
+  },
+  {
+   "check": "part9 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 989.2
+  },
+  {
+   "check": "part10 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 126.8
+  },
+  {
+   "check": "volumes cm3",
+   "passed": true,
+   "value": {
+    "part1": 109.645,
+    "part2": 103.924,
+    "part9": 58.727,
+    "part10": 6.282,
+    "part1_off": 103.672,
+    "part2_off": 106.23
+   }
+  }
+ ]
+}

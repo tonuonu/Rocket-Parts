@@ -31,7 +31,10 @@ def render(part, out):
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out,
-         "-D", "Render_Part=%d" % part, SCAD],
+         "-D", "Render_Part=%d" % part,
+         # The canard variant of parts 1/2 is checked by verify_camnose_canards.py;
+         # these expectations are for the parts without it.
+         "-D", "Canards_Enabled=false", SCAD],
         capture_output=True, text=True, env=env, timeout=900)
     err = r.stdout + r.stderr
     if (r.returncode != 0 or "ERROR:" in err.upper()
