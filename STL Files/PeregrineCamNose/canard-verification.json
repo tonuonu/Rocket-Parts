@@ -4,7 +4,7 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "751e9bb977312cac01e3b08b674a145a526eca1b5903f95749db33b229c2fb81",
-  "PeregrineCamCanards.scad": "2d072b9de1290ba5a9dfd6d67d9cacf8118ba32dda8addf338220a017e313c6a",
+  "PeregrineCamCanards.scad": "d5135155fbcf735a430b406ab07c8521fcc89c9886d69cc2c4f0ee19cfa973ba",
   "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
  },
  "passed": 65,
@@ -346,7 +346,7 @@
     "part1": 109.645,
     "part2": 103.924,
     "part9": 58.727,
-    "part10": 6.282,
+    "part10": 6.369,
     "part1_off": 103.672,
     "part2_off": 106.23
    }

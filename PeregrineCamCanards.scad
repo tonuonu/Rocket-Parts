@@ -99,7 +99,10 @@ Horn_Top_R    = Servo_Bottom_R + Servo_Spline_Top + Horn_Above;   // 42.5
 Plug_D        = 24;     // root plug, turns in a hole through the shell
 Plug_Clear    = 0.3;    // radial; the plug never bears on the shell
 Plug_Hole_R   = Plug_D/2 + Plug_Clear;
-Plug_Trim     = 6;      // +- deg of arc on the plug screw slots (25T steps are 14.4 deg)
+// +- deg of arc on the plug screw holes. 0 = round holes: the joint is then
+// positive, not friction-held, and the 14.4 deg spline step is taken up by
+// the firmware's ctrl_trimN instead. >0 gives slots for mechanical trim.
+Plug_Trim     = 0;
 Plug_Screw_Head_D = 6.2;  // M3 90-deg countersunk
 Plug_Centre_Recess = [7, 3];  // servo centre-screw head: dia, depth
 // Stop: a tab of the shell projects into the plug hole and runs in a
@@ -183,7 +186,7 @@ assert(Canard_TE_Z > NC_Base_L, "canard TE must stay on the ogive above the skir
 assert(Cas_Floor_Z > Shoulder_Spigot_L + 1, "cassette floor must clear the shoulder spigot");
 assert(Canard_Z - Plug_Hole_R - Hole_Ring_W >= Cas_Floor_Top + 1,
        "plug ring would block the cassette floor");
-assert(Horn_D < Plug_D, "disc horn must pass the plug hole");
+assert(Horn_D/2 < Stop_Tab_Rin, "disc horn must pass the stop tab in the plug hole");
 assert(Horn_PCD/2 + Plug_Screw_Head_D/2 < Plug_D/2, "plug screws off the plug");
 // The slot sector must clear the slotted screw heads (at 0 deg) and the
 // blade root (at 90 deg).

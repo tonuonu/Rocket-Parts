@@ -121,6 +121,9 @@ def main():
               "(OR CG %.1f cm)" % ("", (cp2 - D_REF) * 100, cg * 100))
         print("  %-34s one pitch pair stuck at the %.0f deg stop: trim AoA %.1f deg"
               % ("", p["stop"], math.degrees(trim)))
+        # all four at the stop, both pairs pushing the same diagonal way
+        print("  %-34s all four stuck at the stop, diagonal: trim AoA %.1f deg"
+              % ("", math.degrees(trim) * math.sqrt(2)))
     print()
     # hinge moment
     v = 173.2

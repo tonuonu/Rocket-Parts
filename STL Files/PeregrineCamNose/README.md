@@ -32,6 +32,7 @@ Stage 2 drives the four independently with no mechanical change.
 | Pivot (servo axis) | Z = 50 above the nose base; 12.6 mm behind the root LE, 5% MAC **ahead of** the panel CP. A limp canard trails to neutral. |
 | Root LE / TE | Z = 62.6 / 17.6 |
 | Stops | ±11° (`Canard_Stop`); shell tab in a slot in the plug; checked free at ±10.5°, blocked at ±11.5° |
+| Neutral | Plug screws in round holes (`Plug_Trim = 0`): no slip path. The 14.4° spline step goes in firmware `ctrl_trimN` |
 | Firmware max | 8° (`Canard_Max_Cmd`) |
 | Added mass | about 265 g (servos 118, cassette ~56–75, canards ~32, horns/screws/inserts/harness ~50) |
 
@@ -41,7 +42,10 @@ Stage 2 drives the four independently with no mechanical change.
 - The canard set moves the CP **3.9 cm forward at rod exit and 5.3 cm at max speed**, about 0.4–0.5 cal.
 - OpenRocket's rod-exit margin is already 0.48 cal. It drops to 0.10 cal with the canards alone, or 0.61 cal counting their 265 g. At max speed it is 1.60 → 1.09 (1.62 with mass).
 - For 1.0 cal at rod exit with the canards, the CG must be at most 108.4 cm from the OR tip.
-- With one canard pair jammed at the 11° stop, the rocket trims at 2.6° AoA at max speed and 6.0° at rod-exit CG.
+- With canards jammed at the 11° stop, the rocket trims at:
+  - one pair: 2.6° AoA at max speed, 6.0° at rod-exit CG;
+  - all four, both pairs pushing the same diagonal way: 3.7° and 8.5°;
+  - all four in the roll sense: no trim AoA, steady roll ~1.5 rev/s at 173 m/s (canard-alone).
 - Span 20 mm moves the CP 2.7 / 3.7 cm instead.
 
 **Hinge moment.** At 173 m/s (q = 18 kPa) and 16° (stop plus 5° AoA) the panel carries 9 N. With the CP up to 13% MAC off the pivot that gives ≤ 0.43 kg·cm, about 11% of the servo's ~3.85 kg·cm at 5 V. The servo spline carries about 0.19 N·m of bending, similar to an ordinary horn and pushrod.
@@ -64,7 +68,7 @@ Stage 2 drives the four independently with no mechanical change.
 | ruthex RX-M2×4 inserts (Ø3.2, 6 mm pockets) + M2×8 screws | 16 | Servo tabs in the cassette |
 | ruthex RX-M3×5.7 inserts (Ø4.0, 7.7 mm pockets) | 12 | 4 cassette, 8 shoulder |
 | M3×8 90° countersunk | 12 | 4 cassette-to-slice, 8 shoulder-to-slice (all radial, flush) |
-| M3×10 90° countersunk | 8 | Canard plug to horn (slotted ±6° for trim) |
+| M3×10 90° countersunk | 8 | Canard plug to horn |
 | 6-pin breakaway connector | 1 | Bulkhead cut-out 14 × 7 mm at +X, r = 28 |
 
 ### Assembly and service
@@ -75,11 +79,13 @@ Stage 2 drives the four independently with no mechanical change.
 2. With the shoulder off, slide the cassette up into 02 until its four bosses
    line up with the shell holes between the canards. Fit 4 × M3×8 countersunk.
 3. From outside, push each disc horn onto its spline through the plug hole.
-   Centre the servo first; 25T steps are 14.4°, and the plug slots take up
-   ±6°. Fit the centre screw, then the canard with 2 × M3×10.
-4. Seal the lead slots in the cassette floor. The floor is the debris barrier
-   for the servos, not a pressure bulkhead. The shoulder bulkhead's ribbon
-   slots are open to the ejection gas.
+   Centre the servo first. 25T steps are 14.4°; the remainder goes in the
+   firmware trim. Fit the centre screw, then the canard with 2 × M3×10.
+4. Seal the lead slots **and the 0.3 mm floor-to-shell perimeter gap** (~90 mm²).
+   Foam tape or a bead of RTV works for both. The floor is the servos' debris barrier, not a pressure
+   bulkhead. The shoulder's ribbon slots are open to the ejection gas.
+   Unsealed, the drogue bay vents through this floor and the four plug-hole
+   gaps. That leak and its effect on separation pressure are unverified.
 5. Screw the shoulder on: 8 × M3×8 countersunk through the skirt, Z = 7.5.
    Its key goes into a notch filed in the tube rim.
 
