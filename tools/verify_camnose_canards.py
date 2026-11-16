@@ -2,15 +2,15 @@
 """Render the canard section of PeregrineCamNose and check it as CAD.
 
 Checks: printable parts are closed single solids; Canards_Enabled=false
-reproduces the committed shoulder and bottom slice; servos, disc horns,
+reproduces the committed shoulder and bottom slice; servos, output arms,
 cassette, canards, slice and shoulder do not intersect; each canard is
 free at +-(stop - 0.5 deg) and blocked at +-(stop + 0.5 deg); the
 cassette with its servos slides out of the bottom without touching the
 slice; every radial screw's centre line is clear through both parts it
 joins; the index key reaches into the body tube's wall.
 
-Servo and horn solids are envelopes from the Savox SV-1250MG+ drawing/STEP
-(stand-in for the SH-1250MG). This verifies CAD, not printed fits,
+Servo and arm solids are envelopes from the MKS HV6160 dimension drawing;
+lead stub and arm sizes are estimates. This verifies CAD, not printed fits,
 strength, sealing or flight behaviour.
 
 Requires numpy, trimesh, manifold3d (tools/requirements-camnose.txt).
@@ -105,7 +105,7 @@ def main():
     p = echo_values(log0, "CANARD_PARAMS")
     stop = p[7]
     chk = echo_values(log0, "CANARD_CHECK")
-    rf, cas_z, sh_z, sh_r, pocket, cas_floor, cas_top, key_a, key_h, a0, horn_r = chk
+    rf, cas_z, sh_z, sh_r, pocket, cas_floor, cas_top, key_a, key_h, a0, plug_x0 = chk
 
     jobs = {"part1": {"Render_Part": 1}, "part2": {"Render_Part": 2},
             "part10": {"Render_Part": 10}, "servos": {"Render_Part": 20},
@@ -145,15 +145,15 @@ def main():
 
     clear("servos clear the cassette", servos, cas)
     clear("servos clear the canard slice", servos, slice_)
-    clear("disc horns clear the slice", horns, slice_)
-    clear("disc horns clear the cassette", horns, cas)
+    clear("output arms clear the slice", horns, slice_)
+    clear("output arms clear the cassette", horns, cas)
     clear("cassette clears the slice", cas, slice_)
     clear("shoulder clears the slice", shoulder, slice_)
     clear("shoulder clears the cassette", shoulder, cas)
     clear("shoulder clears the servos", shoulder, servos)
     clear("canards (neutral) clear the slice", neutral, slice_)
     clear("canards (neutral) clear the servos", neutral, servos)
-    clear("canards (neutral) clear the disc horns", neutral, horns, tol=0.01)
+    clear("canards (neutral) clear the output arms (arm sits in the plug pocket)", neutral, horns, tol=0.01)
     for d in (stop - 0.5, -(stop - 0.5)):
         clear("canards free at %+.1f deg" % d, m["canards_%+.1f" % d], slice_)
     for d in (stop + 0.5, -(stop + 0.5)):
@@ -184,6 +184,24 @@ def main():
         rod = radial_rod(a, sh_z, shell_r, sh_r - pocket)
         clear("shoulder screw %d line clears the slice" % k, rod, slice_)
         clear("shoulder screw %d line clears the shoulder" % k, rod, shoulder)
+
+    # servo lug bolts: the M2.5 line through each lug hole and block is clear
+    # of servo and cassette, and the near-side wall leaves driver access
+    lug = echo_values(log0, "CANARD_LUGS")
+    lug_x, lug_zs, y_far = lug[0], lug[1:3], lug[3]
+    for k in range(4):
+        a = math.radians(a0 + 90 * k)
+        rot = trimesh.transformations.rotation_matrix(a, [0, 0, 1])
+        for z in lug_zs:
+            for name, d, y0, y1, parts in (("bolt", 2.4, -1.0, y_far, (servos, cas)),
+                                           ("driver", 4.5, -30.0, -1.2, (servos, cas))):
+                rod = trimesh.creation.cylinder(radius=d / 2, height=y1 - y0, sections=36)
+                rod.apply_transform(trimesh.transformations.rotation_matrix(-math.pi / 2, [1, 0, 0]))
+                rod.apply_translation([lug_x, (y0 + y1) / 2, z])
+                rod.apply_transform(rot)
+                for pn, part in zip(("servos", "cassette"), parts):
+                    clear("servo %d lug at z=%+.1f: %s line clears the %s" % (k, z, name, pn),
+                          rod, part)
 
     # index key reaches into the tube wall annulus (ID 99.1 .. OD 101.5)
     key = trimesh.boolean.intersection(

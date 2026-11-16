@@ -42,11 +42,11 @@ FIN_PTS = [(0.0, 0.0), (0.0508, 0.04191), (0.09398, 0.0762), (0.127, 0.09525),
            (0.3048, 0.063754), (0.2794, 0.049276), (0.2667, 0.036576), (0.25908, 0.0254),
            (0.254, 0.015494), (0.24892, 0.0)]
 FIN_CLA = 2.0                  # /rad, low-AR swept fin, rough
-# ---- servo: SH-1250MG retail 3.7 kg cm @4.8 V; SV-1250MG+ sheet 4.6 @6 V ----
-SERVO_KGCM_5V = 3.7 + (4.6 - 3.7) * (5.0 - 4.8) / (6.0 - 4.8)
+# ---- servo: MKS HV6160, MKS spec 11.7 kg cm @4.8 V, 14.5 @6.0 V (stall) ----
+SERVO = "MKS HV6160"
+SERVO_KGCM_5V = 11.7 + (14.5 - 11.7) * (5.0 - 4.8) / (6.0 - 4.8)
 CP_UNCERTAINTY = 0.08          # +- fraction of MAC the real panel CP may move
 ALPHA_EXTRA = 5.0              # deg of body AoA on top of a full deflection
-SPLINE_TIP_R = 0.0419          # m, Servo_Bottom_R + Servo_Spline_Top
 
 
 def scad_params(defines=()):
@@ -60,7 +60,8 @@ def scad_params(defines=()):
         for line in open(out):
             if "CANARD_PARAMS" in line:
                 v = [float(x) for x in line.split("CANARD_PARAMS", 1)[1].strip().strip('"').split()]
-                keys = ["cr", "ct", "s", "xr", "z_pivot", "z_le", "fwd", "stop", "cmd", "skin_r"]
+                keys = ["cr", "ct", "s", "xr", "z_pivot", "z_le", "fwd", "stop", "cmd", "skin_r",
+                        "spline_tip_r"]
                 return dict(zip(keys, v))
     raise RuntimeError("no CANARD_PARAMS echo")
 
@@ -132,7 +133,7 @@ def main():
     ar = (2 * s) ** 2 / (2 * S)
     cla = 2 * math.pi * ar / (2 + math.sqrt(4 + (ar * beta) ** 2))
     e = (p["fwd"] + CP_UNCERTAINTY) * mac
-    arm = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct)) - SPLINE_TIP_R   # panel CP to spline tip
+    arm = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct)) - p["spline_tip_r"] / 1000   # panel CP to spline tip
     print("Hinge moment at %.0f m/s, q = %.1f kPa, panel CL_alpha %.2f /rad (AR %.2f):"
           % (v, q / 1e3, cla, ar))
     for dd, lab in ((p["cmd"], "commanded max"), (p["stop"], "at the stop"),
@@ -143,8 +144,8 @@ def main():
               "(CP %.1f mm off the pivot), spline bending %.2f N m"
               % (lab, dd, lift, mh / 9.81 * 100, e * 1e3, lift * arm))
     worst_kgcm = mh / 9.81 * 100   # last row: stop + ALPHA_EXTRA
-    print("  servo SH-1250MG at 5 V ~%.2f kg cm (direct drive, 1:1) -> worst case uses %.0f%%"
-          % (SERVO_KGCM_5V, 100 * worst_kgcm / SERVO_KGCM_5V))
+    print("  servo %s at 5 V ~%.1f kg cm stall (direct drive, 1:1) -> worst case uses %.0f%%"
+          % (SERVO, SERVO_KGCM_5V, 100 * worst_kgcm / SERVO_KGCM_5V))
     print()
     # roll, canard-alone
     yc = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct))

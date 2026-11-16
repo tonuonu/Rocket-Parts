@@ -3,11 +3,11 @@
  "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
  "trimesh": "4.12.2",
  "scad_sha256": {
-  "PeregrineCamNose.scad": "751e9bb977312cac01e3b08b674a145a526eca1b5903f95749db33b229c2fb81",
-  "PeregrineCamCanards.scad": "d5135155fbcf735a430b406ab07c8521fcc89c9886d69cc2c4f0ee19cfa973ba",
+  "PeregrineCamNose.scad": "ede4a79bd9393ced130167e805a4ee8cb1697b07d0eac98a99aa66f52306d8df",
+  "PeregrineCamCanards.scad": "68e658d0c4a1ca1ca58137f496977620315a7aa3d0a8814f8e761960d6242384",
   "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
  },
- "passed": 65,
+ "passed": 97,
  "failed": 0,
  "results": [
   {
@@ -111,12 +111,12 @@
    "value": 0.0
   },
   {
-   "check": "disc horns clear the slice",
+   "check": "output arms clear the slice",
    "passed": true,
    "value": 0.0
   },
   {
-   "check": "disc horns clear the cassette",
+   "check": "output arms clear the cassette",
    "passed": true,
    "value": 0.0
   },
@@ -151,7 +151,7 @@
    "value": 0.0
   },
   {
-   "check": "canards (neutral) clear the disc horns",
+   "check": "canards (neutral) clear the output arms (arm sits in the plug pocket)",
    "passed": true,
    "value": 0.0
   },
@@ -168,12 +168,12 @@
   {
    "check": "canards blocked by the stop at +11.5 deg",
    "passed": true,
-   "value": 0.6573
+   "value": 3.0407
   },
   {
    "check": "canards blocked by the stop at -11.5 deg",
    "passed": true,
-   "value": 0.5154
+   "value": 0.7767
   },
   {
    "check": "cassette with servos slides out of the slice",
@@ -304,6 +304,166 @@
    "value": 0.0
   },
   {
+   "check": "servo 0 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "index key protrudes into the tube wall",
    "passed": true,
    "value": {
@@ -327,26 +487,26 @@
   {
    "check": "part2 overhang area mm2 (informational)",
    "passed": true,
-   "value": 448.7
+   "value": 500.1
   },
   {
    "check": "part9 overhang area mm2 (informational)",
    "passed": true,
-   "value": 989.2
+   "value": 455.2
   },
   {
    "check": "part10 overhang area mm2 (informational)",
    "passed": true,
-   "value": 126.8
+   "value": 165.6
   },
   {
    "check": "volumes cm3",
    "passed": true,
    "value": {
     "part1": 109.645,
-    "part2": 103.924,
-    "part9": 58.727,
-    "part10": 6.369,
+    "part2": 103.071,
+    "part9": 56.025,
+    "part10": 7.09,
     "part1_off": 103.672,
     "part2_off": 106.23
    }

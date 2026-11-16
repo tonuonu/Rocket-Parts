@@ -277,7 +277,7 @@ include<PeregrineCamCanards.scad>
 // 10 = One canard: root plug + blade (print plug-down; print 4)
 // 11 = Canard section cutaway assembly, for inspection only
 // 20..23 = canard check envelopes for tools/verify_camnose_canards.py:
-//      20 servos, 21 disc horns, 22 canards at Canard_View_Defl, 23 shoulder
+//      20 servos, 21 output arms, 22 canards at Canard_View_Defl, 23 shoulder
 //      in assembled position. Not printable.
 Render_Part = 0;
 
