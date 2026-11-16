@@ -6,17 +6,21 @@ rate and rail clearance.
 Canard geometry is read from PeregrineCamNose.scad (its CANARD_PARAMS echo).
 Rocket data is the OpenRocket L2 model in ~/MyLevel1Peregrine/openrocket/
 PeregrineL2.ork, simulation "Langtora Airfield 21 Feb 2026" (J350, the L2
-flight). That model has the kit nosecone, not the camera nose, so the
-absolute margins here are only as good as its mass model; the canard SHIFTS
-(delta CP, trim angle) do not depend on it. Barrowman fin-set theory,
+flight). That model has the kit nosecone and a 2.8 kg stage-mass override,
+so it is no basis for the CG. This tool therefore gives CG LIMITS, measured
+from the forward rim of the forward body tube (the nose's base plane, Z=0
+in the CAD), for >= 1.0 cal with the canards: the OR CP is moved from the
+kit nose to the camera nose (slender-body nose CN_alpha = 2 at V/A_base
+from the base), then the canards are added. Barrowman fin-set theory,
 canard-alone roll forcing: canard-wake/fin interaction (which can cut or
 even reverse canard roll authority) is NOT modelled.
 
-Usage: canard_estimate.py [--mass-g 250] [-D Canard_Span=20 ...]
+Usage: canard_estimate.py [-D Canard_Span=20 ...] [--cg-from-rim MM]
 """
 import argparse
 import math
 import os
+import struct
 import subprocess
 import tempfile
 
@@ -42,9 +46,12 @@ FIN_PTS = [(0.0, 0.0), (0.0508, 0.04191), (0.09398, 0.0762), (0.127, 0.09525),
            (0.3048, 0.063754), (0.2794, 0.049276), (0.2667, 0.036576), (0.25908, 0.0254),
            (0.254, 0.015494), (0.24892, 0.0)]
 FIN_CLA = 2.0                  # /rad, low-AR swept fin, rough
-# ---- servo: MKS HV6160, MKS spec 11.7 kg cm @4.8 V, 14.5 @6.0 V (stall) ----
+# ---- servo: MKS HV6160 (MKS: 11.7 @4.8 V, 14.5 @6.0, 17.0 @7.4 V stall),
+# fed straight from the camera's 2S 18650 pack (7.4 V nominal; 8.4 full,
+# inside the servo's 4.8-8.4 V range). Use the 6.0 V figure as the floor
+# for a sagging pack.
 SERVO = "MKS HV6160"
-SERVO_KGCM_5V = 11.7 + (14.5 - 11.7) * (5.0 - 4.8) / (6.0 - 4.8)
+SERVO_KGCM = 14.5
 CP_UNCERTAINTY = 0.08          # +- fraction of MAC the real panel CP may move
 ALPHA_EXTRA = 5.0              # deg of body AoA on top of a full deflection
 
@@ -66,6 +73,46 @@ def scad_params(defines=()):
     raise RuntimeError("no CANARD_PARAMS echo")
 
 
+def nose_v_over_a(profile):
+    """Slender-body nose CP: V / A_base, measured forward from the base.
+    profile: list of (z from base, outer radius) at increasing z."""
+    v = 0.0
+    for (z1, r1), (z2, r2) in zip(profile, profile[1:]):
+        v += math.pi * (z2 - z1) * (r1 * r1 + r1 * r2 + r2 * r2) / 3
+    return v / (math.pi * profile[0][1] ** 2)
+
+
+def camera_nose_profile():
+    """Outer radius vs Z of the camera nose: the 574.55 ogive shell up to the
+    flange (Z 389.23), then the owner's CAD camera nose from its mesh on
+    feature/rocket60. Radii in m, Z in m from the nose base."""
+    R, L, base_l, cut3, flange_t = 50.75, 574.55, 15.0, 383.23, 6.0
+    p = (R * R + L * L) / (2 * R)
+    prof = [(0.0, R), (base_l, R)]
+    for z in range(20, int(cut3) + 1, 5):
+        prof.append((z, R - p + math.sqrt(p * p - (z - base_l) ** 2)))
+    prof.append((cut3 + flange_t, 30.0))
+    blob = subprocess.run(["git", "-C", REPO, "show",
+                           "feature/rocket60:STL Files/Rocket60/NoseCone.stl"],
+                          capture_output=True, check=True).stdout
+    n = struct.unpack("<I", blob[80:84])[0]
+    pts = []
+    for i in range(n):
+        o = 84 + 50 * i + 12
+        for k in range(3):
+            pts.append(struct.unpack("<3f", blob[o + 12 * k:o + 12 * k + 12]))
+    top = max(q[2] for q in pts)
+    bins = {}
+    for x, y, z in pts:
+        b = round(z)
+        bins[b] = max(bins.get(b, 0.0), math.hypot(x, y))
+    for b in sorted(bins):
+        if b > 0:
+            prof.append((cut3 + flange_t + b, bins[b]))
+    prof.append((cut3 + flange_t + top, 0.0))
+    return [(z / 1000, r / 1000) for z, r in prof], (cut3 + flange_t + top) / 1000
+
+
 def fin_chord(y):
     xs = []
     pts = FIN_PTS + FIN_PTS[:1]
@@ -78,8 +125,8 @@ def fin_chord(y):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--mass-g", type=float, default=250.0,
-                    help="mass the canard section adds at the pivot station")
+    ap.add_argument("--cg-from-rim", type=float, default=None,
+                    help="rocket CG in mm aft of the tube rim, if known: prints the margin")
     ap.add_argument("-D", dest="defines", action="append", default=[],
                     help="OpenSCAD override, e.g. -D Canard_Span=20")
     a = ap.parse_args()
@@ -96,35 +143,40 @@ def main():
     cna4 = 4 * 4 * (s / d) ** 2 / (1 + math.sqrt(1 + (2 * lm / (cr + ct)) ** 2)) * (d / D_REF) ** 2
     kfb = 1 + R / (s + R)
     cna_c = cna4 * kfb
-    # canard CP from the nose tip, in the OR frame: OR nose length minus the
-    # LE's height above the nose base, plus the panel CP behind the LE
-    x_c = L_NOSE_OR - p["z_le"] / 1000 + xf
-    x_m = L_NOSE_OR - p["z_pivot"] / 1000
-    dm = a.mass_g / 1000
+    # positions in m AFT of the forward body-tube rim (nose base plane)
+    x_c = -(p["z_le"] / 1000 - xf)
+    zcp_kit = 0.466 * L_NOSE_OR       # tangent ogive (OR: 5:1 ogive, shape 1.0)
+    prof, l_cam = camera_nose_profile()
+    zcp_cam = nose_v_over_a(prof)     # forward of the rim
     print("Canard panel: root %.0f, tip %.0f, span %.0f, LE sweep %.0f mm; area %.0f mm2 each"
           % (cr * 1e3, ct * 1e3, s * 1e3, xr * 1e3, S * 1e6))
     print("MAC %.1f mm; Barrowman panel CP %.1f mm behind root LE; pivot %.1f mm behind root LE"
           " (%.0f%% MAC ahead of the CP)" % (mac * 1e3, xf * 1e3, (xf - p["fwd"] * mac) * 1e3,
                                             p["fwd"] * 100))
-    print("CN_alpha of the 4-canard set %.2f /rad (K_fb %.2f), CP %.1f cm from the OR nose tip"
-          % (cna_c, kfb, x_c * 100))
+    print("CN_alpha of the 4-canard set %.2f /rad (K_fb %.2f), CP %.1f mm ahead of the rim"
+          % (cna_c, kfb, -x_c * 1e3))
+    print("Nose CP (CN_alpha 2): kit %.1f mm, camera nose %.1f mm ahead of the rim "
+          "(camera nose length %.1f mm)" % ((L_NOSE_OR - zcp_kit) * 1e3, zcp_cam * 1e3, l_cam * 1e3))
     print()
-    print("Static margin, canards neutral (OR reference %.1f mm):" % (D_REF * 1e3))
-    for name, (cg, cp, cna, v, m) in STATES.items():
-        cp2 = (cna * cp + cna_c * x_c) / (cna + cna_c)
-        cg2 = (m * cg + dm * x_m) / (m + dm)
-        sm0, sm1, sm2 = (cp - cg) / D_REF, (cp2 - cg) / D_REF, (cp2 - cg2) / D_REF
+    print("CG limits for >= 1.0 cal (OR reference %.1f mm), measured AFT of the forward"
+          " body-tube rim:" % (D_REF * 1e3))
+    for name, (cg_or, cp_or, cna, v, m) in STATES.items():
+        cp_kit = cp_or - L_NOSE_OR                     # aft of rim
+        cp_cam = cp_kit + 2 * ((L_NOSE_OR - zcp_kit) - zcp_cam) / cna
+        cp2 = (cna * cp_cam + cna_c * x_c) / (cna + cna_c)
+        lim = cp2 - D_REF
         dl = math.radians(p["stop"])
-        trim = cna_c * dl * (cg2 - x_c) / ((cna + cna_c) * (cp2 - cg2))
-        print("  %-34s OR %.2f cal -> canards %.2f cal (CP moves %.1f cm forward);"
-              " + %.0f g at the canards %.2f cal" % (name, sm0, sm1, (cp - cp2) * 100, a.mass_g, sm2))
-        print("  %-34s aft CG limit for 1.0 cal with canards: %.1f cm from the OR tip "
-              "(OR CG %.1f cm)" % ("", (cp2 - D_REF) * 100, cg * 100))
-        print("  %-34s one pitch pair stuck at the %.0f deg stop: trim AoA %.1f deg"
-              % ("", p["stop"], math.degrees(trim)))
-        # all four at the stop, both pairs pushing the same diagonal way
-        print("  %-34s all four stuck at the stop, diagonal: trim AoA %.1f deg"
-              % ("", math.degrees(trim) * math.sqrt(2)))
+        trim = cna_c * dl * (lim - x_c) / ((cna + cna_c) * (cp2 - lim))
+        print("  %-34s CP %.1f mm (kit nose, no canards: %.1f; canards move it %.1f mm forward)"
+              % (name, cp2 * 1e3, cp_kit * 1e3, (cp_cam - cp2) * 1e3))
+        print("  %-34s CG limit %.0f mm aft of the rim (kit nose without canards: %.0f mm)"
+              % ("", lim * 1e3, (cp_kit - D_REF) * 1e3))
+        print("  %-34s at that CG, canards stuck at %.0f deg: one pair %.1f deg AoA, all four"
+              " diagonal %.1f deg" % ("", p["stop"], math.degrees(trim), math.degrees(trim) * math.sqrt(2)))
+        if a.cg_from_rim is not None:
+            print("  %-34s with CG %.0f mm aft of the rim: margin %.2f cal"
+                  % ("", a.cg_from_rim, (cp2 - a.cg_from_rim / 1000) / D_REF))
+    print("  (OR's own CG is not used: stage-mass override 2.8 kg.)")
     print()
     # hinge moment
     v = 173.2
@@ -144,8 +196,8 @@ def main():
               "(CP %.1f mm off the pivot), spline bending %.2f N m"
               % (lab, dd, lift, mh / 9.81 * 100, e * 1e3, lift * arm))
     worst_kgcm = mh / 9.81 * 100   # last row: stop + ALPHA_EXTRA
-    print("  servo %s at 5 V ~%.1f kg cm stall (direct drive, 1:1) -> worst case uses %.0f%%"
-          % (SERVO, SERVO_KGCM_5V, 100 * worst_kgcm / SERVO_KGCM_5V))
+    print("  servo %s >= %.1f kg cm stall on the 2S pack (direct drive, 1:1) -> worst case uses %.0f%%"
+          % (SERVO, SERVO_KGCM, 100 * worst_kgcm / SERVO_KGCM))
     print()
     # roll, canard-alone
     yc = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct))

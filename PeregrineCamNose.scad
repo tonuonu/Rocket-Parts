@@ -276,9 +276,15 @@ include<PeregrineCamCanards.scad>
 // 9 = Canard servo cassette (Canards_Enabled; print floor-down)
 // 10 = One canard: root plug + blade (print plug-down; print 4)
 // 11 = Canard section cutaway assembly, for inspection only
-// 20..23 = canard check envelopes for tools/verify_camnose_canards.py:
-//      20 servos, 21 output arms, 22 canards at Canard_View_Defl, 23 shoulder
-//      in assembled position. Not printable.
+// 14 = Vega mast unit: roof + mast + LiPo pocket (print roof-down)
+// 15 = Main-charge well (ChargeHolder.scad), bolts to the bulkhead
+// 16 = Joint test coupon: bottom 30 mm of part 2 (canard version)
+// 17 = Joint test coupon: top 35 mm of part 1 (canard version)
+// 18 = Facing-disc cutting template, 2D (export .svg/.dxf)
+// 20..26 = check envelopes for tools/verify_camnose_canards.py:
+//      20 servos, 21 output hubs, 22 canards at Canard_View_Defl, 23 shoulder
+//      in assembled position, 24 Vega envelope, 25 Vega switch body.
+//      Not printable.
 Render_Part = 0;
 
 // ============================================
@@ -306,7 +312,8 @@ module CN_Slice_Middle_Shell(){
 } // CN_Slice_Middle
 
 module CN_Slice_Middle(){
-    if (Bay_Enabled) CN_Bay_Middle();
+    if (Bay_Enabled && Canards_Enabled) difference(){ CN_Bay_Middle(); Canard_Middle_Cuts(); }
+    else if (Bay_Enabled) CN_Bay_Middle();
     else CN_Slice_Middle_Shell();
 }
 
@@ -433,7 +440,10 @@ if (Render_Part == 2) CN_Slice_Bottom();
 if (Render_Part == 3) CN_Slice_Middle();
 if (Render_Part == 4) CN_Slice_Top();
 if (Render_Part == 5) CN_Adapter();
-if (Render_Part == 6) CN_Battery_Carrier();
+if (Render_Part == 6) {
+    if (Canards_Enabled) difference(){ CN_Battery_Carrier(); Canard_Floor_Pass(); }
+    else CN_Battery_Carrier();
+}
 if (Render_Part == 7) CN_Converter_Tray();
 if (Render_Part == 8) CN_Bay_Assembly();
 if (Render_Part == 9) CN_Canard_Cassette();
@@ -443,6 +453,13 @@ if (Render_Part == 20) CN_Canard_Servos();
 if (Render_Part == 21) CN_Canard_Horns();
 if (Render_Part == 22) CN_Canard_Units();
 if (Render_Part == 23) translate([0,0,-Shoulder_L]) CN_Shoulder();
+if (Render_Part == 14) CN_Vega_Mast();
+if (Render_Part == 15) CN_Charge_Well();
+if (Render_Part == 16) CN_Coupon_Slice();
+if (Render_Part == 17) CN_Coupon_Shoulder();
+if (Render_Part == 18) CN_Facing_Disc_2D();
+if (Render_Part == 24) CN_Vega_Envelope();
+if (Render_Part == 25) CN_Vsw_Envelope();
 
 // ============================================
 // PRINT NOTES
@@ -459,12 +476,18 @@ if (Render_Part == 23) translate([0,0,-Shoulder_L]) CN_Shoulder();
 //   7  Converter tray   15mm   -- includes upper battery keeper
 //   9  Servo cassette   53mm   -- Canards_Enabled; print floor-down
 //  10  Canard (x4)      34mm   -- plug down, support under the blade root ends
+//  14  Vega mast unit  125mm   -- roof down
+//  15  Charge well      22mm   -- base down
+//  16/17 Joint test coupon     -- pull-test before flying (>= 3.0 kN)
 //
-// With Canards_Enabled, parts 1 and 2 are the canard versions: part 2 has
-// the four plug holes and ring bosses (support the hole crowns), part 1 has
-// eight insert bosses, the index key and the harness exit. The shoulder is
-// then SCREWED to part 2 (8 x M3x8 countersunk), not glued -- skip step 2
-// below. See STL Files/PeregrineCamNose/README.md, "Canard section".
+// With Canards_Enabled, parts 1, 2, 3 and 6 are the canard versions:
+// 1 has twelve insert bosses, the index key, a thicker bulkhead with the
+// charge-well bolts and four terminal posts; 2 has the plug holes, ring
+// bosses and the Vega switch pad; 3 has the static ports and USB window;
+// 6 has the servo-power pass. The shoulder is SCREWED to part 2 (12 x M3x8
+// button head), not glued -- skip step 2 below. No carbon- or metal-filled
+// filament on 02/03 (GNSS and 2.4 GHz). See STL Files/PeregrineCamNose/
+// README.md, "Canard section".
 //
 // Assembly, bottom to top:
 //   1. Print part 0. Check it sits flush on the tube and accepts the spigot.

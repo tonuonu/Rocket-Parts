@@ -2,12 +2,14 @@
 """Render the canard section of PeregrineCamNose and check it as CAD.
 
 Checks: printable parts are closed single solids; Canards_Enabled=false
-reproduces the committed shoulder and bottom slice; servos, output arms,
+reproduces the committed shoulder, bottom and middle slices and carrier; servos, output arms,
 cassette, canards, slice and shoulder do not intersect; each canard is
 free at +-(stop - 0.5 deg) and blocked at +-(stop + 0.5 deg); the
-cassette with its servos slides out of the bottom without touching the
-slice; every radial screw's centre line is clear through both parts it
-joins; the index key reaches into the body tube's wall.
+cassette with its servos, and the Vega mast unit with the board, slide in
+from the bottom without touching the slices or the Vega switch; every
+radial screw's centre line is clear through both parts it joins; static
+ports, the USB window and the camera-floor pass are open; the index key
+reaches into the body tube's wall at rail + 45 deg.
 
 Servo and arm solids are envelopes from the MKS HV6160 dimension drawing;
 lead stub and arm sizes are estimates. This verifies CAD, not printed fits,
@@ -106,12 +108,20 @@ def main():
     stop = p[7]
     chk = echo_values(log0, "CANARD_CHECK")
     rf, cas_z, sh_z, sh_r, pocket, cas_floor, cas_top, key_a, key_h, a0, plug_x0 = chk
+    (vu, vn, vz, roof_z, roof_r, port_z, fpx, fpy, bfz, bft, mast_top,
+     rail_a, roof_z0) = echo_values(log0, "CANARD_VEGA")
 
     jobs = {"part1": {"Render_Part": 1}, "part2": {"Render_Part": 2},
             "part10": {"Render_Part": 10}, "servos": {"Render_Part": 20},
             "horns": {"Render_Part": 21}, "shoulder_asm": {"Render_Part": 23},
             "part1_off": {"Render_Part": 1, "Canards_Enabled": "false"},
-            "part2_off": {"Render_Part": 2, "Canards_Enabled": "false"}}
+            "part2_off": {"Render_Part": 2, "Canards_Enabled": "false"},
+            "part3": {"Render_Part": 3}, "part6": {"Render_Part": 6},
+            "part3_off": {"Render_Part": 3, "Canards_Enabled": "false"},
+            "part6_off": {"Render_Part": 6, "Canards_Enabled": "false"},
+            "part14": {"Render_Part": 14}, "part15": {"Render_Part": 15},
+            "part16": {"Render_Part": 16}, "part17": {"Render_Part": 17},
+            "vega": {"Render_Part": 24}, "vswitch": {"Render_Part": 25}}
     for d in (0, stop - 0.5, -(stop - 0.5), stop + 0.5, -(stop + 0.5)):
         jobs["canards_%+.1f" % d] = {"Render_Part": 22, "Canard_View_Defl": d}
     with ThreadPoolExecutor(max_workers=6) as ex:
@@ -120,7 +130,8 @@ def main():
     m["part9"] = trimesh.load_mesh(out_dir / "part9.stl")
 
     # printable solids
-    for name in ("part1", "part2", "part9", "part10"):
+    for name in ("part1", "part2", "part3", "part6", "part9", "part10", "part14",
+                 "part15", "part16", "part17"):
         mesh = m[name]
         record("%s is watertight" % name, mesh.is_watertight)
         record("%s has outward winding" % name, mesh.is_volume)
@@ -128,7 +139,8 @@ def main():
         record("%s is one connected solid" % name, bodies == 1, bodies)
 
     # flag off reproduces the committed (already printed) parts
-    for name, stl in (("part1_off", "Shoulder.stl"), ("part2_off", "SliceBottom.stl")):
+    for name, stl in (("part1_off", "Shoulder.stl"), ("part2_off", "SliceBottom.stl"),
+                      ("part3_off", "SliceMiddle.stl"), ("part6_off", "BatteryCarrier.stl")):
         ref = trimesh.load_mesh(COMMITTED / stl)
         dv = abs(m[name].volume - ref.volume)
         db = float(np.max(np.abs(m[name].bounds - ref.bounds)))
@@ -179,8 +191,13 @@ def main():
         rod = radial_rod(a, cas_z, shell_r, rf - pocket)
         clear("cassette screw %d line clears the slice" % k, rod, slice_)
         clear("cassette screw %d line clears the cassette" % k, rod, cas)
-    for k in range(8):
-        a = a0 + 22.5 + 45 * k
+    for k in range(4):
+        a = a0 + 45 + 90 * k
+        rod = radial_rod(a, roof_z, shell_r, roof_r - pocket)
+        clear("roof screw %d line clears the slice" % k, rod, slice_)
+        clear("roof screw %d line clears the mast unit" % k, rod, m["part14"])
+    for k in range(12):
+        a = 15 + 30 * k
         rod = radial_rod(a, sh_z, shell_r, sh_r - pocket)
         clear("shoulder screw %d line clears the slice" % k, rod, slice_)
         clear("shoulder screw %d line clears the shoulder" % k, rod, shoulder)
@@ -203,6 +220,44 @@ def main():
                     clear("servo %d lug at z=%+.1f: %s line clears the %s" % (k, z, name, pn),
                           rod, part)
 
+    # Vega bay
+    mast, vega, vsw, mid = m["part14"], m["vega"], m["vswitch"], m["part3"]
+    clear("Vega clears the mast unit", vega, mast, tol=0.01)
+    clear("Vega clears slice 02", vega, slice_)
+    clear("Vega clears slice 03", vega, mid)
+    clear("mast unit clears slice 02", mast, slice_)
+    clear("mast unit clears slice 03", mast, mid)
+    clear("mast unit clears the cassette", mast, cas)
+    clear("mast unit clears the servos", mast, servos)
+    clear("Vega switch body clears the Vega", vsw, vega)
+    clear("Vega switch body clears the mast unit", vsw, mast)
+    clear("Vega switch body clears the cassette", vsw, cas)
+    obstacles = trimesh.util.concatenate([slice_, mid, vsw])
+    payload = trimesh.util.concatenate([mast, vega])
+    worst, worst_d = 0.0, None
+    for d in np.arange(0, mast_top + 3, 4.0):
+        moved = payload.copy()
+        moved.apply_translation([0, 0, -d])
+        v = max(inter(moved, slice_), inter(moved, mid), inter(moved, vsw))
+        if v > worst:
+            worst, worst_d = v, d
+    record("mast unit with the Vega slides in past both slices and the switch",
+           worst < 1e-3, {"worst_mm3": round(worst, 4), "at_drop_mm": worst_d})
+    for k in range(4):
+        a = a0 + 45 + 90 * k
+        clear("static port %d open" % k, radial_rod(a, port_z, 50, 40, d=2.0), mid)
+    # USB-C axis: from the connector mouth out through the window
+    au = math.radians(a0)
+    uhat = np.array([math.cos(au), math.sin(au), 0]); nhat = np.array([-math.sin(au), math.cos(au), 0])
+    p0 = (vu - 16.5 - 1) * uhat + (vn + 1.15) * nhat + np.array([0, 0, vz - 10.4])
+    rod = trimesh.creation.cylinder(radius=2.5, height=14, sections=36)
+    rod.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], -uhat))
+    rod.apply_translation(p0 - uhat * 7)
+    clear("USB-C axis passes the window", rod, mid)
+    rod = trimesh.creation.cylinder(radius=1.8, height=bft + 2, sections=24)
+    rod.apply_translation([fpx, fpy, bfz + bft / 2])
+    clear("servo-power pass open in the camera-bay floor", rod, m["part6"])
+
     # index key reaches into the tube wall annulus (ID 99.1 .. OD 101.5)
     key = trimesh.boolean.intersection(
         [shoulder, annulus(99.1 / 2 + 0.05, 101.5 / 2, -key_h + 1, -0.05)], engine="manifold")
@@ -218,7 +273,7 @@ def main():
     # overhang screen (informational): downward faces steeper than 45 deg,
     # not on the bed. Horizontal insert holes, the plug-hole crowns and the
     # cassette's upper-ledge bridges are expected here.
-    for name in ("part1", "part2", "part9", "part10"):
+    for name in ("part1", "part2", "part9", "part10", "part14", "part15"):
         mesh = m[name]
         n, a, tri = mesh.face_normals, mesh.area_faces, mesh.triangles
         sel = (n[:, 2] < -math.sqrt(0.5) - 1e-6) & (tri[:, :, 2].max(axis=1) > mesh.bounds[0][2] + 0.01)
@@ -226,7 +281,8 @@ def main():
 
     # mass input for tools/canard_estimate.py
     vols = {n: round(abs(float(m[n].volume)) / 1000, 3) for n in
-            ("part1", "part2", "part9", "part10", "part1_off", "part2_off")}
+            ("part1", "part2", "part3", "part6", "part9", "part10", "part14", "part15",
+             "part1_off", "part2_off", "part3_off", "part6_off")}
     record("volumes cm3", True, vols)
 
     failed = [r for r in results if not r["passed"]]

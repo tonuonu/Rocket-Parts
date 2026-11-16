@@ -9,122 +9,178 @@ This is a CAD-verified prototype, with the initial 04/06 trial fit reported
 below. Full assembly fit, insert strength, mechanical loads, temperatures
 and ejection protection have not been bench-tested.
 
-## Canard section — 2026-11-16 (branch `feature/nose-canards`, not yet printed)
+## Canard section and Vega in the nose — 2026-11-16 (branch `feature/nose-canards`, not yet printed)
 
-Four roll/tilt canards in the bottom slice (02), for CATS Vega canard control
-(stage 1 `ROLL_2`, stage 2 `FULL_4`). Source: `PeregrineCamCanards.scad`,
-switched by `Canards_Enabled` in `PeregrineCamNose.scad`. With it `false`,
-parts 01 and 02 are geometrically the committed (printed) versions: volume,
-bounds and boolean difference checked.
+Source: `PeregrineCamCanards.scad`, switched on by `Canards_Enabled` in
+`PeregrineCamNose.scad`. With it set to `false`, parts 01, 02, 03 and 06
+match the committed (printed) versions. Volume, bounds and boolean
+difference are checked.
 
-**Mechanism.** Each canard is **direct drive**: an MKS HV6160 (10 mm thin
-wing servo) stands in a central cassette with its 5 mm spline pointing
-radially out. An MKS short metal output arm sits on the spline. The canard's
-root plug fits over the arm in a close pocket and is held by two M2
-countersunk screws into the arm. There is no pushrod or ball link, so the only
-play is the servo's own gear train. The four units are identical and turned
-0/90/180/270°, so two opposite servos are 180° apart. One Y-cabled signal
-therefore turns both in the same rotational sense (roll, no reverser).
-Stage 2 drives the four independently with no mechanical change.
+### Architecture
 
-| | Value |
-|---|---|
-| Panel | root 45, tip 25, span 25, LE sweep 12, 4 mm thick; 875 mm² each |
-| Pivot (servo axis) | Z = 50 above the nose base; 12.6 mm behind the root LE, 5% MAC **ahead of** the panel CP. A limp canard trails to neutral. |
-| Root LE / TE | Z = 62.6 / 17.6 |
-| Stops | ±11° (`Canard_Stop`); shell tab in a slot in the plug; checked free at ±10.5°, blocked at ±11.5° |
-| Neutral | Arm in a pocket plus two screws: no slip path. Any spline-step offset goes in firmware `ctrl_trimN` |
-| Firmware max | 8° (`Canard_Max_Cmd`) |
-| Added mass | about 255 g (servos 123, cassette ~53–71, canards ~36, arms/screws/inserts/nuts/harness ~40) |
+The nose carries:
+- the camera, with its 2 × 18650 cells and DC-DC converter (unchanged);
+- the **CATS Vega**, with its own 2S 320 mAh LiPo;
+- the four servo canards;
+- the **main** charge, on the shoulder bulkhead.
 
-`python3 tools/canard_estimate.py` prints the aerodynamic numbers; `-D` overrides any SCAD value.
+The forward tube holds the 48" main and the aft tube the 18" drogue. The
+e-bay is passive: a 2-wire drogue lead passes through it.
 
-**Static margin.** The numbers below use OpenRocket `PeregrineL2.ork`, J350 sim. That model has the kit nose, not the camera nose.
-- The canard set moves the CP **3.9 cm forward at rod exit and 5.3 cm at max speed**, about 0.4–0.5 cal.
-- OpenRocket's rod-exit margin is already 0.48 cal. It drops to 0.10 cal with the canards alone, or 0.59 cal counting their 255 g. At max speed it is 1.60 → 1.09 (1.60 with mass).
-- For 1.0 cal at rod exit with the canards, the CG must be at most 108.4 cm from the OR tip.
-- With canards jammed at the 11° stop, the rocket trims at:
-  - one pair: 2.6° AoA at max speed, 6.2° at rod-exit CG;
-  - all four, both pairs pushing the same diagonal way: 3.7° and 8.7°;
-  - all four in the roll sense: no trim AoA, steady roll ~1.5 rev/s at 173 m/s (canard-alone).
-- Span 20 mm moves the CP 2.7 / 3.7 cm instead.
+| | Vega output | Fires | Location |
+|---|---|---|---|
+| Drogue | pyro 1 | at apogee | aft, while the nose joint is still closed |
+| Main | pyro 2 | at main | on the nose bulkhead; the nose comes off |
 
-**Hinge moment.** At 173 m/s (q = 18 kPa) and 16° (stop plus 5° AoA) the panel carries 9 N. With the CP up to 13% MAC off the pivot that gives ≤ 0.43 kg·cm, about 4% of the HV6160's ~12.2 kg·cm stall torque at 5 V. The spline carries about 0.15 N·m of bending.
+The nose does **not** separate at apogee. The shoulder bulkhead is the gas-seal plane.
+
+### Mechanism (unchanged in principle)
+
+- **Direct drive.** Each MKS HV6160 stands in the servo cassette (09) with its output radial.
+- **Output hub.** The first choice is an aluminium clamp-type hub with a flat face and two tapped M2 holes. The canard's root plug bolts to it through round holes.
+  - Fallback (`Horn_Type = "arm"`): the servo's own arm sits in a form-fit pocket and is held by the centre screw plus one cross screw.
+  - There are no slots. The neutral offset goes in firmware `ctrl_trimN`.
+  - The spline is parametric (`Servo_Spline_Teeth`, `Servo_Spline_OD`, `Servo_Shaft_H`, `Servo_Centre_Screw`). There is no HV6160 spline data yet, so measure it.
+- **Identical units.** The four units are identical at 90°, so opposite servos are 180° apart. One Y-cable **at the Vega** gives roll with no reverser. Stage 2 drives the four servos independently with no mechanical change.
+- **Stops:** ±11°. The canards are checked free at ±10.5° and blocked at ±11.5°.
+- **Pivot:** 5% MAC ahead of the panel CP, so a limp canard trails to neutral.
+
+### Clocking
+
+Angles are taken from `PeregrineL2.ork`, the standard kit positions: fins at 0/120/240° and rail buttons at 60°.
+- The canards sit at **rail + 45° + 90°·k = 15/105/195/285°**.
+- The index key and the notch filed in the tube rim are at **rail + 45° = 105°**. The key keeps the canards off the rail. It also carries the canard roll torque into the airframe (~2 N·m, ~40 N at the key).
+- **Vega board orientation:**
+  - Its long axis runs along the rocket axis.
+  - Its plane is parallel to the 15–195° canard axis, 15 mm off-axis. Its axes are therefore aligned with the canards. The GNSS-patch side faces the wall at 105°.
+
+### Vega bay
+
+The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-bay floor.
+
+**Board**
+- The board spans Z 120–220.
+- Clearances:
+  - 52 mm below the 18650 cells;
+  - 37 mm above the servos;
+  - the SMA tip is 21 mm below the camera-bay corbel (Z 245).
+- Data from `CATS-Vega.step`:
+  - M3 holes at (−30,−13.5), (30,−13.5) and (30,13.5). The 60 × 27 pattern is confirmed.
+  - USB-C on the +Y long edge, facing **sideways**: no 90° adapter.
+  - Right-angle SMA at the −X end. It is at the top, so the 2.4 GHz whip runs up the wall.
+  - The 2×3 right-angle servo header exits the −Y edge.
+- The STEP has **no** models of the GNSS patch or the WAGO terminals. The BOM gives an 18×18 THT patch, feed at X −17, and two WAGO 2601-1104. They are envelopes: 6 mm on the patch side and 14.3 mm on the other side.
+
+**Mast unit (14)**
+- Roof disc at Z 85–91 with a groove for a Ø5 closed-cell foam cord.
+  - The cord seals to the shell and squeezes past the plug-hole rings on the way in.
+  - Total leak budget: ≤ 2 mm², with the wire pass potted.
+- Four radial M3 screws hold it to the shell, between the canards.
+- Channel-section mast, 3 mm walls, up to Z 208.
+- Three Ø8 standoffs with ruthex M3 inserts.
+- Library `LiPo2S320mAh_BattPocket` on the back of the mast.
+- A cup for the 1000 µF capacitor.
+- One Ø9 pass in the roof for the servo, power and pyro leads.
+
+**Shell openings**
+- **Vega switch:** a second Schurter 0033.4513, same keyed cut and pad as the camera's, on 02 at 300°, Z 120.
+- **USB window:** 12 × 7 on 03 at ~174°, Z 160 on the connector's axis. Tape it or plug it for flight.
+- **Static ports:** 4 × Ø2.5 on 03 at Z 160 (60/150/240/330°), above the glued lap. They can be drilled in the printed 03.
+
+### Power and wiring
+
+- **Servos:** fed from the camera's 2S 18650 pack via the camera switch, a 7.5 A fuse, a Ø4 potted pass in the Z 270 floor (part 06) and a 1000 µF / 16 V capacitor at the cassette. There is **no 5 V supply**. 8.4 V full charge is inside the HV6160's 4.8–8.4 V range.
+- **Vega:** runs on its own 2S LiPo. Its servo connectors carry signal and ground only.
+- **Leads:** the servo leads run up the cassette's central channel and through the roof pass to the Vega header. The Y-cables are there.
+- **Pyro:** the Vega's leads go down through the roof pass, the channel and the floor hole to the four M3 brass posts in the bulkhead. Main is local; the drogue lead goes out to the tube.
+
+### Shoulder bulkhead and joint
+
+- **Joint:** 12 × M3×8 **button-head** screws at 15° + 30°·k in plain Ø3.4 holes, into ruthex M3×5.7 in gusseted bosses. A countersink would leave ~0.8 mm of the 2.2 mm skirt in bearing. **Pull-test the coupon (parts 16 + 17) to ≥ 3.0 kN before flying.**
+- **Bulkhead:** 6.5 mm thick. The ribbon loop through the two T-slots is **permanent**: pot the slots and stems with high-temperature RTV.
+- **Charge well:** library `ChargeHolder` (Ø14, 3 cc), on 2 × M3 through-bolts.
+- **Terminals:** 4 × M3 brass posts (main pair, drogue pair), RTV-sealed.
+- **Facing disc:** G10 1.5 mm (or 3 mm plywood), Ø94.7. Cutting template: part 18, `Canards/FacingDisc.svg`. It is located by the two well bolts and four posts and bonded with high-temperature RTV.
+  - There is no recess or lip. The shoulder prints bulkhead-down, so either would leave a 95 mm bridge on the bed face.
+
+### Numbers
+
+`tools/canard_estimate.py` and `tools/nose_mass_cg.py` print these.
+
+**Static margin and CG limits**
+- **Why limits, not margins:** the `.ork` has a 2.8 kg stage-mass override, so it is no basis for the CG.
+- **Method:** the tool moves the OpenRocket CP from the kit nose to the camera nose (nose CP 320 mm ahead of the rim against 269 mm for the kit nose), then adds the canards.
+- **CG limit for ≥ 1.0 cal, measured aft of the forward body-tube rim:**
+  - **574 mm at rail exit**. This is the binding case; the kit nose without canards allowed 620 mm.
+  - 639 mm at max speed.
+- **Canards jammed at 11° with the CG at that limit:**
+  - one pair: 3.4° AoA at rail exit, 4.6° at max speed;
+  - all four diagonally: 4.8° and 6.5°.
+
+**Other numbers**
+- **Hinge moment:** ≤ 0.43 kg·cm, about 3% of the HV6160's ≥ 14.5 kg·cm on the 2S pack.
+- **Roll authority:** 360°/s is stopped in 1.4 s at 30 m/s and 0.12 s at 100 m/s. This is canard-alone; fin-wake interaction is not modelled.
+- **Rail:** the canard tips are 54 mm beside the rail centre line.
+
+**Nose mass and balance point** (complete, flight-ready, `tools/nose_mass_cg.py`):
+
+| Group | g | Source |
+|---|---:|---|
+| Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 14, 15 + CAD camera nose | 851 | CAD: solid PETG 1.27 g/cm³ |
+| Cells 2× INR18650-25R (45 g), Vega (25 g), 4× HV6160 (30.7 g) | 238 | spec |
+| Camera internals, DC-DC, LiPo, switches, hubs, fasteners, inserts, wiring, glue, RTV, charge | 177 | estimated |
+| **Total** | **1266** | |
+
+Balance point: **146 mm forward of the forward body-tube rim**, 338 mm aft
+of the nose tip (nose length 483 mm). The per-item list, with Z and source,
+is in the tool's output.
+
+**Print assumption for the mass:** 0.2 mm layers, 4 perimeters, solid
+infill. The 2.2 mm shells print solid anyway. With 15% infill the thick
+blocks weigh less, so the printed-part figure is an upper bound.
+
+**Spare canards:** `Canards/Canard_Span20.stl` has a 20 mm span. It moves
+the CP 2.7 / 3.6 cm forward instead of 3.9 / 5.2, so the rail-exit CG limit
+becomes 586 mm instead of 574.
 
 ### Parts
 
-| Part | Render_Part | Bed orientation |
+| Part | Render_Part | Print |
 |---|---|---|
-| 01 canard shoulder (`Canards/Shoulder.stl`) | 1 | Bulkhead down. Insert bosses are gusseted. Index key on the OD under the shell base. Harness exit cut in the bulkhead. |
-| 02 canard slice (`Canards/SliceBottom.stl`) | 2 | Wide end down. **Support the crowns of the four Ø27.6 plug holes.** |
-| 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down. Wall windows are 45° diamonds. The upper lug blocks overhang about 4 mm. |
-| 10 canard ×4 (`Canards/Canard.stl`) | 10 | Plug down, blade up. Support under the root ends of the blade. |
+| 01 shoulder (`Canards/Shoulder.stl`) | 1 | Bulkhead down. 12 insert bosses with gussets; key at 105°. |
+| 02 canard slice (`Canards/SliceBottom.stl`) | 2 | Wide end down. **Support the four Ø27.6 plug-hole crowns and the switch pad.** |
+| 03 middle slice (`Canards/SliceMiddle.stl`) | 3 | As before. Adds ports and the USB window; can be drilled/cut in the printed 03. |
+| 06 battery carrier (`Canards/BatteryCarrier.stl`) | 6 | As before, plus the Ø4 pass. Can be drilled in the printed 06. |
+| 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down. |
+| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. |
+| 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 22 mm between the webs. |
+| 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. |
+| 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
+| 18 facing disc template (`Canards/FacingDisc.svg`) | 18 | Cut from G10. |
 
-### Hardware
+**No carbon- or metal-filled filament on 02 or 03** (GNSS and 2.4 GHz).
 
-| Item | Qty | Use |
-|---|---:|---|
-| MKS HV6160 | 4 | Servos |
-| MKS short metal output arm (5 mm output, M2.5 centre screw, hole at 9 mm) | 4 | Plug interface. Tap the 9 mm hole and the 4.6 mm dimple M2 (1.6 mm drill) |
-| M2.5×8 + M2.5 nut | 8 | Servo lug through-bolts; nuts in traps in the cassette |
-| ruthex RX-M3×5.7 inserts (Ø4.0, 7.7 mm pockets) | 12 | 4 cassette, 8 shoulder |
-| M3×8 90° countersunk | 12 | 4 cassette-to-slice, 8 shoulder-to-slice (all radial, flush) |
-| M2×8 90° countersunk | 8 | Canard plug to arm |
-| 6-pin breakaway connector | 1 | Bulkhead cut-out 14 × 7 mm at +X, r = 28 |
+### Assembly order (from below; the shoulder off)
 
-### Assembly and service
+1. **Mast unit:** fit the Vega, LiPo and capacitor. Hang the servo-extension, power and pyro leads down through the roof pass. Slide the unit up and fit 4 × M3×10 button.
+2. **Cassette:** fit the servos with their lugs, M2.5 bolts and nuts. Connect the leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
+3. **Canards, from outside:** fit the hub on the spline, then the centre screw, then the plug with 2 × M2×8. Set the neutral offset in the firmware trim.
+4. **Shoulder:** wire the four posts, then screw the shoulder on with 12 × M3×8 button head. The key goes into the notch at 105°.
 
-1. Slide each servo into its cradle radially from outside, spline out. Bolt
-   both lugs: M2.5 from the open side through the wall's access hole, nut in
-   the trap. Run the leads into the central channel and down through the
-   floor's centre hole.
-2. With the shoulder off, slide the cassette up into 02 until its four bosses
-   line up with the shell holes between the canards. Fit 4 × M3×8 countersunk.
-3. Centre each servo. From outside, push the arm onto its spline through the
-   plug hole, pointing along +y, i.e. tangential, the same rotational direction on all four. The
-   remaining offset goes in the firmware trim. Fit the M2.5 centre screw, then the canard with
-   2 × M2×8.
-4. Seal the floor's lead hole **and the 0.3 mm floor-to-shell perimeter gap** (~90 mm²).
-   Foam tape or a bead of RTV works for both. The floor is the servos' debris barrier, not a pressure
-   bulkhead. The shoulder's ribbon slots are open to the ejection gas.
-   Unsealed, the drogue bay vents through this floor and the four plug-hole
-   gaps. That leak and its effect on separation pressure are unverified.
-5. Screw the shoulder on: 8 × M3×8 countersunk through the skirt, Z = 7.5.
-   Its key goes into a notch filed in the tube rim.
+### Still unverified
 
-Canards and arms come off from outside. For the servos, remove the
-shoulder and then the cassette.
+- **HV6160:**
+  - the spline (teeth, OD, shaft height, centre-screw thread);
+  - the lead stub;
+  - the aluminium hub (the clamp hub Ø12 × 5 is assumed).
+- **Vega:** the GNSS patch and WAGO envelopes and positions; their side of the board is inferred from the STEP plus "100 × 33 × 21 mm".
+- **Masses:** every item marked est in the mass table.
+- **Joint strength:** to be shown by the ≥ 3.0 kN pull test.
+- **Sealing:** the foam seal and the actual leak area.
+- **Fits:** printed fits and insertion.
+- **Aerodynamics:** canard-wake/fin interaction.
 
-![Canard section cutaway](Canards/CanardCutaway.png)
-
-### Cable route and indexing
-
-Servo leads → central channel → floor centre hole → down through the shoulder → connector
-in the bulkhead. The harness then runs along the shock cord through the
-drogue bay → e-bay forward bulkhead → Vega.
-
-- **Y-pairing:** do it on the e-bay side. The nose connector carries 4 signals + GND + 5 V for stage 2.
-- **Separation:** the nose separates at apogee, which is drogue deployment, so the connector parts there.
-- **Firmware:** `ctrl` latches the canards to neutral at DROGUE anyway.
-
-**Index key:** 6 × 6 mm, under the shell base at `Index_Key_A` = canard 1. It
-fixes the nose to the tube within the notch clearance. The tube → e-bay
-coupler → sled → Vega chain must be fixed separately.
-
-**Rail:** keep the rail line at least 15° from any canard; 45° is best. On the rail line a 25 mm canard hits the rail.
-
-Checks: `tools/verify_camnose_canards.py` (report in `canard-verification.json`;
-meshes in `Canards/`).
-
-**Servo data.** The MKS HV6160 dimension drawing, as published by MKS Servo
-Distribution Europe, gives the case, spline, lugs and lug holes. The
-lead-stub size and the metal arm's hub and arm dimensions are estimates
-(`Servo_Wire`, `Horn_*`). Measure them before printing the canards.
-
-**Firmware.** The HV6160 centres at 1520 µs, not 1500, and moves about
-10 µs/° (±60° over 920–2120 µs per the retailer). Set `ctrl_trimN` and
-`ctrl_us_per_deg` on the bench. Stall current is 1.56 A at 4.8 V per servo;
-size the 5 V supply for four.
+Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json`.
 
 ## Revision 2026-11-08 — sleeves, insert pockets, flush screws, ribbon slots
 
