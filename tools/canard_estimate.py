@@ -47,9 +47,9 @@ FIN_PTS = [(0.0, 0.0), (0.0508, 0.04191), (0.09398, 0.0762), (0.127, 0.09525),
            (0.254, 0.015494), (0.24892, 0.0)]
 FIN_CLA = 2.0                  # /rad, low-AR swept fin, rough
 # ---- servo: MKS HV6160 (MKS: 11.7 @4.8 V, 14.5 @6.0, 17.0 @7.4 V stall),
-# fed straight from the camera's 2S 18650 pack (7.4 V nominal; 8.4 full,
-# inside the servo's 4.8-8.4 V range). Use the 6.0 V figure as the floor
-# for a sagging pack.
+# fed straight from the servo 2S 18650 pack in the cassette (7.4 V nominal;
+# 8.4 full, the HV6160's maximum). Use the 6.0 V figure as the floor for a
+# sagging pack.
 SERVO = "MKS HV6160"
 SERVO_KGCM = 14.5
 CP_UNCERTAINTY = 0.08          # +- fraction of MAC the real panel CP may move

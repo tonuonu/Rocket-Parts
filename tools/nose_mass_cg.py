@@ -13,6 +13,11 @@ upper bound. Everything else is listed with its source:
 Z is the assembled nose coordinate: Z = 0 at the nose base plane = the
 forward rim of the forward body tube, + toward the tip.
 
+Two flight configurations (2026-11-19, 18650 cells in the servo cassette):
+  2-cell = servo pair (servos + camera) in the cassette, Vega on its LiPo
+  4-cell = servo pair + FC pair in the cassette, no LiPo
+The camera-bay sleeves (06) stay empty in both.
+
 Usage: nose_mass_cg.py [--mesh-dir DIR] [--json FILE]
 Requires numpy, trimesh, manifold3d (tools/requirements-camnose.txt).
 """
@@ -41,8 +46,11 @@ PRINTED = {   # name: (Render_Part, extra defines, description, Z offset)
     "07 converter tray": (7, {}, 0.0),
     "09 servo cassette": (9, {}, 0.0),
     "10 canards x4 (assembled)": (22, {}, 0.0),
+    "12 servo-switch saddle": (12, {}, 0.0),
     "14 Vega mast unit": (14, {}, 0.0),
+    "19 cell keeper": (19, {}, 0.0),
 }
+CONFIGS = ("2-cell", "4-cell")
 
 
 def render(out_dir, name, part, defines):
@@ -70,7 +78,7 @@ def main():
     with ThreadPoolExecutor(max_workers=6) as ex:
         meshes = dict(ex.map(lambda j: render(out_dir, *j), jobs))
 
-    items = []   # (name, grams, Z, source)
+    items = []   # (name, grams, Z, source, configs)
     for name, mesh in meshes.items():
         g = abs(mesh.volume) * PETG
         z = float(mesh.center_mass[2])
@@ -78,30 +86,44 @@ def main():
             # bolted under the bulkhead on the facing disc, well opening aft
             h = mesh.bounds[1][2]
             z = -SHOULDER_L - 1.5 - (h - z)
-        items.append((name, g, z, "CAD"))
+        items.append((name, g, z, "CAD", CONFIGS))
 
     blob = subprocess.run(["git", "-C", str(REPO), "show",
                            "feature/rocket60:STL Files/Rocket60/NoseCone.stl"],
                           capture_output=True, check=True).stdout
     cam = trimesh.load(trimesh.util.wrap_as_stream(blob), file_type="stl")
     items.append(("camera CAD nose shell (printed)", abs(cam.volume) * PETG,
-                  389.23 + float(cam.center_mass[2]), "CAD"))
+                  389.23 + float(cam.center_mass[2]), "CAD", CONFIGS))
 
-    B = 270 + 4 + 2            # cell bottom (Bay_Cell_Bottom_Z)
-    items += [
+    CELL_Z = 18.0 + 65.0 / 2   # cassette cell body Z 18..83
+    PACK_Z = 22.0              # series link, fuses, terminals under the floor
+    ALL, TWO, FOUR = CONFIGS, ("2-cell",), ("4-cell",)
+    items += [(n, g, z, src, ALL) for n, g, z, src in [
         ("camera module, lens, PCB (in the CAD nose)", 15.0, 471.0, "est"),
         ("camera screws 3x M3 + 3 ruthex in the flange", 3.0, 388.0, "est"),
-        ("2x Samsung INR18650-25R", 90.0, B + 32.5, "spec"),
         ("DC-DC converter 47x26x13", 20.0, 356.5, "est"),
-        ("cell tabs, keeper pads, tray screws/inserts", 6.0, 340.0, "est"),
-        ("Schurter 0033.4513 + nut, camera", 6.0, 315.0, "est"),
-        ("3 charging-contact screws + nuts", 2.0, 321.0, "est"),
+        ("keeper pad, tray screws/inserts (camera bay)", 3.0, 340.0, "est"),
+        ("Schurter 0033.4513 + nut, camera (camera only)", 6.0, 315.0, "est"),
+        ("3 charging-contact screws + nuts (servo pack)", 2.0, 321.0, "est"),
         ("bay service joint 3x M3x8 + 3 ruthex", 3.0, 297.8, "est"),
         ("bay floor 3x M3x8 + 3 ruthex", 3.0, 270.0, "est"),
-        ("camera switch -> 7.5 A fuse + holder", 3.0, 290.0, "est"),
+        ("camera lead 22 AWG pair + 2 A fuse, pack to Z 315", 5.0, 170.0, "est"),
+        ("servo pack: 2x Samsung INR18650-25R", 90.0, CELL_Z, "spec"),
+        ("servo pack: tabs, leads, series link, C-ring pads", 4.0, CELL_Z, "est"),
+        ("servo pack: 7.5 A fuse + holder at the pack", 3.0, PACK_Z, "est"),
+        ("servo pack: charge leads to the Z 321 contacts", 4.0, 200.0, "est"),
+        ("Schurter 0033.4513 + nut, servo switch", 6.0, 106.0, "est"),
+        ("keeper 4x M3x20 countersunk + 4 ruthex", 6.6, 23.0, "est"),
         ("CATS Vega", 25.0, 170.0, "spec"),
-        ("2S 320 mAh LiPo (Vega)", 20.0, 170.0, "est"),
-        ("Vega 3x M3 screws + 3 ruthex", 2.6, 170.0, "est"),
+        ("Vega 3x M3 screws + 3 ruthex", 2.6, 170.0, "est"),]]
+    items += [
+        ("2S 320 mAh LiPo (Vega)", 20.0, 170.0, "est", TWO),
+        ("FC pack: 2x Samsung INR18650-25R", 90.0, CELL_Z, "spec", FOUR),
+        ("FC pack: tabs, leads, series link, C-ring pads", 4.0, CELL_Z, "est", FOUR),
+        ("FC pack: 10 A fuse + holder, JST-XH pigtail", 4.0, PACK_Z - 6.0, "est", FOUR),
+        ("FC pack: lead up to the Vega switch", 3.0, 100.0, "est", FOUR),
+    ]
+    items += [(n, g, z, src, ALL) for n, g, z, src in [
         ("Schurter 0033.4513 + nut, Vega", 6.0, 120.0, "est"),
         ("1000 uF / 16 V capacitor", 3.0, 92.0, "est"),
         ("closed-cell foam ring (roof seal)", 0.6, 88.0, "est"),
@@ -120,24 +142,28 @@ def main():
          -SHOULDER_L - 0.75, "CAD"),
         ("charge-well 2x M3 bolts + nuts", 1.4, -SHOULDER_L - 4.0, "est"),
         ("main charge: BP + e-match", 3.0, -SHOULDER_L - 10.0, "est"),
-    ]
-    total = sum(i[1] for i in items)
-    zcg = sum(i[1] * i[2] for i in items) / total
-    print("%-48s %8s %8s  %s" % ("item", "g", "Z mm", "source"))
-    for n, g, z, src in items:
-        print("%-48s %8.1f %8.1f  %s" % (n, g, z, src))
-    print("%-48s %8.1f" % ("TOTAL", total))
-    print("Balance point: %.0f mm FORWARD of the forward body-tube rim, %.0f mm aft of the"
-          " nose tip (nose length %.1f mm)" % (zcg, TIP_Z - zcg, TIP_Z))
-    by = {}
-    for n, g, z, src in items:
-        by[src] = by.get(src, 0) + g
-    print("By source: " + ", ".join("%s %.0f g" % kv for kv in sorted(by.items())))
+    ]]
+    print("%-52s %8s %8s  %-5s %s" % ("item", "g", "Z mm", "src", "configs"))
+    for n, g, z, src, cf in items:
+        print("%-52s %8.1f %8.1f  %-5s %s" % (n, g, z, src, "all" if cf == CONFIGS else cf[0]))
+    out = {"items": [dict(item=n, grams=round(g, 1), z_mm=round(z, 1), source=s, configs=list(cf))
+                     for n, g, z, s, cf in items], "configs": {}}
+    for cfg in CONFIGS:
+        sel = [i for i in items if cfg in i[4]]
+        total = sum(i[1] for i in sel)
+        zcg = sum(i[1] * i[2] for i in sel) / total
+        by = {}
+        for n, g, z, src, _ in sel:
+            by[src] = by.get(src, 0) + g
+        print("%s: TOTAL %.1f g; balance point %.0f mm FORWARD of the forward body-tube rim,"
+              " %.0f mm aft of the nose tip (nose length %.1f mm); by source: %s"
+              % (cfg, total, zcg, TIP_Z - zcg, TIP_Z,
+                 ", ".join("%s %.0f g" % kv for kv in sorted(by.items()))))
+        out["configs"][cfg] = {"total_g": round(total, 1), "cg_z_mm": round(zcg, 1),
+                               "cg_from_tip_mm": round(TIP_Z - zcg, 1),
+                               "by_source_g": {k: round(v, 1) for k, v in by.items()}}
     if a.json:
-        a.json.write_text(json.dumps({"items": [dict(item=n, grams=round(g, 1), z_mm=round(z, 1),
-                                                     source=s) for n, g, z, s in items],
-                                      "total_g": round(total, 1), "cg_z_mm": round(zcg, 1),
-                                      "cg_from_tip_mm": round(TIP_Z - zcg, 1)}, indent=1) + "\n")
+        a.json.write_text(json.dumps(out, indent=1) + "\n")
 
 
 if __name__ == "__main__":

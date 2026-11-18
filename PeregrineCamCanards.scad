@@ -18,9 +18,14 @@
 // main deployment; the drogue fires aft of the passive e-bay while the nose
 // joint is still closed. The shoulder bulkhead is the gas-seal plane.
 //
+// 2026-11-19: four 18650 slots in the servo cassette (servo pair feeds the
+// servos and camera; optional FC pair feeds the Vega instead of the LiPo),
+// held from below by a cell keeper (part 19).
+//
 // Service: everything inserts from below. With the shoulder unscrewed (12
-// radial M3 button heads; part 1 is no longer glued) the servo cassette
-// (part 9) and then the Vega mast unit (part 14) slide out. Canards come off
+// radial M3 button heads; part 1 is no longer glued) and the cell keeper
+// off, the cells drop out; the servo cassette (part 9) and then the Vega
+// mast unit (part 14) slide out. Canards come off
 // from outside: two M2 screws each, then the output hub's centre screw.
 //
 // Servo: MKS HV6160 (thin wing servo). Geometry from the MKS dimension
@@ -278,8 +283,75 @@ USB_Win = [12, 7];               // along Z x along n
 // 02/03 glued lap (the lap is Z 147-154). Slice 03 is already printed: they
 // can be drilled.
 Port_Z = 160;  Port_D = 2.5;
-// Servo power pass-through in the camera-bay floor (part 06), potted.
+// Camera power pass-through in the camera-bay floor (part 06), potted.
 Floor_Pass_XY = [0, 18];  Floor_Pass_D = 4;
+
+// ============================================
+// 18650 CELLS beside the servos (in part 9) and CELL KEEPER (part 19)
+// ============================================
+// Four identical sleeves in the quadrants between the servos. The servo
+// pair (60/240 deg) feeds the servos and the camera; the FC pair (150/330)
+// optionally feeds the Vega, whose LiPo pocket on the mast stays as the
+// alternative. Cells carry spot-welded tabs and soldered leads; there are
+// no spring contacts. A cell bears only on its insulated rims: below on a
+// seat ring of the keeper, above on a C-ring pad under the mast roof, so
+// tabs and solder joints carry no load. The cells hang through the cassette
+// floor; with the shoulder and the keeper off they drop out downward.
+Cell_A       = [for(k=[0:3]) Canard_A0+45+90*k];   // 60, 150, 240, 330
+Cell_Servo_A = [Cell_A[0], Cell_A[2]];
+Cell_R       = 25.5;                 // sleeve axis radius
+Cell_D       = Bay_Cell_D;           // 18.5 wrapped
+Cell_Body_L  = Bay_Cell_Body_L;      // 65, excluding tabs
+Cell_Bore_D  = Bay_Cup_ID;           // 19.5
+Cell_Wall    = 1.6;
+Cell_Sleeve_OD = Cell_Bore_D + 2*Cell_Wall;   // 22.7
+Cell_End_Relief = Bay_End_Relief;    // 2: tab and solder joint room at each end
+Cell_Slot_W  = Bay_Tab_Slot_W;       // 6: full-height tab/lead slot toward the axis
+Cell_Notch   = [Cell_Slot_W, 5];     // floor notch toward the axis: width, depth
+// Top pad: C-ring, 1.5 fishpaper/G10 + 0.5 closed-cell foam, OD 18, ID 12,
+// gap toward the slot. It bears on the rim, never on the tab, and is the
+// stack's only compliance: there is no other axial slack.
+Cell_Top_Pad_T = 2;
+Cell_Pad = [18, 12];                 // OD, ID
+Cell_Top_Z    = Roof_Z0 - Cell_Top_Pad_T;   // 83
+Cell_Bottom_Z = Cell_Top_Z - Cell_Body_L;   // 18
+// Lacing-cord tie holes (strain relief), a pair per sleeve in the floor of
+// the cradle on the sleeve's clockwise side (canard local frame).
+Cell_Tie_D   = 2.5;
+Cell_Tie_XY  = [[10, 3], [15, 3]];
+
+// Keeper (part 19): a plate under the cassette floor, inside the shoulder
+// spigot and above the shoulder's insert bosses, with four seat rings and
+// four columns screwed up into the cassette.
+Keeper_T     = 2.5;
+Keeper_Top_Z = Cell_Bottom_Z - Cell_End_Relief;   // 16
+Keeper_Z0    = Keeper_Top_Z - Keeper_T;           // 13.5
+Keeper_R     = 38;
+Keeper_Lead_D = 12;                  // central lead hole (pyro, pack leads)
+Keeper_Ring  = [Bay_End_Window_D, Cell_Bore_D];   // seat ring ID, OD (14.5, 19.5)
+Keeper_Col_D = 8;
+// Fixing: M3x20 90-deg countersunk, flush under the plate, into ruthex
+// M3x5.7 set from below into a Ø8 boss on the cassette floor. The boss
+// stands against the outer face of each cradle's -y wall (canard local
+// frame): no lug block, no nut trap, clear of the lug-bolt driver line.
+Keeper_Fix   = [31, -10.5];
+Keeper_Boss_D = 8;
+Keeper_Boss_Top_Z = Cas_Floor_Z + Insert_Pocket_L + 1.6;
+Keeper_Screw_L = 20;
+
+// Servo switch: a third Schurter 0033.4513 on the printed slice 02, drilled
+// by hand (Ø12.7 + R1.2 key relief), with a glue-on saddle (part 12) inside
+// the shell for a flat nut face. Slice 02's source is NOT changed.
+Ssw_A = 30;  Ssw_Z = 106;
+Ssw_Bezel = [15.2, 2.3];             // datasheet: bezel Ø15.2 x 2.3
+Ssw_Body  = [16, 23.5];              // conservative rear envelope behind the face
+Ssw_Thread_D = 12.6;
+// The ogive widens downward, so the flat bezel first touches the skin at
+// its lowest point; the saddle's flat back is a full panel thickness behind.
+Ssw_Face_R = CN_Outer_R(Ssw_Z - Ssw_Bezel[0]/2);
+Ssw_Panel_T = Bay_Switch_Panel_T;    // 6; the switch allows up to 8.5
+Ssw_Glue = 0.2;                      // epoxy gap, saddle to the shell
+Roof_Pass_Ream_D = 11;               // ream the printed Ø9 roof pass (part 14)
 
 // ============================================
 // SANITY CHECKS
@@ -321,6 +393,32 @@ assert(Bay_Cell_Bottom_Z - (Vega_Z_Mid + Vega_Board[0]/2) >= Vega_RF_Clear, "Veg
 assert((Vega_Z_Mid - Vega_Board[0]/2) - (Canard_Z - Servo_Spline_Off - Servo_Lug_Ext + Servo_Lug_L) >= Vega_RF_Clear,
        "Vega within 25 mm of the servos");
 assert(Port_Z > Cut1_Z + 7 + Port_D, "static ports in the glued lap");
+// Cells: the sleeve bore stays outside the cradle walls, the wall arcs stay
+// inside the walls' thickness (never in a servo cradle), and the bore ends
+// inside the quadrant screw boss's tip relief.
+Cas_Yw = Servo_W/2 + Cas_Clear;
+assert(Cell_R*sin(45) - Cell_Bore_D/2 >= Cas_Yw + Cas_Wall + 0.3, "cell bore cuts a cradle wall");
+assert(Cell_R*sin(45) - Cell_Sleeve_OD/2 > Cas_Yw, "sleeve wall reaches into a servo cradle");
+assert(Cell_R + Cell_Bore_D/2 < CN_Inner_R(Cas_Floor_Z+Cas_Boss_D) - Cas_Clear - Insert_Pocket_L - Bay_Screw_Tip_L/2 - 1.5,
+       "cell bore too close to the cassette screw's tip relief");
+assert(Cell_Top_Z + Cell_Top_Pad_T <= Roof_Z0, "cell stack taller than the space under the roof");
+assert(Cell_Top_Z < Cas_Top_Z, "cell top above the sleeve");
+assert((Vega_Z_Mid - Vega_Board[0]/2) - (Cell_Top_Z + Cell_Top_Pad_T) >= Vega_RF_Clear,
+       "Vega within 25 mm of the cassette cells");
+// Keeper: above the shoulder's insert bosses, inside the spigot, and its
+// screws hold in a sound boss.
+assert(Keeper_Z0 >= Sh_Joint_Z + Sh_Boss_D/2 + 1, "keeper plate on the shoulder boss tops");
+assert(Keeper_R < Sh_Spigot_R - NC_Wall_T - 2, "keeper plate hits the shoulder spigot");
+assert(Keeper_Boss_D >= Insert_Hole_D + 2*1.6, "keeper boss wall under ruthex minimum (1.6 mm)");
+assert(Keeper_Boss_Top_Z - (Cas_Floor_Z + Insert_Pocket_L) >= 1.2, "keeper insert pocket breaks through the boss top");
+assert(Keeper_Z0 + Keeper_Screw_L - Cas_Floor_Z >= 4, "keeper screw engages less than 4 mm of the insert");
+assert(Keeper_Z0 + Keeper_Screw_L < Cas_Floor_Z + Insert_Pocket_L, "keeper screw bottoms in the pocket");
+assert(norm(Keeper_Fix - [Cell_R*cos(45), -Cell_R*sin(45)]) - Insert_Hole_D/2 - Cell_Bore_D/2 >= 1.6,
+       "keeper insert pocket too close to the cell bore");
+assert(Keeper_Fix[1] + Keeper_Boss_D/2 < -Cas_Yw, "keeper boss reaches into the servo cradle");
+assert(Keeper_Fix[0] + Keeper_Boss_D/2 < Servo_Bottom_R + Servo_Lug_Hole_X - Lug_Access_D/2,
+       "keeper boss in the lug-bolt access hole");
+assert(Ssw_Panel_T <= 8.5, "servo switch panel thicker than the Schurter allows");
 
 echo(str("CANARD: pivot Z=", Canard_Z, " LE Z=", Canard_LE_Z, " TE Z=", Canard_TE_Z,
          " MAC=", Canard_MAC, " Xf=", Canard_Xf, " pivot from LE=", Canard_Pivot_From_LE,
@@ -340,6 +438,14 @@ echo(str("CANARD_LUGS ", Servo_Bottom_R+Servo_Lug_Hole_X, " ", Canard_Z+Lug_Hole
 echo(str("CANARD_VEGA ", Vega_U, " ", Vega_N, " ", Vega_Z_Mid, " ", Roof_Screw_Z, " ",
          CN_Inner_R(Roof_Screw_Z)-0.3, " ", Port_Z, " ", Floor_Pass_XY[0], " ", Floor_Pass_XY[1], " ",
          Bay_Floor_Z, " ", Bay_Floor_T, " ", Mast_Top_Z, " ", Rail_A, " ", Roof_Z0));
+
+echo(str("CELLS_GEOM ", Cell_R, " ", Cell_D, " ", Cell_Bottom_Z, " ", Cell_Top_Z, " ",
+         Cell_Top_Pad_T, " ", Keeper_Z0, " ", Keeper_Fix[0], " ", Keeper_Fix[1], " ",
+         Cas_Floor_Z, " ", Cas_Floor_Z+Insert_Pocket_L, " ", Keeper_Boss_Top_Z, " ",
+         Keeper_Screw_L, " ", Bay_Charge_Head_D));
+echo(str("SSW_GEOM ", Ssw_A, " ", Ssw_Z, " ", Ssw_Face_R, " ", Ssw_Bezel[0], " ", Ssw_Bezel[1], " ",
+         Roof_Pass[0], " ", Roof_Pass[1], " ", Roof_Pass[2], " ", Roof_Pass_Ream_D, " ",
+         Roof_Z0, " ", Roof_T, " ", Roof_Rim_H, " ", Peregrine_Body_OD/2));
 
 // ============================================
 // FRAMES
@@ -529,22 +635,54 @@ module Cas_Cradle(){   // local frame of one servo
     zl = -Servo_Spline_Off-Cas_Clear;             // case ends (+clearance)
     zu = Servo_L-Servo_Spline_Off+Cas_Clear;
     // side walls; they start at the channel edge so neighbours' walls merge
-    for(s=[-1,1]) translate([yw, s>0 ? yw : -yw-Cas_Wall, zf-Overlap])
-        cube([xt-yw, Cas_Wall, zt-zf+Overlap]);
+    // (solid: the cell sleeves are fused to their outer faces)
+    Cas_Walls(zf-Overlap, zt-zf+Overlap);
     // lug blocks beside the lug plates, beyond both case ends
     translate([xb,Cas_Lug_Y0,zf-Overlap]) cube([xt-xb,yw+Cas_Wall-Cas_Lug_Y0,zl-zf+Overlap]);
     // upper block: a ~4 mm ledge off the +y wall over the case end
     translate([xb,Cas_Lug_Y0,zu]) cube([xt-xb,yw+Cas_Wall-Cas_Lug_Y0,zt-zu]);
 }
-// Diamond lightening window in a side wall, between the lug blocks: its
-// edges are at 45 deg, so the print needs no bridge.
-module Cas_Wall_Window(){
-    b = Servo_Bottom_R; yw = Servo_W/2+Cas_Clear;
-    x0 = yw+3; x1 = b+Servo_Lug_Hole_X-Lug_Access_D/2-3;
-    z0 = -Servo_Spline_Off+1; z1 = Servo_L-Servo_Spline_Off-1;
-    d = min(x1-x0, z1-z0);
-    for(s=[-1,1]) translate([(x0+x1)/2, s*(yw+Cas_Wall/2), (z0+z1)/2])
-        rotate([90,0,0]) rotate([0,0,45]) cube([d/sqrt(2),d/sqrt(2),Cas_Wall+1],center=true);
+module Cas_Walls(z0, h){   // local frame (z relative to Canard_Z)
+    yw = Servo_W/2+Cas_Clear; xt = Servo_Bottom_R+Servo_Case_H;
+    for(s=[-1,1]) translate([yw, s>0 ? yw : -yw-Cas_Wall, z0]) cube([xt-yw, Cas_Wall, h]);
+}
+module Canard_Rot(k) rotate([0,0,Canard_A0+90*k]) children();   // canard frame, Z absolute
+
+// Cell sleeves: a Ø22.7 tube per quadrant on the floor, fused to both
+// neighbouring cradle walls, plus a web out to the quadrant screw boss.
+module Cell_Sleeves_Add(rf){
+    for(a=Cell_A) rotate([0,0,a]){
+        translate([Cell_R,0,Cas_Floor_Top-Overlap])
+            cylinder(d=Cell_Sleeve_OD,h=Cas_Top_Z-Cas_Floor_Top+Overlap,$fn=96);
+        translate([Cell_R,-3,Cas_Floor_Top-Overlap])
+            cube([rf-Cas_Boss_L+0.5-Cell_R,6,Cas_Floor_Z+Cas_Boss_D-Cas_Floor_Top+Overlap]);
+    }
+    // keeper insert bosses, against the outer face of each -y cradle wall
+    for(k=[0:3]) Canard_Rot(k) translate([Keeper_Fix[0],Keeper_Fix[1],Cas_Floor_Top-Overlap])
+        cylinder(d=Keeper_Boss_D,h=Keeper_Boss_Top_Z-Cas_Floor_Top+Overlap,$fn=48);
+}
+module Cell_Sleeves_Cut(){
+    for(a=Cell_A) rotate([0,0,a]){
+        // bore, through the floor: the cell hangs below it onto the keeper
+        translate([Cell_R,0,Cas_Floor_Z-1]) cylinder(d=Cell_Bore_D,h=Cas_Top_Z-Cas_Floor_Z+2,$fn=96);
+        // full-height tab/lead slot toward the axis, through the wall arc only
+        translate([Cell_R-Cell_Sleeve_OD/2-0.1,-Cell_Slot_W/2,Cas_Floor_Top-Overlap])
+            cube([Cell_Sleeve_OD/2+0.1,Cell_Slot_W,Cas_Top_Z-Cas_Floor_Top+1]);
+    }
+    // floor notch toward the axis, under the lead channel between the two
+    // cradle walls; the floor under the walls stays, so nothing overhangs
+    difference(){
+        for(a=Cell_A) rotate([0,0,a])
+            translate([Cell_R-Cell_Bore_D/2-Cell_Notch[1],-Cell_Notch[0]/2,Cas_Floor_Z-1])
+                cube([Cell_Notch[1]+1,Cell_Notch[0],Cas_Floor_T+2]);
+        for(k=[0:3]) Canard_Rot(k) Cas_Walls(Cas_Floor_Z-2, Cas_Floor_T+4);
+    }
+    for(k=[0:3]) Canard_Rot(k){
+        // keeper inserts, set from below
+        translate([Keeper_Fix[0],Keeper_Fix[1],Cas_Floor_Z-Overlap])
+            cylinder(d=Insert_Hole_D,h=Insert_Pocket_L+Overlap,$fn=36);
+        for(p=Cell_Tie_XY) translate([p[0],p[1],Cas_Floor_Z-1]) cylinder(d=Cell_Tie_D,h=Cas_Floor_T+2,$fn=24);
+    }
 }
 module Cas_Lug_Cuts(){   // local frame
     b = Servo_Bottom_R; yw = Servo_W/2+Cas_Clear;
@@ -571,14 +709,99 @@ module CN_Canard_Cassette(){
                             translate([-Cas_Boss_D/2,-Cas_Boss_D/2,0]) cube([Cas_Boss_D/2,Cas_Boss_D,Cas_Boss_L]); }
                 translate([0,0,Cas_Floor_Z]) cylinder(r=rf,h=Cas_Boss_D+3,$fn=180);
             }
+            Cell_Sleeves_Add(rf);
         }
-        for(k=[0:3]) Canard_Frame(k){ Cas_Lug_Cuts(); Cas_Wall_Window(); }
+        for(k=[0:3]) Canard_Frame(k) Cas_Lug_Cuts();
+        Cell_Sleeves_Cut();
         // the four leads drop down the central channel through one hole
         rotate([0,0,Canard_A0]) translate([-Cas_Lead_Hole/2,-Cas_Lead_Hole/2,Cas_Floor_Z-1])
             cube([Cas_Lead_Hole,Cas_Lead_Hole,Cas_Floor_T+2]);
         for(a=Cas_Screw_A) Radial_Insert_Pocket(Canard_A0+a, rf, Cas_Screw_Z);
     }
 }
+
+// ============================================
+// CELL KEEPER (part 19), assembled position; prints plate-down
+// ============================================
+module CN_Cell_Keeper(){
+    difference(){
+        union(){
+            translate([0,0,Keeper_Z0]) cylinder(r=Keeper_R,h=Keeper_T,$fn=180);
+            // seat rings on the cells' insulated bottom rims
+            for(a=Cell_A) rotate([0,0,a]) translate([Cell_R,0,Keeper_Top_Z-Overlap])
+                cylinder(d=Keeper_Ring[1],h=Cell_End_Relief+Overlap,$fn=96);
+            // columns up to the cassette floor
+            for(k=[0:3]) Canard_Rot(k) translate([Keeper_Fix[0],Keeper_Fix[1],Keeper_Top_Z-Overlap])
+                cylinder(d=Keeper_Col_D,h=Cas_Floor_Z-Keeper_Top_Z+Overlap,$fn=48);
+        }
+        translate([0,0,Keeper_Z0-1]) cylinder(d=Keeper_Lead_D,h=Keeper_T+2,$fn=48);
+        for(a=Cell_A) rotate([0,0,a]){
+            // end window for the tab and solder joint, and its lead slot
+            translate([Cell_R,0,Keeper_Z0-1]) cylinder(d=Keeper_Ring[0],h=Keeper_T+Cell_End_Relief+2,$fn=72);
+            translate([Cell_R-Keeper_Ring[1]/2-1,-Cell_Slot_W/2,Keeper_Z0-1])
+                cube([Keeper_Ring[1]/2+1,Cell_Slot_W,Keeper_T+Cell_End_Relief+2]);
+        }
+        // M3 countersunk, flush with the plate's underside
+        for(k=[0:3]) Canard_Rot(k) translate([Keeper_Fix[0],Keeper_Fix[1],Keeper_Z0]){
+            translate([0,0,-1]) cylinder(d=Bay_M3_Clearance,h=Cas_Floor_Z-Keeper_Z0+2,$fn=36);
+            translate([0,0,-Overlap]) cylinder(d1=Bay_Charge_Head_D+2*Overlap,d2=Bay_M3_Clearance,
+                h=(Bay_Charge_Head_D-Bay_M3_Clearance)/2+Overlap,$fn=60);
+        }
+    }
+}
+// Cells, with their top pads, for checks and the assembly view
+module CN_Cell_Envelopes(){
+    for(a=Cell_A) rotate([0,0,a]) translate([Cell_R,0,0]){
+        translate([0,0,Cell_Bottom_Z]) cylinder(d=Cell_D,h=Cell_Body_L,$fn=72);
+        translate([0,0,Cell_Top_Z]) difference(){
+            cylinder(d=Cell_Pad[0],h=Cell_Top_Pad_T,$fn=72);
+            translate([0,0,-1]) cylinder(d=Cell_Pad[1],h=Cell_Top_Pad_T+2,$fn=72);
+            translate([-Cell_Pad[0],-Cell_Slot_W/2,-1]) cube([Cell_Pad[0],Cell_Slot_W,Cell_Top_Pad_T+2]);
+        }
+    }
+}
+// Keeper screws M3x20 countersunk (head flush in the plate), for checks
+module CN_Keeper_Screws(){
+    for(k=[0:3]) Canard_Rot(k) translate([Keeper_Fix[0],Keeper_Fix[1],Keeper_Z0]){
+        cylinder(d1=Bay_Charge_Head_D-0.2,d2=2.9,h=(Bay_Charge_Head_D-0.2-2.9)/2,$fn=36);
+        cylinder(d=2.9,h=Keeper_Screw_L,$fn=36);
+    }
+}
+
+// ============================================
+// SERVO SWITCH on slice 02 (drilled) and its saddle (part 12)
+// ============================================
+// Local XY is the bezel's seating plane, local +Z points into the nose.
+module Ssw_Frame(){
+    rotate([0,0,Ssw_A-90]) translate([0,Ssw_Face_R,Ssw_Z]) rotate([90,0,0]) children();
+}
+module Ssw_Hole_Cut(h=30){   // Ø12.7 + R1.2 key relief (13.6 overall), as the camera switch
+    translate([0,0,-h/2]) cylinder(d=Bay_Switch_Hole_D,h=h,$fn=120);
+    translate([0,6.05,-h/2]) cylinder(r=1.2,h=h,$fn=48);
+}
+// Glued inside the shell; its flat back carries the nut. Print flat back down.
+module CN_Ssw_Saddle(){
+    difference(){
+        intersection(){
+            Ssw_Frame() Bay_Panel(22,22,Ssw_Panel_T);
+            rotate_extrude($fn=360) polygon(concat([[0,Ssw_Z-20]],
+                [for(z=[Ssw_Z-20:2:Ssw_Z+20]) [CN_Inner_R(z)-Ssw_Glue,z]],
+                [[0,Ssw_Z+20]]));
+        }
+        Ssw_Frame() Ssw_Hole_Cut();
+    }
+}
+// Bezel in front, thread through the panel, Ø16 rear envelope behind it
+module CN_Ssw_Envelope(){
+    Ssw_Frame(){
+        translate([0,0,-Ssw_Bezel[1]]) cylinder(d=Ssw_Bezel[0],h=Ssw_Bezel[1],$fn=72);
+        cylinder(d=Ssw_Thread_D,h=Ssw_Panel_T+Overlap,$fn=72);
+        translate([0,0,Ssw_Panel_T]) cylinder(d=Ssw_Body[0],h=Ssw_Body[1]-Ssw_Panel_T,$fn=72);
+    }
+}
+// Slice 02 as drilled by hand for the servo switch (checks only; the
+// printed part and its STL keep the source geometry)
+module CN_Slice_Drilled(){ difference(){ CN_Canard_Slice(); Ssw_Frame() Ssw_Hole_Cut(); } }
 
 // ============================================
 // SHOULDER ADDITIONS (shoulder coordinates: assembled Z + Shoulder_L)
@@ -768,6 +991,10 @@ module CN_Canard_Assembly(){
         rotate([0,0,Canard_A0+45]) translate([-100,-100,-1]) cube([100,200,200]);
     }
     color([0.95,0.62,0.18]) CN_Canard_Cassette();
+    color([0.2,0.45,0.95]) CN_Cell_Envelopes();
+    color([0.85,0.3,0.3]) CN_Cell_Keeper();
+    color([0.85,0.3,0.3]) CN_Ssw_Saddle();
+    color([0.15,0.15,0.15]) CN_Ssw_Envelope();
     color([0.3,0.7,0.4]) CN_Vega_Mast();
     color([0.1,0.35,0.2]) CN_Vega_Envelope();
     color([0.2,0.2,0.25]) CN_Canard_Servos();

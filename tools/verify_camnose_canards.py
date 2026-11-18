@@ -11,6 +11,18 @@ radial screw's centre line is clear through both parts it joins; static
 ports, the USB window and the camera-floor pass are open; the index key
 reaches into the body tube's wall at rail + 45 deg.
 
+18650 cells in the cassette (2026-11-19): the four cell envelopes (with
+their top pads) and the cell keeper (part 19) and its screws clear the
+shoulder, slices, cassette, servos, arms, mast unit, Vega and the canards
+at every checked deflection; the keeper's insert pockets sit in a sound
+boss (1.6 mm walls, 1.2 mm cap); the lug-bolt driver lines and nut-insertion
+paths stay clear of the cells; the servo switch (drilled into the printed
+02, saddle part 12) clears everything inside, stays inside the body-tube
+silhouette on the rail side, and does not block the mast unit's insertion;
+the roof pass can be reamed to Ø11 without touching the mast. Printed or
+unchanged parts (01, 02, 03, 06, 07, 10, 14, 15, 16, 17 and the flag-off
+parts) render to exactly the committed triangles.
+
 Servo and arm solids are envelopes from the MKS HV6160 dimension drawing;
 lead stub and arm sizes are estimates. This verifies CAD, not printed fits,
 strength, sealing or flight behaviour.
@@ -20,6 +32,7 @@ Usage: verify_camnose_canards.py [--output-dir DIR] [--json FILE]
 """
 import argparse
 import hashlib
+import struct
 import json
 import math
 import subprocess
@@ -55,6 +68,18 @@ def render(out_dir, name, defines):
     if r.returncode != 0 or "ERROR" in log or "WARNING" in log or not out.exists():
         raise RuntimeError("render %s failed:\n%s" % (name, log[-3000:]))
     return name, out, log
+
+
+def stl_vertices(path):
+    """Triangle vertices of a binary or ASCII STL as float32 (header and
+    normals ignored). OpenSCAD's ASCII digits round-trip to the float32
+    values of its binary export."""
+    b = Path(path).read_bytes()
+    if len(b) >= 84 and len(b) == 84 + 50 * struct.unpack("<I", b[80:84])[0]:
+        dt = np.dtype([("n", "<f4", 3), ("v", "<f4", 9), ("a", "<u2")])
+        return np.frombuffer(b[84:], dtype=dt)["v"]
+    v = [ln.split()[1:] for ln in b.decode().splitlines() if ln.lstrip().startswith("vertex")]
+    return np.array(v, dtype=np.float64).astype(np.float32).reshape(-1, 9)
 
 
 def inter(a, b):
@@ -121,7 +146,12 @@ def main():
             "part6_off": {"Render_Part": 6, "Canards_Enabled": "false"},
             "part14": {"Render_Part": 14}, "part15": {"Render_Part": 15},
             "part16": {"Render_Part": 16}, "part17": {"Render_Part": 17},
-            "vega": {"Render_Part": 24}, "vswitch": {"Render_Part": 25}}
+            "vega": {"Render_Part": 24}, "vswitch": {"Render_Part": 25},
+            "part7": {"Render_Part": 7},
+            "part7_off": {"Render_Part": 7, "Canards_Enabled": "false"},
+            "part12": {"Render_Part": 12}, "part19": {"Render_Part": 19},
+            "cells": {"Render_Part": 26}, "kscrews": {"Render_Part": 27},
+            "sswitch": {"Render_Part": 28}, "part2_drilled": {"Render_Part": 29}}
     for d in (0, stop - 0.5, -(stop - 0.5), stop + 0.5, -(stop + 0.5)):
         jobs["canards_%+.1f" % d] = {"Render_Part": 22, "Canard_View_Defl": d}
     with ThreadPoolExecutor(max_workers=6) as ex:
@@ -129,9 +159,23 @@ def main():
     m = {name: trimesh.load_mesh(path) for name, path, _ in done}
     m["part9"] = trimesh.load_mesh(out_dir / "part9.stl")
 
+    # parts that are printed already or must not change: the render gives
+    # exactly the committed triangles (STL header and normals ignored)
+    for name, stl in (("part1", "Canards/Shoulder.stl"), ("part2", "Canards/SliceBottom.stl"),
+                      ("part3", "Canards/SliceMiddle.stl"), ("part6", "Canards/BatteryCarrier.stl"),
+                      ("part7", "ConverterTray.stl"), ("part10", "Canards/Canard.stl"),
+                      ("part14", "Canards/VegaMast.stl"), ("part15", "Canards/ChargeWell.stl"),
+                      ("part16", "Canards/Coupon_Slice.stl"), ("part17", "Canards/Coupon_Shoulder.stl"),
+                      ("part1_off", "Shoulder.stl"), ("part2_off", "SliceBottom.stl"),
+                      ("part3_off", "SliceMiddle.stl"), ("part6_off", "BatteryCarrier.stl"),
+                      ("part7_off", "ConverterTray.stl")):
+        a, b = stl_vertices(out_dir / (name + ".stl")), stl_vertices(COMMITTED / stl)
+        record("%s triangles identical to committed %s" % (name, stl),
+               a.shape == b.shape and np.array_equal(a, b), {"triangles": [len(a), len(b)]})
+
     # printable solids
-    for name in ("part1", "part2", "part3", "part6", "part9", "part10", "part14",
-                 "part15", "part16", "part17"):
+    for name in ("part1", "part2", "part3", "part6", "part9", "part10", "part12", "part14",
+                 "part15", "part16", "part17", "part19"):
         mesh = m[name]
         record("%s is watertight" % name, mesh.is_watertight)
         record("%s has outward winding" % name, mesh.is_volume)
@@ -172,8 +216,8 @@ def main():
         v = inter(m["canards_%+.1f" % d], slice_)
         record("canards blocked by the stop at %+.1f deg" % d, v > 0.01, round(v, 4))
 
-    # cassette + servos slide out of the bottom (shoulder removed)
-    payload = trimesh.util.concatenate([cas, servos])
+    # cassette + servos + cells slide out of the bottom (shoulder and keeper off)
+    payload = trimesh.util.concatenate([cas, servos, m["cells"]])
     worst, worst_d = 0.0, None
     for d in np.arange(0, cas_top + 3, 3.0):
         moved = payload.copy()
@@ -181,7 +225,7 @@ def main():
         v = inter(moved, slice_)
         if v > worst:
             worst, worst_d = v, d
-    record("cassette with servos slides out of the slice", worst < 1e-3,
+    record("cassette with servos and cells slides out of the slice", worst < 1e-3,
            {"worst_mm3": round(worst, 4), "at_drop_mm": worst_d})
 
     # every screw centre line is free through both parts it joins
@@ -210,13 +254,17 @@ def main():
         a = math.radians(a0 + 90 * k)
         rot = trimesh.transformations.rotation_matrix(a, [0, 0, 1])
         for z in lug_zs:
+            # nut path: a Ø5.8 rod (across the nut's corners) from the
+            # trap's open face out through the quadrant
             for name, d, y0, y1, parts in (("bolt", 2.4, -1.0, y_far, (servos, cas)),
-                                           ("driver", 4.5, -30.0, -1.2, (servos, cas))):
+                                           ("driver", 4.5, -30.0, -1.2, (servos, cas, m["cells"])),
+                                           ("nut path", 5.8, y_far + 2.45, 30.0,
+                                            (servos, cas, m["cells"]))):
                 rod = trimesh.creation.cylinder(radius=d / 2, height=y1 - y0, sections=36)
                 rod.apply_transform(trimesh.transformations.rotation_matrix(-math.pi / 2, [1, 0, 0]))
                 rod.apply_translation([lug_x, (y0 + y1) / 2, z])
                 rod.apply_transform(rot)
-                for pn, part in zip(("servos", "cassette"), parts):
+                for pn, part in zip(("servos", "cassette", "cells"), parts):
                     clear("servo %d lug at z=%+.1f: %s line clears the %s" % (k, z, name, pn),
                           rod, part)
 
@@ -232,16 +280,17 @@ def main():
     clear("Vega switch body clears the Vega", vsw, vega)
     clear("Vega switch body clears the mast unit", vsw, mast)
     clear("Vega switch body clears the cassette", vsw, cas)
-    obstacles = trimesh.util.concatenate([slice_, mid, vsw])
+    ssw, saddle = m["sswitch"], m["part12"]
     payload = trimesh.util.concatenate([mast, vega])
     worst, worst_d = 0.0, None
     for d in np.arange(0, mast_top + 3, 4.0):
         moved = payload.copy()
         moved.apply_translation([0, 0, -d])
-        v = max(inter(moved, slice_), inter(moved, mid), inter(moved, vsw))
+        v = max(inter(moved, slice_), inter(moved, mid), inter(moved, vsw),
+                inter(moved, ssw), inter(moved, saddle))
         if v > worst:
             worst, worst_d = v, d
-    record("mast unit with the Vega slides in past both slices and the switch",
+    record("mast unit with the Vega slides in past both slices and both switches",
            worst < 1e-3, {"worst_mm3": round(worst, 4), "at_drop_mm": worst_d})
     for k in range(4):
         a = a0 + 45 + 90 * k
@@ -258,6 +307,80 @@ def main():
     rod.apply_translation([fpx, fpy, bfz + bft / 2])
     clear("servo-power pass open in the camera-bay floor", rod, m["part6"])
 
+    # ---- 18650 cells in the cassette, cell keeper (19), servo switch (12, 28)
+    (cell_r, cell_d, cell_z0, cell_z1, pad_t, kz0, kfx, kfy, cfz, pocket_top,
+     kboss_top, kscrew_l, khead_d) = echo_values(log0, "CELLS_GEOM")
+    (ssw_a, ssw_z, ssw_face_r, bezel_d, bezel_h, pass_u, pass_n, pass_d, ream_d,
+     roof_z0b, roof_t, roof_rim_h, body_r) = echo_values(log0, "SSW_GEOM")
+    cells, keeper, kscrews = m["cells"], m["part19"], m["kscrews"]
+    drilled = m["part2_drilled"]
+    deflections = [k for k in m if k.startswith("canards_")]
+    for pn, part in (("the cassette", cas), ("slice 02", slice_), ("the shoulder", shoulder),
+                     ("the servos", servos), ("the output arms", horns), ("the mast unit", mast),
+                     ("the Vega", vega), ("the Vega switch", vsw)):
+        clear("cells clear %s" % pn, cells, part, tol=0.01)
+    for dk in deflections:
+        clear("cells clear the canards at %s deg" % dk.split("_")[1], cells, m[dk])
+    clear("cells clear the keeper (rims rest on the seat rings)", cells, keeper, tol=0.01)
+    for pn, part in (("the shoulder", shoulder), ("slice 02", slice_), ("the cassette", cas),
+                     ("the servos", servos), ("the output arms", horns), ("the mast unit", mast)):
+        clear("keeper clears %s" % pn, keeper, part, tol=0.01)
+    for dk in deflections:
+        clear("keeper clears the canards at %s deg" % dk.split("_")[1], keeper, m[dk])
+    for pn, part in (("the shoulder", shoulder), ("the keeper", keeper), ("the cassette", cas),
+                     ("the cells", cells), ("the servos", servos)):
+        clear("keeper screws clear %s" % pn, kscrews, part, tol=0.01)
+    # the keeper's lowest point against the highest shoulder feature under it
+    v = shoulder.vertices
+    under = v[np.hypot(v[:, 0], v[:, 1]) < 46.0]
+    gap = float(keeper.bounds[0][2] - under[:, 2].max())
+    record("keeper plate >= 1 mm above the shoulder's insert bosses", gap >= 1.0,
+           {"keeper_bottom_z": round(float(keeper.bounds[0][2]), 2),
+            "shoulder_top_inside_r46_z": round(float(under[:, 2].max()), 2)})
+    # keeper insert pockets: a 1.6 mm wall all round and a 1.2 mm cap, in solid
+    for k in range(4):
+        a = math.radians(a0 + 90 * k)
+        c = np.array([kfx * math.cos(a) - kfy * math.sin(a), kfx * math.sin(a) + kfy * math.cos(a)])
+        outer = trimesh.creation.cylinder(radius=2.0 + 1.6, height=pocket_top + 1.2 - (cfz + 0.05),
+                                          sections=48)
+        outer.apply_translation([c[0], c[1], (pocket_top + 1.2 + cfz + 0.05) / 2])
+        inner = trimesh.creation.cylinder(radius=2.0 + 0.02, height=pocket_top + 0.02 - cfz, sections=48)
+        inner.apply_translation([c[0], c[1], (pocket_top + 0.02 + cfz) / 2])
+        shell = trimesh.boolean.difference([outer, inner], engine="manifold")
+        miss = trimesh.boolean.difference([shell, cas], engine="manifold")
+        mv = 0.0 if miss.is_empty else abs(float(miss.volume))
+        record("keeper insert %d: 1.6 mm wall and 1.2 mm cap are solid" % k, mv < 0.05, round(mv, 4))
+        rod = trimesh.creation.cylinder(radius=1.45, height=kscrew_l, sections=36)
+        rod.apply_translation([c[0], c[1], kz0 + kscrew_l / 2])
+        clear("keeper screw %d line clears the cassette (runs in the pocket)" % k, rod, cas)
+        clear("keeper screw %d line clears the shoulder" % k, rod, shoulder)
+
+    # servo switch: body behind the drilled 02 and the saddle, bezel outside
+    for pn, part in (("the mast unit", mast), ("the Vega", vega), ("the cassette", cas),
+                     ("the cells", cells), ("the servos", servos), ("the output arms", horns),
+                     ("the Vega switch", vsw), ("drilled slice 02", drilled),
+                     ("the saddle", saddle)):
+        clear("servo switch clears %s" % pn, ssw, part, tol=0.01)
+    for dk in deflections:
+        clear("servo switch clears the canards at %s deg" % dk.split("_")[1], ssw, m[dk])
+    clear("saddle clears drilled slice 02 (epoxy gap)", saddle, drilled, tol=0.01)
+    clear("saddle clears the mast unit", saddle, mast)
+    clear("saddle clears the Vega", saddle, vega)
+    rail = np.array([math.cos(math.radians(rail_a)), math.sin(math.radians(rail_a)), 0.0])
+    reach = float((ssw.vertices @ rail).max())
+    record("servo switch stays inside the body-tube silhouette toward the rail",
+           reach < body_r, {"max_toward_rail_mm": round(reach, 2), "body_r": body_r})
+    # roof pass reamed Ø9 -> Ø11, from below: the reamer and the leads' bend
+    # (15 mm above the roof plate) meet nothing of part 14 but the plate
+    au = math.radians(a0)
+    pc = pass_u * np.array([math.cos(au), math.sin(au)]) + pass_n * np.array([-math.sin(au), math.cos(au)])
+    for z0, z1, what in ((roof_z0b + roof_t + 0.05, roof_z0b + roof_t + 15.0, "within 15 mm above the roof plate"),
+                         (roof_z0b - 20.0, roof_z0b - 0.05, "below the roof")):
+        rod = trimesh.creation.cylinder(radius=ream_d / 2, height=z1 - z0, sections=48)
+        rod.apply_translation([pc[0], pc[1], (z0 + z1) / 2])
+        clear("Ø%.0f roof-pass ream clears the mast unit %s" % (ream_d, what), rod, mast)
+        clear("Ø%.0f roof-pass ream clears the servo switch %s" % (ream_d, what), rod, ssw)
+
     # index key reaches into the tube wall annulus (ID 99.1 .. OD 101.5)
     key = trimesh.boolean.intersection(
         [shoulder, annulus(99.1 / 2 + 0.05, 101.5 / 2, -key_h + 1, -0.05)], engine="manifold")
@@ -273,7 +396,7 @@ def main():
     # overhang screen (informational): downward faces steeper than 45 deg,
     # not on the bed. Horizontal insert holes, the plug-hole crowns and the
     # cassette's upper-ledge bridges are expected here.
-    for name in ("part1", "part2", "part9", "part10", "part14", "part15"):
+    for name in ("part1", "part2", "part9", "part10", "part12", "part14", "part15", "part19"):
         mesh = m[name]
         n, a, tri = mesh.face_normals, mesh.area_faces, mesh.triangles
         sel = (n[:, 2] < -math.sqrt(0.5) - 1e-6) & (tri[:, :, 2].max(axis=1) > mesh.bounds[0][2] + 0.01)
@@ -281,8 +404,8 @@ def main():
 
     # mass input for tools/canard_estimate.py
     vols = {n: round(abs(float(m[n].volume)) / 1000, 3) for n in
-            ("part1", "part2", "part3", "part6", "part9", "part10", "part14", "part15",
-             "part1_off", "part2_off", "part3_off", "part6_off")}
+            ("part1", "part2", "part3", "part6", "part9", "part10", "part12", "part14", "part15",
+             "part19", "part1_off", "part2_off", "part3_off", "part6_off")}
     record("volumes cm3", True, vols)
 
     failed = [r for r in results if not r["passed"]]
