@@ -122,7 +122,8 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 - Four Ø8 columns up to the cassette floor (Z 29.2), each held by an **M3×20 90° countersunk** screw, head flush under the plate, into a ruthex M3×5.7 set from below into the cassette.
 - The insert sits in a Ø8 boss standing on the floor against the outer face of each cradle's −y wall, at canard-local (31, −10.5). That boss has 2.0 mm walls and a 1.6 mm cap over the 7.7 mm pocket. The screw engages 4.3 mm.
 
-**Top retention.** The underside of the mast roof (Z 85, printed part 14, unchanged) holds the cells down through a **C-ring pad**: 1.5 mm fishpaper or G10 plus 0.5 mm closed-cell foam, OD 18, ID 12, the gap toward the slot. It bears on the rim, never on the tab. The stack (ring top Z 18, body 65, pad 2, roof Z 85) has **no other axial slack**: the foam is the only compliance. Measure the real cells; if a cell is longer than 65.0 mm, use thinner foam.
+**Top retention.** The underside of the mast roof (Z 85, printed part 14, unchanged) holds the cells down through a **C-ring pad**: 1.5 mm fishpaper or G10 plus 0.5 mm closed-cell foam, OD 18, ID 12, the gap toward the slot. It bears on the rim, never on the tab. The seat-ring top (Z 18) to the roof (Z 85) is 67 mm, so **pad thickness = 67 mm − the cell's rim-to-rim length** (bottom face to the shoulder rim around the + cap, not to the cap top; usually 0.5–1 mm less than the 65 mm overall). Make it up from fishpaper/G10 plus 0.5 mm foam, and keep it at least 0.5 mm thicker than the cap height plus the tab, so the roof never touches the tab.
+- **No soldered lead at the top of a cell:** only about 2 mm separates the cell top from the roof, and a soldered lead would be crushed there. Bring the welded nickel strip out through the pad's gap and down the 6 mm slot, and solder the lead to it below the floor.
 
 **Pairs.**
 - **Servo pair: 60° and 240°.** It feeds the servos and the camera.
@@ -226,11 +227,11 @@ becomes 586 mm instead of 574.
 1. **Mast unit:** fit the Vega, the LiPo (if flown) and the capacitor. Hang the servo-extension, power, pyro and camera leads down through the roof pass (reamed Ø11), including both packs' harness leads (servo pack to the servo switch, FC pack to the Vega switch). Slide the unit up and fit 4 × M3×10 button.
 2. **Cassette:** melt the four keeper inserts into the floor bosses from below and thread the lacing cords through the tie holes. Fit the servos with their lugs, M2.5 bolts and nuts. Run the pack harness leads down the central channel and out through the floor hole. Connect the servo leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
 3. **Cells, from below:** lay a C-ring pad on each cell's top rim, gap toward the slot. Push each wired cell up through its floor hole, top lead in the slot and out through the notch, until the pad meets the roof. Hold the cells (tape) until the keeper is on.
-4. **Keeper:** make the series links, fuses and pack terminals under the floor, onto the harness leads. Push the keeper up so the seat rings take the cells' bottom rims, then fit 4 × M3×20 countersunk. Tie the pack leads with the lacing cords.
+4. **Keeper:** make the series links, fuses and pack terminals under the floor, onto the harness leads. Tie the pack leads with the lacing cords now (the keeper plate covers the tie holes once fitted). Push the keeper up so the seat rings take the cells' bottom rims, then fit 4 × M3×20 countersunk.
 5. **Canards, from outside:** fit the hub on the spline, then the centre screw, then the plug with 2 × M2×8. Set the neutral offset in the firmware trim.
 6. **Shoulder:** wire the four posts, then screw the shoulder on with 12 × M3×8 button head. The key goes into the notch at 105°.
 
-**Service:** shoulder off; untie the lacing cords (leave them threaded: they cannot be re-threaded with the servos in); keeper off (4 screws); the cells drop out with their leads. The cassette stays in.
+**Service:** shoulder off; keeper off (4 screws, support the cells); untie the lacing cords (leave them threaded: they cannot be re-threaded with the servos in); the cells drop out with their leads. The cassette stays in.
 
 ### Still unverified
 
@@ -239,7 +240,7 @@ becomes 586 mm instead of 574.
   - the lead stub;
   - the aluminium hub (the clamp hub Ø12 × 5 is assumed).
 - **Vega:** the GNSS patch and WAGO envelopes and positions; their side of the board is inferred from the STEP plus "100 × 33 × 21 mm".
-- **Cells:** the real cell length (the stack under the roof has no slack beyond the 0.5 mm foam), tab and solder-joint heights in the 2 mm reliefs, and lead routing through the slots and notches.
+- **Cells:** the real rim-to-rim length (sets the pad thickness), the + cap height, and strip/lead routing through the slots and notches.
 - **Servo switch:** the Schurter 0033.4513 is rated 6.3 A / 250 VAC (300 no-load cycles); no DC rating is given, and the servo fuse is 7.5 A.
 - **Masses:** every item marked est in the mass table.
 - **Joint strength:** to be shown by the ≥ 3.0 kN pull test.
