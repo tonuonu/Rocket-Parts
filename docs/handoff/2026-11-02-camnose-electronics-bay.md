@@ -223,3 +223,72 @@ or complete assembly validation is claimed.
 The home print folder's `01-Shoulder.stl` is updated. A separate
 `01-Shoulder-Chamfered.3mf` contains the new sliced project; the owner's
 existing `01-Shoulder.3mf` is preserved and still contains the old geometry.
+
+### Tube insertion gauge and local diameter correction — 2026-11-03
+
+The owner reported the printed 00 about 1 mm smaller in diameter than the
+tube, clarified this was against the tube's outside diameter, then asked
+to increase the bottom and make a ring to fit into the tube. The old 00
+was a Ø101.5 outside-profile ring, not an insertion gauge. The actual tube
+ID is still unknown; do not derive a confirmed inside fit from that outside
+comparison.
+
+The new 00 is a Ø99.7 × 7 mm insertion ring, matching the requested +1 mm
+diametral change to 01's original Ø98.7 body. This correction is local to
+the shoulder (`Shoulder_Tube_Fit_Adjust=1.0`); the global body/nosecone
+diameters are preserved. Material is added outside only. The Ø96.7 × 15 mm
+spigot, bore, chamfer and ribbon slots are unchanged. The owner's printed
+02/03/04/06/07 remain unchanged. Trial the ring before printing the updated
+01; no physical tube fit is yet confirmed.
+
+Twenty-two dimension/topology/overhang checks pass. Additional mesh checks
+confirm the added material is confined below the spigot, the spigot is
+unchanged, clearance to 02 remains, and both ribbon gauges pass. Results
+and hashes are in `tube-fit-verification.json`. Bambu Studio was not used
+for this revision, per the owner's instruction about overheating.
+
+Home `00-TestRing.stl` and `01-Shoulder.stl` are updated. All existing 3MF
+projects, including `01-Shoulder-Chamfered.3mf`, predate this diameter
+correction. Import the new STL instead. The previous verification reports
+remain historical evidence, not verification of these latest meshes.
+
+### Ø99.7 trial rejected; stepped gauge — 2026-11-03
+
+The owner printed the Ø99.7 mm 00 ring and reports that it does not enter
+the tube and is much too large. The +1 mm correction is therefore rejected.
+Do not infer the tube ID from the earlier outside-diameter comparison.
+
+Part 00 is now one stepped insertion gauge: Ø98.3, 98.5, 98.7, 98.9 and
+99.1 mm, each band 3 mm tall. Print largest end down, insert smallest end
+first and report the largest band that enters freely. Top and bottom
+0.3 mm bevels ease entry and isolate the largest test surface from bed
+flare. Do not measure fit using only the tip bevel.
+
+`Shoulder_Tube_Fit_Adjust` is restored to zero. Part 01 is back to the
+original chamfered Ø98.7 geometry, pending the gauge result; no new final
+diameter is asserted. The other printed parts are unchanged. Current
+mesh verification is in `fit-gauge-verification.json`. Bambu Studio was
+not used. Home 00/01 STLs and print instructions are updated; old 3MFs
+and the Ø99.7 CAD report are historical, not current print instructions.
+
+### Gauge result and shoulder entry chamfer — 2026-11-03
+
+Owner reports that four gauge bands went in and the fifth did not:
+Ø98.9 entered; Ø99.1 did not. Retain the original Ø98.7 main shoulder
+diameter, giving 0.2 mm diametral margin relative to the largest band that
+entered. This is a printed fit observation, not a direct tube-ID measurement
+or a full-length shoulder trial.
+
+At the owner's request, 01 now has an external insertion lead-in at the
+bulkhead end: Ø96.7 at Z=0, widening smoothly to Ø98.7 at Z=2. It stays
+within the solid bulkhead and clear of the ribbon slots. The main body,
+bore, internal support-removing chamfer and upper spigot are unchanged.
+Print bulkhead-down. The gauge and all other parts remain unchanged.
+
+Twenty shoulder dimension/topology/overhang checks and twenty additional
+geometry/hash checks pass. Mesh differences are confined to the outermost
+1 mm radial band within the first 2 mm. Original upper fit and both ribbon
+gauges pass. Results are in `entry-chamfer-verification.json`. Bambu Studio
+was not used. The home 01 STL and print pack are updated; old 3MFs predate
+the external entry chamfer. The next physical check is the printed 01's
+full insertion depth, before bonding to the nosecone.

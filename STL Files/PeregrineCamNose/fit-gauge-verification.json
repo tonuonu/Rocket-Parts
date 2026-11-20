@@ -1,0 +1,67 @@
+{
+  "scope": "Stepped insertion gauge and restoration of original chamfered 98.7 mm shoulder",
+  "physical_observation": "Owner reports 99.7 mm trial ring does not enter tube; rejected",
+  "gauge_diameters_from_small_end_mm": [
+    98.3,
+    98.5,
+    98.7,
+    98.9,
+    99.1
+  ],
+  "band_height_mm": 3,
+  "gauge_height_mm": 15,
+  "physical_gauge_result": "pending",
+  "slicer_used": false,
+  "dimension_checks_passed": 32,
+  "geometry_checks": [
+    {
+      "check": "gauge is one watertight outward solid",
+      "passed": true
+    },
+    {
+      "check": "shoulder is one watertight outward solid",
+      "passed": true
+    },
+    {
+      "check": "shoulder bounds restored",
+      "passed": true
+    },
+    {
+      "check": "shoulder geometry matches original chamfered mesh",
+      "passed": true
+    },
+    {
+      "check": "02-SliceBottom.stl unchanged",
+      "passed": true
+    },
+    {
+      "check": "06-BatteryCarrier.stl unchanged",
+      "passed": true
+    },
+    {
+      "check": "07-ConverterTray.stl unchanged",
+      "passed": true
+    },
+    {
+      "check": "04-SliceTop.stl unchanged",
+      "passed": true
+    },
+    {
+      "check": "03-SliceMiddle.stl unchanged",
+      "passed": true
+    }
+  ],
+  "failed": 0,
+  "sha256": {
+    "Shoulder.stl": "a4e603caaccd52ae1b0dfbb984b16b5e43f9eed8f0262003e74ccf923b8c0cde",
+    "TestRing.stl": "8e8b615364bab12920dbb4678267a526328d54c31578540f40230343da104b6d"
+  },
+  "source_sha256": "01809e468ccbeb1abaf699a10cdf026d8531cfaa695ccfcc96319c3a6e0b8fd5",
+  "unchanged_print_pack_stl_sha256": {
+    "02-SliceBottom.stl": "170371a9ced9783ad97297ee3f3468843cb2a1bce7ae5a3134dfa91eda24939c",
+    "06-BatteryCarrier.stl": "3f5b7688f51baf6460119751a0f94f299e8078dd38fc11213e44349c0efb5429",
+    "07-ConverterTray.stl": "825984d7967552ba3a7d2b8ce19fcf7e37d3fa9872417d5e20544b232f4e1f2b",
+    "04-SliceTop.stl": "150134ae33d06e5167f0e048f78d322af1db37e0344da9dcb0116ec0bb6417cd",
+    "03-SliceMiddle.stl": "43d5d00abfcceb816c331668847ecd2441fec571fcef12a760d2eb4a141e1abd"
+  }
+}

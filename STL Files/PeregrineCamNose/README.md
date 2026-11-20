@@ -9,6 +9,55 @@ This is a CAD-verified prototype, with the initial 04/06 trial fit reported
 below. Full assembly fit, insert strength, mechanical loads, temperatures
 and ejection protection have not been bench-tested.
 
+## Shoulder insertion chamfer and tube fit — 2026-11-03
+
+**The owner reports four gauge bands entered, while the fifth did not:**
+Ø98.9 mm entered and Ø99.1 mm did not. The current 01 therefore retains
+its **Ø98.7 mm body**, 0.2 mm smaller than the largest band that entered,
+to allow some margin along the 100 mm insertion length.
+
+**Print the updated 01 bulkhead-down.** Its insertion end now starts at
+Ø96.7 mm and tapers smoothly to Ø98.7 mm over the first 2 mm. This external
+lead-in helps centre the shoulder and avoids a square edge catching the
+tube rim. The main bore, existing internal chamfer, ribbon slots and upper
+Ø96.7 × 15 mm spigot are unchanged. The already printed parts need no
+reprint for this change. The full-length shoulder still needs a dry fit.
+
+The gauge and its measured result are documented below for reference.
+Current shoulder CAD checks are in `entry-chamfer-verification.json`;
+Bambu Studio was not used for this revision.
+
+### Stepped gauge
+
+**The owner reports that the Ø99.7 mm ring does not enter the tube.**
+That +1 mm trial is rejected. The tube's outside-profile difference did
+not establish the inside clearance. Part 00 is now a stepped insertion
+gauge spanning Ø98.3–99.1 mm in 0.2 mm increments, 15 mm tall overall.
+
+Print it **largest end down**, as supplied. Insert the **smallest end
+first**, without forcing it. From that small end, each 3 mm band is:
+
+| Band from insertion end | Diameter | Depth reached when that band has entered |
+|---|---:|---:|
+| 1 | 98.3 mm | 3 mm |
+| 2 | 98.5 mm | 6 mm |
+| 3 | 98.7 mm | 9 mm |
+| 4 | 98.9 mm | 12 mm |
+| 5 | 99.1 mm | 15 mm |
+
+The first four bands entered in the owner's trial. The tip has a 0.3 mm lead-in;
+judge the full cylindrical band, not just the beveled tip. A similar relief
+at the bed keeps first-layer flare away from the largest test surface.
+
+The gauge supports retaining the original **Ø98.7 mm** shoulder body.
+A short gauge does not prove that a full 100 mm-long shoulder will fit
+an oval or bowed tube. Parts 02/03/04/06/07 remain unchanged.
+
+Use the current numbered STLs. The initial Ø101.5 outside-profile ring and
+the subsequent Ø99.7 insertion ring are superseded. Existing 3MF projects
+contain earlier shoulder geometry; import the current STL. The gauge's
+original CAD check is recorded in `fit-gauge-verification.json`.
+
 ## How 04 and 06 fit together
 
 **06 does not go completely inside 04.** Its bottom is supposed to remain
@@ -36,7 +85,7 @@ No slot or mesh change was needed for the reported width.
 
 ## Shoulder chamfer — 2026-11-03
 
-**Use the updated 01 shoulder for the remaining print.** The bore now
+The preceding chamfer revision replaced the internal ledge. The bore now
 narrows gradually over 2 mm at the spigot instead of leaving a 1 mm radial
 horizontal ledge. Print bulkhead-down as before. Outside mating surfaces,
 115 mm total height and both 16 × 4 mm ribbon slots are unchanged; the
@@ -59,7 +108,7 @@ in this view. Its mesh is on `feature/rocket60` at
 
 | Part | Mesh | Height | Bed orientation |
 |---|---|---:|---|
-| 0 | `TestRing.stl` | 15 mm | Flat; optional tube-fit check |
+| 0 | `TestRing.stl` | 15 mm | Largest end down; five Ø98.3–99.1 fit bands |
 | 1 | `Shoulder.stl` | 115 mm | Bulkhead down |
 | 2 | `SliceBottom.stl` | 154.15 mm | Wide end down |
 | 3 | `SliceMiddle.stl` | 154.13 mm | Wide end down; includes floor seat and service-joint bosses |
@@ -73,7 +122,7 @@ new top has an integral flange, with no spigot or adapter-to-shell glue joint.
 
 Repository meshes retain their assembly coordinates: orient, then drop to
 bed. The downloadable print pack is already oriented at Z=0. Part 2 keeps
-its previous shape; part 1 has the internal chamfer described above. Parts
+its previous shape; part 1 has both internal and entry chamfers at Ø98.7. Parts
 3 and 4 replace the pre-bay versions; the owner's already printed bay
 versions remain current. Part 8 is a cutaway view, not a printable part.
 
@@ -154,8 +203,8 @@ the complete assembly in the actual top before bonding.
    The harness passes through the Ø29.56 central bore.
 8. Attach the top with three M3×8 side screws. **Do not glue this service
    joint.** After trial assembly, epoxy shoulder-to-bottom and
-   bottom-to-middle as before. The shoulder's 98.7 mm outer body remains
-   removable from the body tube.
+   bottom-to-middle as before. Dry-fit the shoulder's 98.7 mm outer body
+   through the full insertion depth before bonding it to the nosecone.
 
 For normal service, remove the three side screws and lift the top with
 its camera attached. Remove two tray screws for cell access. The entire
@@ -183,9 +232,15 @@ tab and hardware intersections, blind insert seats, a continuous carrier
 insertion envelope and shell/switch removal at 1 mm intervals. It must reject
 an oversized converter and an unscalloped floor. `verification.json` records
 the 2026-11-02 bay baseline; `shoulder-verification.json` records the
-2026-11-03 shoulder-only checks and slicer comparison. To repeat the
-shoulder dimensions and overhang regression, use
-`python3 tools/verify_camnose.py 1 --output-dir /tmp/camnose-shoulder`.
+2026-11-03 chamfer checks and slicer comparison before the diameter change.
+`tube-fit-verification.json` records the subsequently rejected Ø99.7 trial's
+CAD checks. `fit-gauge-verification.json` records the stepped gauge and
+restored Ø98.7 shoulder before the external lead-in was added.
+`entry-chamfer-verification.json` records the current shoulder with its
+external lead-in, the owner's gauge result, and unchanged mating geometry.
+No slicer was used for these later revisions. To repeat dimensions and
+overhang regression, use
+`python3 tools/verify_camnose.py 0 1 --output-dir /tmp/camnose-shoulder`.
 Tests do not simulate print tolerances, strength, heat, leaks or flexible wiring.
 
 Sources: `PeregrineCamNose.scad`, `PeregrineCamBay.scad` and repository
