@@ -274,6 +274,32 @@ def main():
 
     # Vega bay
     mast, vega, vsw, mid = m["part14"], m["vega"], m["vswitch"], m["part3"]
+    # Each Ø8 Vega standoff ends 1.5 mm into the 3 mm mast flange. Behind
+    # that end only the flange (or its tab) can back it: a disc there, in
+    # the flange's back half, must be solid part 14. Margin = how far the
+    # backing reaches past the Ø8 footprint (bisection), required >= 0.3.
+    au = math.radians(a0)
+    uhat = np.array([math.cos(au), math.sin(au), 0.0]); nhat = np.array([-math.sin(au), math.cos(au), 0.0])
+    n_front = vn - 14.3 - 0.5                      # Vega_Bot_H, 0.5 gap
+    n0, n1 = n_front - 3.0 + 0.05, n_front - 1.5 - 0.05
+
+    def backing(u, z, d):
+        disc = trimesh.creation.cylinder(radius=d / 2, height=n1 - n0, sections=72)
+        disc.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], nhat))
+        disc.apply_translation(u * uhat + (n0 + n1) / 2 * nhat + np.array([0, 0, z]))
+        return inter(disc, mast) > disc.volume * 0.999
+
+    for hx, hy in ((-30, -13.5), (30, -13.5), (30, 13.5)):   # Vega holes (STEP)
+        u, z = vu - hy, vz - hx
+        margin = None                              # footprint itself not backed
+        if backing(u, z, 8.0):
+            lo, hi = 8.0, 12.0
+            for _ in range(12):
+                mid_d = (lo + hi) / 2
+                lo, hi = (mid_d, hi) if backing(u, z, mid_d) else (lo, mid_d)
+            margin = round((lo - 8.0) / 2, 2)
+        record("Vega standoff at u=%.1f, Z=%.0f: footprint backed by the mast flange" % (u, z),
+               margin is not None and margin >= 0.3, {"margin_mm": margin})
     clear("Vega clears the mast unit", vega, mast, tol=0.01)
     clear("Vega clears slice 02", vega, slice_)
     clear("Vega clears slice 03", vega, mid)

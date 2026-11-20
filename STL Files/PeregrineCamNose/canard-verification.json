@@ -4,10 +4,10 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
-  "PeregrineCamCanards.scad": "f3ce6b46934aede1430f72939a736a192880c5d99c08bd2e6e21742c9db51d87",
+  "PeregrineCamCanards.scad": "1c321627001134d90f39aca7dfc924f126c1f2afed0244f012d7b94db44b7d7a",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
- "passed": 300,
+ "passed": 303,
  "failed": 0,
  "results": [
   {
@@ -65,8 +65,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     2090,
-     2090
+     2222,
+     2222
     ]
    }
   },
@@ -1124,6 +1124,27 @@
    "value": 0.0
   },
   {
+   "check": "Vega standoff at u=-5.3, Z=200: footprint backed by the mast flange",
+   "passed": true,
+   "value": {
+    "margin_mm": 0.57
+   }
+  },
+  {
+   "check": "Vega standoff at u=-5.3, Z=140: footprint backed by the mast flange",
+   "passed": true,
+   "value": {
+    "margin_mm": 0.57
+   }
+  },
+  {
+   "check": "Vega standoff at u=-32.3, Z=140: footprint backed by the mast flange",
+   "passed": true,
+   "value": {
+    "margin_mm": 1.99
+   }
+  },
+  {
    "check": "Vega clears the mast unit",
    "passed": true,
    "value": 0.0
@@ -1576,7 +1597,7 @@
   {
    "check": "part10 overhang area mm2 (informational)",
    "passed": true,
-   "value": 232.4
+   "value": 240.1
   },
   {
    "check": "part12 overhang area mm2 (informational)",
@@ -1607,7 +1628,7 @@
     "part3": 148.959,
     "part6": 37.496,
     "part9": 75.628,
-    "part10": 6.675,
+    "part10": 6.674,
     "part12": 0.992,
     "part14": 49.556,
     "part15": 8.2,

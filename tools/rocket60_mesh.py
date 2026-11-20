@@ -2,7 +2,9 @@
 
 Shared by canard_estimate.py and nose_mass_cg.py. Read from HEAD first
 (once feature/rocket60 is merged), then origin/feature/rocket60, then the
-local feature/rocket60 branch.
+local feature/rocket60 branch. Only committed meshes are read: uncommitted
+edits are never seen, and once HEAD (or the remote branch) has the mesh,
+local-only or unpushed commits to it are ignored too.
 """
 import subprocess
 from pathlib import Path

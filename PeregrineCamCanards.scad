@@ -297,8 +297,10 @@ Mast_U0    = min(Vega_U - 15, LiPo_U - LiPo_Out[0]/2 - Mast_T);   // flange -u e
 Mast_U1    = Vega_U + 15;        // flange +u edge
 // Standoffs whose Ø8 footprint (+0.5) passes Mast_U1 get a tab on the
 // flange's +u edge, only over their own Z band; the tab's underside is
-// 45 deg so it prints roof-down without support. The roof pass and its
-// Ø11 ream path are far below these bands.
+// 45 deg so it prints roof-down without support. The straight Ø11 column
+// above the roof pass is clear only up to 15 mm above the roof plate (the
+// leads' bend zone); higher up the standoffs (4.3 mm from the pass axis)
+// and these tabs stand in it. Ream the pass from the roof's underside.
 Mast_Tab_Margin = 0.5;
 function Vega_Hole_U(h) = Vega_U - h[1];
 function Vega_Hole_Z(h) = Vega_Z_Mid - h[0];
@@ -437,11 +439,10 @@ assert(Port_Z > Cut1_Z + 7 + Port_D, "static ports in the glued lap");
 assert(USB_Z - USB_Win[0]/2 >= Cut1_Z + 7, "USB window in the glued lap");
 assert(USB_Z - USB_Win[0]/2 < Vega_Z_Mid - Vega_USB[0][1] &&
        USB_Z + USB_Win[0]/2 > Vega_Z_Mid - Vega_USB[0][0], "USB window narrower than the receptacle");
+// The +u side is backed by Mast_Tabs by construction; the verifier checks
+// the backing on the mesh ("standoff footprint backed by the flange").
 for(h=Vega_Holes)
     assert(Vega_Hole_U(h)-Vega_Standoff_D/2 >= Mast_U0 &&
-           Vega_Hole_U(h)+Vega_Standoff_D/2 <= max([Mast_U1,
-               for(t=Mast_Tabs) if (Vega_Hole_Z(h)-Vega_Standoff_D/2 >= t[1] &&
-                                    Vega_Hole_Z(h)+Vega_Standoff_D/2 <= t[2]) t[0]]) &&
            Vega_Hole_Z(h)-Vega_Standoff_D/2 >= Roof_Z0+Roof_T &&
            Vega_Hole_Z(h)+Vega_Standoff_D/2 <= Mast_Top_Z,
            str("Vega standoff at ", h, " overhangs the mast flange"));
@@ -580,12 +581,13 @@ module Canard_Blade(){
 module Canard_Plug_Screw_Cuts(x0, x1){
     // two M2 countersunk screws into the tapped arm
     // x1 is the skin radius; the plug face is that skin of revolution, so
-    // at a hole r off the plug axis it lies at sqrt(x1^2 - r^2): the head
-    // seat starts there and the head sits flush.
+    // it is lowest under the head's outer rim, |r| + Plug_Screw_Head_D/2
+    // off the plug axis. The seat starts there: no part of the head stands
+    // proud (the inner rim sits slightly below the face).
     for(r=Horn_Holes_R) translate([0,r,0]){
         translate([x0-Overlap,0,0]) rotate([0,90,0])
             cylinder(d=Plug_Screw_D,h=x1-x0+2*Overlap,$fn=24);
-        translate([sqrt(x1*x1-r*r)+Overlap,0,0]) rotate([0,-90,0])
+        translate([sqrt(x1*x1-pow(abs(r)+Plug_Screw_Head_D/2,2))+Overlap,0,0]) rotate([0,-90,0])
             cylinder(d1=Plug_Screw_Head_D+2*Overlap,d2=Plug_Screw_D,
                      h=(Plug_Screw_Head_D-Plug_Screw_D)/2+Overlap,$fn=36);
     }
