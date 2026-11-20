@@ -18,6 +18,7 @@ want=0; scad_changed=0
 while IFS= read -r -d '' f; do
   case "$f" in
     "$NOSE"*) want=1 ;;
+    tools/verify_camnose*.py|tools/check_camnose_stls.py|tools/precommit_camnose.sh) want=1 ;;
     *.scad) scad_changed=1 ;;
   esac
 done < <(git diff --cached --name-only -z --no-renames)

@@ -53,6 +53,17 @@ PRINTED = {   # name: (Render_Part, extra defines, description, Z offset)
 CONFIGS = ("2-cell", "4-cell")
 
 
+
+def rocket60_nose_stl():
+    """The owner's CAD camera nose mesh, kept on branch feature/rocket60:
+    the local branch, else the remote-tracking one, else HEAD (once merged)."""
+    for ref in ("feature/rocket60", "origin/feature/rocket60", "HEAD"):
+        r = subprocess.run(["git", "-C", str(REPO), "show",
+                            ref + ":STL Files/Rocket60/NoseCone.stl"], capture_output=True)
+        if r.returncode == 0:
+            return r.stdout
+    raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")
+
 def render(out_dir, name, part, defines):
     out = out_dir / ("p%d.stl" % part)
     if not out.exists():
@@ -84,13 +95,10 @@ def main():
         z = float(mesh.center_mass[2])
         if name == "15 charge well":
             # bolted under the bulkhead on the facing disc, well opening aft
-            h = mesh.bounds[1][2]
-            z = -SHOULDER_L - 1.5 - (h - z)
+            z = -SHOULDER_L - 1.5 - (z - mesh.bounds[0][2])   # base on the disc
         items.append((name, g, z, "CAD", CONFIGS))
 
-    blob = subprocess.run(["git", "-C", str(REPO), "show",
-                           "feature/rocket60:STL Files/Rocket60/NoseCone.stl"],
-                          capture_output=True, check=True).stdout
+    blob = rocket60_nose_stl()
     cam = trimesh.load(trimesh.util.wrap_as_stream(blob), file_type="stl")
     items.append(("camera CAD nose shell (printed)", abs(cam.volume) * PETG,
                   389.23 + float(cam.center_mass[2]), "CAD", CONFIGS))

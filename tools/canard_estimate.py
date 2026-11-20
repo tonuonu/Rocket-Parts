@@ -56,6 +56,17 @@ CP_UNCERTAINTY = 0.08          # +- fraction of MAC the real panel CP may move
 ALPHA_EXTRA = 5.0              # deg of body AoA on top of a full deflection
 
 
+
+def rocket60_nose_stl():
+    """The owner's CAD camera nose mesh, kept on branch feature/rocket60:
+    the local branch, else the remote-tracking one, else HEAD (once merged)."""
+    for ref in ("feature/rocket60", "origin/feature/rocket60", "HEAD"):
+        r = subprocess.run(["git", "-C", str(REPO), "show",
+                            ref + ":STL Files/Rocket60/NoseCone.stl"], capture_output=True)
+        if r.returncode == 0:
+            return r.stdout
+    raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")
+
 def scad_params(defines=()):
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "p.echo")
@@ -92,9 +103,7 @@ def camera_nose_profile():
     for z in range(20, int(cut3) + 1, 5):
         prof.append((z, R - p + math.sqrt(p * p - (z - base_l) ** 2)))
     prof.append((cut3 + flange_t, 30.0))
-    blob = subprocess.run(["git", "-C", REPO, "show",
-                           "feature/rocket60:STL Files/Rocket60/NoseCone.stl"],
-                          capture_output=True, check=True).stdout
+    blob = rocket60_nose_stl()
     n = struct.unpack("<I", blob[80:84])[0]
     pts = []
     for i in range(n):

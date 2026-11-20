@@ -11,9 +11,11 @@ and ejection protection have not been bench-tested.
 
 ## Canard section and Vega in the nose — 2026-11-16, cells in the cassette 2026-11-19 (branch `feature/nose-canards`)
 
-Printed so far: 01, 02, 10, 14 and 15. Their geometry is frozen; the
-2026-11-19 change adds hand work to 02 and 14 only (see below). 09 and the
-new 12 and 19 are not printed yet.
+Printed so far: 01, 02, 10, 14 and 15. The geometry of 01, 02, 10 and 15 is
+frozen; the 2026-11-19 change adds hand work to 02 only (see below). **14
+must be reprinted** (2026-11-20): its LiPo pocket now takes the 2S stack of
+two 362543 cells; the printed one has the old pocket, 5 mm too narrow. 09
+and the new 12 and 19 are not printed yet.
 
 Source: `PeregrineCamCanards.scad`, switched on by `Canards_Enabled` in
 `PeregrineCamNose.scad`. With it set to `false`, parts 01, 02, 03 and 06
@@ -90,8 +92,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 - LiPo pocket on the back of the mast for two stacked 362543 cells (3.6 × 25 × 43 mm each): inside 26.0 × 8.0 mm, floor at Z 148, open top with a lead slot over the rim.
 - A cup for the 1000 µF capacitor.
 - One Ø9 pass in the roof for the servo, power, pyro and camera leads.
-  **Ream it to Ø11 by hand** for the extra pack leads. The source keeps Ø9
-  so the STL stays the printed part. In CAD nothing of part 14 but the roof
+  **Ream it to Ø11 by hand** for the extra pack leads. The source keeps Ø9. In CAD nothing of part 14 but the roof
   plate lies in a Ø11 path; the foot gusset is 1.3 mm from it.
 
 **Shell openings**
@@ -122,7 +123,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 - Four Ø8 columns up to the cassette floor (Z 29.2), each held by an **M3×20 90° countersunk** screw, head flush under the plate, into a ruthex M3×5.7 set from below into the cassette.
 - The insert sits in a Ø8 boss standing on the floor against the outer face of each cradle's −y wall, at canard-local (31, −10.5). That boss has 2.0 mm walls and a 1.6 mm cap over the 7.7 mm pocket. The screw engages 4.3 mm.
 
-**Top retention.** The underside of the mast roof (Z 85, printed part 14, unchanged) holds the cells down through a **C-ring pad**: 1.5 mm fishpaper or G10 plus 0.5 mm closed-cell foam, OD 18, ID 12, the gap toward the slot. It bears on the rim, never on the tab. The seat-ring top (Z 18) to the roof (Z 85) is 67 mm, so **pad thickness = 67 mm − the cell's rim-to-rim length** (bottom face to the shoulder rim around the + cap, not to the cap top; usually 0.5–1 mm less than the 65 mm overall). Make it up from fishpaper/G10 plus 0.5 mm foam, and keep it at least 0.5 mm thicker than the cap height plus the tab, so the roof never touches the tab.
+**Top retention.** The underside of the mast roof (Z 85, part 14) holds the cells down through a **C-ring pad**: 1.5 mm fishpaper or G10 plus 0.5 mm closed-cell foam, OD 18, ID 12, the gap toward the slot. It bears on the rim, never on the tab. The seat-ring top (Z 18) to the roof (Z 85) is 67 mm, so **pad thickness = 67 mm − the cell's rim-to-rim length** (bottom face to the shoulder rim around the + cap, not to the cap top; usually 0.5–1 mm less than the 65 mm overall). Make it up from fishpaper/G10 plus 0.5 mm foam, and keep it at least 0.5 mm thicker than the cap height plus the tab, so the roof never touches the tab.
 - **No soldered lead at the top of a cell:** only about 2 mm separates the cell top from the roof, and a soldered lead would be crushed there. Bring the welded nickel strip out through the pad's gap and down the 6 mm slot, and solder the lead to it below the floor.
 
 **Pairs.**
@@ -224,7 +225,7 @@ becomes 586 mm instead of 574.
 ### Assembly order (from below; the shoulder off)
 
 0. **Servo switch, before the mast unit** (its nut is in the Vega bay, above the roof): drill 02, epoxy the saddle (12) inside, fit the switch and its leads.
-1. **Mast unit:** fit the Vega, the LiPo (if flown) and the capacitor. Hang the servo-extension, power, pyro and camera leads down through the roof pass (reamed Ø11), including both packs' harness leads (servo pack to the servo switch, FC pack to the Vega switch). Slide the unit up and fit 4 × M3×10 button.
+1. **Mast unit:** fit the Vega, the LiPo (if flown) and the capacitor. Hang the servo-extension, power, pyro and camera leads down through the roof pass (reamed Ø11), including both packs' harness leads (servo pack to the servo switch, FC pack to the Vega switch). Slide the unit up and fit 4 × M3×10 countersunk (slice 02 has countersinks there).
 2. **Cassette:** melt the four keeper inserts into the floor bosses from below and thread the lacing cords through the tie holes. Fit the servos with their lugs, M2.5 bolts and nuts. Run the pack harness leads down the central channel and out through the floor hole. Connect the servo leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
 3. **Cells, from below:** lay a C-ring pad on each cell's top rim, gap toward the slot. Push each wired cell up through its floor hole, top lead in the slot and out through the notch, until the pad meets the roof. Hold the cells (tape) until the keeper is on.
 4. **Keeper:** make the series links, fuses and pack terminals under the floor, onto the harness leads. Tie the pack leads with the lacing cords now (the keeper plate covers the tie holes once fitted). Push the keeper up so the seat rings take the cells' bottom rims, then fit 4 × M3×20 countersunk.

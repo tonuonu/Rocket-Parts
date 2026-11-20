@@ -7,8 +7,8 @@
   "PeregrineCamCanards.scad": "b61f7cc68c790e8b805c3774d2e754128e6ca40ccf1e11a77dabb1f5da813b3c",
   "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
  },
- "passed": 275,
- "failed": 1,
+ "passed": 276,
+ "failed": 0,
  "results": [
   {
    "check": "part1 triangles identical to committed Canards/Shoulder.stl",
@@ -72,11 +72,11 @@
   },
   {
    "check": "part14 triangles identical to committed Canards/VegaMast.stl",
-   "passed": false,
+   "passed": true,
    "value": {
     "triangles": [
      8366,
-     9530
+     8366
     ]
    }
   },
