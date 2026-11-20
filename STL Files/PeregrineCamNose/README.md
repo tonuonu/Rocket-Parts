@@ -20,7 +20,8 @@ and charging pads. Part 07 attaches to the tops of the posts.
 
 The owner printed 04/06/07 and reported approximately 24 mm remaining
 outside, which matches this arrangement. That observation does not require
-those parts to be reprinted. Print 03 next for the actual carrier seat.
+those parts to be reprinted. As of 2026-11-03, the owner has printed every
+required part except 01; full assembly fit has not yet been reported.
 
 ![Centre section showing the carrier floor 24.28 mm below part 04](AssemblyPosition.png)
 
@@ -32,6 +33,21 @@ nominal opening for the owner's approximately 15 mm-wide ribbon. The
 exported STL measures 16.000 × 3.998 mm and clears a solid 15 × 3 mm test
 gauge; actual ribbon thickness and printed clearance still need checking.
 No slot or mesh change was needed for the reported width.
+
+## Shoulder chamfer — 2026-11-03
+
+**Use the updated 01 shoulder for the remaining print.** The bore now
+narrows gradually over 2 mm at the spigot instead of leaving a 1 mm radial
+horizontal ledge. Print bulkhead-down as before. Outside mating surfaces,
+115 mm total height and both 16 × 4 mm ribbon slots are unchanged; the
+already printed parts need no revision for this fix.
+
+Bambu Studio 02.08.02.61 was run on the old and new shoulder with the same
+P1S/0.4 mm, 0.2 mm-layer settings and automatic tree supports enabled. The
+old mesh produced support paths; the new mesh produced **zero support or
+support-interface paths**. Geometry checks also confirm the unchanged fit
+to 02 and clearance for a 15 × 3 mm ribbon gauge. This verifies the CAD and
+sliced paths, not a physical print. See `shoulder-verification.json`.
 
 ![Bay cutaway: blue cells, green converter, orange carrier](BayCutaway.png)
 
@@ -56,9 +72,10 @@ only for the previous separate-adapter design (`Bay_Enabled=false`). The
 new top has an integral flange, with no spigot or adapter-to-shell glue joint.
 
 Repository meshes retain their assembly coordinates: orient, then drop to
-bed. The downloadable print pack is already oriented at Z=0. Parts 1 and 2
-keep their previous shape. **Reprint parts 3 and 4** for this bay. Part 8
-is a cutaway view, not a printable part.
+bed. The downloadable print pack is already oriented at Z=0. Part 2 keeps
+its previous shape; part 1 has the internal chamfer described above. Parts
+3 and 4 replace the pre-bay versions; the owner's already printed bay
+versions remain current. Part 8 is a cutaway view, not a printable part.
 
 Use PETG or ASA as before. Start with 0.2 mm layers and at least four
 perimeters; use local solid-infill modifiers for the floor, flange, posts
@@ -165,8 +182,11 @@ and camera holes. The second checks connected/watertight solids, component,
 tab and hardware intersections, blind insert seats, a continuous carrier
 insertion envelope and shell/switch removal at 1 mm intervals. It must reject
 an oversized converter and an unscalloped floor. `verification.json` records
-the latest default-model results. Tests do not simulate print tolerances,
-strength, heat, leaks or flexible wiring.
+the 2026-11-02 bay baseline; `shoulder-verification.json` records the
+2026-11-03 shoulder-only checks and slicer comparison. To repeat the
+shoulder dimensions and overhang regression, use
+`python3 tools/verify_camnose.py 1 --output-dir /tmp/camnose-shoulder`.
+Tests do not simulate print tolerances, strength, heat, leaks or flexible wiring.
 
 Sources: `PeregrineCamNose.scad`, `PeregrineCamBay.scad` and repository
 libraries. Keep `Render_Part=0` committed. Export an individual part with:

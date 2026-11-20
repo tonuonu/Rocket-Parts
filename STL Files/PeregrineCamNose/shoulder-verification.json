@@ -1,0 +1,154 @@
+{
+  "scope": "Shoulder chamfer only; other printed parts unchanged",
+  "geometry_checks": [
+    {
+      "check": "one watertight outward solid",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "overall bounds unchanged",
+      "passed": true,
+      "value": [
+        [
+          -49.349998474121094,
+          -49.349998474121094,
+          0.0
+        ],
+        [
+          49.349998474121094,
+          49.349998474121094,
+          115.0
+        ]
+      ]
+    },
+    {
+      "check": "no material removed",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "added material stays inside the bore transition",
+      "passed": true,
+      "value": [
+        [
+          -47.150001525878906,
+          -47.150001525878906,
+          98.0
+        ],
+        [
+          47.150001525878906,
+          47.150001525878906,
+          100.05000305175781
+        ]
+      ]
+    },
+    {
+      "check": "added material cannot change either outside fit",
+      "passed": true,
+      "value": 47.15000180604559
+    },
+    {
+      "check": "old ledge is detected by overhang regression",
+      "passed": true,
+      "value": 293.09575559828954
+    },
+    {
+      "check": "new overhang regression is clear",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "shoulder clears the already-printed bottom slice",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "diametral spigot clearance at 0.5 mm",
+      "passed": true,
+      "value": 0.3998761763553489
+    },
+    {
+      "check": "diametral spigot clearance at 7.5 mm",
+      "passed": true,
+      "value": 0.3990728199439104
+    },
+    {
+      "check": "diametral spigot clearance at 14.5 mm",
+      "passed": true,
+      "value": 0.3990723779327112
+    },
+    {
+      "check": "15 x 3 mm recovery-ribbon gauge clears",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "15 x 3 mm recovery-ribbon gauge clears",
+      "passed": true,
+      "value": null
+    }
+  ],
+  "failed": 0,
+  "sha256": {
+    "Shoulder-before.stl": "49a048bf18e39a6d1ac576d39c0a2cc4a2dab30e1f80b1f671acb5e1940ccc0a",
+    "Shoulder-chamfered.stl": "a4e603caaccd52ae1b0dfbb984b16b5e43f9eed8f0262003e74ccf923b8c0cde"
+  },
+  "slicer": "Bambu Studio 02.08.02.61",
+  "slicer_comparison": {
+    "before": {
+      "settings": {
+        "enable_support": "1",
+        "support_type": "tree(auto)",
+        "support_threshold_angle": "30",
+        "support_on_build_plate_only": "0",
+        "layer_height": "0.2",
+        "printer_model": "Bambu Lab P1S",
+        "printer_settings_id": "Bambu Lab P1S 0.4 nozzle",
+        "filament_type": [
+          "PETG",
+          "PETG",
+          "PETG",
+          "ASA"
+        ]
+      },
+      "support_feature_sections": 497,
+      "support_interface_sections": 2,
+      "estimated_time_seconds": 17648,
+      "estimated_total_filament_g": 109.59,
+      "gcode_sha256": "c5c93248eee60ed3bb90ee19f6f500f0ab456cf49546b67362751dd2c6ab7fcf"
+    },
+    "after": {
+      "settings": {
+        "enable_support": "1",
+        "support_type": "tree(auto)",
+        "support_threshold_angle": "30",
+        "support_on_build_plate_only": "0",
+        "layer_height": "0.2",
+        "printer_model": "Bambu Lab P1S",
+        "printer_settings_id": "Bambu Lab P1S 0.4 nozzle",
+        "filament_type": [
+          "PETG",
+          "PETG",
+          "PETG",
+          "ASA"
+        ]
+      },
+      "support_feature_sections": 0,
+      "support_interface_sections": 0,
+      "estimated_time_seconds": 15870,
+      "estimated_total_filament_g": 105.34,
+      "gcode_sha256": "5c293fffa4d9088f022ed548704e1e0d9a26bd566f079a5c404da5ab33c9b20b"
+    }
+  },
+  "unchanged_print_pack_stl_sha256": {
+    "02-SliceBottom.stl": "170371a9ced9783ad97297ee3f3468843cb2a1bce7ae5a3134dfa91eda24939c",
+    "06-BatteryCarrier.stl": "3f5b7688f51baf6460119751a0f94f299e8078dd38fc11213e44349c0efb5429",
+    "07-ConverterTray.stl": "825984d7967552ba3a7d2b8ce19fcf7e37d3fa9872417d5e20544b232f4e1f2b",
+    "00-TestRing.stl": "c43a9fac8b524da860c39984ddeb2db2ee591db14900f60f4e9b852f10a5ea8c",
+    "04-SliceTop.stl": "150134ae33d06e5167f0e048f78d322af1db37e0344da9dcb0116ec0bb6417cd",
+    "03-SliceMiddle.stl": "43d5d00abfcceb816c331668847ecd2441fec571fcef12a760d2eb4a141e1abd"
+  },
+  "dimension_checks_passed": 15,
+  "source_sha256": "5ffeb5e00df9f4fa24fd6eb35a5b997aa7f7b42e6744ba01af2277febcb06a19"
+}

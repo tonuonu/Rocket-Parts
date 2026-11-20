@@ -183,7 +183,8 @@ to merge a GitHub PR.
 
 `STL Files/PeregrineCamNose/README.md` is the current assembly guide. Parts
 3/4 replace the old middle/top; 6/7 are new. The top prints flange-down.
-Shoulder and bottom are unchanged. Actual cell/tab fit, printed tolerances,
+At the initial bay revision, shoulder and bottom were unchanged; the later
+shoulder printability fix is recorded below. Actual cell/tab fit, printed tolerances,
 sealing, thermal and flight loads remain unverified. The barrier is not
 pressure-rated. No hardware operation or GitHub merge is part of this work.
 
@@ -199,3 +200,26 @@ the relationship. Full physical assembly with 03 is not yet reported.
 Owner measured the recovery ribbon at about 15 mm wide. The existing
 01 shoulder slots already measure 16.000 × 3.998 mm in the exported mesh;
 a modeled 15 × 3 mm solid gauge clears both. No geometry change was made.
+
+### Shoulder support fix — 2026-11-03
+
+Owner has now printed all required parts except 01 and showed Bambu tree
+supports reaching the shoulder's internal bore step. The 1 mm radial ledge
+is replaced with a 2 mm-high chamfer at Z=98–100. A single revolved bore
+avoids a residual lip from overlapping subtractive cylinders. External
+dimensions, mating faces and recovery slots are unchanged. Only the
+shoulder STL is replaced; other delivered STL hashes are unchanged.
+
+All 15 shoulder dimension/topology/overhang checks and 13 additional mesh
+checks pass, including fit to the already printed bottom slice and both
+ribbon gauges. The old mesh fails the new overhang check. Bambu Studio
+02.08.02.61, using the same captured P1S 0.4 mm / 0.2 mm-layer settings with
+automatic tree supports enabled, generates support paths for the old
+shoulder and zero support/interface paths for the new one. Results and
+hashes are in `STL Files/PeregrineCamNose/shoulder-verification.json`;
+`verification.json` remains the November 2 bay baseline. No physical print
+or complete assembly validation is claimed.
+
+The home print folder's `01-Shoulder.stl` is updated. A separate
+`01-Shoulder-Chamfered.3mf` contains the new sliced project; the owner's
+existing `01-Shoulder.3mf` is preserved and still contains the old geometry.
