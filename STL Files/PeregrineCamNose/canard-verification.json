@@ -1,14 +1,14 @@
 {
  "tool": "verify_camnose_canards.py",
  "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
- "trimesh": "5.2.1",
+ "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "b2854223bdf218780eebb83a1953325b709eec088f1e890f975de979aae00215",
-  "PeregrineCamCanards.scad": "2e8dd9008f177cb269b34b02a10eaada2e05e2862b4109429c59409e714ea6c0",
+  "PeregrineCamCanards.scad": "b61f7cc68c790e8b805c3774d2e754128e6ca40ccf1e11a77dabb1f5da813b3c",
   "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
  },
- "passed": 276,
- "failed": 0,
+ "passed": 275,
+ "failed": 1,
  "results": [
   {
    "check": "part1 triangles identical to committed Canards/Shoulder.stl",
@@ -72,10 +72,10 @@
   },
   {
    "check": "part14 triangles identical to committed Canards/VegaMast.stl",
-   "passed": true,
+   "passed": false,
    "value": {
     "triangles": [
-     9530,
+     8366,
      9530
     ]
    }
@@ -1466,7 +1466,7 @@
   {
    "check": "part14 overhang area mm2 (informational)",
    "passed": true,
-   "value": 1456.5
+   "value": 1440.3
   },
   {
    "check": "part15 overhang area mm2 (informational)",
@@ -1489,7 +1489,7 @@
     "part9": 75.628,
     "part10": 6.885,
     "part12": 0.992,
-    "part14": 50.859,
+    "part14": 49.407,
     "part15": 8.2,
     "part19": 12.156,
     "part1_off": 103.672,

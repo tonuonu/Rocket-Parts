@@ -28,8 +28,8 @@ The nose carries:
 - **four 18650 slots in the servo cassette (09)**, in the quadrants between
   the servos. The servo pair feeds the servos and the camera; the optional
   FC pair feeds the Vega;
-- the **CATS Vega**, on the FC pair or on its own 2S 320 mAh LiPo (the
-  pocket on the mast stays);
+- the **CATS Vega**, on the FC pair or on its own 2S LiPo (two 362543 290 mAh cells
+  stacked in series, in the pocket on the mast);
 - the four servo canards;
 - the **main** charge, on the shoulder bulkhead.
 
@@ -87,7 +87,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 - Four radial M3 screws hold it to the shell, between the canards.
 - Channel-section mast, 3 mm walls, up to Z 208.
 - Three Ø8 standoffs with ruthex M3 inserts.
-- Library `LiPo2S320mAh_BattPocket` on the back of the mast.
+- LiPo pocket on the back of the mast for two stacked 362543 cells (3.6 × 25 × 43 mm each): inside 26.0 × 8.0 mm, floor at Z 148, open top with a lead slot over the rim.
 - A cup for the 1000 µF capacitor.
 - One Ø9 pass in the roof for the servo, power, pyro and camera leads.
   **Ream it to Ø11 by hand** for the extra pack leads. The source keeps Ø9
@@ -184,10 +184,10 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 
 | Group | 2-cell, g | 4-cell, g | Source |
 |---|---:|---:|---|
-| Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 892 | 892 | CAD: solid PETG 1.27 g/cm³ |
+| Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 890 | 890 | CAD: solid PETG 1.27 g/cm³ |
 | Cells INR18650-25R (45 g each), Vega (25 g), 4× HV6160 (30.7 g) | 238 (2 cells) | 328 (4 cells) | spec |
-| Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 200 | 191 | estimated |
-| **Total** | **1330** | **1411** | |
+| Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 193 | 191 | estimated |
+| **Total** | **1321** | **1409** | |
 | **Balance point, forward of the forward body-tube rim** | **123 mm** | **117 mm** | |
 | Balance point, aft of the nose tip (nose length 483 mm) | 360 mm | 366 mm | |
 
@@ -213,7 +213,7 @@ becomes 586 mm instead of 574.
 | 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down, no supports. Four cell sleeves, four keeper-insert bosses. |
 | 12 servo-switch saddle (`Canards/ServoSwitchSaddle.stl`) | 12 | Flat back down. Epoxied inside 02 at 30°, Z 106. |
 | 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. |
-| 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 22 mm between the webs. Printed: ream the roof pass to Ø11. |
+| 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Printed: ream the roof pass to Ø11. |
 | 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. |
 | 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
 | 18 facing disc template (`Canards/FacingDisc.svg`) | 18 | Cut from G10. |

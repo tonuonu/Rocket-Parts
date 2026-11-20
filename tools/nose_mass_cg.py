@@ -117,7 +117,7 @@ def main():
         ("CATS Vega", 25.0, 170.0, "spec"),
         ("Vega 3x M3 screws + 3 ruthex", 2.6, 170.0, "est"),]]
     items += [
-        ("2S 320 mAh LiPo (Vega)", 20.0, 170.0, "est", TWO),
+        ("2S LiPo (Vega): 2x 362543 290 mAh + series link", 13.5, 170.0, "est", TWO),
         ("FC pack: 2x Samsung INR18650-25R", 90.0, CELL_Z, "spec", FOUR),
         ("FC pack: tabs, leads, series link, C-ring pads", 4.0, CELL_Z, "est", FOUR),
         ("FC pack: 10 A fuse + holder, JST-XH pigtail", 4.0, PACK_Z - 6.0, "est", FOUR),

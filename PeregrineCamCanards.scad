@@ -270,7 +270,20 @@ Roof_Pass  = [3, 3, 9];          // local x(u), y(n), dia: leads, servo power, p
 Mast_T     = 3;
 Mast_Top_Z = Vega_Z_Mid + 30 + 8;
 Mast_Front_N = Vega_N - Vega_Bot_H - 0.5;
-LiPo_Z     = 170;                // pocket centre (library pocket 22.4x14.6x42.4)
+LiPo_Z     = 170;                // pocket centre
+// Vega LiPo: 2S = two 1S 362543 pouch cells (290 mAh, 1.073 Wh, the owner's
+// stock) stacked face to face and wired in series; 2S keeps the pyro voltage.
+// 362543 = 3.6 thick x 25 wide x 43 long (nominal, from the type code).
+LiPo_Cell  = [25, 3.6, 43];      // u (width), n (thickness), Z (length)
+LiPo_Cells = 2;
+LiPo_Clear = [1.0, 0.8, 1.0];    // total play: +-0.5 width tolerance, swell, tape
+LiPo_Wall  = 1.2;
+LiPo_In    = [LiPo_Cell[0]+LiPo_Clear[0], LiPo_Cells*LiPo_Cell[1]+LiPo_Clear[1], LiPo_Cell[2]+LiPo_Clear[2]];
+LiPo_Out   = LiPo_In + 2*[LiPo_Wall, LiPo_Wall, LiPo_Wall];
+// The pocket and its two webs end flush with the flange's +u edge
+// (Vega_U+15), away from the roof pass, and grow toward -u.
+LiPo_U     = Vega_U + 15 - Mast_T - LiPo_Out[0]/2;
+Mast_U0    = min(Vega_U - 15, LiPo_U - LiPo_Out[0]/2 - Mast_T);   // flange -u edge
 Cap_D      = 10;  Cap_L = 16;   // 1000 uF / 16 V at the cassette
 Cap_A      = 300; Cap_R = 26;
 
@@ -873,20 +886,38 @@ module Roof_Plan(h){
         Local1() translate([Roof_Pass[0],Roof_Pass[1],-Overlap]) cylinder(d=Roof_Pass[2],h=h+2*Overlap,$fn=36);
     }
 }
+// Open-top pocket for the 2S LiPo stack, centred on the origin: floor at
+// -In.z/2, walls up to +In.z/2+Wall, lead slot over the rim along u, push-up
+// hole in the floor, lightening windows in the faces and sides.
+module Vega_LiPo_Pocket(){
+    i = LiPo_In;  o = LiPo_Out;  w = LiPo_Wall;
+    difference(){
+        cube(o, center=true);
+        translate([0,0,w+Overlap]) cube(i+[0,0,2*w], center=true);
+        translate([0,0,i[2]/2+2]) rotate([0,90,0]) cylinder(d=7,h=o[0]+2*Overlap,center=true,$fn=36);
+        translate([0,0,-o[2]/2-Overlap]) cylinder(d=5,h=w+2*Overlap,$fn=36);
+        hull() for(z=[-1,1]) translate([0,0,z*(i[2]/2-9)]) rotate([90,0,0])
+            cylinder(d=14,h=o[1]+2*Overlap,center=true,$fn=36);
+        hull() for(z=[-1,1]) translate([0,0,z*(i[2]/2-8)]) rotate([0,90,0])
+            cylinder(d=i[1]-2,h=o[0]+2*Overlap,center=true,$fn=36);
+    }
+}
 module Mast_Local(){   // local u/n frame, Z absolute
     zf = Roof_Z0+Roof_T-Overlap;
     yf = Mast_Front_N;
+    fw = Vega_U + 15 - Mast_U0;          // flange width
+    d  = LiPo_Out[1];                    // channel depth behind the flange
     // flange behind the board
-    translate([Vega_U-15, yf-Mast_T, zf]) cube([30, Mast_T, Mast_Top_Z-zf]);
+    translate([Mast_U0, yf-Mast_T, zf]) cube([fw, Mast_T, Mast_Top_Z-zf]);
     // two webs either side of the LiPo pocket: a channel section
-    for(s=[-1,1]) translate([Vega_U+s*12.7-Mast_T/2, yf-Mast_T-14.6, zf])
-        cube([Mast_T, 14.6+Overlap, Mast_Top_Z-zf]);
-    // LiPo pocket (library) on the back of the flange
-    translate([Vega_U, yf-Mast_T-14.6/2+Overlap, LiPo_Z]) LiPo2S320mAh_BattPocket();
+    for(s=[-1,1]) translate([LiPo_U+s*(LiPo_Out[0]+Mast_T)/2-Mast_T/2, yf-Mast_T-d, zf])
+        cube([Mast_T, d+Overlap, Mast_Top_Z-zf]);
+    // LiPo pocket on the back of the flange
+    translate([LiPo_U, yf-Mast_T-d/2+Overlap, LiPo_Z]) Vega_LiPo_Pocket();
     // 45-deg gussets at the foot, front and back
     hull(){
-        translate([Vega_U-15, yf-Mast_T-14.6, zf]) cube([30, 14.6+Mast_T+12, Overlap]);
-        translate([Vega_U-15, yf-Mast_T, zf+12]) cube([30, Mast_T, Overlap]);
+        translate([Mast_U0, yf-Mast_T-d, zf]) cube([fw, d+Mast_T+12, Overlap]);
+        translate([Mast_U0, yf-Mast_T, zf+12]) cube([fw, Mast_T, Overlap]);
     }
 }
 module CN_Vega_Mast(){
