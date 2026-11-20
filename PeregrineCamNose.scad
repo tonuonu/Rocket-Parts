@@ -259,8 +259,9 @@ include<PeregrineCamBay.scad>
 
 // Canard control section: four direct-drive servo canards in the bottom
 // slice, a removable servo cassette, and a screwed (not glued) shoulder so
-// the cassette can come out. False reproduces parts 1 and 2 exactly as
-// before, for the parts already printed.
+// the cassette can come out. It changes parts 1, 2, 3 and 6 (3 gets the
+// static ports and USB window, 6 the Ø4 camera-power pass). False
+// reproduces those four as the committed non-canard meshes.
 Canards_Enabled = true;
 include<PeregrineCamCanards.scad>
 
@@ -316,6 +317,9 @@ module CN_Slice_Middle_Shell(){
             cylinder(d=Peregrine_Body_OD+2, h=NC_Length, $fn=$preview? 90:360);
     } // intersection
 } // CN_Slice_Middle
+
+assert(!Canards_Enabled || Bay_Enabled,
+       "Canards_Enabled needs Bay_Enabled: the canard cuts are made in the bay's parts 3 and 6");
 
 module CN_Slice_Middle(){
     if (Bay_Enabled && Canards_Enabled) difference(){ CN_Bay_Middle(); Canard_Middle_Cuts(); }

@@ -65,16 +65,16 @@ def rocket60_nose_stl():
     raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")
 
 def render(out_dir, name, part, defines):
+    # Always render: a mesh left in --mesh-dir may be from older source.
     out = out_dir / ("p%d.stl" % part)
-    if not out.exists():
-        cmd = [OPENSCAD, "--backend=manifold", "--render", "-o", str(out),
-               "-D", "Render_Part=%d" % part]
-        for k, v in defines.items():
-            cmd += ["-D", "%s=%s" % (k, v)]
-        r = subprocess.run(cmd + [str(SCAD)], capture_output=True, text=True,
-                           env={"OPENSCADPATH": str(REPO), "PATH": "/usr/bin:/bin"})
-        if r.returncode or "ERROR" in r.stdout + r.stderr:
-            raise RuntimeError(r.stdout + r.stderr)
+    cmd = [OPENSCAD, "--backend=manifold", "--render", "-o", str(out),
+           "-D", "Render_Part=%d" % part]
+    for k, v in defines.items():
+        cmd += ["-D", "%s=%s" % (k, v)]
+    r = subprocess.run(cmd + [str(SCAD)], capture_output=True, text=True,
+                       env={"OPENSCADPATH": str(REPO), "PATH": "/usr/bin:/bin"})
+    if r.returncode or "ERROR" in r.stdout + r.stderr:
+        raise RuntimeError(r.stdout + r.stderr)
     return name, trimesh.load_mesh(out)
 
 

@@ -3,8 +3,8 @@
  "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
  "trimesh": "4.12.2",
  "scad_sha256": {
-  "PeregrineCamNose.scad": "bb7813d21dac237a7fb73ffd0836124f99088e727779bbc17ef99a74a01e32c5",
-  "PeregrineCamCanards.scad": "b61f7cc68c790e8b805c3774d2e754128e6ca40ccf1e11a77dabb1f5da813b3c",
+  "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
+  "PeregrineCamCanards.scad": "df74735d14616a58a211b7f10d105703fcc19b6a70d8a338497f6903dad21ea5",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
  "passed": 276,
@@ -65,8 +65,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     2022,
-     2022
+     2014,
+     2014
     ]
    }
   },
@@ -1456,7 +1456,7 @@
   {
    "check": "part10 overhang area mm2 (informational)",
    "passed": true,
-   "value": 185.5
+   "value": 226.7
   },
   {
    "check": "part12 overhang area mm2 (informational)",
@@ -1487,7 +1487,7 @@
     "part3": 148.935,
     "part6": 37.496,
     "part9": 75.628,
-    "part10": 6.885,
+    "part10": 6.677,
     "part12": 0.992,
     "part14": 49.407,
     "part15": 8.2,

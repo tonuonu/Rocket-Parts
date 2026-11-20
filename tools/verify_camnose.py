@@ -34,8 +34,10 @@ def render(part, out):
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out,
          "-D", "Render_Part=%d" % part,
-         # The canard variant of parts 1/2 is checked by verify_camnose_canards.py;
-         # these expectations are for the parts without it.
+         # Every part is rendered with canards off. The canard versions of
+         # parts 1, 2, 3 and 6 are checked by verify_camnose_canards.py, so
+         # verify_camnose_bay.py on these meshes sees only the canards-off
+         # parts 3 and 6.
          "-D", "Canards_Enabled=false", SCAD],
         capture_output=True, text=True, env=env, timeout=900)
     err = r.stdout + r.stderr

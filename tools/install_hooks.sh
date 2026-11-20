@@ -4,12 +4,10 @@
 # to any pre-commit hook that was there before (kept as pre-commit.orig).
 set -eu
 cd "$(git rev-parse --show-toplevel)"
-if hp=$(git config --get core.hooksPath); then
-  case "$hp" in /*) HOOKS=$hp ;; *) HOOKS=$PWD/$hp ;; esac
-else
-  HOOKS=$(cd "$(git rev-parse --git-common-dir)" && pwd)/hooks
-fi
+# git resolves core.hooksPath (including ~ and relative paths) and worktrees.
+HOOKS=$(git rev-parse --git-path hooks)
 mkdir -p "$HOOKS"
+HOOKS=$(cd "$HOOKS" && pwd)
 HOOK=$HOOKS/pre-commit
 MARK="# camnose-guard"
 if [ -e "$HOOK" ] && ! grep -q "^$MARK" "$HOOK"; then
@@ -33,9 +31,11 @@ echo "installed $HOOK"
 MODS="import numpy, trimesh, manifold3d, networkx"
 for c in "${CAMNOSE_PYTHON:-}" "$(git config --get camnose.python || true)" "$HOME/.cache/camnose-venv/bin/python" \
          /tmp/camnose-venv/bin/python "$(command -v python3 || true)"; do
-  [ -n "$c" ] && [ -x "$c" ] && "$c" -c "$MODS" 2>/dev/null && { echo "python for the guard: $c"; exit 0; }
+  [ -n "$c" ] && [ -x "$c" ] && "$c" -c "$MODS" 2>/dev/null && {
+    git config camnose.python "$c"; echo "python for the guard: $c"; exit 0; }
 done
 echo "no Python with numpy/trimesh/manifold3d/networkx found; creating ~/.cache/camnose-venv"
 python3 -m venv "$HOME/.cache/camnose-venv"
 "$HOME/.cache/camnose-venv/bin/pip" install -q -r tools/requirements-camnose.txt
+git config camnose.python "$HOME/.cache/camnose-venv/bin/python"
 echo "python for the guard: $HOME/.cache/camnose-venv/bin/python"

@@ -131,9 +131,18 @@ Servo_Centre_Screw = "M2.5";  // MKS drawing; thread length unknown
 // No slots either way; the neutral offset goes in firmware ctrl_trimN.
 // ============================================
 Horn_Type     = "clamp";
-Clamp_Hub_D   = 12;
+// Ø14: at Ø12 the tapped M2 holes at r=5 ran out at the rim. The holes stay
+// at ±5 so the Ø2.4 holes in the printed canards still line up.
+Clamp_Hub_D   = 14;
 Clamp_Hub_H   = 5;      // above the case top: spline + centre screw head
 Clamp_Holes_R = [-5, 5];   // tapped M2 (1.6 drill), along local y, clear of the blade
+Clamp_Thread_R = 1;     // M2 major radius
+Clamp_Thread_Wall = 0.8;  // aluminium round each tapped hole
+Clamp_Wall    = 0.5;    // further aluminium between that and the spline bore
+assert(max([for(r=Clamp_Holes_R) abs(r)]) + Clamp_Thread_R + Clamp_Thread_Wall <= Clamp_Hub_D/2,
+       "clamp-hub tapped hole runs out at the hub rim");
+assert(min([for(r=Clamp_Holes_R) abs(r)]) - Clamp_Thread_R - Clamp_Thread_Wall
+       >= Servo_Spline_OD/2 + Clamp_Wall, "clamp-hub tapped hole breaks into the spline bore");
 Horn_Hub_D    = Horn_Type=="clamp" ? Clamp_Hub_D : 8;
 Horn_Hub_H    = Horn_Type=="clamp" ? Clamp_Hub_H : 4.8;
 Horn_Arm_W    = 5.5;    // fallback arm (estimated; measure)

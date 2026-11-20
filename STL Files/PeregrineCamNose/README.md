@@ -11,8 +11,14 @@ and ejection protection have not been bench-tested.
 
 ## Canard section and Vega in the nose — 2026-11-16, cells in the cassette 2026-11-19 (branch `feature/nose-canards`)
 
-Printed so far: 01, 02, 10, 14 and 15. The geometry of 01, 02, 10 and 15 is
-frozen; the 2026-11-19 change adds hand work to 02 only (see below). **14
+Printed so far: 01, 02, 10, 14 and 15. The geometry of 01, 02 and 15 is
+frozen; the 2026-11-19 change adds hand work to 02 only (see below). **10:
+the hub pocket grows from Ø12 to Ø14** (2026-11-20). Two tapped M2 holes at
+r = 5 mm do not fit in a Ø12 hub: the thread runs out at the rim. The hub
+is now Ø14 × 5 and the holes stay at ±5 mm, so the printed canards'
+Ø2.4 holes still line up. Rework each printed canard: open the hub pocket
+from Ø12.2 to Ø14.2, 5.1 mm deep as before (step drill, flat bottom), or
+reprint it. **14
 must be reprinted** (2026-11-20): its LiPo pocket now takes the 2S stack of
 two 362543 cells; the printed one has the old pocket, 5 mm too narrow. 09
 and the new 12 and 19 are not printed yet.
@@ -27,7 +33,8 @@ difference are checked.
 
 The nose carries:
 - the camera and its DC-DC converter. The camera-bay sleeves in 06 stay
-  empty; 06 and 07 print unchanged (the sleeves web 07's boss columns);
+  empty; 07 prints unchanged and 06 only gains the Ø4 camera-power pass
+  (the sleeves web 07's boss columns);
 - **four 18650 slots in the servo cassette (09)**, in the quadrants between
   the servos. The servo pair feeds the servos and the camera; the optional
   FC pair feeds the Vega;
@@ -140,7 +147,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
   - up the roof pass to the **servo switch** (02, 30°, Z 106);
   - then to the 1000 µF / 16 V capacitor in its cup on the roof (unchanged) and the servo power bus.
   - There is **no 5 V supply**. 8.40 V (full charge) is the HV6160's maximum; keep the capacitor.
-- **Camera:** stays on the servo pack. A 22 AWG pair with a 2 A fuse at the pack runs up the roof pass, through the Ø4 potted pass in the Z 270 floor (part 06) to the camera switch (Z 315) and the DC-DC converter on 07. The camera switch now switches only the camera. 06 and 07 print unchanged.
+- **Camera:** stays on the servo pack. A 22 AWG pair with a 2 A fuse at the pack runs up the roof pass, through the Ø4 potted pass in the Z 270 floor (part 06) to the camera switch (Z 315) and the DC-DC converter on 07. The camera switch now switches only the camera. 07 prints unchanged; 06 only gains that Ø4 pass (it can be drilled in a printed 06).
 - **Vega:**
   - **FC pack** (FC pair): 10 A fuse at the pack, a JST-XH 3-pin pigtail in the shoulder cavity, the existing Vega switch at 300°.
   - **Or LiPo:** the pocket on the mast stays. The Vega's battery lead ends in the same JST-XH, so either pack plugs in, **never both**.
@@ -189,8 +196,8 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 | Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 890 | 890 | CAD: solid PETG 1.27 g/cm³ |
 | Cells INR18650-25R (45 g each), Vega (25 g), 4× HV6160 (30.7 g) | 238 (2 cells) | 328 (4 cells) | spec |
 | Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 193 | 191 | estimated |
-| **Total** | **1321** | **1409** | |
-| **Balance point, forward of the forward body-tube rim** | **123 mm** | **117 mm** | |
+| **Total** | **1321** | **1408** | |
+| **Balance point, forward of the forward body-tube rim** | **123 mm** | **118 mm** | |
 | Balance point, aft of the nose tip (nose length 483 mm) | 360 mm | 366 mm | |
 
 Before the cells moved (two cells in the camera bay): 1266 g, 146 mm. The
@@ -214,7 +221,7 @@ becomes 586 mm instead of 574.
 | 06 battery carrier (`Canards/BatteryCarrier.stl`) | 6 | As before, plus the Ø4 pass. Can be drilled in the printed 06. |
 | 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down, no supports. Four cell sleeves, four keeper-insert bosses. |
 | 12 servo-switch saddle (`Canards/ServoSwitchSaddle.stl`) | 12 | Flat back down. Epoxied inside 02 at 30°, Z 106. |
-| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. |
+| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep (2026-11-20). |
 | 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Printed: ream the roof pass to Ø11. |
 | 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. |
 | 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
@@ -240,7 +247,7 @@ becomes 586 mm instead of 574.
 - **HV6160:**
   - the spline (teeth, OD, shaft height, centre-screw thread);
   - the lead stub;
-  - the aluminium hub (the clamp hub Ø12 × 5 is assumed).
+  - the aluminium hub (the clamp hub Ø14 × 5 is assumed, M2 tapped holes at ±5 mm).
 - **Vega:** the GNSS patch and WAGO envelopes and positions; their side of the board is inferred from the STEP plus "100 × 33 × 21 mm".
 - **Cells:** the real rim-to-rim length (sets the pad thickness), the + cap height, and strip/lead routing through the slots and notches.
 - **Servo switch:** the Schurter 0033.4513 is rated 6.3 A / 250 VAC (300 no-load cycles); no DC rating is given, and the servo fuse is 7.5 A.
