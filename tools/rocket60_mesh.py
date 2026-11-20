@@ -7,6 +7,7 @@ edits are never seen, and once HEAD (or the remote branch) has the mesh,
 local-only or unpushed commits to it are ignored too.
 """
 import subprocess
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -20,5 +21,6 @@ def rocket60_nose_stl():
         r = subprocess.run(["git", "-C", str(REPO), "show", "%s:%s" % (ref, PATH)],
                            capture_output=True)
         if r.returncode == 0:
+            print("camera nose mesh: %s:%s" % (ref, PATH), file=sys.stderr)
             return r.stdout
     raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")

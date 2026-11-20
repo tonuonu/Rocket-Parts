@@ -130,7 +130,7 @@ def main():
         ("mast-unit 4x M3x10 + 4 ruthex", 4.2, 89.5, "est"),
         ("4x MKS HV6160", 4 * 30.7, 60.5, "spec"),
         ("4x aluminium clamp hubs + centre screws", 4 * 2.8, 50.0, "est"),
-        ("8x M2x8 countersunk (plug to hub)", 1.6, 50.0, "est"),
+        ("8x M2x6 countersunk (plug to hub)", 1.3, 50.0, "est"),
         ("8x M2.5x10 + nuts (servo lugs)", 5.0, 60.5, "est"),
         ("cassette 4x M3x8 + 4 ruthex", 3.8, 34.1, "est"),
         ("shoulder joint 12x M3x8 button + 12 ruthex", 12.6, 7.5, "est"),

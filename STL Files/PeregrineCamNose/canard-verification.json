@@ -4,10 +4,10 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
-  "PeregrineCamCanards.scad": "1c321627001134d90f39aca7dfc924f126c1f2afed0244f012d7b94db44b7d7a",
+  "PeregrineCamCanards.scad": "4a5d7accd840ce50a482c2dbd80ac2a54122cbcef6046390af8b050b947efcee",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
- "passed": 303,
+ "passed": 307,
  "failed": 0,
  "results": [
   {
@@ -1124,24 +1124,54 @@
    "value": 0.0
   },
   {
+   "check": "plug screw M2x6 tip >= 0.3 mm above the clamp hub base",
+   "passed": true,
+   "value": {
+    "tip": 44.09,
+    "base": 42.5
+   }
+  },
+  {
+   "check": "plug screw M2x6 engages >= 3 mm of the clamp hub's thread",
+   "passed": true,
+   "value": {
+    "engagement_mm": 3.41
+   }
+  },
+  {
+   "check": "plug screw M2x6 tip >= 0.3 mm above the arm base",
+   "passed": true,
+   "value": {
+    "tip": 43.37,
+    "base": 42.5
+   }
+  },
+  {
+   "check": "plug screw M2x6 engagement in the arm (informational)",
+   "passed": true,
+   "value": {
+    "engagement_mm": 1.63
+   }
+  },
+  {
    "check": "Vega standoff at u=-5.3, Z=200: footprint backed by the mast flange",
    "passed": true,
    "value": {
-    "margin_mm": 0.57
+    "margin_mm": 0.5
    }
   },
   {
    "check": "Vega standoff at u=-5.3, Z=140: footprint backed by the mast flange",
    "passed": true,
    "value": {
-    "margin_mm": 0.57
+    "margin_mm": 0.5
    }
   },
   {
    "check": "Vega standoff at u=-32.3, Z=140: footprint backed by the mast flange",
    "passed": true,
    "value": {
-    "margin_mm": 1.99
+    "margin_mm": 1.9
    }
   },
   {

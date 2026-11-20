@@ -3,7 +3,7 @@
   "source_sha256": {
     "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
     "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4",
-    "PeregrineCamCanards.scad": "1c321627001134d90f39aca7dfc924f126c1f2afed0244f012d7b94db44b7d7a",
+    "PeregrineCamCanards.scad": "4a5d7accd840ce50a482c2dbd80ac2a54122cbcef6046390af8b050b947efcee",
     "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
   },
   "mesh_sha256": {

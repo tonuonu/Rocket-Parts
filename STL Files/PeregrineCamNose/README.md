@@ -42,7 +42,9 @@ Review fixes after the merge (2026-11-20):
   face is lowest under the head's outer rim (r = 5 + 1.9), 0.47 mm deeper
   than before, so no part of the 3.8 mm head stands proud. On the printed
   canards, deepen each countersink by about 0.47 mm with a 90° bit, until
-  the head's outer rim is flush.
+  the head's outer rim is flush. Use **M2×6** plug screws: with the deeper
+  seat an M2×8 tip reaches 42.09, past the hub's base (42.5) and into the
+  servo case (42.2).
 
 Source: `PeregrineCamCanards.scad`, switched on by `Canards_Enabled` in
 `PeregrineCamNose.scad`. With it set to `false`, parts 01, 02, 03 and 06
@@ -78,7 +80,7 @@ The nose does **not** separate at apogee. The shoulder bulkhead is the gas-seal 
 
 - **Direct drive.** Each MKS HV6160 stands in the servo cassette (09) with its output radial.
 - **Output hub.** The first choice is an aluminium clamp-type hub with a flat face and two tapped M2 holes. The canard's root plug bolts to it through round holes.
-  - Fallback (`Horn_Type = "arm"`): the servo's own arm sits in a form-fit pocket and is held by the centre screw plus one cross screw.
+  - Fallback (`Horn_Type = "arm"`): the servo's own arm sits in a form-fit pocket and is held by the centre screw plus one cross screw, an M2×6 countersunk like the clamp's. It holds by the arm's 2.5 mm tapped thread only (1.63 mm engaged), less than the clamp hub's 3.4 mm.
   - There are no slots. The neutral offset goes in firmware `ctrl_trimN`.
   - The spline is parametric (`Servo_Spline_Teeth`, `Servo_Spline_OD`, `Servo_Shaft_H`, `Servo_Centre_Screw`). There is no HV6160 spline data yet, so measure it.
 - **Identical units.** The four units are identical at 90°, so opposite servos are 180° apart. One Y-cable **at the Vega** gives roll with no reverser. Stage 2 drives the four servos independently with no mechanical change.
@@ -217,8 +219,8 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 | Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 890 | 890 | CAD: solid PETG 1.27 g/cm³ |
 | Cells INR18650-25R (45 g each), Vega (25 g), 4× HV6160 (30.7 g) | 238 (2 cells) | 328 (4 cells) | spec |
 | Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 194 | 191 | estimated |
-| **Total** | **1322** | **1409** | |
-| **Balance point, forward of the forward body-tube rim** | **123 mm** | **117 mm** | |
+| **Total** | **1321** | **1409** | |
+| **Balance point, forward of the forward body-tube rim** | **123 mm** | **118 mm** | |
 | Balance point, aft of the nose tip (nose length 483 mm) | 360 mm | 366 mm | |
 
 Before the cells moved (two cells in the camera bay): 1266 g, 146 mm. The
@@ -242,7 +244,7 @@ becomes 586 mm instead of 574.
 | 06 battery carrier (`Canards/BatteryCarrier.stl`) | 6 | As before, plus the Ø4 pass. Can be drilled in the printed 06. |
 | 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down, no supports. Four cell sleeves, four keeper-insert bosses. |
 | 12 servo-switch saddle (`Canards/ServoSwitchSaddle.stl`) | 12 | Flat back down. Epoxied inside 02 at 30°, Z 106. |
-| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep and deepen the two M2 countersinks ~0.47 mm (2026-11-20). |
+| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep and deepen the two M2 countersinks ~0.47 mm and use M2×6 (2026-11-20). |
 | 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Reprint (LiPo pocket, standoff tabs); ream the roof pass to Ø11 from the roof's underside. |
 | 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. Fit with the groove toward the posts (+X). |
 | 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
@@ -258,7 +260,7 @@ becomes 586 mm instead of 574.
 2. **Cassette:** melt the four keeper inserts into the floor bosses from below and thread the lacing cords through the tie holes. Fit the servos with their lugs, 8 × M2.5×10 bolts and nuts (an M2.5×8 ends 0.4 mm short of the nut's far face; the ×10 tip stays 11.6 mm from the cells). Run the pack harness leads down the central channel and out through the floor hole. Connect the servo leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
 3. **Cells, from below:** lay a C-ring pad on each cell's top rim, gap toward the slot. Push each wired cell up through its floor hole, top lead in the slot and out through the notch, until the pad meets the roof. Hold the cells (tape) until the keeper is on.
 4. **Keeper:** make the series links, fuses and pack terminals under the floor, onto the harness leads. Tie the pack leads with the lacing cords now (the keeper plate covers the tie holes once fitted). Push the keeper up so the seat rings take the cells' bottom rims, then fit 4 × M3×20 countersunk.
-5. **Canards, from outside:** fit the hub on the spline, then the centre screw, then the plug with 2 × M2×8. Set the neutral offset in the firmware trim.
+5. **Canards, from outside:** fit the hub on the spline, then the centre screw, then the plug with 2 × M2×6 countersunk (not ×8: its tip would reach the servo case). Set the neutral offset in the firmware trim.
 6. **Shoulder:** wire the four posts, then screw the shoulder on with 12 × M3×8 button head. The key goes into the notch at 105°.
 
 **Service:** shoulder off; keeper off (4 screws, support the cells); untie the lacing cords (leave them threaded: they cannot be re-threaded with the servos in); the cells drop out with their leads. The cassette stays in.
@@ -278,13 +280,16 @@ becomes 586 mm instead of 574.
 - **Fits:** printed fits and insertion.
 - **Aerodynamics:** canard-wake/fin interaction.
 
-Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (300/300 on 2026-11-20, including the M2.5×10 lug-bolt tips). Besides the earlier checks, it covers:
+Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (307/307 on 2026-11-20). Besides the earlier checks, it covers:
 - the four cell envelopes with their top pads, the keeper and its screws against the shoulder, 02, 09, 14, the Vega, the servos, the arms and the canards at 0, ±10.5 and ±11.5°;
 - the keeper above the shoulder's boss tops (Z 13.5 against Z 12);
 - the keeper inserts' 1.6 mm walls and 1.2 mm cap;
 - the lug-bolt driver lines and nut-insertion paths against the cells;
 - the servo switch and saddle, and the mast unit's insertion past both switches;
 - the Ø11 ream;
+- the M2.5×10 lug-bolt tips against the servos, cassette and cells;
+- that each Vega standoff's Ø8 footprint is backed by the mast flange (margin by bisection, ≥ 0.3 mm required; 0.5 / 0.5 / 1.9 mm);
+- the plug-to-hub screw length: the M2×6 tip stays ≥ 0.3 mm above the hub or arm base (an M2×8 reaches the servo case), with ≥ 3 mm of thread in the clamp hub (3.41 mm); the arm's engagement is reported (1.63 mm);
 - that 01, 02, 03, 06, 07, 10, 14, 15, 16, 17 and the flag-off parts render to exactly the committed triangles.
 
 The new sleeves add no overhang to 09: its overhang area rises from 455 to 505 mm², and the 50 mm² are the four Ø4 ceilings of the keeper-insert pockets.
@@ -524,6 +529,7 @@ tunnels after printing.
 | M3×12 button-head screws (ISO 7380, head 5.7 mm) | 2 | Converter tray, on the screw columns |
 | M3×8 **90° countersunk** screws, head ≤6.2 mm | 3 | Shell side screws, heads flush |
 | M2.5×10 screws + M2.5 hex nuts | 8 each | Canard servo lugs in the cassette (09); nuts in the far-face traps |
+| M2×6 **90° countersunk** screws, head 3.8 mm | 8 | Canard plug to the clamp hub, 2 per canard (3.4 mm of thread); the fallback arm uses M2×6 too, 1 per canard |
 | Camera's existing M3 screws | 3 | Match actual camera base; ≤5.7 mm insert engagement |
 | Schurter 0033.4513 + 0098.0043 nut | 1 each | Switch; nut may be a separate order |
 | M3 countersunk screws, nuts and terminations | As wired | Three unassigned charging-contact seats |

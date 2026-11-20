@@ -138,6 +138,7 @@ def main():
 
     jobs = {"part1": {"Render_Part": 1}, "part2": {"Render_Part": 2},
             "part10": {"Render_Part": 10}, "servos": {"Render_Part": 20},
+            "part10_arm": {"Render_Part": 10, "Horn_Type": '"arm"'},
             "horns": {"Render_Part": 21}, "shoulder_asm": {"Render_Part": 23},
             "part1_off": {"Render_Part": 1, "Canards_Enabled": "false"},
             "part2_off": {"Render_Part": 2, "Canards_Enabled": "false"},
@@ -273,11 +274,31 @@ def main():
                           rod, part)
 
     # Vega bay
+    # Plug-to-hub M2 countersunk screws, from the head top (flush on the
+    # seat) inward: the tip must stay >= 0.3 mm above the hub/arm base (the
+    # servo case top is 0.3 below it). The clamp hub's tapped holes need
+    # >= 3 mm (1.5 d) of thread; the fallback arm is only 2.5 mm thick, so
+    # its engagement is reported, not required.
+    logs = {name: log for name, _, log in done}
+    for variant, log in (("clamp hub", log0), ("arm", logs["part10_arm"])):
+        clamp, length, seat_lo, seat_hi, base, top = echo_values(log, "CANARD_PLUG_SCREWS")
+        tip_lo, tip_hi = seat_lo - length, seat_hi - length
+        record("plug screw M2x%g tip >= 0.3 mm above the %s base" % (length, variant),
+               tip_lo - base >= 0.3, {"tip": round(tip_lo, 2), "base": base})
+        engaged = top - max(tip_hi, base)
+        if clamp:
+            record("plug screw M2x%g engages >= 3 mm of the clamp hub's thread" % length,
+                   engaged >= 3.0, {"engagement_mm": round(engaged, 2)})
+        else:
+            record("plug screw M2x%g engagement in the arm (informational)" % length,
+                   True, {"engagement_mm": round(engaged, 2)})
+
     mast, vega, vsw, mid = m["part14"], m["vega"], m["vswitch"], m["part3"]
     # Each Ø8 Vega standoff ends 1.5 mm into the 3 mm mast flange. Behind
     # that end only the flange (or its tab) can back it: a disc there, in
     # the flange's back half, must be solid part 14. Margin = how far the
-    # backing reaches past the Ø8 footprint (bisection), required >= 0.3.
+    # backing reaches past the Ø8 footprint (bisection, to 0.01 mm),
+    # required >= 0.3. Backed = solid to within 0.001 mm3.
     au = math.radians(a0)
     uhat = np.array([math.cos(au), math.sin(au), 0.0]); nhat = np.array([-math.sin(au), math.cos(au), 0.0])
     n_front = vn - 14.3 - 0.5                      # Vega_Bot_H, 0.5 gap
@@ -287,14 +308,14 @@ def main():
         disc = trimesh.creation.cylinder(radius=d / 2, height=n1 - n0, sections=72)
         disc.apply_transform(trimesh.geometry.align_vectors([0, 0, 1], nhat))
         disc.apply_translation(u * uhat + (n0 + n1) / 2 * nhat + np.array([0, 0, z]))
-        return inter(disc, mast) > disc.volume * 0.999
+        return inter(disc, mast) >= disc.volume - 1e-3
 
     for hx, hy in ((-30, -13.5), (30, -13.5), (30, 13.5)):   # Vega holes (STEP)
         u, z = vu - hy, vz - hx
         margin = None                              # footprint itself not backed
         if backing(u, z, 8.0):
-            lo, hi = 8.0, 12.0
-            for _ in range(12):
+            lo, hi = 8.0, 40.0
+            for _ in range(13):
                 mid_d = (lo + hi) / 2
                 lo, hi = (mid_d, hi) if backing(u, z, mid_d) else (lo, mid_d)
             margin = round((lo - 8.0) / 2, 2)

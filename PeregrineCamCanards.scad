@@ -157,6 +157,10 @@ Plug_Clear    = 0.3;    // radial; the plug never bears on the shell
 Plug_Hole_R   = Plug_D/2 + Plug_Clear;
 Plug_Screw_D  = 2.4;    // M2 clearance, round
 Plug_Screw_Head_D = 3.8;  // M2 90-deg countersunk
+// M2x6 for both hubs. With the head seat on the curved plug face (below),
+// an M2x8 tip reaches 42.09, past the clamp hub's base (Plug_X0 = 42.5) and
+// into the servo case (42.2). The verifier checks the tip and engagement.
+Plug_Screw_L  = 6;
 // Stop: a tab of the shell projects into the plug hole and runs in a
 // slot along the plug side. The slot is open along the whole plug, so the
 // canard goes in from outside past the tab. The slot's flanks are radial,
@@ -485,6 +489,12 @@ echo(str("CANARD_CHECK ", CN_Inner_R(Cas_Floor_Z+Cas_Boss_D)-Cas_Clear, " ", Cas
          Sh_Joint_Z, " ", Sh_Spigot_R, " ", Insert_Pocket_L, " ", Cas_Floor_Z, " ", Cas_Top_Z, " ",
          Index_Key_A, " ", Index_Key_H, " ", Canard_A0, " ", Plug_X0));
 
+// Plug screws: clamp flag, length, seat (head top) x range over the holes,
+// hub/arm base and the top of the tapped part (clamp hub top, or arm top).
+echo(str("CANARD_PLUG_SCREWS ", Horn_Type=="clamp" ? 1 : 0, " ", Plug_Screw_L, " ",
+         min([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ", max([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ",
+         Plug_X0, " ", Plug_X0 + (Horn_Type=="clamp" ? Horn_Hub_H : Horn_Arm_T)));
+
 echo(str("CANARD_LUGS ", Servo_Bottom_R+Servo_Lug_Hole_X, " ", Canard_Z+Lug_Hole_Zs()[0], " ",
          Canard_Z+Lug_Hole_Zs()[1], " ", Servo_W/2+Cas_Clear+Cas_Wall-Lug_Nut_T-0.4));
 
@@ -578,16 +588,17 @@ module Canard_Blade(){
             translate([-200,0]) square([400,Canard_Skin_R+Canard_Root_Gap+3]);
         }
 }
+// The plug face is the skin of revolution (radius Canard_Skin_R); it is
+// lowest under the head's outer rim, |r| + Plug_Screw_Head_D/2 off the plug
+// axis. The head seat starts there, so no part of the head stands proud.
+function Plug_Seat_X(r) = sqrt(Canard_Skin_R*Canard_Skin_R - pow(abs(r)+Plug_Screw_Head_D/2,2));
 module Canard_Plug_Screw_Cuts(x0, x1){
     // two M2 countersunk screws into the tapped arm
-    // x1 is the skin radius; the plug face is that skin of revolution, so
-    // it is lowest under the head's outer rim, |r| + Plug_Screw_Head_D/2
-    // off the plug axis. The seat starts there: no part of the head stands
-    // proud (the inner rim sits slightly below the face).
+    // head seats start at Plug_Seat_X(r) (see above)
     for(r=Horn_Holes_R) translate([0,r,0]){
         translate([x0-Overlap,0,0]) rotate([0,90,0])
             cylinder(d=Plug_Screw_D,h=x1-x0+2*Overlap,$fn=24);
-        translate([sqrt(x1*x1-pow(abs(r)+Plug_Screw_Head_D/2,2))+Overlap,0,0]) rotate([0,-90,0])
+        translate([Plug_Seat_X(r)+Overlap,0,0]) rotate([0,-90,0])
             cylinder(d1=Plug_Screw_Head_D+2*Overlap,d2=Plug_Screw_D,
                      h=(Plug_Screw_Head_D-Plug_Screw_D)/2+Overlap,$fn=36);
     }
