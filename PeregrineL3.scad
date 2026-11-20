@@ -42,7 +42,7 @@ Render_Part = 0;
 // 1 = Cutaway (half removed) - motor, adapter, nose shoulder visible
 // 2 = Fin can + fins only
 
-Motor = 0;
+Motor = 2;
 // 0 = AeroTech M1297W   RMS-75/5120  (L3 cert flight)
 // 1 = AeroTech K1499N   RMS-75/1280  (test flight, no adapter)
 // 2 = AeroTech J1299N   RMS-54/852   (test flight, 54 mm adapter)

@@ -71,7 +71,7 @@ Ring_Wall  = 4;
 // 4 = Top slice (filled tip)
 // 5 = Guide ring, lower
 // 6 = Guide ring, upper
-Render_Part = 0;
+Render_Part = 4;
 
 // ============================================
 // PARTS

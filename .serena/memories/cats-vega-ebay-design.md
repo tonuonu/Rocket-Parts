@@ -1,33 +1,47 @@
-# CATS Vega Flight Computer - Mounting Specs
+# CamRocket E-Bay Design — Baseline v0.2.0
 
-## Board Dimensions
-- Length: 100mm
-- Width: 33mm
-- Total height: 15mm
+## File: CamRocket/CamRocket.scad
+## Branch: feature/cam-rocket
+## Baseline commit: 392bba7
 
-## Mounting Holes
-- 3× M3 screw holes
-- Pattern: 60mm × 27mm spacing
-- Spacers recommended to keep electronics off mounting surface
+## Rocket specs (body tube already printed)
+- Body tube: OD=75mm, ID=71.4mm, wall=1.8mm, height=250mm
+- Fin can shoulder: 30mm into body tube bottom
+- Nosecone shoulder: 25mm into e-bay top socket
+- Motor: 24mm (Estes D/E)
+- Shoulder clearance: 0.2mm per side
 
-## Mounting Notes
-- No specific orientation required (auto-detects gravity vector)
-- Must be in radio-transparent section (fiberglass or cardboard, NOT carbon fiber)
-- GNSS patch antenna needs sky view
-- Keep telemetry antenna away from metallic objects
-- 3D files available from CATS github
+## Architecture: 4-part stack + door
+1. **Fin can** (bottom) — 4 fins, motor tube, shoulder up into body tube
+2. **Body tube** — ALREADY PRINTED, DO NOT MODIFY
+3. **E-bay coupler** (between body tube and nosecone) — 145mm total
+   - Bottom shoulder 20mm (into body tube, OD=71.0mm)
+   - Exposed body 100mm (OD=75mm, bore=71mm)
+   - Top socket 25mm (receives nosecone shoulder, bore=71.4mm)
+4. **Nosecone** — tangent ogive, 150mm, tip truncated 1mm flat
+5. **Door** — curved panel, 4x M2.5 bolts, sits in sill recess
 
-## Peregrine Integration Notes
-- Target tube: Body_OD=101.5mm, Body_ID=99.0mm (from PeregrineEjection.scad)
-- Closest library tube: BT98 (OD=101.9mm, ID=98.9mm)
-- 33mm board width fits easily inside 99mm ID
-- Design approach: keep current library style (Alt_BayDoorFrame pattern)
-- Existing Alt_BayDoorFrame designed for MissionControl V3 — needs door resizing for CATS Vega
-- Door must accommodate 33mm board width plus side connectors (screw terminals, SMA)
+## E-bay coupler features
+- CATS Vega rail on +Y wall, 3x M3 standoffs (L-shaped pattern)
+- Access door on -Y wall: 36x85mm opening, 5mm frame, 4mm inward projection
+- 4x M2.5 bolt bosses in frame corners
+- SMA antenna hole through top bulkhead (6.5mm)
+- Open bore for ejection gas flow
 
-## Library Pattern for Electronics Bays (from Rocket98.scad example)
-1. `Tube()` — tube section
-2. `CenteringRing()` — top and bottom (typically 15mm inset from ends)
-3. `Alt_BayFrameHole()` — difference cut for door opening
-4. `Alt_BayDoorFrame()` — door mounting frame
-5. Coupler/bolt interfaces for adjacent sections
+## CATS Vega mounting holes — L-SHAPED (verified from PCB drill data)
+- A=(-13.5, -25): one long edge, 25mm from end
+- B=(-13.5, +35): same edge, 85mm from end (60mm from A)
+- C=(+13.5, +35): opposite edge, same end as B (27mm from B)
+- Source: catsystems/cats-hardware NC drill T11 (3.2mm)
+
+## Nosecone camera
+- M12 x 0.5 lens bore (12mm) through solid tip
+- Tip solid from z=135mm (hollowing stops there)
+- Tip truncated at z=149mm (flat face)
+- Known issue: thin spike artifact at tip (cosmetic, deferred)
+- Camera PCB mounting inside nosecone: deferred until board dimensions provided
+
+## Known issues
+- Nosecone tip spike artifact (ogive point approximation) — cosmetic
+- Door bolt boss fit needs test print verification
+- CATS Vega hole positions need physical board measurement confirmation
