@@ -407,8 +407,10 @@ function CN_Inner_R(Z) = Z < NC_Base_L ? Peregrine_Coupler_OD/2 : Ogive_OD_At_Z(
 Canard_Skin_R = CN_Outer_R(Canard_Z);
 assert(Canard_TE_Z > NC_Base_L, "canard TE must stay on the ogive above the skirt screws");
 assert(Cas_Floor_Z > Shoulder_Spigot_L + 1, "cassette floor must clear the shoulder spigot");
-// (The plug-hole rings are trimmed 1 mm above the cassette floor by
-// construction, Cas_Floor_Top above, so they cannot block it.)
+// The plug-hole rings are trimmed 1 mm above the cassette floor; that trim
+// must stay below the round part of each ring.
+assert(Cas_Floor_Top + 1 <= Canard_Z - Plug_Hole_R - Hole_Ring_W,
+       "cassette floor too high: the ring trim would cut into the ring round the plug hole");
 assert(Horn_Hub_D/2 < Stop_Tab_Rin, "arm hub must pass the stop tab in the plug hole");
 for(r=Horn_Holes_R) assert(abs(r) - Plug_Screw_Head_D/2 > Canard_T/2 + 0.5, "plug screw head under the blade");
 // The slot sector must clear the arm pocket (at 0 deg) and the blade root
@@ -494,6 +496,12 @@ echo(str("CANARD_CHECK ", CN_Inner_R(Cas_Floor_Z+Cas_Boss_D)-Cas_Clear, " ", Cas
 echo(str("CANARD_PLUG_SCREWS ", Horn_Type=="clamp" ? 1 : 0, " ", Plug_Screw_L, " ",
          min([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ", max([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ",
          Plug_X0, " ", Plug_X0 + (Horn_Type=="clamp" ? Horn_Hub_H : Horn_Arm_T)));
+
+function Join(v, i=0) = i >= len(v) ? "" : str(v[i], " ", Join(v, i+1));
+echo(str("CANARD_PLUG_HOLES ", Join(Horn_Holes_R)));
+// Mast flange front face (n), thickness, standoff Ø, Vega holes (STEP x y).
+echo(str("CANARD_MAST ", Mast_Front_N, " ", Mast_T, " ", Vega_Standoff_D, " ",
+         Join([for(h=Vega_Holes) each h])));
 
 echo(str("CANARD_LUGS ", Servo_Bottom_R+Servo_Lug_Hole_X, " ", Canard_Z+Lug_Hole_Zs()[0], " ",
          Canard_Z+Lug_Hole_Zs()[1], " ", Servo_W/2+Cas_Clear+Cas_Wall-Lug_Nut_T-0.4));
@@ -601,6 +609,11 @@ module Canard_Plug_Screw_Cuts(x0, x1){
         translate([Plug_Seat_X(r)+Overlap,0,0]) rotate([0,-90,0])
             cylinder(d1=Plug_Screw_Head_D+2*Overlap,d2=Plug_Screw_D,
                      h=(Plug_Screw_Head_D-Plug_Screw_D)/2+Overlap,$fn=36);
+        // clear the plug face above the seat, or a lip caps the head; the
+        // skin is widest at the head's lower edge (the ogive narrows upward)
+        translate([Plug_Seat_X(r),0,0]) rotate([0,90,0])
+            cylinder(d=Plug_Screw_Head_D+2*Overlap,
+                     h=CN_Outer_R(Canard_Z-Plug_Screw_Head_D/2)-Plug_Seat_X(r)+Overlap,$fn=36);
     }
 }
 module Canard_Plug(){

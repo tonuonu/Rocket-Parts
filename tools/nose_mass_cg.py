@@ -24,12 +24,14 @@ Requires numpy, trimesh, manifold3d (tools/requirements-camnose.txt).
 import argparse
 import json
 import subprocess
+import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import trimesh
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # also under python -I
 from rocket60_mesh import rocket60_nose_stl
 
 REPO = Path(__file__).resolve().parents[1]

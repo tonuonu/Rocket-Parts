@@ -273,8 +273,8 @@ def main():
                     clear("servo %d lug at z=%+.1f: %s line clears the %s" % (k, z, name, pn),
                           rod, part)
 
-    # Vega bay
-    # Plug-to-hub M2 countersunk screws, from the head top (flush on the
+    # ---- plug-to-hub screws -------------------------------------------
+    # M2 countersunk screws, from the head top (flush on the
     # seat) inward: the tip must stay >= 0.3 mm above the hub/arm base (the
     # servo case top is 0.3 below it). The clamp hub's tapped holes need
     # >= 3 mm (1.5 d) of thread; the fallback arm is only 2.5 mm thick, so
@@ -292,17 +292,32 @@ def main():
         else:
             record("plug screw M2x%g engagement in the arm (informational)" % length,
                    True, {"engagement_mm": round(engaged, 2)})
+    # The head must reach its seat: the Ø3.8 head envelope, from the seat
+    # outward past the skin, is clear of the canard (no lip over the head).
+    # Part 10 prints rotated: local radial x -> print Z = x - plug_x0.
+    skin_r = p[9]
+    for variant, name, log in (("clamp hub", "part10", log0), ("arm", "part10_arm", logs["part10_arm"])):
+        seat_lo = echo_values(log, "CANARD_PLUG_SCREWS")[2]
+        for r in echo_values(log, "CANARD_PLUG_HOLES"):
+            head = trimesh.creation.cylinder(radius=3.8 / 2, height=skin_r + 2 - seat_lo - 0.01, sections=48)
+            head.apply_translation([0, r, (seat_lo + 0.01 + skin_r + 2) / 2 - plug_x0])
+            clear("plug screw head at r=%+g (%s) has a clear path to its seat" % (r, variant),
+                  head, m[name])
+
+    # ---- Vega bay -----------------------------------------------------
 
     mast, vega, vsw, mid = m["part14"], m["vega"], m["vswitch"], m["part3"]
-    # Each Ø8 Vega standoff ends 1.5 mm into the 3 mm mast flange. Behind
+    # Each Vega standoff ends half-way into the mast flange. Behind
     # that end only the flange (or its tab) can back it: a disc there, in
     # the flange's back half, must be solid part 14. Margin = how far the
-    # backing reaches past the Ø8 footprint (bisection, to 0.01 mm),
+    # backing reaches past the standoff footprint (bisection, to 0.01 mm),
     # required >= 0.3. Backed = solid to within 0.001 mm3.
+    mst = echo_values(log0, "CANARD_MAST")
+    n_front, mast_t, sd = mst[:3]
+    holes = list(zip(mst[3::2], mst[4::2]))        # Vega_Holes, STEP x, y
     au = math.radians(a0)
     uhat = np.array([math.cos(au), math.sin(au), 0.0]); nhat = np.array([-math.sin(au), math.cos(au), 0.0])
-    n_front = vn - 14.3 - 0.5                      # Vega_Bot_H, 0.5 gap
-    n0, n1 = n_front - 3.0 + 0.05, n_front - 1.5 - 0.05
+    n0, n1 = n_front - mast_t + 0.05, n_front - mast_t / 2 - 0.05
 
     def backing(u, z, d):
         disc = trimesh.creation.cylinder(radius=d / 2, height=n1 - n0, sections=72)
@@ -310,15 +325,15 @@ def main():
         disc.apply_translation(u * uhat + (n0 + n1) / 2 * nhat + np.array([0, 0, z]))
         return inter(disc, mast) >= disc.volume - 1e-3
 
-    for hx, hy in ((-30, -13.5), (30, -13.5), (30, 13.5)):   # Vega holes (STEP)
+    for hx, hy in holes:
         u, z = vu - hy, vz - hx
         margin = None                              # footprint itself not backed
-        if backing(u, z, 8.0):
-            lo, hi = 8.0, 40.0
+        if backing(u, z, sd):
+            lo, hi = sd, 40.0
             for _ in range(13):
                 mid_d = (lo + hi) / 2
                 lo, hi = (mid_d, hi) if backing(u, z, mid_d) else (lo, mid_d)
-            margin = round((lo - 8.0) / 2, 2)
+            margin = round((lo - sd) / 2, 2)
         record("Vega standoff at u=%.1f, Z=%.0f: footprint backed by the mast flange" % (u, z),
                margin is not None and margin >= 0.3, {"margin_mm": margin})
     clear("Vega clears the mast unit", vega, mast, tol=0.01)

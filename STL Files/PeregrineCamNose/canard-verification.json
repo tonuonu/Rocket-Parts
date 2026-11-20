@@ -4,10 +4,10 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
-  "PeregrineCamCanards.scad": "4a5d7accd840ce50a482c2dbd80ac2a54122cbcef6046390af8b050b947efcee",
+  "PeregrineCamCanards.scad": "62fe0f24a9b3d7c840a0f5888793187895da64298ade641f6cd370d7e1c9b2bf",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
- "passed": 307,
+ "passed": 310,
  "failed": 0,
  "results": [
   {
@@ -65,8 +65,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     2222,
-     2222
+     2294,
+     2294
     ]
    }
   },
@@ -1154,6 +1154,21 @@
    }
   },
   {
+   "check": "plug screw head at r=-5 (clamp hub) has a clear path to its seat",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "plug screw head at r=+5 (clamp hub) has a clear path to its seat",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "plug screw head at r=+9 (arm) has a clear path to its seat",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "Vega standoff at u=-5.3, Z=200: footprint backed by the mast flange",
    "passed": true,
    "value": {
@@ -1627,7 +1642,7 @@
   {
    "check": "part10 overhang area mm2 (informational)",
    "passed": true,
-   "value": 240.1
+   "value": 226.7
   },
   {
    "check": "part12 overhang area mm2 (informational)",
@@ -1658,7 +1673,7 @@
     "part3": 148.959,
     "part6": 37.496,
     "part9": 75.628,
-    "part10": 6.674,
+    "part10": 6.671,
     "part12": 0.992,
     "part14": 49.556,
     "part15": 8.2,

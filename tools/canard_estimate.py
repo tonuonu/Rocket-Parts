@@ -22,8 +22,11 @@ import math
 import os
 import struct
 import subprocess
+import sys
 import tempfile
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # also under python -I
 from rocket60_mesh import rocket60_nose_stl
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

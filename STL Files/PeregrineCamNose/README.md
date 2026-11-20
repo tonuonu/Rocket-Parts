@@ -280,7 +280,7 @@ becomes 586 mm instead of 574.
 - **Fits:** printed fits and insertion.
 - **Aerodynamics:** canard-wake/fin interaction.
 
-Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (307/307 on 2026-11-20). Besides the earlier checks, it covers:
+Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (310/310 on 2026-11-20). Besides the earlier checks, it covers:
 - the four cell envelopes with their top pads, the keeper and its screws against the shoulder, 02, 09, 14, the Vega, the servos, the arms and the canards at 0, ±10.5 and ±11.5°;
 - the keeper above the shoulder's boss tops (Z 13.5 against Z 12);
 - the keeper inserts' 1.6 mm walls and 1.2 mm cap;
@@ -289,7 +289,7 @@ Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` 
 - the Ø11 ream;
 - the M2.5×10 lug-bolt tips against the servos, cassette and cells;
 - that each Vega standoff's Ø8 footprint is backed by the mast flange (margin by bisection, ≥ 0.3 mm required; 0.5 / 0.5 / 1.9 mm);
-- the plug-to-hub screw length: the M2×6 tip stays ≥ 0.3 mm above the hub or arm base (an M2×8 reaches the servo case), with ≥ 3 mm of thread in the clamp hub (3.41 mm); the arm's engagement is reported (1.63 mm);
+- the plug-to-hub screw length: the M2×6 tip stays ≥ 0.3 mm above the hub or arm base (an M2×8 reaches the servo case), with ≥ 3 mm of thread in the clamp hub (3.41 mm); the arm's engagement is reported (1.63 mm); and the Ø3.8 head has a clear path from beyond the skin down to its seat (no lip of plug material over it), for the clamp and the arm;
 - that 01, 02, 03, 06, 07, 10, 14, 15, 16, 17 and the flag-off parts render to exactly the committed triangles.
 
 The new sleeves add no overhang to 09: its overhang area rises from 455 to 505 mm², and the 50 mm² are the four Ø4 ceilings of the keeper-insert pockets.
