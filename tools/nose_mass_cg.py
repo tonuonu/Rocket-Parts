@@ -24,11 +24,15 @@ Requires numpy, trimesh, manifold3d (tools/requirements-camnose.txt).
 import argparse
 import json
 import subprocess
+import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import trimesh
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # also under python -I
+from rocket60_mesh import rocket60_nose_stl
 
 REPO = Path(__file__).resolve().parents[1]
 SCAD = REPO / "PeregrineCamNose.scad"
@@ -53,16 +57,6 @@ PRINTED = {   # name: (Render_Part, extra defines, description, Z offset)
 CONFIGS = ("2-cell", "4-cell")
 
 
-
-def rocket60_nose_stl():
-    """The owner's CAD camera nose mesh, kept on branch feature/rocket60:
-    the local branch, else the remote-tracking one, else HEAD (once merged)."""
-    for ref in ("feature/rocket60", "origin/feature/rocket60", "HEAD"):
-        r = subprocess.run(["git", "-C", str(REPO), "show",
-                            ref + ":STL Files/Rocket60/NoseCone.stl"], capture_output=True)
-        if r.returncode == 0:
-            return r.stdout
-    raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")
 
 def render(out_dir, name, part, defines):
     # Always render: a mesh left in --mesh-dir may be from older source.
@@ -138,7 +132,7 @@ def main():
         ("mast-unit 4x M3x10 + 4 ruthex", 4.2, 89.5, "est"),
         ("4x MKS HV6160", 4 * 30.7, 60.5, "spec"),
         ("4x aluminium clamp hubs + centre screws", 4 * 2.8, 50.0, "est"),
-        ("8x M2x8 countersunk (plug to hub)", 1.6, 50.0, "est"),
+        ("8x M2x6 countersunk (plug to hub)", 1.3, 50.0, "est"),
         ("8x M2.5x10 + nuts (servo lugs)", 5.0, 60.5, "est"),
         ("cassette 4x M3x8 + 4 ruthex", 3.8, 34.1, "est"),
         ("shoulder joint 12x M3x8 button + 12 ruthex", 12.6, 7.5, "est"),

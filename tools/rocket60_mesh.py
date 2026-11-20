@@ -1,0 +1,26 @@
+"""The owner's CAD camera nose mesh (STL Files/Rocket60/NoseCone.stl).
+
+Shared by canard_estimate.py and nose_mass_cg.py. Read from HEAD first
+(once feature/rocket60 is merged), then origin/feature/rocket60, then the
+local feature/rocket60 branch. Only committed meshes are read: uncommitted
+edits are never seen, and once HEAD (or the remote branch) has the mesh,
+local-only or unpushed commits to it are ignored too.
+"""
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+PATH = "STL Files/Rocket60/NoseCone.stl"
+REFS = ("HEAD", "origin/feature/rocket60", "feature/rocket60")
+
+
+def rocket60_nose_stl():
+    """STL bytes of the camera nose mesh from the first ref that has it."""
+    for ref in REFS:
+        r = subprocess.run(["git", "-C", str(REPO), "show", "%s:%s" % (ref, PATH)],
+                           capture_output=True)
+        if r.returncode == 0:
+            print("camera nose mesh: %s:%s" % (ref, PATH), file=sys.stderr)
+            return r.stdout
+    raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")

@@ -3,7 +3,7 @@
   "source_sha256": {
     "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
     "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4",
-    "PeregrineCamCanards.scad": "5f9d223cb65ea690bb8285b3ef9120b7383f3d9785cfd3b3738cbf2b3dd693b5",
+    "PeregrineCamCanards.scad": "62fe0f24a9b3d7c840a0f5888793187895da64298ade641f6cd370d7e1c9b2bf",
     "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
   },
   "mesh_sha256": {
@@ -13,7 +13,7 @@
     "part2.stl": "16e3c8b977923b594684724e02d181eee721c59e4a0fede2006a49afb6805736",
     "part2_canards.stl": "f05a06627149482050d2ced3ca43e95eee1c57c0993ba8cf9e977d0baeb12250",
     "part3.stl": "72a344b441796a77f9f4852b08d2d67036e89074e2f13e4ea357016eefd35054",
-    "part3_canards.stl": "c5688f12846e382d13513b54e715dfaad3465c007ff66558eaa6f8bee4e66e6a",
+    "part3_canards.stl": "4df411a547b51d3be631a364306afe40680a9cb6f5c97daf735a3daffabca75d",
     "part4.stl": "e18aeb6aafa614838fbb8671152cf91b69d127b1e63033995084a4b0d90cbf10",
     "part5.stl": "484155828282cc59a54d6bd410cf310b465d37e1096e984308ba8efeded205dc",
     "part6.stl": "9a874eace401ee8d9e50e2ade81a9fadf739698ef9bf525ac7fffb94dbe963bd",

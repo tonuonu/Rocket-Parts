@@ -157,6 +157,10 @@ Plug_Clear    = 0.3;    // radial; the plug never bears on the shell
 Plug_Hole_R   = Plug_D/2 + Plug_Clear;
 Plug_Screw_D  = 2.4;    // M2 clearance, round
 Plug_Screw_Head_D = 3.8;  // M2 90-deg countersunk
+// M2x6 for both hubs. With the head seat on the curved plug face (below),
+// an M2x8 tip reaches 42.09, past the clamp hub's base (Plug_X0 = 42.5) and
+// into the servo case (42.2). The verifier checks the tip and engagement.
+Plug_Screw_L  = 6;
 // Stop: a tab of the shell projects into the plug hole and runs in a
 // slot along the plug side. The slot is open along the whole plug, so the
 // canard goes in from outside past the tab. The slot's flanks are radial,
@@ -294,13 +298,32 @@ LiPo_Out   = LiPo_In + 2*[LiPo_Wall, LiPo_Wall, LiPo_Wall];
 // (Vega_U+15), away from the roof pass, and grow toward -u.
 LiPo_U     = Vega_U + 15 - Mast_T - LiPo_Out[0]/2;
 Mast_U0    = min(Vega_U - 15, LiPo_U - LiPo_Out[0]/2 - Mast_T);   // flange -u edge
+Mast_U1    = Vega_U + 15;        // flange +u edge
+// Standoffs whose Ø8 footprint (+0.5) passes Mast_U1 get a tab on the
+// flange's +u edge, only over their own Z band; the tab's underside is
+// 45 deg so it prints roof-down without support. The straight Ø11 column
+// above the roof pass is clear only up to 15 mm above the roof plate (the
+// leads' bend zone); higher up the standoffs (4.3 mm from the pass axis)
+// and these tabs stand in it. Ream the pass from the roof's underside.
+Mast_Tab_Margin = 0.5;
+function Vega_Hole_U(h) = Vega_U - h[1];
+function Vega_Hole_Z(h) = Vega_Z_Mid - h[0];
+Mast_Tabs = [for(h=Vega_Holes)
+    if (Vega_Hole_U(h)+Vega_Standoff_D/2+Mast_Tab_Margin > Mast_U1)
+        [Vega_Hole_U(h)+Vega_Standoff_D/2+Mast_Tab_Margin,     // tab +u edge
+         Vega_Hole_Z(h)-Vega_Standoff_D/2-Mast_Tab_Margin,     // Z band
+         Vega_Hole_Z(h)+Vega_Standoff_D/2+Mast_Tab_Margin]];
 Cap_D      = 10;  Cap_L = 16;   // 1000 uF / 16 V at the cassette
 Cap_A      = 300; Cap_R = 26;
 
 // Vega power switch (second Schurter 0033.4513, same cut as the camera's)
 // and the USB window: both on the side away from the rail.
 Vsw_A = 300;  Vsw_Z = 120;
-USB_Win = [12, 7];               // along Z x along n
+// The window is centred on the connector's axis (Z 159.6) and must start
+// above the 02/03 glued lap (top Cut1_Z+7 = 154.15): 10.5 mm leaves 0.75 mm
+// round the 9 mm receptacle. A cable's plug overmold must fit 10.5 x 7.
+USB_Z   = Vega_Z_Mid - (Vega_USB[0][0]+Vega_USB[0][1])/2;
+USB_Win = [10.5, 7];             // along Z x along n
 
 // Static ports into the sealed Vega bay, between the canards, above the
 // 02/03 glued lap (the lap is Z 147-154). Slice 03 is already printed: they
@@ -384,8 +407,10 @@ function CN_Inner_R(Z) = Z < NC_Base_L ? Peregrine_Coupler_OD/2 : Ogive_OD_At_Z(
 Canard_Skin_R = CN_Outer_R(Canard_Z);
 assert(Canard_TE_Z > NC_Base_L, "canard TE must stay on the ogive above the skirt screws");
 assert(Cas_Floor_Z > Shoulder_Spigot_L + 1, "cassette floor must clear the shoulder spigot");
-assert(Canard_Z - Plug_Hole_R - Hole_Ring_W >= Cas_Floor_Top + 1,
-       "plug ring would block the cassette floor");
+// The plug-hole rings are trimmed 1 mm above the cassette floor; that trim
+// must stay below the round part of each ring.
+assert(Cas_Floor_Top + 1 <= Canard_Z - Plug_Hole_R - Hole_Ring_W,
+       "cassette floor too high: the ring trim would cut into the ring round the plug hole");
 assert(Horn_Hub_D/2 < Stop_Tab_Rin, "arm hub must pass the stop tab in the plug hole");
 for(r=Horn_Holes_R) assert(abs(r) - Plug_Screw_Head_D/2 > Canard_T/2 + 0.5, "plug screw head under the blade");
 // The slot sector must clear the arm pocket (at 0 deg) and the blade root
@@ -396,7 +421,8 @@ assert(Stop_Tab_A - Stop_Slot_Half > (Horn_Type=="arm" ?
 assert(Horn_Type=="arm" || Clamp_Hub_D/2 + 1 < Stop_Tab_Rin - Stop_Slot_Clear, "stop slot cuts the hub pocket");
 assert(Stop_Tab_A + Stop_Slot_Half < 90 - asin((Canard_T/2)/(Stop_Tab_Rin-Stop_Slot_Clear)) - 2,
        "stop slot cuts the blade root");
-assert(Servo_Bottom_R + Servo_Spline_Top < CN_Inner_R(Cas_Floor_Top+1) - Hole_Ring_T - 0.5,
+// Tightest point: the ring's bore just below the plug hole, Canard_Z - Plug_Hole_R.
+assert(Servo_Bottom_R + Servo_Spline_Top < CN_Inner_R(Canard_Z - Plug_Hole_R) - Hole_Ring_T - 0.5,
        "spline tip would hit the plug-hole ring while the cassette slides in");
 assert(Plug_X0 < CN_Inner_R(Canard_Z) - Hole_Ring_T - 2,
        "case top too close to the shell: no room for the plug");
@@ -416,6 +442,16 @@ assert(Bay_Cell_Bottom_Z - (Vega_Z_Mid + Vega_Board[0]/2) >= Vega_RF_Clear, "Veg
 assert((Vega_Z_Mid - Vega_Board[0]/2) - (Canard_Z - Servo_Spline_Off - Servo_Lug_Ext + Servo_Lug_L) >= Vega_RF_Clear,
        "Vega within 25 mm of the servos");
 assert(Port_Z > Cut1_Z + 7 + Port_D, "static ports in the glued lap");
+assert(USB_Z - USB_Win[0]/2 >= Cut1_Z + 7, "USB window in the glued lap");
+assert(USB_Z - USB_Win[0]/2 < Vega_Z_Mid - Vega_USB[0][1] &&
+       USB_Z + USB_Win[0]/2 > Vega_Z_Mid - Vega_USB[0][0], "USB window narrower than the receptacle");
+// The +u side is backed by Mast_Tabs by construction; the verifier checks
+// the backing on the mesh ("standoff footprint backed by the flange").
+for(h=Vega_Holes)
+    assert(Vega_Hole_U(h)-Vega_Standoff_D/2 >= Mast_U0 &&
+           Vega_Hole_Z(h)-Vega_Standoff_D/2 >= Roof_Z0+Roof_T &&
+           Vega_Hole_Z(h)+Vega_Standoff_D/2 <= Mast_Top_Z,
+           str("Vega standoff at ", h, " overhangs the mast flange"));
 // Cells: the sleeve bore stays outside the cradle walls, the wall arcs stay
 // inside the walls' thickness (never in a servo cradle), and the bore ends
 // inside the quadrant screw boss's tip relief.
@@ -454,6 +490,18 @@ echo(str("CANARD_PARAMS ", Canard_Root_C, " ", Canard_Tip_C, " ", Canard_Span, "
 echo(str("CANARD_CHECK ", CN_Inner_R(Cas_Floor_Z+Cas_Boss_D)-Cas_Clear, " ", Cas_Screw_Z, " ",
          Sh_Joint_Z, " ", Sh_Spigot_R, " ", Insert_Pocket_L, " ", Cas_Floor_Z, " ", Cas_Top_Z, " ",
          Index_Key_A, " ", Index_Key_H, " ", Canard_A0, " ", Plug_X0));
+
+// Plug screws: clamp flag, length, seat (head top) x range over the holes,
+// hub/arm base and the top of the tapped part (clamp hub top, or arm top).
+echo(str("CANARD_PLUG_SCREWS ", Horn_Type=="clamp" ? 1 : 0, " ", Plug_Screw_L, " ",
+         min([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ", max([for(r=Horn_Holes_R) Plug_Seat_X(r)]), " ",
+         Plug_X0, " ", Plug_X0 + (Horn_Type=="clamp" ? Horn_Hub_H : Horn_Arm_T)));
+
+function Join(v, i=0) = i >= len(v) ? "" : str(v[i], " ", Join(v, i+1));
+echo(str("CANARD_PLUG_HOLES ", Join(Horn_Holes_R)));
+// Mast flange front face (n), thickness, standoff Ø, Vega holes (STEP x y).
+echo(str("CANARD_MAST ", Mast_Front_N, " ", Mast_T, " ", Vega_Standoff_D, " ",
+         Join([for(h=Vega_Holes) each h])));
 
 echo(str("CANARD_LUGS ", Servo_Bottom_R+Servo_Lug_Hole_X, " ", Canard_Z+Lug_Hole_Zs()[0], " ",
          Canard_Z+Lug_Hole_Zs()[1], " ", Servo_W/2+Cas_Clear+Cas_Wall-Lug_Nut_T-0.4));
@@ -548,14 +596,24 @@ module Canard_Blade(){
             translate([-200,0]) square([400,Canard_Skin_R+Canard_Root_Gap+3]);
         }
 }
+// The plug face is the skin of revolution (radius Canard_Skin_R); it is
+// lowest under the head's outer rim, |r| + Plug_Screw_Head_D/2 off the plug
+// axis. The head seat starts there, so no part of the head stands proud.
+function Plug_Seat_X(r) = sqrt(Canard_Skin_R*Canard_Skin_R - pow(abs(r)+Plug_Screw_Head_D/2,2));
 module Canard_Plug_Screw_Cuts(x0, x1){
     // two M2 countersunk screws into the tapped arm
+    // head seats start at Plug_Seat_X(r) (see above)
     for(r=Horn_Holes_R) translate([0,r,0]){
         translate([x0-Overlap,0,0]) rotate([0,90,0])
             cylinder(d=Plug_Screw_D,h=x1-x0+2*Overlap,$fn=24);
-        translate([x1+Overlap,0,0]) rotate([0,-90,0])
+        translate([Plug_Seat_X(r)+Overlap,0,0]) rotate([0,-90,0])
             cylinder(d1=Plug_Screw_Head_D+2*Overlap,d2=Plug_Screw_D,
                      h=(Plug_Screw_Head_D-Plug_Screw_D)/2+Overlap,$fn=36);
+        // clear the plug face above the seat, or a lip caps the head; the
+        // skin is widest at the head's lower edge (the ogive narrows upward)
+        translate([Plug_Seat_X(r),0,0]) rotate([0,90,0])
+            cylinder(d=Plug_Screw_Head_D+2*Overlap,
+                     h=CN_Outer_R(Canard_Z-Plug_Screw_Head_D/2)-Plug_Seat_X(r)+Overlap,$fn=36);
     }
 }
 module Canard_Plug(){
@@ -919,6 +977,11 @@ module Mast_Local(){   // local u/n frame, Z absolute
     d  = LiPo_Out[1];                    // channel depth behind the flange
     // flange behind the board
     translate([Mast_U0, yf-Mast_T, zf]) cube([fw, Mast_T, Mast_Top_Z-zf]);
+    // tabs under the standoffs that overhang the +u edge
+    for(t=Mast_Tabs) hull(){
+        translate([Mast_U1-Overlap, yf-Mast_T, t[1]]) cube([t[0]-Mast_U1+Overlap, Mast_T, t[2]-t[1]]);
+        translate([Mast_U1-Overlap, yf-Mast_T, t[1]-(t[0]-Mast_U1)]) cube([Overlap, Mast_T, Overlap]);
+    }
     // two webs either side of the LiPo pocket: a channel section
     for(s=[-1,1]) translate([LiPo_U+s*(LiPo_Out[0]+Mast_T)/2-Mast_T/2, yf-Mast_T-d, zf])
         cube([Mast_T, d+Overlap, Mast_Top_Z-zf]);
@@ -988,7 +1051,7 @@ module Canard_Middle_Cuts(){
     for(k=[0:3]) Radial_At(Canard_A0+45+90*k, CN_Outer_R(Port_Z)+1, Port_Z)
         cylinder(d=Port_D,h=NC_Wall_T+6,$fn=24);
     // USB-C: the window sits on the connector's axis (parallel to -u)
-    Local1() translate([-60, Vega_N+1.15-USB_Win[1]/2, Vega_Z_Mid-10.4-USB_Win[0]/2])
+    Local1() translate([-60, Vega_N+1.15-USB_Win[1]/2, USB_Z-USB_Win[0]/2])
         cube([60-abs(Vega_U)-Vega_Board[1]/2-3, USB_Win[1], USB_Win[0]]);
 }
 // Part 06 (camera-bay floor): one potted pass for the servo supply
