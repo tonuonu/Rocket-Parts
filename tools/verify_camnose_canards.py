@@ -259,6 +259,10 @@ def main():
             for name, d, y0, y1, parts in (("bolt", 2.4, -1.0, y_far, (servos, cas)),
                                            ("driver", 4.5, -30.0, -1.2, (servos, cas, m["cells"])),
                                            ("nut path", 5.8, y_far + 2.45, 30.0,
+                                            (servos, cas, m["cells"])),
+                                           # M2.5x10 from the lug's near face
+                                           # (y=-1) ends at y=9, past the nut
+                                           ("M2.5x10 tip", 2.5, y_far + 2.0, 9.0,
                                             (servos, cas, m["cells"]))):
                 rod = trimesh.creation.cylinder(radius=d / 2, height=y1 - y0, sections=36)
                 rod.apply_transform(trimesh.transformations.rotation_matrix(-math.pi / 2, [1, 0, 0]))

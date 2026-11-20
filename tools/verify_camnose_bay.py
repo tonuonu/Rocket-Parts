@@ -23,9 +23,31 @@ import trimesh
 REPO = Path(__file__).resolve().parents[1]
 OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
 results = []
+# Set for the second pass over the printed canard parts 3 and 6: label
+# prefix, and the parts a check must read to be repeated in that pass.
+variant = {"prefix": "", "only": None, "m": None}
 
 
-def record(name, ok, value=None):
+class Touched(dict):
+    """Part meshes that remember which parts a check has read."""
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.used = set()
+
+    def __getitem__(self, k):
+        self.used.add(k)
+        return super().__getitem__(k)
+
+
+def record(name, ok, value=None, parts=None):
+    m = variant["m"]
+    if m is not None:
+        used, m.used = m.used, set()
+        if parts is not None:
+            used = set(parts)
+        if variant["only"] and not used & variant["only"]:
+            return
+    name = variant["prefix"] + name
     results.append({"check": name, "passed": bool(ok), "value": value})
     print(("PASS " if ok else "FAIL ") + name +
           ("  " + str(value) if value is not None else ""), flush=True)
@@ -85,11 +107,46 @@ def main():
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     m = {p: trimesh.load_mesh(args.mesh_dir / ("part%d.stl" % p)) for p in range(8)}
-    for p, mesh in m.items():
-        record("part %d is watertight" % p, mesh.is_watertight)
-        record("part %d has outward winding" % p, mesh.is_volume)
+    bay_checks(m, canards=False)
+    # The printed canard versions of 3 (static ports, USB window) and 6
+    # (Ø4 potted pass): repeat every check that reads part 3 or 6.
+    canard_files = {p: args.mesh_dir / ("part%d_canards.stl" % p) for p in (3, 6)}
+    if all(f.exists() for f in canard_files.values()):
+        mc = Touched(m)
+        for p, f in canard_files.items():
+            dict.__setitem__(mc, p, trimesh.load_mesh(f))
+        variant.update(prefix="[canards] ", only={3, 6}, m=mc)
+        bay_checks(mc, canards=True)
+        variant.update(prefix="", only=None, m=None)
+    else:
+        record("canard renders of parts 3 and 6 present", False,
+               [str(f) for f in canard_files.values() if not f.exists()])
+    failed=sum(not r["passed"] for r in results)
+    if args.report:
+        sources=["PeregrineCamNose.scad","PeregrineCamBay.scad","PeregrineCamCanards.scad","NoseCone.scad"]
+        report={
+            "scope":"Default CAD geometry only; no physical or flight qualification",
+            "source_sha256":{name:hashlib.sha256((REPO/name).read_bytes()).hexdigest()
+                             for name in sources},
+            "mesh_sha256":{f.name:hashlib.sha256(f.read_bytes()).hexdigest()
+                           for f in sorted(args.mesh_dir.glob("part[0-7]*.stl"))},
+            "packages":{name:importlib.metadata.version(name)
+                        for name in ["numpy","trimesh","manifold3d","networkx"]},
+            "checks":results,"failed":failed,
+        }
+        args.report.write_text(json.dumps(report,indent=2)+"\n")
+    print("\n%d/%d checks passed" % (len(results)-failed,len(results)))
+    return bool(failed)
+
+
+def bay_checks(m, canards):
+    parts = (3, 6) if canards else range(8)
+    for p in parts:
+        mesh = m[p]
+        record("part %d is watertight" % p, mesh.is_watertight, parts={p})
+        record("part %d has outward winding" % p, mesh.is_volume, parts={p})
         bodies = len(mesh.split())
-        record("part %d is one connected solid" % p, bodies == 1, bodies)
+        record("part %d is one connected solid" % p, bodies == 1, bodies, parts={p})
 
     for a, b in itertools.combinations([3, 4, 6, 7], 2):
         clear("parts %d/%d do not intersect" % (a, b), m[a], m[b])
@@ -254,41 +311,30 @@ def main():
            area[ledge].sum()<1,round(float(area[ledge].sum()),2))
 
     barrier=cylinder(45,3.9,[0,0,270.05])
-    record("floor has a continuous solid centre",
-           intersection_volume(barrier,m[6]) > barrier.volume*0.999)
+    label="floor has a continuous solid centre"
+    if canards:
+        # Named exemption: the Ø4 potted camera-power pass at (0,18).
+        # Any other hole in the floor still fails this check.
+        barrier=trimesh.boolean.difference([barrier,cylinder(4.1,5,[0,18,269.5])],engine="manifold")
+        label+=" (except the Ø4 pass at 0,18)"
+    record(label, intersection_volume(barrier,m[6]) > barrier.volume*0.999)
 
     # Top shell translates upward. Test densely over the entire overlap
     # with the installed bay, including the internal switch envelope.
-    for label, moving, fixed in [
-        ("shell",m[4],[m[3],m[6],m[7],*cells,converter]),
-        ("switch",switch,[m[6],m[7],*cells,converter]),
+    for label, moving, fixed, used in [
+        ("shell",m[4],[m[3],m[6],m[7],*cells,converter],{3,4,6,7}),
+        ("switch",switch,[m[6],m[7],*cells,converter],{6,7}),
     ]:
         worst=0.0
         for dz in np.arange(0,80.1,1):
             step=moved(moving,dz)
             for target in fixed:
                 worst=max(worst,intersection_volume(step,target))
-        record(label+" removal path (1 mm sampling)",worst<0.001,round(worst,6))
+        record(label+" removal path (1 mm sampling)",worst<0.001,round(worst,6),parts=used)
 
     # Prove the collision test can reject an oversized converter.
     too_wide=box([64,26,13],[-32,-13,350])
     record("oversized converter is rejected",intersection_volume(too_wide,m[4])>1)
-    failed=sum(not r["passed"] for r in results)
-    if args.report:
-        sources=["PeregrineCamNose.scad","PeregrineCamBay.scad","NoseCone.scad"]
-        report={
-            "scope":"Default CAD geometry only; no physical or flight qualification",
-            "source_sha256":{name:hashlib.sha256((REPO/name).read_bytes()).hexdigest()
-                             for name in sources},
-            "mesh_sha256":{f"part{p}.stl":hashlib.sha256((args.mesh_dir/f"part{p}.stl").read_bytes()).hexdigest()
-                           for p in m},
-            "packages":{name:importlib.metadata.version(name)
-                        for name in ["numpy","trimesh","manifold3d","networkx"]},
-            "checks":results,"failed":failed,
-        }
-        args.report.write_text(json.dumps(report,indent=2)+"\n")
-    print("\n%d/%d checks passed" % (len(results)-failed,len(results)))
-    return bool(failed)
 
 
 if __name__ == "__main__":

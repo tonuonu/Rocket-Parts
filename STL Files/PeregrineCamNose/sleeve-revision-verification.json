@@ -1,18 +1,23 @@
 {
   "scope": "Default CAD geometry only; no physical or flight qualification",
   "source_sha256": {
-    "PeregrineCamNose.scad": "bb7813d21dac237a7fb73ffd0836124f99088e727779bbc17ef99a74a01e32c5",
+    "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
     "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4",
+    "PeregrineCamCanards.scad": "5f9d223cb65ea690bb8285b3ef9120b7383f3d9785cfd3b3738cbf2b3dd693b5",
     "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
   },
   "mesh_sha256": {
     "part0.stl": "a75228a09d161c2377e203cb02ba33d06b72923284a9fbb16b646839fac44ed2",
     "part1.stl": "3a57efdaa7c111962d33c964a968d8a9b6a828570f7c8918887b3a9ac367c3c9",
+    "part1_canards.stl": "0603563e3e0f0991e3d175e6e5102767375bdb4bc30d8bd18500da726ffcf8a9",
     "part2.stl": "16e3c8b977923b594684724e02d181eee721c59e4a0fede2006a49afb6805736",
+    "part2_canards.stl": "f05a06627149482050d2ced3ca43e95eee1c57c0993ba8cf9e977d0baeb12250",
     "part3.stl": "72a344b441796a77f9f4852b08d2d67036e89074e2f13e4ea357016eefd35054",
+    "part3_canards.stl": "c5688f12846e382d13513b54e715dfaad3465c007ff66558eaa6f8bee4e66e6a",
     "part4.stl": "e18aeb6aafa614838fbb8671152cf91b69d127b1e63033995084a4b0d90cbf10",
     "part5.stl": "484155828282cc59a54d6bd410cf310b465d37e1096e984308ba8efeded205dc",
     "part6.stl": "9a874eace401ee8d9e50e2ade81a9fadf739698ef9bf525ac7fffb94dbe963bd",
+    "part6_canards.stl": "2d16ac579a2e3dbe87c654985760cd8f29b25e0cdf85a2535119899dbacd4d58",
     "part7.stl": "958a3cd6926a075f82f220e695b00daef70d54baaa4c32c974be5de437002e16"
   },
   "packages": {
@@ -651,6 +656,281 @@
       "check": "oversized converter is rejected",
       "passed": true,
       "value": null
+    },
+    {
+      "check": "[canards] part 3 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] part 3 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] part 3 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "[canards] part 6 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] part 6 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] part 6 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "[canards] parts 3/4 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] parts 3/6 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] parts 3/7 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] parts 4/6 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] parts 6/7 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 0 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 0 clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 0 lower tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 0 upper tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 1 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 1 clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 1 lower tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] cell 1 upper tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] converter clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] converter clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor screw 30 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 30 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 30 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] floor screw 30 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor screw 150 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 150 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 150 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] floor screw 150 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor screw 270 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 270 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor insert 270 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] floor screw 270 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] tray insert pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] tray screw tip relief",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] tray insert pocket is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] tray boss is joined to the sleeve wall",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] tray insert pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] tray screw tip relief",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] tray insert pocket is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] tray boss is joined to the sleeve wall",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] service screw 90 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] service insert 90 pocket >= L+1",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] service screw 210 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] service insert 210 pocket >= L+1",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] service screw 330 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] service insert 330 pocket >= L+1",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] switch body/nut clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] continuous carrier insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] insertion sweep encloses the actual carrier",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] uncut floor is rejected at joint bosses",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] service insert bosses have no floating underside",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] floor has a continuous solid centre (except the \u00d84 pass at 0,18)",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "[canards] shell removal path (1 mm sampling)",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "[canards] switch removal path (1 mm sampling)",
+      "passed": true,
+      "value": 0.0
     }
   ],
   "failed": 0

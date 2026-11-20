@@ -232,8 +232,9 @@ Bulk_Add_T   = 2.5;      // extra bulkhead thickness on the inside
 Facing_T     = 1.5;      // G10 1.5 (or plywood 3: set 3 and re-check)
 // Seat = the flat outer face of the bulkhead itself. A recess or a lip would
 // put a 95 mm bridge on the bed face (the shoulder prints bulkhead-down), so
-// the disc is located by the two charge-well bolts and the four terminal
-// posts that pass through it, and bonded with high-temperature RTV.
+// the disc is located by the two charge-well bolts (Ø3.4 holes) and bonded
+// with high-temperature RTV. The four terminal posts pass through Ø6.2
+// insulating clearance holes and do not locate it.
 Facing_D     = Shoulder_OD - 2*(Shoulder_Entry_Chamfer_R + 1);
 Charge_Dia   = 14;       // ChargeHolder.scad well
 Charge_CC    = 3;
@@ -448,7 +449,7 @@ echo(str("CANARD: pivot Z=", Canard_Z, " LE Z=", Canard_LE_Z, " TE Z=", Canard_T
 echo(str("CANARD_PARAMS ", Canard_Root_C, " ", Canard_Tip_C, " ", Canard_Span, " ",
          Canard_LE_Sweep, " ", Canard_Z, " ", Canard_LE_Z, " ", Canard_Pivot_Fwd, " ",
          Canard_Stop, " ", Canard_Max_Cmd, " ", Canard_Skin_R, " ",
-         Servo_Bottom_R+Servo_Spline_Top));
+         Servo_Bottom_R+Servo_Spline_Top, " ", Canard_Root_Gap));
 
 echo(str("CANARD_CHECK ", CN_Inner_R(Cas_Floor_Z+Cas_Boss_D)-Cas_Clear, " ", Cas_Screw_Z, " ",
          Sh_Joint_Z, " ", Sh_Spigot_R, " ", Insert_Pocket_L, " ", Cas_Floor_Z, " ", Cas_Top_Z, " ",
@@ -1010,11 +1011,16 @@ module CN_Facing_Disc_2D(){
             offset(r=1.5) square([16-3,4-3],center=true);
             translate([0,-s*(2+Ribbon_Guide_L)/2]) square([Ribbon_Guide_W,2+Ribbon_Guide_L],center=true);
         }
-        for(p=Term_XY) translate(p) circle(d=Term_D+3,$fn=24);   // insulating clearance
+        // insulating clearance round the posts: they do not locate the disc
+        for(p=Term_XY) translate(p) circle(d=Term_D+3,$fn=24);
+        // the two charge-well bolts locate the disc
         for(s=[-1,1]) translate([Charge_XY[0],Charge_XY[1]+s*Charge_Bolt_Sp/2]) circle(d=Bay_M3_Clearance,$fn=24);
     }
 }
-module CN_Charge_Well(){ rotate([0,0,90]) ChargeHolder(CH_BoltSp=0, Dia=Charge_Dia, CC=Charge_CC); }
+// ChargeHolder has its bolts on X and the e-match groove on +Y. Turned -90:
+// bolts on Y (as the bulkhead holes), groove on +X, toward the terminal
+// posts at x = +20..28. (+90 pointed it at the rim.)
+module CN_Charge_Well(){ rotate([0,0,-90]) ChargeHolder(CH_BoltSp=0, Dia=Charge_Dia, CC=Charge_CC); }
 
 // ============================================
 // ASSEMBLY VIEW (part 11) and check envelopes

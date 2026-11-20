@@ -4,10 +4,10 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
-  "PeregrineCamCanards.scad": "df74735d14616a58a211b7f10d105703fcc19b6a70d8a338497f6903dad21ea5",
+  "PeregrineCamCanards.scad": "5f9d223cb65ea690bb8285b3ef9120b7383f3d9785cfd3b3738cbf2b3dd693b5",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
- "passed": 276,
+ "passed": 300,
  "failed": 0,
  "results": [
   {
@@ -724,6 +724,21 @@
    "value": 0.0
   },
   {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "servo 0 lug at z=+80.0: bolt line clears the servos",
    "passed": true,
    "value": 0.0
@@ -760,6 +775,21 @@
   },
   {
    "check": "servo 0 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the cells",
    "passed": true,
    "value": 0.0
   },
@@ -804,6 +834,21 @@
    "value": 0.0
   },
   {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "servo 1 lug at z=+80.0: bolt line clears the servos",
    "passed": true,
    "value": 0.0
@@ -840,6 +885,21 @@
   },
   {
    "check": "servo 1 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the cells",
    "passed": true,
    "value": 0.0
   },
@@ -884,6 +944,21 @@
    "value": 0.0
   },
   {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "servo 2 lug at z=+80.0: bolt line clears the servos",
    "passed": true,
    "value": 0.0
@@ -920,6 +995,21 @@
   },
   {
    "check": "servo 2 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the cells",
    "passed": true,
    "value": 0.0
   },
@@ -964,6 +1054,21 @@
    "value": 0.0
   },
   {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
    "check": "servo 3 lug at z=+80.0: bolt line clears the servos",
    "passed": true,
    "value": 0.0
@@ -1000,6 +1105,21 @@
   },
   {
    "check": "servo 3 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the cells",
    "passed": true,
    "value": 0.0
   },

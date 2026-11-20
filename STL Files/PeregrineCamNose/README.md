@@ -163,9 +163,9 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 
 - **Joint:** 12 × M3×8 **button-head** screws at 15° + 30°·k in plain Ø3.4 holes, into ruthex M3×5.7 in gusseted bosses. A countersink would leave ~0.8 mm of the 2.2 mm skirt in bearing. **Pull-test the coupon (parts 16 + 17) to ≥ 3.0 kN before flying.**
 - **Bulkhead:** 6.5 mm thick. The ribbon loop through the two T-slots is **permanent**: pot the slots and stems with high-temperature RTV.
-- **Charge well:** library `ChargeHolder` (Ø14, 3 cc), on 2 × M3 through-bolts.
+- **Charge well:** library `ChargeHolder` (Ø14, 3 cc), on 2 × M3 through-bolts. Mount it with the e-match groove facing +X, toward the terminal posts. The printed 15 is the same part (its bolt pattern is symmetric): turn it so the groove faces the posts.
 - **Terminals:** 4 × M3 brass posts (main pair, drogue pair), RTV-sealed.
-- **Facing disc:** G10 1.5 mm (or 3 mm plywood), Ø94.7. Cutting template: part 18, `Canards/FacingDisc.svg`. It is located by the two well bolts and four posts and bonded with high-temperature RTV.
+- **Facing disc:** G10 1.5 mm (or 3 mm plywood), Ø94.7. Cutting template: part 18, `Canards/FacingDisc.svg`. It is located by the two charge-well bolts (Ø3.4 holes) and bonded with high-temperature RTV. The four posts pass through Ø6.2 insulating clearance holes and do not locate it.
   - There is no recess or lip. The shoulder prints bulkhead-down, so either would leave a 95 mm bridge on the bed face.
 
 ### Numbers
@@ -195,9 +195,9 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 |---|---:|---:|---|
 | Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 890 | 890 | CAD: solid PETG 1.27 g/cm³ |
 | Cells INR18650-25R (45 g each), Vega (25 g), 4× HV6160 (30.7 g) | 238 (2 cells) | 328 (4 cells) | spec |
-| Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 193 | 191 | estimated |
-| **Total** | **1321** | **1408** | |
-| **Balance point, forward of the forward body-tube rim** | **123 mm** | **118 mm** | |
+| Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 194 | 191 | estimated |
+| **Total** | **1321** | **1409** | |
+| **Balance point, forward of the forward body-tube rim** | **123 mm** | **117 mm** | |
 | Balance point, aft of the nose tip (nose length 483 mm) | 360 mm | 366 mm | |
 
 Before the cells moved (two cells in the camera bay): 1266 g, 146 mm. The
@@ -223,7 +223,7 @@ becomes 586 mm instead of 574.
 | 12 servo-switch saddle (`Canards/ServoSwitchSaddle.stl`) | 12 | Flat back down. Epoxied inside 02 at 30°, Z 106. |
 | 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep (2026-11-20). |
 | 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Printed: ream the roof pass to Ø11. |
-| 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. |
+| 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. Fit with the groove toward the posts (+X). |
 | 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
 | 18 facing disc template (`Canards/FacingDisc.svg`) | 18 | Cut from G10. |
 | 19 cell keeper (`Canards/CellKeeper.stl`) | 19 | Plate down, no supports. |
@@ -234,7 +234,7 @@ becomes 586 mm instead of 574.
 
 0. **Servo switch, before the mast unit** (its nut is in the Vega bay, above the roof): drill 02, epoxy the saddle (12) inside, fit the switch and its leads.
 1. **Mast unit:** fit the Vega, the LiPo (if flown) and the capacitor. Hang the servo-extension, power, pyro and camera leads down through the roof pass (reamed Ø11), including both packs' harness leads (servo pack to the servo switch, FC pack to the Vega switch). Slide the unit up and fit 4 × M3×10 countersunk (slice 02 has countersinks there).
-2. **Cassette:** melt the four keeper inserts into the floor bosses from below and thread the lacing cords through the tie holes. Fit the servos with their lugs, M2.5 bolts and nuts. Run the pack harness leads down the central channel and out through the floor hole. Connect the servo leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
+2. **Cassette:** melt the four keeper inserts into the floor bosses from below and thread the lacing cords through the tie holes. Fit the servos with their lugs, 8 × M2.5×10 bolts and nuts (an M2.5×8 ends 0.4 mm short of the nut's far face; the ×10 tip stays 11.6 mm from the cells). Run the pack harness leads down the central channel and out through the floor hole. Connect the servo leads below the roof, slide the cassette up and fit 4 × M3×8 countersunk.
 3. **Cells, from below:** lay a C-ring pad on each cell's top rim, gap toward the slot. Push each wired cell up through its floor hole, top lead in the slot and out through the notch, until the pad meets the roof. Hold the cells (tape) until the keeper is on.
 4. **Keeper:** make the series links, fuses and pack terminals under the floor, onto the harness leads. Tie the pack leads with the lacing cords now (the keeper plate covers the tie holes once fitted). Push the keeper up so the seat rings take the cells' bottom rims, then fit 4 × M3×20 countersunk.
 5. **Canards, from outside:** fit the hub on the spline, then the centre screw, then the plug with 2 × M2×8. Set the neutral offset in the firmware trim.
@@ -257,7 +257,7 @@ becomes 586 mm instead of 574.
 - **Fits:** printed fits and insertion.
 - **Aerodynamics:** canard-wake/fin interaction.
 
-Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (276/276 on 2026-11-19; rerun 276/276 on 2026-11-20 after the bay fix). Besides the earlier checks, it covers:
+Checks: `tools/verify_camnose_canards.py`, report in `canard-verification.json` (300/300 on 2026-11-20, including the M2.5×10 lug-bolt tips). Besides the earlier checks, it covers:
 - the four cell envelopes with their top pads, the keeper and its screws against the shoulder, 02, 09, 14, the Vega, the servos, the arms and the canards at 0, ±10.5 and ±11.5°;
 - the keeper above the shoulder's boss tops (Z 13.5 against Z 12);
 - the keeper inserts' 1.6 mm walls and 1.2 mm cap;
@@ -302,7 +302,8 @@ Two faults in the 2026-11-08 parts, found in review before assembly:
 | 06 | Reprint, as the 2026-11-08 revision says. Unchanged since. |
 | 07 | Reprint from the current `ConverterTray.stl`, even if it was already printed from the 2026-11-08 files. |
 
-CAD checks: `sleeve-revision-verification.json` (125/125). It now also
+CAD checks: `sleeve-revision-verification.json` (125/125 on the bay branch;
+180/180 here, where the canard 03 and 06 are checked as well). It now also
 checks that the bath is closed below its rim, that the tray heads bear on
 solid columns, and the service screws' seat-to-edge distance (1.93 mm) and
 head insertion path. On the 2026-11-08 meshes the bath check, the bearing
@@ -501,6 +502,7 @@ tunnels after printing.
 | M3×8 button-head screws | 3 | Carrier-floor screws |
 | M3×12 button-head screws (ISO 7380, head 5.7 mm) | 2 | Converter tray, on the screw columns |
 | M3×8 **90° countersunk** screws, head ≤6.2 mm | 3 | Shell side screws, heads flush |
+| M2.5×10 screws + M2.5 hex nuts | 8 each | Canard servo lugs in the cassette (09); nuts in the far-face traps |
 | Camera's existing M3 screws | 3 | Match actual camera base; ≤5.7 mm insert engagement |
 | Schurter 0033.4513 + 0098.0043 nut | 1 each | Switch; nut may be a separate order |
 | M3 countersunk screws, nuts and terminations | As wired | Three unassigned charging-contact seats |
@@ -619,7 +621,12 @@ The first check renders meshes and measures dimensions, topology, overlaps
 and camera holes. The second checks connected/watertight solids, component,
 tab and hardware intersections, blind insert seats, a continuous carrier
 insertion envelope and shell/switch removal at 1 mm intervals. It must reject
-an oversized converter and an unscalloped floor. `verification.json` records
+an oversized converter and an unscalloped floor. Both run twice: on the
+canards-off parts and, marked `[canards]`, on the printed canard versions
+of 01, 02, 03 and 06. Checks that legitimately differ for those parts are
+listed by name, with the reason, in `CANARD_EXEMPT` (verify_camnose.py)
+and in the floor check's exemption of the Ø4 pass at (0, 18); a second hole
+in the canard floor fails the run. `verification.json` records
 the 2026-11-02 bay baseline; `shoulder-verification.json` records the
 2026-11-03 chamfer checks and slicer comparison before the diameter change.
 `tube-fit-verification.json` records the subsequently rejected Ø99.7 trial's

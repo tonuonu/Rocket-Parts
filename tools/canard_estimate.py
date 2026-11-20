@@ -79,7 +79,7 @@ def scad_params(defines=()):
             if "CANARD_PARAMS" in line:
                 v = [float(x) for x in line.split("CANARD_PARAMS", 1)[1].strip().strip('"').split()]
                 keys = ["cr", "ct", "s", "xr", "z_pivot", "z_le", "fwd", "stop", "cmd", "skin_r",
-                        "spline_tip_r"]
+                        "spline_tip_r", "root_gap"]
                 return dict(zip(keys, v))
     raise RuntimeError("no CANARD_PARAMS echo")
 
@@ -194,7 +194,7 @@ def main():
     ar = (2 * s) ** 2 / (2 * S)
     cla = 2 * math.pi * ar / (2 + math.sqrt(4 + (ar * beta) ** 2))
     e = (p["fwd"] + CP_UNCERTAINTY) * mac
-    arm = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct)) - p["spline_tip_r"] / 1000   # panel CP to spline tip
+    arm = R + p["root_gap"] / 1000 + s * (cr + 2 * ct) / (3 * (cr + ct)) - p["spline_tip_r"] / 1000   # panel CP to spline tip
     print("Hinge moment at %.0f m/s, q = %.1f kPa, panel CL_alpha %.2f /rad (AR %.2f):"
           % (v, q / 1e3, cla, ar))
     for dd, lab in ((p["cmd"], "commanded max"), (p["stop"], "at the stop"),
@@ -209,7 +209,7 @@ def main():
           % (SERVO, SERVO_KGCM, 100 * worst_kgcm / SERVO_KGCM))
     print()
     # roll, canard-alone
-    yc = R + 0.0008 + s * (cr + 2 * ct) / (3 * (cr + ct))
+    yc = R + p["root_gap"] / 1000 + s * (cr + 2 * ct) / (3 * (cr + ct))
     print("Roll (canard-alone; fin-wake interaction not modelled), I_roll %.4f kg m2:" % I_ROLL)
     for vv in (30, 60, 100, 173.2):
         qq = 0.5 * RHO * vv * vv
@@ -225,7 +225,7 @@ def main():
         print("  all four stuck at the stop in the roll sense, steady roll at %.0f m/s: %.1f rev/s"
               % (vv, force / damp * vv / (2 * math.pi)))
     print()
-    tip = R + 0.0008 + s
+    tip = R + p["root_gap"] / 1000 + s
     print("Rail: canard tip radius %.1f mm. Clocked 45 deg off the rail line the tip is %.1f mm"
           " to the side of the rail centre line (1010 rail half-width 12.7 mm)."
           % (tip * 1e3, tip * math.sin(math.radians(45)) * 1e3))
