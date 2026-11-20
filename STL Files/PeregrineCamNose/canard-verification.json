@@ -3,9 +3,9 @@
  "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
  "trimesh": "4.12.2",
  "scad_sha256": {
-  "PeregrineCamNose.scad": "b2854223bdf218780eebb83a1953325b709eec088f1e890f975de979aae00215",
+  "PeregrineCamNose.scad": "bb7813d21dac237a7fb73ffd0836124f99088e727779bbc17ef99a74a01e32c5",
   "PeregrineCamCanards.scad": "b61f7cc68c790e8b805c3774d2e754128e6ca40ccf1e11a77dabb1f5da813b3c",
-  "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6"
+  "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
  "passed": 276,
  "failed": 0,
@@ -35,8 +35,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     16542,
-     16542
+     16650,
+     16650
     ]
    }
   },
@@ -55,8 +55,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     3038,
-     3038
+     2218,
+     2218
     ]
    }
   },
@@ -135,8 +135,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     16026,
-     16026
+     16134,
+     16134
     ]
    }
   },
@@ -155,8 +155,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     3038,
-     3038
+     2218,
+     2218
     ]
    }
   },
@@ -373,7 +373,7 @@
   {
    "check": "part3_off matches committed SliceMiddle.stl (volume)",
    "passed": true,
-   "value": 0.0153
+   "value": 0.0139
   },
   {
    "check": "part3_off matches committed SliceMiddle.stl (bounds)",
@@ -1484,7 +1484,7 @@
    "value": {
     "part1": 129.877,
     "part2": 103.996,
-    "part3": 148.895,
+    "part3": 148.935,
     "part6": 37.496,
     "part9": 75.628,
     "part10": 6.885,
@@ -1494,7 +1494,7 @@
     "part19": 12.156,
     "part1_off": 103.672,
     "part2_off": 106.23,
-    "part3_off": 149.136,
+    "part3_off": 149.175,
     "part6_off": 37.546
    }
   }

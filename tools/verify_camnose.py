@@ -7,9 +7,11 @@ legacy adapter, not an additional part of that assembly. Run the companion
 verify_camnose_bay.py for solid intersections, hardware and service access.
 
 The camera itself no longer lives in this file -- it lives in a separate,
-already-finished CAD nosecone that bolts onto the adapter (see CN_Adapter()
-in the .scad). That CAD nosecone's own mesh is not part of this branch, so
-there is nothing here to check the camera's fit against.
+already-finished CAD nosecone that bolts onto the top slice's integral
+flange (Bay_Camera_Flange() in PeregrineCamBay.scad; the separate
+CN_Adapter() is only for the legacy Bay_Enabled=false shell). That CAD
+nosecone's own mesh is not part of this branch, so there is nothing here
+to check the camera's fit against.
 """
 import argparse, math, os, subprocess, sys, tempfile
 
@@ -264,7 +266,9 @@ def main(argv):
     if 2 in m and 3 in m:
         checks += [("joint 1 overlap", m[2]["zmax"] - m[3]["zmin"], 7.0, 0.2)]
     if 3 in m and 4 in m:
-        checks += [("joint 2 overlap", m[3]["zmax"] - m[4]["zmin"], 7.0, 0.2)]
+        # The 7 mm lap plus the three service-insert bosses, which stand
+        # 2 mm above it to hold their pockets 5 mm above 04's edge.
+        checks += [("joint 2 overlap incl. service bosses", m[3]["zmax"] - m[4]["zmin"], 9.0, 0.2)]
     if 1 in m:
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
                    ("shoulder body dia", m[1]["dmax"], 98.7, 0.02),

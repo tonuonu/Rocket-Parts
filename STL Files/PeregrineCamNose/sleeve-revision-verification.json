@@ -1,24 +1,24 @@
 {
   "scope": "Default CAD geometry only; no physical or flight qualification",
   "source_sha256": {
-    "PeregrineCamNose.scad": "1f776fd400facae9c14047a39cf5467259d13fe0ee0371e54e4ce92b806fa342",
-    "PeregrineCamBay.scad": "f2fe9cd2338741f3f05c8d1b4b33ee83df647343f1d37899a9c671b5a9d42bc6",
+    "PeregrineCamNose.scad": "bb7813d21dac237a7fb73ffd0836124f99088e727779bbc17ef99a74a01e32c5",
+    "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4",
     "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
   },
   "mesh_sha256": {
     "part0.stl": "a75228a09d161c2377e203cb02ba33d06b72923284a9fbb16b646839fac44ed2",
     "part1.stl": "3a57efdaa7c111962d33c964a968d8a9b6a828570f7c8918887b3a9ac367c3c9",
     "part2.stl": "16e3c8b977923b594684724e02d181eee721c59e4a0fede2006a49afb6805736",
-    "part3.stl": "e5dcf8232f12f261bb854b4a817fc25a7aa6024e957f135cf7c02d6bea2c7b4a",
-    "part4.stl": "687eb469f1d27c1b3a3b2311d891e7fd3db51760523a14fb940482b7d9bf1b95",
+    "part3.stl": "72a344b441796a77f9f4852b08d2d67036e89074e2f13e4ea357016eefd35054",
+    "part4.stl": "e18aeb6aafa614838fbb8671152cf91b69d127b1e63033995084a4b0d90cbf10",
     "part5.stl": "484155828282cc59a54d6bd410cf310b465d37e1096e984308ba8efeded205dc",
     "part6.stl": "9a874eace401ee8d9e50e2ade81a9fadf739698ef9bf525ac7fffb94dbe963bd",
-    "part7.stl": "848f21cb5359d61379ef10a3dd53cdd3a0ceeeca50b364496083c5e7770d0d03"
+    "part7.stl": "958a3cd6926a075f82f220e695b00daef70d54baaa4c32c974be5de437002e16"
   },
   "packages": {
     "numpy": "2.4.6",
-    "trimesh": "5.2.0",
-    "manifold3d": "3.5.4",
+    "trimesh": "4.12.2",
+    "manifold3d": "3.5.5",
     "networkx": "3.6.1"
   },
   "checks": [
@@ -373,7 +373,17 @@
       "value": 0.0
     },
     {
+      "check": "tray screw head bears on solid column",
+      "passed": true,
+      "value": null
+    },
+    {
       "check": "tray screw head insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw driver path clears converter",
       "passed": true,
       "value": 0.0
     },
@@ -418,9 +428,29 @@
       "value": 0.0
     },
     {
+      "check": "tray screw head bears on solid column",
+      "passed": true,
+      "value": null
+    },
+    {
       "check": "tray screw head insertion path",
       "passed": true,
       "value": 0.0
+    },
+    {
+      "check": "tray screw driver path clears converter",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "converter bath is closed below its rim",
+      "passed": true,
+      "value": {
+        "bath_half_extent_xy": [
+          23.9,
+          13.4
+        ]
+      }
     },
     {
       "check": "service screw 90 clears part 3",
@@ -438,9 +468,19 @@
       "value": 0.0
     },
     {
+      "check": "service screw 90 head insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
       "check": "service insert 90 pocket >= L+1",
       "passed": true,
       "value": 0.0
+    },
+    {
+      "check": "service screw 90 seat >= 1.5 mm above part 04 lower edge",
+      "passed": true,
+      "value": 1.932
     },
     {
       "check": "service screw 210 clears part 3",
@@ -458,9 +498,19 @@
       "value": 0.0
     },
     {
+      "check": "service screw 210 head insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
       "check": "service insert 210 pocket >= L+1",
       "passed": true,
       "value": 0.0
+    },
+    {
+      "check": "service screw 210 seat >= 1.5 mm above part 04 lower edge",
+      "passed": true,
+      "value": 1.93
     },
     {
       "check": "service screw 330 clears part 3",
@@ -478,9 +528,19 @@
       "value": 0.0
     },
     {
+      "check": "service screw 330 head insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
       "check": "service insert 330 pocket >= L+1",
       "passed": true,
       "value": 0.0
+    },
+    {
+      "check": "service screw 330 seat >= 1.5 mm above part 04 lower edge",
+      "passed": true,
+      "value": 1.93
     },
     {
       "check": "switch body/nut clears shell",
