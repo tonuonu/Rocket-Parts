@@ -1,0 +1,1622 @@
+{
+ "tool": "verify_camnose_canards.py",
+ "openscad": "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD",
+ "trimesh": "4.12.2",
+ "scad_sha256": {
+  "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
+  "PeregrineCamCanards.scad": "5f9d223cb65ea690bb8285b3ef9120b7383f3d9785cfd3b3738cbf2b3dd693b5",
+  "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
+ },
+ "passed": 300,
+ "failed": 0,
+ "results": [
+  {
+   "check": "part1 triangles identical to committed Canards/Shoulder.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     14838,
+     14838
+    ]
+   }
+  },
+  {
+   "check": "part2 triangles identical to committed Canards/SliceBottom.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     28468,
+     28468
+    ]
+   }
+  },
+  {
+   "check": "part3 triangles identical to committed Canards/SliceMiddle.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     16650,
+     16650
+    ]
+   }
+  },
+  {
+   "check": "part6 triangles identical to committed Canards/BatteryCarrier.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     4532,
+     4532
+    ]
+   }
+  },
+  {
+   "check": "part7 triangles identical to committed ConverterTray.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     2218,
+     2218
+    ]
+   }
+  },
+  {
+   "check": "part10 triangles identical to committed Canards/Canard.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     2014,
+     2014
+    ]
+   }
+  },
+  {
+   "check": "part14 triangles identical to committed Canards/VegaMast.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     8366,
+     8366
+    ]
+   }
+  },
+  {
+   "check": "part15 triangles identical to committed Canards/ChargeWell.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     4356,
+     4356
+    ]
+   }
+  },
+  {
+   "check": "part16 triangles identical to committed Canards/Coupon_Slice.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     9160,
+     9160
+    ]
+   }
+  },
+  {
+   "check": "part17 triangles identical to committed Canards/Coupon_Shoulder.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     12112,
+     12112
+    ]
+   }
+  },
+  {
+   "check": "part1_off triangles identical to committed Shoulder.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     7608,
+     7608
+    ]
+   }
+  },
+  {
+   "check": "part2_off triangles identical to committed SliceBottom.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     15050,
+     15050
+    ]
+   }
+  },
+  {
+   "check": "part3_off triangles identical to committed SliceMiddle.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     16134,
+     16134
+    ]
+   }
+  },
+  {
+   "check": "part6_off triangles identical to committed BatteryCarrier.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     4432,
+     4432
+    ]
+   }
+  },
+  {
+   "check": "part7_off triangles identical to committed ConverterTray.stl",
+   "passed": true,
+   "value": {
+    "triangles": [
+     2218,
+     2218
+    ]
+   }
+  },
+  {
+   "check": "part1 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part1 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part1 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part2 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part2 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part2 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part3 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part3 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part3 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part6 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part6 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part6 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part9 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part9 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part9 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part10 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part10 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part10 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part12 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part12 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part12 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part14 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part14 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part14 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part15 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part15 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part15 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part16 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part16 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part16 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part17 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part17 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part17 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part19 is watertight",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part19 has outward winding",
+   "passed": true,
+   "value": null
+  },
+  {
+   "check": "part19 is one connected solid",
+   "passed": true,
+   "value": 1
+  },
+  {
+   "check": "part1_off matches committed Shoulder.stl (volume)",
+   "passed": true,
+   "value": 0.0007
+  },
+  {
+   "check": "part1_off matches committed Shoulder.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part1_off minus committed Shoulder.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part2_off matches committed SliceBottom.stl (volume)",
+   "passed": true,
+   "value": 0.0034
+  },
+  {
+   "check": "part2_off matches committed SliceBottom.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part2_off minus committed SliceBottom.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part3_off matches committed SliceMiddle.stl (volume)",
+   "passed": true,
+   "value": 0.0139
+  },
+  {
+   "check": "part3_off matches committed SliceMiddle.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part3_off minus committed SliceMiddle.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part6_off matches committed BatteryCarrier.stl (volume)",
+   "passed": true,
+   "value": 0.0009
+  },
+  {
+   "check": "part6_off matches committed BatteryCarrier.stl (bounds)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "part6_off minus committed BatteryCarrier.stl is empty",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear the canard slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "output arms clear the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "output arms clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards (neutral) clear the output arms (arm sits in the plug pocket)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards free at +10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards free at -10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "canards blocked by the stop at +11.5 deg",
+   "passed": true,
+   "value": 3.0407
+  },
+  {
+   "check": "canards blocked by the stop at -11.5 deg",
+   "passed": true,
+   "value": 0.7766
+  },
+  {
+   "check": "cassette with servos and cells slides out of the slice",
+   "passed": true,
+   "value": {
+    "worst_mm3": 0.0,
+    "at_drop_mm": null
+   }
+  },
+  {
+   "check": "cassette screw 0 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 0 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 1 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 1 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 2 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 2 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 3 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cassette screw 3 line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 0 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 0 line clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 1 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 1 line clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 2 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 2 line clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 3 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "roof screw 3 line clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 0 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 0 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 1 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 1 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 2 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 2 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 3 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 3 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 4 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 4 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 5 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 5 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 6 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 6 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 7 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 7 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 8 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 8 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 9 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 9 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 10 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 10 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 11 line clears the slice",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "shoulder screw 11 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 0 lug at z=+80.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 1 lug at z=+80.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 2 lug at z=+80.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+41.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: bolt line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: bolt line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: driver line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: driver line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: driver line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: nut path line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: nut path line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: nut path line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo 3 lug at z=+80.0: M2.5x10 tip line clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega clears slice 02",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega clears slice 03",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "mast unit clears slice 02",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "mast unit clears slice 03",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "mast unit clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "mast unit clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega switch body clears the Vega",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega switch body clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "Vega switch body clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "mast unit with the Vega slides in past both slices and both switches",
+   "passed": true,
+   "value": {
+    "worst_mm3": 0.0,
+    "at_drop_mm": null
+   }
+  },
+  {
+   "check": "static port 0 open",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "static port 1 open",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "static port 2 open",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "static port 3 open",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "USB-C axis passes the window",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo-power pass open in the camera-bay floor",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear slice 02",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the output arms",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the Vega",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the Vega switch",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the canards at +0.0 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the canards at +10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the canards at -10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the canards at +11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the canards at -11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cells clear the keeper (rims rest on the seat rings)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears slice 02",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the output arms",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the canards at +0.0 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the canards at +10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the canards at -10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the canards at +11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper clears the canards at -11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screws clear the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screws clear the keeper",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screws clear the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screws clear the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screws clear the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper plate >= 1 mm above the shoulder's insert bosses",
+   "passed": true,
+   "value": {
+    "keeper_bottom_z": 13.5,
+    "shoulder_top_inside_r46_z": 12.0
+   }
+  },
+  {
+   "check": "keeper insert 0: 1.6 mm wall and 1.2 mm cap are solid",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 0 line clears the cassette (runs in the pocket)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 0 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper insert 1: 1.6 mm wall and 1.2 mm cap are solid",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 1 line clears the cassette (runs in the pocket)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 1 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper insert 2: 1.6 mm wall and 1.2 mm cap are solid",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 2 line clears the cassette (runs in the pocket)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 2 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper insert 3: 1.6 mm wall and 1.2 mm cap are solid",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 3 line clears the cassette (runs in the pocket)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "keeper screw 3 line clears the shoulder",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the Vega",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the cassette",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the cells",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the output arms",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the Vega switch",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears drilled slice 02",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the saddle",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the canards at +0.0 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the canards at +10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the canards at -10.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the canards at +11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch clears the canards at -11.5 deg",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "saddle clears drilled slice 02 (epoxy gap)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "saddle clears the mast unit",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "saddle clears the Vega",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo switch stays inside the body-tube silhouette toward the rail",
+   "passed": true,
+   "value": {
+    "max_toward_rail_mm": 48.82,
+    "body_r": 50.75
+   }
+  },
+  {
+   "check": "\u00d811 roof-pass ream clears the mast unit within 15 mm above the roof plate",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "\u00d811 roof-pass ream clears the servo switch within 15 mm above the roof plate",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "\u00d811 roof-pass ream clears the mast unit below the roof",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "\u00d811 roof-pass ream clears the servo switch below the roof",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "index key protrudes into the tube wall",
+   "passed": true,
+   "value": {
+    "mm3": 25.23,
+    "angle": 105.0
+   }
+  },
+  {
+   "check": "index key at Index_Key_A",
+   "passed": true,
+   "value": {
+    "expected": 105.0,
+    "measured": 105.0
+   }
+  },
+  {
+   "check": "part1 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 324.1
+  },
+  {
+   "check": "part2 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 688.8
+  },
+  {
+   "check": "part9 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 505.2
+  },
+  {
+   "check": "part10 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 226.7
+  },
+  {
+   "check": "part12 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 41.6
+  },
+  {
+   "check": "part14 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 1440.3
+  },
+  {
+   "check": "part15 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 28.3
+  },
+  {
+   "check": "part19 overhang area mm2 (informational)",
+   "passed": true,
+   "value": 0.1
+  },
+  {
+   "check": "volumes cm3",
+   "passed": true,
+   "value": {
+    "part1": 129.877,
+    "part2": 103.996,
+    "part3": 148.935,
+    "part6": 37.496,
+    "part9": 75.628,
+    "part10": 6.677,
+    "part12": 0.992,
+    "part14": 49.407,
+    "part15": 8.2,
+    "part19": 12.156,
+    "part1_off": 103.672,
+    "part2_off": 106.23,
+    "part3_off": 149.175,
+    "part6_off": 37.546
+   }
+  }
+ ]
+}

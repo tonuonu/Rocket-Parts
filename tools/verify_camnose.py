@@ -26,14 +26,39 @@ CAD_BOLT_A = (52.2, -52.2, 180.0)   # clocking, deliberately not 120 deg apart
 INSERT_HOLE = 4.0             # heat-set insert hole, Insert_Hole_D in the .scad
 
 GENUS = {0: 1, 1: 2, 4: 11, 5: 4}
+# Canards_Enabled changes these parts; they are also rendered and checked
+# as printed. The canard genus is pinned from the 2026-11-20 renders: a
+# hole gained or lost changes it.
+CANARD_PARTS = (1, 2, 3, 6)
+CANARD_GENUS = {1: 8, 2: 26}
+# Checks that legitimately differ for the canard parts, each with its
+# reason. verify_camnose_canards.py checks those features; the body fit
+# is still checked here by "bottom outer dia at Z=5" and the shoulder's
+# entry, Z=50 and spigot diameters.
+CANARD_EXEMPT = {
+    "bottom outer dia":
+        "02's Vega switch pad stands proud to Ø102.8 at -72 deg",
+    "shoulder body dia":
+        "01's index key at 105 deg reaches Ø100.9; it sits in the tube notch",
+    "shoulder unsupported face area mm2":
+        "01's twelve insert bosses and their gussets (canard verifier)",
+    **{"shoulder bore at Z=%s" % z:
+        "01's insert bosses fill the top of the bore" for z in ("97.5","98.5","99.0","99.5","100.5")},
+    **{"shoulder OD at Z=%s" % z:
+        "01's index key is in this band" for z in ("97.5","98.5","99.0","99.5")},
+}
 # Top: bore, three service screws, switch, three charging + three camera holes.
 
 
-def render(part, out):
+def render(part, out, canards=False):
     env = dict(os.environ, OPENSCADPATH=REPO)
     r = subprocess.run(
         [OPENSCAD, "--export-format", "asciistl", "-o", out,
-         "-D", "Render_Part=%d" % part, SCAD],
+         "-D", "Render_Part=%d" % part,
+         # partN.stl is the canards-off part; partN_canards.stl (parts 1, 2,
+         # 3 and 6 only) is the canard version that gets printed. Both sets
+         # are checked here and by verify_camnose_bay.py.
+         "-D", "Canards_Enabled=%s" % ("true" if canards else "false"), SCAD],
         capture_output=True, text=True, env=env, timeout=900)
     err = r.stdout + r.stderr
     if (r.returncode != 0 or "ERROR:" in err.upper()
@@ -179,31 +204,13 @@ NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
          4:"integrated top", 5:"legacy adapter", 6:"battery carrier", 7:"converter tray"}
 
 
-def main(argv):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("parts", type=int, nargs="*")
-    parser.add_argument("--output-dir", help="keep rendered ASCII STLs for mesh checks")
-    args = parser.parse_args(argv[1:])
-    parts = args.parts or list(range(8))
-    if any(p not in range(8) for p in parts):
-        parser.error("part numbers must be 0..7 (8 is a non-printable assembly)")
-    tmp = args.output_dir or tempfile.mkdtemp()
-    os.makedirs(tmp, exist_ok=True)
-    m, genus, stls = {}, {}, {}
-    for p in parts:
-        out = os.path.join(tmp, "part%d.stl" % p)
-        try:
-            genus[p] = render(p, out)
-        except (RuntimeError, subprocess.TimeoutExpired) as e:
-            print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
-            return 1
-        stls[p] = out
-        m[p] = measure(out)
-        print("  part %d %-14s h=%7.2f dia=%7.2f z=%7.2f..%7.2f %5.0f g"
-              % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
-                 m[p]["zmin"], m[p]["zmax"], volume(out) * 1.27))
+def build_checks(m, stls, genus, expected_genus, scope=None):
+    """Dimension checks on one set of parts. Only checks that involve a part
+    in `scope` (default: all) are made."""
+    def has(*ps):
+        return all(p in m for p in ps) and (scope is None or any(p in scope for p in ps))
     checks = []
-    if 0 in m:
+    if has(0):
         checks += [("stepped fit gauge height",m[0]["height"],15.0,0.01),
                    ("fit gauge unsupported face area mm2",unsupported_area(stls[0]),0.0,0.01)]
         for z, expected in [(1.5,99.1),(4.5,98.9),(7.5,98.7),(10.5,98.5),(13.5,98.3)]:
@@ -213,16 +220,17 @@ def main(argv):
         for z, expected in [(.15,98.8),(14.85,98.0)]:
             _, outer = bore(stls[0],z-.01,z+.01)
             checks += [("fit gauge lead relief at Z=%.2f" % z,outer,expected,0.02)]
-        if 1 in m:
-            _, outer = bore(stls[0],7.49,7.51)
-            _, shoulder_outer = bore(stls[1],49.99,50.01)
-            checks += [("central gauge band matches shoulder OD",outer-shoulder_outer,0.0,0.01)]
-    if 2 in m:
+    if has(0, 1):
+        _, outer = bore(stls[0],7.49,7.51)
+        _, shoulder_outer = bore(stls[1],49.99,50.01)
+        checks += [("central gauge band matches shoulder OD",outer-shoulder_outer,0.0,0.01)]
+    if has(2):
         checks += [("bottom zmin", m[2]["zmin"], 0.0, 0.1),
-                   ("bottom outer dia", m[2]["dmax"], 101.5, 0.3)]
-    if 3 in m:
+                   ("bottom outer dia", m[2]["dmax"], 101.5, 0.3),
+                   ("bottom outer dia at Z=5", bore(stls[2],4.99,5.01)[1], 101.5, 0.3)]
+    if has(3):
         checks += [("middle zmin", m[3]["zmin"], CUT1_Z, 0.2)]
-    if 4 in m:
+    if has(4):
         top_inner, top_outer = bore(stls[4], m[4]["zmax"] - 0.3, m[4]["zmax"] - 0.05)
         checks += [("integrated top zmax", m[4]["zmax"], CUT3_Z+6, 0.2),
                    ("camera flange outer dia", top_outer, 60.0, 0.2),
@@ -235,7 +243,7 @@ def main(argv):
                 checks += [("integral insert @%.1f radius" % exp_a,r,CAD_BOLT_R,0.15),
                            ("integral insert @%.1f angle error" % exp_a,((a-exp_a+180)%360)-180,0,1),
                            ("integral insert @%.1f diameter" % exp_a,d,INSERT_HOLE,0.15)]
-    if 5 in m:
+    if has(5):
         checks += [("adapter flange outer dia", m[5]["dmax"], 60.0, 0.1),
                    ("adapter height", m[5]["height"], 6.0 + 15, 0.1)]
 
@@ -260,15 +268,16 @@ def main(argv):
                     ("adapter hole @%.1fdeg angle" % exp_a, a_norm, exp_a, 1.0),
                     ("adapter hole @%.1fdeg diameter" % exp_a, d, INSERT_HOLE, 0.15),
                 ]
-    if 2 in m and 3 in m:
+    if has(2, 3):
         checks += [("joint 1 overlap", m[2]["zmax"] - m[3]["zmin"], 7.0, 0.2)]
-    if 3 in m and 4 in m:
+    if has(3, 4):
         # The 7 mm lap plus the three service-insert bosses, which stand
         # 2 mm above it to hold their pockets 5 mm above 04's edge.
         checks += [("joint 2 overlap incl. service bosses", m[3]["zmax"] - m[4]["zmin"], 9.0, 0.2)]
-    if 1 in m:
+    if has(1):
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
                    ("shoulder body dia", m[1]["dmax"], 98.7, 0.02),
+                   ("shoulder OD at Z=50", bore(stls[1],49.99,50.01)[1], 98.7, 0.02),
                    ("shoulder unsupported face area mm2", unsupported_area(stls[1]), 0.0, 0.01)]
         for z, expected in [(0.2,96.9),(0.5,97.2),(1,97.7),(1.5,98.2),(2.1,98.7)]:
             _, outer = bore(stls[1],z-.01,z+.01)
@@ -278,20 +287,74 @@ def main(argv):
             inner, outer = bore(stls[1],z-0.01,z+0.01)
             checks += [("shoulder bore at Z=%.1f" % z,inner,expected,0.02),
                        ("shoulder OD at Z=%.1f" % z,outer,98.7 if z<100 else 96.7,0.02)]
-    if 6 in m:
+    if has(6):
         checks += [("carrier floor z", m[6]["zmin"], 270.0, 0.01),
                    ("carrier height", m[6]["height"], 77.0, 0.01),
                    ("carrier max diameter", m[6]["dmax"], 64.0, 0.01)]
-    if 7 in m:
+    if has(7):
         # Keeper ring only: the carrier sleeves now locate the cells.
         checks += [("tray keeper bottom z", m[7]["zmin"], 341.6, 0.01),
                    ("tray rim top z", m[7]["zmax"], 353.0, 0.01)]
-    for p in m:
+    for p in [q for q in m if has(q)]:
         checks += [("part %d fits 250mm Z" % p, m[p]["height"],
                     min(m[p]["height"], 250.0), 0.01)]
     for p, g in genus.items():
-        if p in GENUS and g is not None:
-            checks += [("part %d genus" % p, g, GENUS[p], 0)]
+        if has(p) and p in expected_genus and g is not None:
+            checks += [("part %d genus" % p, g, expected_genus[p], 0)]
+
+    return checks
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("parts", type=int, nargs="*")
+    parser.add_argument("--output-dir", help="keep rendered ASCII STLs for mesh checks")
+    args = parser.parse_args(argv[1:])
+    parts = args.parts or list(range(8))
+    if any(p not in range(8) for p in parts):
+        parser.error("part numbers must be 0..7 (8 is a non-printable assembly)")
+    tmp = args.output_dir or tempfile.mkdtemp()
+    os.makedirs(tmp, exist_ok=True)
+    m, genus, stls = {}, {}, {}
+    for p in parts:
+        out = os.path.join(tmp, "part%d.stl" % p)
+        try:
+            genus[p] = render(p, out)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  render part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
+            return 1
+        stls[p] = out
+        m[p] = measure(out)
+        print("  part %d %-14s h=%7.2f dia=%7.2f z=%7.2f..%7.2f %5.0f g"
+              % (p, NAMES.get(p, "?"), m[p]["height"], m[p]["dmax"],
+                 m[p]["zmin"], m[p]["zmax"], volume(out) * 1.27))
+    # The printed canard versions of 1, 2, 3 and 6 get the same checks,
+    # with the other parts shared.
+    mc, genus_c, stls_c = dict(m), dict(genus), dict(stls)
+    for p in [q for q in CANARD_PARTS if q in parts]:
+        out = os.path.join(tmp, "part%d_canards.stl" % p)
+        try:
+            genus_c[p] = render(p, out, canards=True)
+        except (RuntimeError, subprocess.TimeoutExpired) as e:
+            print("FAIL  render canard part %d (%s)\n%s" % (p, NAMES.get(p, "?"), e))
+            return 1
+        stls_c[p] = out
+        mc[p] = measure(out)
+        print("  part %d %-14s h=%7.2f dia=%7.2f z=%7.2f..%7.2f %5.0f g  [canards]"
+              % (p, NAMES.get(p, "?"), mc[p]["height"], mc[p]["dmax"],
+                 mc[p]["zmin"], mc[p]["zmax"], volume(out) * 1.27))
+    checks = build_checks(m, stls, genus, GENUS)
+    canard_checks = build_checks(mc, stls_c, genus_c, CANARD_GENUS,
+                                 scope=set(CANARD_PARTS) & set(parts))
+    for c in canard_checks:
+        if c[0] in CANARD_EXEMPT:
+            print("EXEMPT [canards] %s: %s" % (c[0], CANARD_EXEMPT[c[0]]))
+        else:
+            checks.append(("[canards] " + c[0],) + tuple(c[1:]))
+    if set(parts) == set(range(8)):
+        # An exemption that matches no check is a typo or a renamed check.
+        stale = set(CANARD_EXEMPT) - {c[0] for c in canard_checks}
+        checks += [("canard exemption '%s' matches a check" % e, False, True, 0) for e in sorted(stale)]
 
     print()
     bad = 0
