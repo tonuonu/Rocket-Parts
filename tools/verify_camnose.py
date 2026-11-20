@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""Render and measure PeregrineCamNose parts, and prove the graft fits.
+"""Render and measure the default PeregrineCamNose bay and its legacy adapter.
 
 A part that does not fit still renders cleanly, so every mating dimension is
-measured from the STL rather than inferred from parameters. In particular the
-adapter-spigot-to-shell-bore fit is checked mesh against mesh (part 4's
-actual bore vs part 5's actual spigot OD), not against the constants that
-produced them -- that convention is used elsewhere in this repo and has
-caught real interference that the constants alone would have missed.
+measured from the STL rather than inferred from parameters. The default top slice now includes the camera flange. Part 5 remains a
+legacy adapter, not an additional part of that assembly. Run the companion
+verify_camnose_bay.py for solid intersections, hardware and service access.
 
 The camera itself no longer lives in this file -- it lives in a separate,
 already-finished CAD nosecone that bolts onto the adapter (see CN_Adapter()
 in the .scad). That CAD nosecone's own mesh is not part of this branch, so
 there is nothing here to check the camera's fit against.
 """
-import math, os, subprocess, sys, tempfile
+import argparse, math, os, subprocess, sys, tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
@@ -24,10 +22,9 @@ WALL = 2.2
 CAD_BOLT_R = 18.98            # bolt circle radius on the CAD nosecone, measured
 CAD_BOLT_A = (52.2, -52.2, 180.0)   # clocking, deliberately not 120 deg apart
 INSERT_HOLE = 4.0             # heat-set insert hole, Insert_Hole_D in the .scad
-EPOXY_GAP = 0.4                # adapter spigot vs shell bore, diametral (target)
-SPIGOT_L = 15.0                 # Adapter_Spigot_L: engagement depth into the bore
 
-GENUS = {0: 1, 1: 2, 4: 1, 5: 4}   # 5 = adapter: 1 harness bore + 3 insert holes
+GENUS = {0: 1, 1: 2, 4: 11, 5: 4}
+# Top: bore, three service screws, switch, three charging + three camera holes.
 
 
 def render(part, out):
@@ -157,12 +154,20 @@ def volume(stl):
 
 
 NAMES = {0:"test ring", 1:"shoulder", 2:"bottom slice", 3:"middle slice",
-         4:"top slice", 5:"adapter"}
+         4:"integrated top", 5:"legacy adapter", 6:"battery carrier", 7:"converter tray"}
 
 
 def main(argv):
-    parts = [int(a) for a in argv[1:]] or [0, 1, 2, 3, 4, 5]
-    m, genus, stls, tmp = {}, {}, {}, tempfile.mkdtemp()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("parts", type=int, nargs="*")
+    parser.add_argument("--output-dir", help="keep rendered ASCII STLs for mesh checks")
+    args = parser.parse_args(argv[1:])
+    parts = args.parts or list(range(8))
+    if any(p not in range(8) for p in parts):
+        parser.error("part numbers must be 0..7 (8 is a non-printable assembly)")
+    tmp = args.output_dir or tempfile.mkdtemp()
+    os.makedirs(tmp, exist_ok=True)
+    m, genus, stls = {}, {}, {}
     for p in parts:
         out = os.path.join(tmp, "part%d.stl" % p)
         try:
@@ -183,9 +188,17 @@ def main(argv):
         checks += [("middle zmin", m[3]["zmin"], CUT1_Z, 0.2)]
     if 4 in m:
         top_inner, top_outer = bore(stls[4], m[4]["zmax"] - 0.3, m[4]["zmax"] - 0.05)
-        checks += [("top slice zmax (Cut3)", m[4]["zmax"], CUT3_Z, 0.2),
-                   ("top slice outer dia at Cut3", top_outer, 60.0, 0.2),
-                   ("top slice bore dia at Cut3", top_inner, 60.0 - 2*WALL, 0.2)]
+        checks += [("integrated top zmax", m[4]["zmax"], CUT3_Z+6, 0.2),
+                   ("camera flange outer dia", top_outer, 60.0, 0.2),
+                   ("camera flange harness bore", top_inner, 29.56, 0.2)]
+        holes = bolt_pattern(stls[4],CUT3_Z+2,CUT3_Z+4,CAD_BOLT_R,INSERT_HOLE)
+        checks += [("integral flange insert hole count",len(holes),3,0)]
+        for exp_a in CAD_BOLT_A:
+            if holes:
+                r,a,d=min(holes,key=lambda h:abs(((h[1]-exp_a+180)%360)-180))
+                checks += [("integral insert @%.1f radius" % exp_a,r,CAD_BOLT_R,0.15),
+                           ("integral insert @%.1f angle error" % exp_a,((a-exp_a+180)%360)-180,0,1),
+                           ("integral insert @%.1f diameter" % exp_a,d,INSERT_HOLE,0.15)]
     if 5 in m:
         checks += [("adapter flange outer dia", m[5]["dmax"], 60.0, 0.1),
                    ("adapter height", m[5]["height"], 6.0 + 15, 0.1)]
@@ -218,45 +231,19 @@ def main(argv):
     if 1 in m:
         checks += [("shoulder height", m[1]["height"], 115.0, 0.2),
                    ("shoulder body dia", m[1]["dmax"], 98.7, 0.2)]
+    if 6 in m:
+        checks += [("carrier floor z", m[6]["zmin"], 270.0, 0.01),
+                   ("carrier height", m[6]["height"], 77.0, 0.01),
+                   ("carrier max diameter", m[6]["dmax"], 64.0, 0.01)]
+    if 7 in m:
+        checks += [("tray keeper bottom z", m[7]["zmin"], 337.6, 0.01),
+                   ("tray rim top z", m[7]["zmax"], 353.0, 0.01)]
     for p in m:
         checks += [("part %d fits 250mm Z" % p, m[p]["height"],
                     min(m[p]["height"], 250.0), 0.01)]
     for p, g in genus.items():
         if p in GENUS and g is not None:
             checks += [("part %d genus" % p, g, GENUS[p], 0)]
-
-    # Adapter spigot vs shell bore: mesh against mesh, not constants. Part 4
-    # is rendered in the shell's own absolute Z (its zmax is Cut3, the rim);
-    # part 5 (adapter) is rendered with its flange top at Z=0 and its spigot
-    # hanging below to Z=-SPIGOT_L (its zmin).
-    #
-    # The bore is a station on the shell's own ogive, not a cylinder -- it
-    # gets WIDER the deeper the spigot goes (the shell converges toward the
-    # tip, so moving away from the tip, into the shell, moves toward the
-    # fatter part of the cone). A single sample at the rim only proves the
-    # tightest point fits; it says nothing about the rest of the 15mm
-    # engagement, and a straight (untapered) spigot sized to the rim would
-    # pass that single-point check while opening into a multi-mm unglued
-    # void everywhere below it. Sweep several depths across the full
-    # engagement and bound the gap from above (a MAXIMUM-gap check) as well
-    # as from below (must never interfere) -- not just "clears at one spot".
-    if 4 in m and 5 in m:
-        depths = [0.17, 3.0, 6.0, 9.0, 12.0, 14.83]
-        gaps = []
-        for d in depths:
-            shell_z = m[4]["zmax"] - d
-            spigot_z = m[5]["zmin"] + (SPIGOT_L - d)
-            shell_inner, _ = bore(stls[4], shell_z - 0.15, shell_z + 0.15)
-            _, spigot_outer = bore(stls[5], spigot_z - 0.15, spigot_z + 0.15)
-            gaps.append((d, shell_inner - spigot_outer))
-        print("      spigot/bore diametral gap by depth: " +
-              ", ".join("%.3fmm@%.2fmm" % (g, d) for d, g in gaps))
-        min_gap = min(g for _, g in gaps)
-        max_gap = max(g for _, g in gaps)
-        checks += [("spigot clears bore at every sampled depth (min gap>0)",
-                    min_gap > 0, True, 0)]
-        checks += [("spigot/bore MAX diametral gap over full engagement",
-                    max_gap, EPOXY_GAP, 0.1)]
 
     print()
     bad = 0

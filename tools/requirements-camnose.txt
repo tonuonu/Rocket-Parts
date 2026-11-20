@@ -1,0 +1,5 @@
+# Only needed for verify_camnose_bay.py; the original verifier is stdlib-only.
+numpy>=1.26,<3
+trimesh>=4.5,<5
+manifold3d>=3,<4
+networkx>=3,<4

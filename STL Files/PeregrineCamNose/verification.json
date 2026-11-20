@@ -1,0 +1,502 @@
+{
+  "scope": "Default CAD geometry only; no physical or flight qualification",
+  "source_sha256": {
+    "PeregrineCamNose.scad": "f1411e9dc53313d1b3f81c7d35cf2a37589f1ffd86df6f83575396230a5db423",
+    "PeregrineCamBay.scad": "9fb4dfd157ea0dab25616685d5fe2f206a6df3d82e3e5c156bcbb897bec3df44",
+    "NoseCone.scad": "acdb48c93649a680fc76bbb1e464cf2bb5843fb42e051b90034cf96d1914948d"
+  },
+  "mesh_sha256": {
+    "part0.stl": "de06f3f0050b4f4c6f83b1056be38a092f533151f00f82382841b25bdac23df1",
+    "part1.stl": "9397dda2b17d75f842eae9f0a7caa25adf42618e7f5bb60848ef86d5770ba040",
+    "part2.stl": "16e3c8b977923b594684724e02d181eee721c59e4a0fede2006a49afb6805736",
+    "part3.stl": "12fd1e5a17f505d9af98ad4756c007b33798808f36ab29ff9681daa8bcac05ef",
+    "part4.stl": "7a06f8d4ecb0011948c90f0e7ccc7a4bd44a2e119ea97dba1649f4d37ea7b4bd",
+    "part5.stl": "484155828282cc59a54d6bd410cf310b465d37e1096e984308ba8efeded205dc",
+    "part6.stl": "79c7f3f45d43600adfc17e5369d0fb20f6b85544e47f6b2b97dcf610b3885523",
+    "part7.stl": "78e2ac18a9dc8697492522f834ea83372b4dc9da83df2c858f5f2c286d3a44f7"
+  },
+  "packages": {
+    "numpy": "2.4.6",
+    "trimesh": "5.2.0",
+    "manifold3d": "3.5.4",
+    "networkx": "3.6.1"
+  },
+  "checks": [
+    {
+      "check": "part 0 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 0 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 0 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 1 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 1 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 1 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 2 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 2 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 2 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 3 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 3 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 3 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 4 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 4 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 4 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 5 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 5 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 5 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 6 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 6 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 6 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "part 7 is watertight",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 7 has outward winding",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "part 7 is one connected solid",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "check": "parts 3/4 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "parts 3/6 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "parts 3/7 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "parts 4/6 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "parts 4/7 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "parts 6/7 do not intersect",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 lower tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 lower tab clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 upper tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 0 upper tab clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 lower tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 lower tab clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 upper tab clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "cell 1 upper tab clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "converter clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "converter clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "converter clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "converter clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor screw 30 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 30 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 30 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "floor screw 30 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor screw 150 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 150 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 150 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "floor screw 150 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor screw 270 clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 270 has seat pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "floor insert 270 is blind",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "floor screw 270 head clears carrier",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw clearance",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray insert pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears tray",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears shell",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears converter",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw clearance",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray insert pocket",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears tray",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears shell",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "tray screw head clears converter",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 90 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 90 clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 210 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 210 clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 330 clears part 3",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "service screw 330 clears part 4",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch body/nut clears shell",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch body/nut clears part 6",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch body/nut clears part 7",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch body/nut clears cell 0",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch body/nut clears cell 1",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch round cutout",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch R1.2 key relief",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "charging screw -8 passes panel",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "charging screw 0 passes panel",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "charging screw 8 passes panel",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "continuous carrier insertion path",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "insertion sweep encloses the actual carrier",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "uncut floor is rejected at joint bosses",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "floor has a continuous solid centre",
+      "passed": true,
+      "value": null
+    },
+    {
+      "check": "shell removal path (1 mm sampling)",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "switch removal path (1 mm sampling)",
+      "passed": true,
+      "value": 0.0
+    },
+    {
+      "check": "oversized converter is rejected",
+      "passed": true,
+      "value": null
+    }
+  ],
+  "failed": 0
+}
