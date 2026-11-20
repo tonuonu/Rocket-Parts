@@ -44,16 +44,32 @@ Bay_Tray_X = Bay_DCDC[0] + Bay_DCDC_Clearance + 2*Bay_Tray_Wall;
 Bay_Tray_Y = Bay_DCDC[1] + Bay_DCDC_Clearance + 2*Bay_Tray_Wall;
 // Tray screw bosses sit outboard so the converter's whole 47x26 footprint
 // stays free. Below the sleeve top each boss is fused to its sleeve wall;
-// above it the boss stands alone to clear the keeper ring. Tray screws are
-// countersunk flush; a button head would eat this margin.
+// above it the boss stands alone to clear the keeper ring. The bosses are
+// at the shell's limit (0.37 mm at the bath floor), so they cannot move out.
+// A head at the bath floor would need a notch through the bath end wall,
+// because the head's path is tangent to the bath end (27-3.1 = 23.9). So
+// the tray's screw column rises to the rim top instead, the rim stays
+// whole, and an M3x12 button head sits on the column (ISO 7380: 5.7 x 1.65).
 Bay_Bosses = [[27,0],[-27,0]];
+Bay_Tray_Shell_Gap = 0.35; // radial, column to shell bore
 Bay_Boss_D = 8;
 Bay_M3_Clearance = 3.4;
 Bay_Screw_Tip_L = 4;      // clearance below the insert pocket: longer screws, melt
 
-Bay_Joint_A = [90,210,330]; // clear the two posts and the three floor fasteners
-Bay_Joint_Z = Cut2_Z + 3.5;  // middle of the existing 7 mm overlap
-Bay_Joint_R = Ogive_OD_At_Z(Bay_Joint_Z, NC_Wall_T)/2 - 0.35;
+Bay_Joint_A = [90,210,330]; // clear the tray bosses (0/180) and the three floor fasteners
+// Service-joint screw axis, where it meets the outer surface. It is normal
+// to the local surface (tilted Bay_Joint_Tilt, ~4.95 deg), so the flush
+// countersunk head sits flush all round. 5 mm above 04's lower edge leaves
+// 1.9 mm of shell under the Ø6.2 seat (3.5 mm left 0.4 mm). The insert
+// boss in 03 therefore stands 2 mm above the 7 mm lap.
+Bay_Joint_Z = Cut2_Z + 5;
+Bay_Joint_Edge_Min = 1.5;    // shell between the seat and 04's free lower edge
+Bay_Joint_Boss_Top = Cut2_Z + 9;
+function Bay_Ogive_Slope(Z) =
+    let(p=NC_OGiveArcOffset(Peregrine_Body_OD/2, NC_Length), y=Z-NC_Base_L)
+    atan(y/sqrt(p*p-y*y));
+Bay_Joint_Tilt = Bay_Ogive_Slope(Bay_Joint_Z);
+Bay_Joint_Boss_Gap = 0.35;   // boss face to the 04 bore
 
 // The switch is on +Y; charging hardware is on -Y. Neither is keyed to a
 // rail-button direction because that relation is not specified in the CAD.
@@ -70,6 +86,8 @@ Bay_Charge_Head_D = 6.2;  // nominal M3 90-degree countersunk screw
 // shell. The 90-degree seat is 1.4 mm deep, leaving 0.8 mm of the 2.2 mm
 // wall under it: do not over-tighten.
 Bay_Joint_Head_D = Bay_Charge_Head_D;
+assert(Bay_Joint_Z - Bay_Joint_Head_D/2*cos(Bay_Joint_Tilt) - Cut2_Z >= Bay_Joint_Edge_Min,
+       "service-screw seat too close to the top shell's lower edge");
 
 // The floor-seat pockets reach below the 8 mm seat into the corbel. Keep
 // 1 mm of corbel under each pocket at its inner (thinnest) edge.
@@ -90,6 +108,15 @@ assert(Bay_Tray_Z+Bay_Tray_T+Bay_DCDC[2] < Cut3_Z-Adapter_Spigot_L-3,
 
 module Bay_Radial(a, r, z){
     rotate([0,0,a]) translate([r,0,z]) rotate([0,-90,0]) children();
+}
+
+// Service-screw frame: origin on the outer surface at Bay_Joint_Z, moved s
+// along the outward surface normal; local +Z points inward along the axis.
+module Bay_Joint_Frame(a, s=0){
+    t = Bay_Joint_Tilt;
+    rotate([0,0,a])
+        translate([Ogive_OD_At_Z(Bay_Joint_Z)/2 + s*cos(t), 0, Bay_Joint_Z + s*sin(t)])
+            rotate([0,-90-t,0]) children();
 }
 
 module Bay_Seat(){
@@ -121,17 +148,18 @@ module Bay_Joint_Bosses(){
     zg = Bay_Joint_Gusset_Z;
     intersection(){
         for (a=Bay_Joint_A) hull(){
-            Bay_Radial(a,Bay_Joint_R,Bay_Joint_Z)
+            Bay_Joint_Frame(a,-NC_Wall_T-Bay_Joint_Boss_Gap)
                 cylinder(d=9,h=9,$fn=48);
             Bay_Radial(a,Ogive_OD_At_Z(zg)/2-0.3,zg)
                 cylinder(d=2,h=1.6,$fn=24);
         }
         union(){
             // The boss must not obstruct lifting the top shell off its lap.
+            // It rises above the 7 mm lap to hold the insert pocket.
             translate([0,0,Cut2_Z-2])
-                cylinder(d1=Ogive_OD_At_Z(Cut2_Z-2,NC_Wall_T)-0.7,
-                         d2=Ogive_OD_At_Z(Cut2_Z+7,NC_Wall_T)-0.7,
-                         h=9,$fn=180);
+                cylinder(d1=Ogive_OD_At_Z(Cut2_Z-2,NC_Wall_T)-2*Bay_Joint_Boss_Gap,
+                         d2=Ogive_OD_At_Z(Bay_Joint_Boss_Top,NC_Wall_T)-2*Bay_Joint_Boss_Gap,
+                         h=Bay_Joint_Boss_Top-Cut2_Z+2,$fn=180);
             // Below the lap the gusset stays inside the shell's outer skin.
             translate([0,0,zg-2])
                 cylinder(d1=Ogive_OD_At_Z(zg-2)-0.4,
@@ -152,9 +180,9 @@ module CN_Bay_Middle(){
             // Inserts installed from outside with the top shell removed.
             // Start outside the original library lap too: its outer arc
             // is slightly larger than the conservative new boss envelope.
-            Bay_Radial(a,Bay_Joint_R+1,Bay_Joint_Z)
+            Bay_Joint_Frame(a,1-NC_Wall_T-Bay_Joint_Boss_Gap)
                 cylinder(d=Insert_Hole_D,h=Insert_Pocket_L+1,$fn=36);
-            Bay_Radial(a,Bay_Joint_R+1,Bay_Joint_Z)
+            Bay_Joint_Frame(a,1-NC_Wall_T-Bay_Joint_Boss_Gap)
                 cylinder(d=Bay_M3_Clearance,h=11,$fn=36);
         }
     }
@@ -195,10 +223,10 @@ module CN_Bay_Top(){
             Bay_Charge_Frame() Bay_Panel(28,12,Bay_Charge_Panel_T);
         }
         for(a=Bay_Joint_A){
-            Bay_Radial(a,Ogive_OD_At_Z(Bay_Joint_Z)/2+1,Bay_Joint_Z)
+            Bay_Joint_Frame(a,1)
                 cylinder(d=Bay_M3_Clearance,h=8,$fn=36);
-            // Flush 90-degree seat, starting at the outer surface.
-            Bay_Radial(a,Ogive_OD_At_Z(Bay_Joint_Z)/2+Overlap,Bay_Joint_Z)
+            // Flush 90-degree seat, normal to the local outer surface.
+            Bay_Joint_Frame(a,Overlap)
                 cylinder(d1=Bay_Joint_Head_D+2*Overlap,d2=Bay_M3_Clearance,
                          h=(Bay_Joint_Head_D-Bay_M3_Clearance)/2+Overlap,$fn=60);
         }
@@ -288,6 +316,15 @@ module CN_Battery_Carrier(){
     }
 }
 
+// Keeps the tray's screw columns Bay_Tray_Shell_Gap inside the shell bore.
+module Bay_Tray_Shell_Clip(){
+    z0 = Bay_Tray_Z+Bay_Tray_T-2*Overlap;
+    z1 = Bay_Tray_Z+Bay_Tray_T+Bay_Tray_Rim_H+Overlap;
+    translate([0,0,z0])
+        cylinder(d1=Ogive_OD_At_Z(z0,NC_Wall_T)-2*Bay_Tray_Shell_Gap,
+                 d2=Ogive_OD_At_Z(z1,NC_Wall_T)-2*Bay_Tray_Shell_Gap,h=z1-z0,$fn=180);
+}
+
 module CN_Converter_Tray(){
     keeper_z = Bay_Cell_Top_Z+Bay_Keeper_Gap;
     difference(){
@@ -296,8 +333,17 @@ module CN_Converter_Tray(){
             translate([-Bay_Tray_X/2,-Bay_Tray_Y/2,Bay_Tray_Z])
                 cube([Bay_Tray_X,Bay_Tray_Y,Bay_Tray_T]);
             difference(){
-                translate([-Bay_Tray_X/2,-Bay_Tray_Y/2,Bay_Tray_Z+Bay_Tray_T-Overlap])
-                    cube([Bay_Tray_X,Bay_Tray_Y,Bay_Tray_Rim_H+Overlap]);
+                union(){
+                    translate([-Bay_Tray_X/2,-Bay_Tray_Y/2,Bay_Tray_Z+Bay_Tray_T-Overlap])
+                        cube([Bay_Tray_X,Bay_Tray_Y,Bay_Tray_Rim_H+Overlap]);
+                    // Screw columns up to the rim top. The bath cut below
+                    // trims them to the bath end wall, so the rim is whole.
+                    for(p=Bay_Bosses) intersection(){
+                        translate([p[0],p[1],Bay_Tray_Z+Bay_Tray_T-Overlap])
+                            cylinder(d=Bay_Boss_D,h=Bay_Tray_Rim_H+Overlap,$fn=60);
+                        Bay_Tray_Shell_Clip();
+                    }
+                }
                 translate([-(Bay_DCDC[0]+Bay_DCDC_Clearance)/2,
                            -(Bay_DCDC[1]+Bay_DCDC_Clearance)/2,Bay_Tray_Z+Bay_Tray_T-2*Overlap])
                     cube([Bay_DCDC[0]+Bay_DCDC_Clearance,Bay_DCDC[1]+Bay_DCDC_Clearance,
@@ -314,17 +360,10 @@ module CN_Converter_Tray(){
                     cube([2,6,Bay_Tray_Z-keeper_z-1+Overlap]);
             }
         }
-        for(p=Bay_Bosses){
+        // Button heads bear on the column tops, level with the rim.
+        for(p=Bay_Bosses)
             translate([p[0],p[1],Bay_Tray_Z-Overlap])
-                cylinder(d=Bay_M3_Clearance,h=Bay_Tray_T+2*Overlap,$fn=36);
-            translate([p[0],p[1],Bay_Tray_Z+Bay_Tray_T-1.4])
-                cylinder(d1=Bay_M3_Clearance,d2=6.2+2*Overlap,
-                         h=1.4+Overlap,$fn=60);
-            // The bath rim used to overhang the head's straight path in by
-            // 1.8 mm, so the screw could not be put in. Notch it.
-            translate([p[0],p[1],Bay_Tray_Z+Bay_Tray_T-Overlap])
-                cylinder(d=6.6,h=Bay_Tray_Rim_H+2*Overlap,$fn=60);
-        }
+                cylinder(d=Bay_M3_Clearance,h=Bay_Tray_T+Bay_Tray_Rim_H+2*Overlap,$fn=36);
         // These two channels take a 2.5 mm cable tie around the converter.
         // They are in the tray, never through the blast/debris floor.
         for(y=[-8,8]) translate([-Bay_Tray_X/2-Overlap,y-1.6,Bay_Tray_Z+0.8])

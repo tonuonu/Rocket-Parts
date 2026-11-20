@@ -12,7 +12,9 @@
 // The camera does not live in this part. It lives in a separate,
 // already-finished CAD nosecone -- a straight FreeCAD conversion of the
 // user's own design: correct ogive, sunken screw heads, lens bore, all of
-// it -- that bolts onto the cut end via CN_Adapter(). That CAD nosecone's
+// it -- that bolts onto the top slice's integral flange (part 4,
+// Bay_Camera_Flange() in PeregrineCamBay.scad; CN_Adapter() is only for the
+// legacy Bay_Enabled=false shell). That CAD nosecone's
 // own mesh lives on a different branch (feature/rocket60), not here; this
 // file only defines the interface it bolts to. An earlier version of this
 // file reinvented that
@@ -39,9 +41,10 @@ include<NoseCone.scad>
 // BODY TUBE -- measure yours and adjust
 // ============================================
 Peregrine_Body_OD    = 101.5;   // outside diameter of body tube
-// MEASURED 2026-08-13 with a printed stepped fit gauge, not assumed. A
-// 99.10 band enters by hand but will not slide under its own weight; 98.85
-// slides freely. That brackets the real ID at ~99.1.
+// MEASURED with printed stepped fit gauges, not assumed. The latest trial
+// (2026-11-03, part 0): the 98.9 band entered, the 99.1 band did not. So
+// the real ID is between 98.9 and 99.1. 99.1 stays as the nominal that
+// sets the 98.7 shoulder (ID - 0.4); it is an upper bound, not a fit.
 Peregrine_Body_ID    = 99.1;    // inside diameter of body tube
 // Derived, not hardcoded. This previously read 97.1 with a comment claiming
 // it was Body_OD - 2*Wall_T; the two happened to agree, so a change to
@@ -296,8 +299,9 @@ module CN_Slice_Middle(){
 
 module CN_Slice_Top_Shell(){
     // Plain frustum shell, cut 2 to cut 3 (OD 60) -- no lens hole, no
-    // camera mounts. The camera now lives entirely in the CAD nosecone
-    // that glues onto this shell's open top via CN_Adapter().
+    // camera mounts. The camera now lives entirely in the CAD nosecone,
+    // bolted to the integral flange (Bay_Enabled) or, for the legacy
+    // shell, to CN_Adapter() glued into this shell's open top.
     intersection(){
         CN_Cone(Cut_d=Cut2_d, Lower=false);
         cylinder(d=Peregrine_Body_OD+2, h=Cut3_Z, $fn=$preview? 90:360);
@@ -418,17 +422,18 @@ if (Render_Part == 8) CN_Bay_Assembly();
 // ============================================
 //
 // Parts:
-//   0  Test ring        15mm   -- disposable fit check, print first, not glued
+//   0  Fit gauge        15mm   -- stepped plug gauge, 98.3..99.1, print first
 //   1  Shoulder        115mm
 //   2  Bottom slice    147mm
 //   3  Middle slice    147mm
 //   4  Bay top          95mm   -- integral camera flange, print flange-down
 //   5  Legacy adapter   21mm   -- not used with the bay top
 //   6  Battery carrier  77mm   -- print floor-down
-//   7  Converter tray   15mm   -- includes upper battery keeper
+//   7  Converter tray   11.4mm -- includes upper battery keeper
 //
 // Assembly, bottom to top:
-//   1. Print part 0. Check it sits flush on the tube and accepts the spigot.
+//   1. Print part 0, largest end down. Push it into the body tube, smallest
+//      end first, and note the largest band that enters (README).
 //   2. Glue the shoulder spigot into the bottom slice bore.
 //   3. Glue the bottom slice flange into the middle slice, hold until set.
 //   4. With Bay_Enabled, fit the carrier and seal its seat, then fasten the

@@ -123,7 +123,7 @@ def main():
         clear("floor screw %d head clears carrier" % a,head,m[6])
 
     for x,y in [(27,0),(-27,0)]:
-        clear("tray screw clearance",cylinder(3.2,3.1,[x,y,346.9]),m[7])
+        clear("tray screw clearance",cylinder(3.2,6.2,[x,y,346.9]),m[7])
         clear("tray insert pocket",cylinder(3.8,7.6,[x,y,339.35]),m[6])
         clear("tray screw tip relief",cylinder(3.2,3.9,[x,y,335.35]),m[6])
         back = cylinder(3.8,1,[x,y,334.2])
@@ -133,17 +133,36 @@ def main():
         web = box([0.7,4,60],[22.3 if x>0 else -23.0,-2,276])
         record("tray boss is joined to the sleeve wall",
                intersection_volume(web,m[6]) > web.volume*0.99)
-        # Flush 90-degree head, 6.0 mm at the top and 3.2 mm at the neck.
-        profile=np.array([[0,0],[1.6,0],[3,1.4],[0,1.4],[0,0]])
-        head=trimesh.creation.revolve(profile,sections=96)
-        head.apply_translation([x,y,348.6])
+        # M3 button head (ISO 7380: 5.7 x 1.65; envelope 6.0 x 1.8) on the
+        # screw column, level with the bath rim (Z=353).
+        head=cylinder(6.0,1.8,[x,y,353.01])
         clear("tray screw head clears tray",head,m[7])
         clear("tray screw head clears shell",head,m[4])
         clear("tray screw head clears converter",head,converter)
+        bearing=trimesh.boolean.difference(
+            [cylinder(5.7,0.5,[x,y,352.49]),cylinder(3.6,0.7,[x,y,352.39])],engine="manifold")
+        record("tray screw head bears on solid column",
+               intersection_volume(bearing,m[7]) > bearing.volume*0.99)
         # The head must also be able to go in: its straight path from
-        # above, not only its seated position.
-        clear("tray screw head insertion path",
-              cylinder(6.2,20,[x,y,350.01]),m[7])
+        # above, not only its seated position. The converter may stay in
+        # its bath while the tray screws come out for cell access.
+        path=cylinder(6.2,20,[x,y,353.01])
+        clear("tray screw head insertion path",path,m[7])
+        clear("tray screw driver path clears converter",path,converter)
+
+    # The epoxy bath must hold liquid to its rim (Z=353): the empty space
+    # below the rim that holds the bath centre must not reach the outside.
+    # A leak (e.g. a notch through the end wall) merges it with the open
+    # air around the tray, so the component then spans the whole slab.
+    slab=box([80,50,2.96],[-40,-25,350.02])
+    empty=trimesh.boolean.difference([slab,m[7]],engine="manifold")
+    inside=[b for b in empty.split(only_watertight=False)
+            if np.all(b.bounds[0][:2] < 0) and np.all(b.bounds[1][:2] > 0)]
+    bath=min(inside,key=lambda b:abs(b.volume)) if inside else None
+    reach=None if bath is None else [round(float(v),2) for v in np.max(np.abs(bath.bounds[:,:2]),axis=0)]
+    record("converter bath is closed below its rim",
+           reach is not None and reach[0] < 24.0 and reach[1] < 13.5,
+           {"bath_half_extent_xy": reach})
 
     # Hardware depths from the repository's Schurter drawing, with a
     # conservative 16 mm body/nut envelope behind the flat 6 mm panel.
@@ -152,21 +171,42 @@ def main():
         arc=(r*r+l*l)/(2*r)
         return 2*(r-arc+math.sqrt(arc*arc-(z-15)**2))
     face = od(304)/2+0.8
+    # Service screws: axis normal to the outer surface where it crosses
+    # Z=299.28, 5 mm above part 04's lower edge (Z=294.28).
+    zj = 299.28
+    tilt = math.atan((od(zj-0.01)-od(zj+0.01))/2/0.02)
+    z4 = m[4].bounds[0][2]
+    fc,fn=m[4].triangles_center,m[4].face_normals
     for a in [90,210,330]:
         c,s=math.cos(math.radians(a)),math.sin(math.radians(a))
-        shaft=cylinder(3.2,8,[39*c,39*s,297.785],[-c,-s,0])
+        surf=np.array([od(zj)/2*c,od(zj)/2*s,zj])
+        n=np.array([math.cos(tilt)*c,math.cos(tilt)*s,math.sin(tilt)])
+        shaft=cylinder(3.2,8,surf+n,-n)
         for p in [3,4]:
             clear("service screw %d clears part %d" % (a,p),shaft,m[p])
         # Countersunk flush: a 90-degree M3 head (6.0 mm) sits below the
         # outer surface, and the insert pocket is L+1 deep or more.
-        r_out = od(297.79)/2
         profile=np.array([[0,0],[1.6,0],[3,1.4],[0,1.4],[0,0]])
         head=trimesh.creation.revolve(profile,sections=96)
-        head.apply_transform(trimesh.geometry.align_vectors([0,0,1],[c,s,0]))
-        head.apply_translation([(r_out-1.45)*c,(r_out-1.45)*s,297.785])
+        head.apply_transform(trimesh.geometry.align_vectors([0,0,1],n))
+        head.apply_translation(surf-1.45*n)
         clear("service screw %d countersunk head" % a,head,m[4])
-        pocket=cylinder(3.8,6.7,[(r_out-2.2)*c,(r_out-2.2)*s,297.785],[-c,-s,0])
+        # Straight insertion path of the head along its own axis: a seat
+        # cut square to a sloping surface leaves a lip that blocks it.
+        clear("service screw %d head insertion path" % a,
+              cylinder(6.2,20,surf+0.01*n,n),m[4])
+        pocket=cylinder(3.8,6.7,surf-2.2*n,-n)
         clear("service insert %d pocket >= L+1" % a,pocket,m[3])
+        # Shell left between the hole/seat and 04's free lower edge, read
+        # from the mesh: hole and seat faces below the axis face upward;
+        # the shell's own skin, bore and edge faces do not.
+        radial=fc[:,0]*c+fc[:,1]*s
+        tangential=-fc[:,0]*s+fc[:,1]*c
+        sel=(np.abs(tangential)<4)&(radial>30)&(fc[:,2]<zj+4)&(fn[:,2]>0.3)
+        edge=float(m[4].triangles[sel][:,:,2].min()-z4) if sel.any() else None
+        record("service screw %d seat >= 1.5 mm above part 04 lower edge" % a,
+               edge is not None and edge >= 1.5,
+               None if edge is None else round(edge,3))
     switch = cylinder(16,17.5,[0,face-6.01,315],(0,-1,0))
     clear("switch body/nut clears shell",switch,m[4])
     for p in [6,7]:
