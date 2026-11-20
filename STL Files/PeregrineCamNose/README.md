@@ -519,6 +519,24 @@ size, temperature and printed-part response remain unverified. The selected
 Schurter switch is rated 6.3 A/250 VAC and 300 no-load cycles in its datasheet;
 no DC rating is given. Retaining it does not establish a DC rating.
 
+## Pre-commit guard
+
+```sh
+tools/install_hooks.sh            # once per clone; the hook is shared by all worktrees
+export CAMNOSE_PYTHON=/path/to/python   # optional; needs tools/requirements-camnose.txt
+```
+
+The hook runs only when the staged change touches a `.scad` file the cam nose
+uses (`PeregrineCamNose.scad`, `PeregrineCamCanards.scad`, `PeregrineCamBay.scad`
+and what they include) or anything under `STL Files/PeregrineCamNose/`; other
+commits and branches without `tools/precommit_camnose.sh` are not affected. It
+checks the **staged** content (about 90 seconds): `verify_camnose_canards.py`,
+`verify_camnose.py` and `verify_camnose_bay.py` must pass, and every committed
+STL here must match a fresh render of the staged source (same triangle count,
+volume within 1e-5 relative, bounds within 0.001 mm). A `.3mf` next to an STL
+with a different triangle count only prints a warning; the `.3mf` files are
+never touched. Emergency bypass: `git commit --no-verify`.
+
 ## Verification and regeneration
 
 ```sh
