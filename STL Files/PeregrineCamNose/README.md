@@ -23,6 +23,24 @@ must be reprinted** (2026-11-20): its LiPo pocket now takes the 2S stack of
 two 362543 cells; the printed one has the old pocket, 5 mm too narrow. 09
 and the new 12 and 19 are not printed yet.
 
+Review fixes after the merge (2026-11-20):
+
+- **14:** two of the three Vega standoffs (Ø8 at u = Vega_U + 13.5, Z 140
+  and 200) overhung the mast flange's +u edge by 2.5 mm. The flange now
+  has a tab under each, 3 mm wider over Z 135.5–144.5 and 195.5–204.5,
+  with a 45° underside. Reprint 14 from the current `VegaMast.stl` (it
+  had to be reprinted anyway for the LiPo pocket).
+- **03:** the USB window started at Z 153.6, inside the 02/03 glued lap
+  (top 154.15). It is now 10.5 × 7, Z 154.35–164.85, centred on the
+  connector. A cable's plug overmold must fit that. Print 03 from the
+  current `Canards/SliceMiddle.stl`. If you already printed it from the
+  earlier canard file, its window reaches 0.55 mm into the lap: keep glue
+  out of the window there.
+- **10:** the plug's two M2 countersinks now start on the curved plug face
+  (0.25 mm deeper at r = 5), so the heads sit flush. On the printed
+  canards, deepen each countersink by about 0.25 mm with a 90° bit, until
+  the head sits flush.
+
 Source: `PeregrineCamCanards.scad`, switched on by `Canards_Enabled` in
 `PeregrineCamNose.scad`. With it set to `false`, parts 01, 02, 03 and 06
 match the committed versions (01, 02 and 06 as printed; 03 changed on
@@ -110,7 +128,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
   - Epoxy the saddle (part 12) inside the shell over the hole. Its flat back carries the nut, 6 mm behind the bezel's seat (the switch allows 8.5).
   - The flat bezel sits on the curved skin: it touches at its lowest point; the top edge stands 0.4 mm off and the sides about 0.6 mm. Bed it in a thin epoxy fillet or a foam washer.
   - Checked in CAD: the rear envelope (Ø16 × 23.5) clears the mast, its foot gusset, the Vega, the reamed roof pass, the cassette, the cells and canard 1 at ±11.5°; the bezel stays inside the body-tube silhouette on the rail side.
-- **USB window:** 12 × 7 on 03 at ~174°, Z 160 on the connector's axis. Tape it or plug it for flight.
+- **USB window:** 10.5 × 7 on 03 at ~174°, Z 154.35–164.85, on the connector's axis (Z 159.6) and above the glued lap. Tape it or plug it for flight.
 - **Static ports:** 4 × Ø2.5 on 03 at Z 160 (60/150/240/330°), above the glued lap. They can be drilled in the printed 03.
 
 ### 18650 cells in the servo cassette
@@ -196,7 +214,7 @@ The bay runs from Z 86 to 270, sealed between the cassette roof and the camera-b
 | Printed parts 01, 02, 03, 04, 06, 07, 09, 10×4, 12, 14, 15, 19 + CAD camera nose, G10 facing disc | 890 | 890 | CAD: solid PETG 1.27 g/cm³ |
 | Cells INR18650-25R (45 g each), Vega (25 g), 4× HV6160 (30.7 g) | 238 (2 cells) | 328 (4 cells) | spec |
 | Camera internals, DC-DC, LiPo (2-cell only), switches, fuses, hubs, fasteners, inserts, wiring, glue, RTV, charge | 194 | 191 | estimated |
-| **Total** | **1321** | **1409** | |
+| **Total** | **1322** | **1409** | |
 | **Balance point, forward of the forward body-tube rim** | **123 mm** | **117 mm** | |
 | Balance point, aft of the nose tip (nose length 483 mm) | 360 mm | 366 mm | |
 
@@ -221,8 +239,8 @@ becomes 586 mm instead of 574.
 | 06 battery carrier (`Canards/BatteryCarrier.stl`) | 6 | As before, plus the Ø4 pass. Can be drilled in the printed 06. |
 | 09 servo cassette (`Canards/ServoCassette.stl`) | 9 | Floor down, no supports. Four cell sleeves, four keeper-insert bosses. |
 | 12 servo-switch saddle (`Canards/ServoSwitchSaddle.stl`) | 12 | Flat back down. Epoxied inside 02 at 30°, Z 106. |
-| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep (2026-11-20). |
-| 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Printed: ream the roof pass to Ø11. |
+| 10 canard ×4 (`Canards/Canard.stl`; spare `Canard_Span20.stl`) | 10 | Plug down, support under the blade root ends. Printed: open the hub pocket to Ø14.2 × 5.1 deep and deepen the two M2 countersinks ~0.25 mm (2026-11-20). |
+| 14 Vega mast unit (`Canards/VegaMast.stl`) | 14 | Roof down. The LiPo-pocket floor bridges 28 mm between the webs. Reprint (LiPo pocket, standoff tabs); ream the roof pass to Ø11. |
 | 15 charge well (`Canards/ChargeWell.stl`) | 15 | Base down. Fit with the groove toward the posts (+X). |
 | 16 + 17 joint coupon (`Canards/Coupon_Slice.stl`, `Coupon_Shoulder.stl`) | 16, 17 | As the parts. |
 | 18 facing disc template (`Canards/FacingDisc.svg`) | 18 | Cut from G10. |

@@ -24,6 +24,8 @@ import struct
 import subprocess
 import tempfile
 
+from rocket60_mesh import rocket60_nose_stl
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
 
@@ -56,16 +58,6 @@ CP_UNCERTAINTY = 0.08          # +- fraction of MAC the real panel CP may move
 ALPHA_EXTRA = 5.0              # deg of body AoA on top of a full deflection
 
 
-
-def rocket60_nose_stl():
-    """The owner's CAD camera nose mesh, kept on branch feature/rocket60:
-    the local branch, else the remote-tracking one, else HEAD (once merged)."""
-    for ref in ("feature/rocket60", "origin/feature/rocket60", "HEAD"):
-        r = subprocess.run(["git", "-C", str(REPO), "show",
-                            ref + ":STL Files/Rocket60/NoseCone.stl"], capture_output=True)
-        if r.returncode == 0:
-            return r.stdout
-    raise SystemExit("camera nose mesh not found: git fetch origin feature/rocket60")
 
 def scad_params(defines=()):
     with tempfile.TemporaryDirectory() as tmp:

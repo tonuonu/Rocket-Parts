@@ -4,7 +4,7 @@
  "trimesh": "4.12.2",
  "scad_sha256": {
   "PeregrineCamNose.scad": "9cb2966d70554f0db9960c68855f41a19c2a8c29ba1d8210abaeee5cda444606",
-  "PeregrineCamCanards.scad": "5f9d223cb65ea690bb8285b3ef9120b7383f3d9785cfd3b3738cbf2b3dd693b5",
+  "PeregrineCamCanards.scad": "f3ce6b46934aede1430f72939a736a192880c5d99c08bd2e6e21742c9db51d87",
   "PeregrineCamBay.scad": "3c8c83314009c299cb52285863c53d3ec0166ed5abe5b44f457f81a4d31cd4c4"
  },
  "passed": 300,
@@ -65,8 +65,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     2014,
-     2014
+     2090,
+     2090
     ]
    }
   },
@@ -75,8 +75,8 @@
    "passed": true,
    "value": {
     "triangles": [
-     8366,
-     8366
+     8390,
+     8390
     ]
    }
   },
@@ -1576,7 +1576,7 @@
   {
    "check": "part10 overhang area mm2 (informational)",
    "passed": true,
-   "value": 226.7
+   "value": 232.4
   },
   {
    "check": "part12 overhang area mm2 (informational)",
@@ -1586,7 +1586,7 @@
   {
    "check": "part14 overhang area mm2 (informational)",
    "passed": true,
-   "value": 1440.3
+   "value": 1435.5
   },
   {
    "check": "part15 overhang area mm2 (informational)",
@@ -1604,12 +1604,12 @@
    "value": {
     "part1": 129.877,
     "part2": 103.996,
-    "part3": 148.935,
+    "part3": 148.959,
     "part6": 37.496,
     "part9": 75.628,
-    "part10": 6.677,
+    "part10": 6.675,
     "part12": 0.992,
-    "part14": 49.407,
+    "part14": 49.556,
     "part15": 8.2,
     "part19": 12.156,
     "part1_off": 103.672,
