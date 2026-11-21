@@ -9,6 +9,26 @@ sweep fits.
 |------|------|
 | `ZeusFinGuide.stl` | Guide: 127.4 mm across, 40 mm tall, Ø57.8 bore, 3.53 mm slots |
 | `ZeusFinGuide-FitTest.stl` | 10 mm ring with the same bore and slots, to check fits first |
+| `ZeusMidFinGuide-Split.stl` | Split guide for the mid-body fins: two halves, bolted together around the tube |
+
+## Split guide for the mid-body fins
+
+This is the same guide cut in two along a line halfway between fins, so
+each half carries two whole fin slots. The halves close around the tube
+anywhere along the body, so the guide does not have to pass the aft fins
+or come in from an end.
+
+- **Hardware:** 4 × M3×14 socket-head screws and 4 × M3 nuts. M3×12 and
+  M3×16 also work. Each nut drops into the hex trap, and the screw head sits
+  in the counterbore on the other half.
+- **Use:**
+  1. Close the halves around the tube just ahead of the fins.
+  2. Tighten until the halves touch. The bore is the same as the one-piece
+     guide, so it still slides rather than clamping.
+  3. Slide it onto the fins until the collar band stops on the roots. Turn
+     it around to work from the other side of the fins.
+- **Print:** both halves together, flange down, no supports. The horizontal
+  screw holes print as small arches.
 
 - **Print:** flange down, no supports. PLA or PETG, 0.2 mm layers, 3 walls.
 - **Use:** slide the guide on from the forward end until its collar band
