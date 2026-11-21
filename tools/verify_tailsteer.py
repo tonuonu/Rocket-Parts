@@ -150,7 +150,8 @@ def rot_x(deg, z0):
 def capsule(p0, p1, r):
     p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
     L = np.linalg.norm(p1 - p0)
-    c = trimesh.creation.capsule(height=L, radius=r, count=[16, 16])
+    # circumscribed: the faceted capsule is never thinner than r (sagitta added)
+    c = trimesh.creation.capsule(height=L, radius=r / math.cos(math.pi / 32), count=[32, 32])
     T = trimesh.geometry.align_vectors([0, 0, 1], (p1 - p0) / L)
     T[:3, 3] = (p0 + p1) / 2
     c.apply_transform(T)
@@ -182,7 +183,7 @@ def main():
             "Flap_Gap Flap_LE_R Shaft_D Shaft_X0 Shaft_X1 Brg_In_X0 Brg_Out_X1 Brg_B Brg_D Crank_A "
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
-            "Lipo_Z0 Lipo_L").split()
+            "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     p = dict(zip(keys, P))
     m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS) + list(ZEPHYR)}
 
@@ -272,6 +273,37 @@ def main():
     ok = all(r is not None and screw_l <= r - 0.3 for r in room)
     record("aileron clamp screws M2x%g stop >= 0.3 mm short of the tap bottom" % screw_l, ok,
            "seat-to-tap-bottom %s mm" % [None if r is None else round(r, 2) for r in room])
+
+    # ---------- aileron drive play: rays from the shaft axis to the D-groove in the
+    # assembled halves, against the shaft profile (r 2, flat at 1.5 toward -Z). The
+    # split plane (+-12 deg of +-Z) is skipped: the clamp relief is open there.
+    sh_r, sh_flat = p["Shaft_D"] / 2, p["Shaft_D"] / 2 - 0.5
+    half_chord = math.sqrt(sh_r ** 2 - sh_flat ** 2)
+    c_round, c_flat = [], []
+    for xs_ in (58.0, 75.0):
+        for a_deg in np.arange(0, 360, 4):
+            if min(abs(a_deg - 90), abs(a_deg - 270)) < 12:
+                continue
+            a_ = math.radians(a_deg)
+            d_ = np.array([0, math.cos(a_), math.sin(a_)])
+            o_ = np.array([xs_, 0, Z])
+            loc, _, _ = ail.ray.intersects_location([o_], [d_], multiple_hits=False)
+            if len(loc) == 0:
+                continue
+            r_b = float(np.linalg.norm(loc[0] - o_))
+            on_flat = math.sin(a_) < 0 and abs(math.cos(a_)) / -math.sin(a_) <= half_chord / sh_flat
+            r_s = sh_flat / -math.sin(a_) if on_flat else sh_r
+            (c_flat if on_flat else c_round).append(r_b - r_s)
+    cf_, cr_ = max(c_flat), max(c_round)
+    play = math.degrees(math.asin(min(1.0, max(0.0, cf_ + cr_) / half_chord)))
+    o_ = np.array([65.0, -10.0, Z - 8])
+    loc, _, _ = ail.ray.intersects_location([o_], [[0, 1, 0]], multiple_hits=True)
+    ys = sorted(float(y) for y in loc[:, 1])
+    inner = [y for y in ys if -1 < y < 1]
+    gap_c = (inner[1] - inner[0]) if len(inner) >= 2 else 0.0
+    record("aileron drive: angular play < 0.5 deg at the trailing edge, clamp gap > 0",
+           play < 0.5 and gap_c > 0.05,
+           "flat clearance %.3f, round %.3f -> play %.2f deg; split-face gap %.2f mm" % (cf_, cr_, play, gap_c))
 
     # ---------- fin-root fillets: the hatch rebates and openings stay clear of a
     # Fillet_Max leg + 2 mm, measured on the outer skin from each fin face
@@ -465,7 +497,9 @@ def main():
            max(abs(v) for v in phis.values()) <= 35,
            {d: round(v, 2) for d, v in phis.items()})
     gain = (phis[5] - phis[-5]) / 10
-    record("linkage gain near neutral (servo deg per aileron deg)", 1.2 < gain < 1.8, round(gain, 3))
+    ratio = p["Crank_A"] / p["Horn_R"]
+    record("linkage gain near neutral (servo deg per aileron deg) within 5%% of Crank_A/Horn_R = %.2f" % ratio,
+           abs(gain - ratio) < 0.05 * ratio, round(gain, 3))
 
     ax_dir = np.array([-math.sin(th), math.cos(th), 0.0])
     ax_pt = np.array([rc * math.cos(th), rc * math.sin(th), zo])

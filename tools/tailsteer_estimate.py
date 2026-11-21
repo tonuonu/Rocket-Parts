@@ -37,13 +37,13 @@ D_REF = 0.1016
 A_REF = math.pi * D_REF ** 2 / 4
 # Design load case. Max speed of every simulation in PeregrineL2-CamNose.ork
 # (OpenRocket 24.12, tools/ORSimMass.java), as saved and with the tail-steering
-# mass change added (+0.474 kg at 1.5335 m from the tip). The highest is the J350;
+# mass change added (+0.460 kg at 1.531 m from the tip, as a zero-length mass). The highest is the J350;
 # the J420R that L2-PrintSettings.md names reaches 130.0 m/s in the .ork, not the
 # ~200 m/s that file quotes for an earlier, lighter design. Design q uses the
 # J350 as saved (lighter, faster) at sea-level density.
 OR_VMAX = {   # motor: (vmax as saved, vmax with the tail), m/s
-    "J350W": (132.7, 119.3), "J420R": (130.0, 116.7), "HP-J270W": (128.6, None),
-    "I327DM": (106.2, 94.9), "H550ST": (70.6, None)}
+    "J350W": (132.7, 119.7), "J420R": (130.0, 117.1), "HP-J270W": (128.6, None),
+    "I327DM": (106.2, 95.2), "H550ST": (70.6, None)}
 V_DESIGN = 132.7
 Q_MAX = 0.5 * RHO * V_DESIGN ** 2   # 10.79 kPa
 FACTOR_MIN = 2.0                    # servo margin, bearing C0r/P and shaft factor all >= this
@@ -82,7 +82,7 @@ def scad_params(fin_set):
             "Flap_Gap Flap_LE_R Shaft_D Shaft_X0 Shaft_X1 Brg_In_X0 Brg_Out_X1 Brg_B Brg_D Crank_A "
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
-            "Lipo_Z0 Lipo_L").split()
+            "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "p.echo")
         subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Fin_Set="%s"' % fin_set,
@@ -336,7 +336,8 @@ def main():
     gap, cheek, arm_h, win0 = 5.2, 2.5, 9.0, p["Crank_A"] - 3.5 - 1
     arm_w = p["Crank_Xk"] + gap / 2 + cheek - (p["Brg_In_X0"] + p["Brg_B"] + 0.15)
     eye, pin_d, pin_yield = 4.6, 2.0, 1200.0       # hardened dowel (ISO 8734), yield assumed
-    stud_minor, stud_yield, stud_arm = 1.57, 1080.0, 2.3 + 0.3 + 1.25   # M2 12.9; eye half + gap + arm half
+    # M2 x 10 12.9 through the horn arm; the ball load acts Ball_Off (CAD) from the arm mid-plane
+    stud_minor, stud_yield, stud_arm = 1.57, 1080.0, p["Ball_Off"]
     print("  crank (clevis: cheeks %.1f x %.0f, Ø%.0f dowel, eye %.1f; no torsion) and horn stud:" % (cheek, arm_h, pin_d, eye))
     for lab, T_ in (("flight", Ts), ("servo stall 8.4 V", SERVO["stall_Nm"][8.4])):
         Fpp = T_ / (p["Horn_R"] * 1e-3)
@@ -351,14 +352,31 @@ def main():
               % (lab, Fpp, s_cheek, PC["sigma_in"] / s_cheek, s_root, PC["sigma_in"] / s_root, s_pin,
                  pin_yield / s_pin, s_brg, s_stud, stud_yield / s_stud))
     T_stud = stud_yield * (math.pi * stud_minor ** 3 / 32) / stud_arm * p["Horn_R"] * 1e-3
-    print("    the horn stud yields at %.2f N m of servo torque (%.1fx the flight need): a jammed aileron"
-          " at full servo torque bends that screw first" % (T_stud, T_stud / Ts))
+    print("    the horn stud (ball %.2f mm off the arm mid-plane) yields at %.2f N m of servo torque"
+          " (%.1fx the flight need)" % (stud_arm, T_stud, T_stud / Ts))
+    f_stud = T_stud / Ts
     Tlug = SERVO["stall_Nm"][8.4]
     print("  servo lugs: stall reaction %.2f N m over 39 mm -> %.0f N per M2.5 bolt; pedestal bearing"
           " %.1f MPa on the 2 x 8 mm lug face" % (Tlug, Tlug / 0.039, Tlug / 0.039 / (2 * 8) * 1))
+    # aileron drive. D-flat alone: the flat is 2 sqrt(r^2 - d^2) wide; a slight rotation loads
+    # half of it triangularly, so the resultant acts ~0.9 mm off the axis over a 1.32 mm band,
+    # peak = 2 x mean. Dowel drive: Ø2 pin along the chord through the shaft, bearing in the
+    # halves with pressure growing linearly from the axis to the pin's aft end.
+    ratio = p["Crank_A"] / p["Horn_R"]
     eng = p["Shaft_X1"] - (R + p["Flap_Root_Gap"])
-    print("  aileron D-groove (split halves): torque %.2f N m on the flat -> ~%.1f MPa over %.0f mm"
-          % (H, H * 1e3 / 1.5 / (3.4 * eng), eng))
+    flat_w = 2 * math.sqrt((p["Shaft_D"] / 2) ** 2 - (p["Shaft_D"] / 2 - 0.5) ** 2)
+    pin_aft = p["Pin_L"] - 2.2                    # pin length aft of the axis
+    k_pin = p["Pin_D"] / pin_aft * ((pin_aft ** 3 - 2.0 ** 3) / 3)   # T = sigma_max * k_pin (from r 2 = shaft surface)
+    print("  aileron drive (flat %.2f mm wide, %.0f mm engaged; Ø%.0f dowel %.0f mm aft of the axis):"
+          % (flat_w, eng, p["Pin_D"], pin_aft))
+    for lab, T_ in (("flight", H), ("horn-screw yield", T_stud * ratio), ("servo stall 8.4 V", SERVO["stall_Nm"][8.4] * ratio)):
+        s_flat = 2 * (T_ * 1e3 / 0.9) / ((flat_w / 2) * eng)
+        s_pinpc = T_ * 1e3 / k_pin
+        s_pinsh = (T_ * 1e3 / (2 * (p["Shaft_D"] / 2))) / (math.pi * p["Pin_D"] ** 2 / 4)
+        print("    %s, %.2f N m at the aileron: D-flat alone peak %.0f MPa | dowel in PC peak %.0f MPa"
+              " (x%.1f) | dowel shear %.0f MPa" % (lab, T_, s_flat, s_pinpc, PC["sigma_in"] / s_pinpc, s_pinsh))
+    print("    the dowel carries the torque; the D-flat and clamp only locate. In a jam the horn screw yields"
+          " before the dowel's PC bearing reaches its allowable")
     # aileron as a chordwise cantilever from the shaft, root of the widest strip
     cfmax = max(s[2] for s in strips)
     w = F / (Sf * 1e-6)     # mean pressure
@@ -371,14 +389,16 @@ def main():
     f_servo = SERVO["stall_Nm"][6.0] / Ts
     f_brg = BEARING["C0r"] / Ro
     f_shaft = SHAFT_YIELD / sig
-    f_min = min(f_servo, f_brg, f_shaft)
+    f_min = min(f_servo, f_brg, f_shaft, f_stud)
     q_lim = Q_MAX * f_min / FACTOR_MIN
     print("\nLoad envelope (15 deg, alpha 6 deg; loads scale with q):")
-    print("  at %.2f kPa: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f" % (Q_MAX / 1e3, f_servo, f_brg, f_shaft))
+    print("  at %.2f kPa: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f, horn screw %.1f"
+          % (Q_MAX / 1e3, f_servo, f_brg, f_shaft, f_stud))
     print("  all >= %.1f up to q = %.1f kPa = %.0f m/s at sea level" % (FACTOR_MIN, q_lim / 1e3, math.sqrt(2 * q_lim / RHO)))
     for v in (OR_VMAX["J350W"][1], 200.0):
         k = (0.5 * RHO * v * v) / Q_MAX
-        print("  at %.0f m/s (q %.1f kPa): servo %.1fx, C0r/P %.1f, shaft %.1f" % (v, k * Q_MAX / 1e3, f_servo / k, f_brg / k, f_shaft / k))
+        print("  at %.0f m/s (q %.1f kPa): servo %.1fx, C0r/P %.1f, shaft %.1f, horn screw %.1f"
+              % (v, k * Q_MAX / 1e3, f_servo / k, f_brg / k, f_shaft / k, f_stud / k))
 
     # ---- flutter, rough. Panel flutter by the NACA TN 4197 fin formula (as used in
     # Apogee's flutter calculator) for the aileron and the fixed fin, and the
@@ -410,7 +430,9 @@ def main():
     print("\nServo and LiPo heating (lumped, assumptions in the README):")
     sb = 5.67e-8
     # faces toward the motor tube: servo 33 x 35.2 (L x H), LiPo 61 x 15 (length x width along u)
-    for name, A_face, m_g, c_ in (("servo", 33 * 35.2e-6, 30.7, 0.9), ("LiPo", 61 * 15e-6, 28.0, 1.0)):
+    # gap to the floor plate (CAD): servo inner face at lx -5, floor at -7.5; LiPo 0.3 off the floor
+    for name, A_face, m_g, c_, gap_f in (("servo", 33 * 35.2e-6, 30.7, 0.9, 2.5e-3),
+                                         ("LiPo", 61 * 15e-6, 28.0, 1.0, 0.3e-3)):
         T = 303.0
         Tw = 303.0
         cw = 1.6e-3 * A_face * 1200 * 1250   # floor plate behind it: m3 x kg/m3 x J/(kg K) = J/K
@@ -420,7 +442,7 @@ def main():
             t = step * dt
             Tm = 303.0 + 70.0 * min(1.0, t / 30.0)    # motor tube outer surface: 100 C after 30 s
             q1 = A_face * (sb * 0.9 * (Tm ** 4 - Tw ** 4) + 0.026 / 8e-3 * (Tm - Tw))
-            q2 = A_face * (sb * 0.9 * (Tw ** 4 - T ** 4) + 0.026 / 3e-3 * (Tw - T))
+            q2 = A_face * (sb * 0.9 * (Tw ** 4 - T ** 4) + 0.026 / gap_f * (Tw - T))
             Tw += (q1 - q2) / cw * dt
             T += q2 / (m_g * c_) * dt
             for mark in (15, 60, 600):

@@ -3,7 +3,7 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.3  11/21/2026
+// Revision: 0.1.4  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -44,6 +44,10 @@
 //                    hinge pillars fused to the web.
 // 0.1.3  11/21/2026  Review 3: M2x5 aileron clamp screws (M2x6 bottomed out); hatch
 //                    fin-side edge at u 33.5 with a 2 mm rebate, clear of a 10 mm root fillet.
+// 0.1.4  11/21/2026  Review 4: aileron drive line-to-line with a clamp relief and a Ø2
+//                    dowel through the shaft; horn ball 3.95 off the arm (M2x10 12.9,
+//                    0.3 shim); crank arm 14 mm (servo 59 deg, link 1.75); AeroPack RA38L
+//                    retainer keep-out; hatch fin-side rebate 3 mm.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -73,8 +77,12 @@ MMT_L     = 279.4;          // 11 in, kit length (.ork)
 MMT_Z0    = 12.7;           // aft end above the base (.ork: bottom -0.0127)
 Glue_Gap  = 0.2;            // radial epoxy gap at every MMT contact
 MMT_Bore_R = MMT_OD/2 + Glue_Gap;
-Retainer_D = 52;            // envelope of the motor retainer on the MMT end
-Retainer_H = 14;
+// Motor retainer: AeroPack RA38L (Apogee 24062) for 1.630 in (41.4 mm) paper
+// tubes: OD 1.969 in (50.0 mm), 0.5 in (12.7 mm) long, needs >= 3/8 in of tube
+// exposed. Keep-out: its OD + 1 mm radial, from the base to 1 mm past the body
+// on the tube (tube end + 12.7). The cap sits aft of the tube end.
+Retainer_D = 50.0 + 2;
+Retainer_H = MMT_Z0 + 12.7 + 1;
 
 Can_L      = 220;           // full-OD body of the can
 Shoulder_L = 30;            // spigot into the paper tube
@@ -133,6 +141,15 @@ Clamp_Clear_D = 2.2; Clamp_Tap_D = 1.6; Clamp_Head_D = 3.8; Clamp_Tap_L = 2.6;
 // head's top face, flush with the -Y face, to the tip. It must stop 0.3 mm short
 // of the tap hole's bottom; the +Y half keeps Fin_T/2 - Clamp_Tap_L of skin.
 Clamp_Screw_L = 5;
+// Drive: the D-groove is line-to-line with the shaft; near the shaft the split
+// faces stand Clamp_Relief apart, so the screws squeeze the halves onto the
+// shaft instead of onto each other. A Ø2 dowel through a cross hole in the
+// shaft, lying in the split plane along the chord, carries the torque (slip
+// fit; it lifts out of the shaft once the halves are off).
+Clamp_Relief  = 0.25;       // total gap at the split face, from the LE to Relief_Dz aft of the hinge
+Relief_Dz     = 12;
+Pin_D = 2; Pin_Yf = 19; Pin_Z = [2.2, -11.8];   // dowel: dia, y_f, z range rel. hinge
+Pin_X = R_Out + Pin_Yf;
 assert(Clamp_Screw_L <= Fin_T/2 + Clamp_Tap_L - 0.3, "clamp screw bottoms out in the tap hole");
 assert(Fin_T/2 - Clamp_Tap_L >= 0.5, "tap hole leaves under 0.5 mm of +Y skin");
 // Tail-first landing: the fixed fin must reach further aft than any aileron
@@ -187,10 +204,18 @@ Horn_Hub_D = 8; Horn_Hub_H = 3; Horn_Arm_W = 5.5; Horn_Arm_T = 2.5;
 Horn_R     = 8;             // ball stud from the spline axis
 Horn_Plane = Servo_Case_H/2 + 2.0;   // horn mid-plane above the case centre
 Ball_D     = 4.8;           // M2 ball stud
-Ball_Off   = 6.0;           // ball centre from the arm mid-plane (link eye clears the arm)
+// Horn pivot: the 4.8 mm pivot ball on an M2 x 10 12.9 screw through the servo's
+// metal arm (2.5 thick), a 0.3 mm shim between arm and ball, M2 nut beyond the ball.
+// Ball centre = arm half + shim + ball half; the link eye (4.6) clears the arm by 0.3.
+Horn_Shim  = 0.3;
+Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
+Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
+Ball_Off   = 2.5/2 + Horn_Shim + 4.8/2;
+Horn_Screw_L = 2.5 + Horn_Shim + 4.8 + Horn_Nut[1] + 0.5;   // grip + 0.5 protrusion
+assert(Horn_Screw_L <= 10, "horn pivot needs a longer screw than M2 x 10");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
-Crank_A    = 12;            // crank arm, shaft axis to ball centre
+Crank_A    = 14;            // crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the servo, and its hatch, further from the fin)
 // Servo placement: the case lies flat (W radial) with its centre at Servo_Rc
 // in the fin frame; the horn points inward. The angle is solved so the horn
 // ball sits axially over the crank ball (pushrod parallel to the axis).
@@ -231,11 +256,11 @@ Set_Insert   = [4.0, 5.0];  // ruthex RX-M3x4.0 SHORT: hole, pocket depth (L+1)
 Bay_Ly      = [-32.0, 24.5];   // web positions (fin-side web 1 mm clear of the pushrod links)
 Bay_Floor_X = [-9.1, -7.5];
 Bay_Web_T   = 1.6;
-Floor_Ly0   = -(Servo_Case_H/2 - 0.3);                        // floor stops at the case top (horn side)
+Floor_Ly0   = -16.0;                                           // floor stops short of the horn's pivot nut
 Floor_Bridge_Z = Servo_ZO + Horn_R*sin(25) + Link_Eye_D/2 + 1.5; // floor reaches the web above the horn
 Lug_Bolt_D  = 2.8;          // M2.5 through the lug
 Lug_Nut_AF  = 5.0; Lug_Nut_T = 2.0;
-Ped_Ly      = [-18.0, -8.6];   // horn arm passes at ly <= -18.35
+Ped_Ly      = [-16.0, -8.6];   // the horn's pivot nut passes at ly <= -16.75; the nut trap opens at -16
 Ped_X_In    = -7.5;
 Spine_X     = [-7.5, -5.3];
 Ped_Z_Aft   = [0, Servo_ZO - Servo_Spline_Off - 0.3];
@@ -250,7 +275,7 @@ Lipo_Lx0 = Bay_Floor_X[1] + 0.3;
 Strap_Slot = [2.5, 14];
 
 // Hatch openings (servo frame, u = -ly)
-Hatch_U   = [-23.5, 33.5];    // servo part: arc at R_Out from the servo angle; the horn ball lifts out from 33.0 (verifier)
+Hatch_U   = [-23.5, 33.5];    // servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0 (verifier)
 Hatch_Z   = [Servo_Zc - Servo_Lug_L/2 - 1, Servo_Zc + Servo_Lug_L/2 + 1];   // passes the lugs
 Hatch_Bat_U = [-11.5, 11.5];  // sector A battery part
 Hatch_Bat_Z1 = 192;
@@ -258,7 +283,7 @@ Hatch_Rebate = 7.5;           // cover overlap round the opening
 // On the fin-side edge the rebate is narrow, so a fin-root fillet with a 10 mm
 // leg still ends 2 mm short of the cover: the fin face is at u = Servo_Theta's
 // arc minus Fin_T/2 (no screw sits on that edge).
-Hatch_Rebate_Fin = 2.0;      // cover seat 1.75 mm on this edge (no screw on it)
+Hatch_Rebate_Fin = 3.0;      // cover seat 2.75 mm on this edge (no screw on it)
 Fillet_Max = 10;              // fin-root fillet leg the hatches leave room for (+2 mm)
 assert(Servo_Theta*PI/180*R_Out - Fin_T/2 - (Hatch_U[1] + Hatch_Rebate_Fin) >= Fillet_Max + 2,
        "hatch rebate too close to the fin root fillet");
@@ -390,10 +415,14 @@ module Aileron_Body() intersection(){
     }
 }
 // blind D-bore from the root, flat toward -Z (aft) as on the shaft
-module Aileron_Bore()
+module Aileron_Bore(){
     translate([R_Out + Flap_Root_Gap - 1, 0, Hinge_Z]) rotate([0,90,0])
         linear_extrude(height = Shaft_X1 + 0.5 - (R_Out + Flap_Root_Gap - 1), convexity=4)
-            rotate(90) Shaft_Section(Shaft_D + 0.15, Shaft_Flat - 0.05);
+            rotate(90) Shaft_Section(Shaft_D, Shaft_Flat);      // line-to-line
+    translate([Pin_X, 0, Hinge_Z + Pin_Z[1]]) cylinder(d=Pin_D + 0.05, h=Pin_Z[0] - Pin_Z[1], $fn=24);
+    // split-face relief round the shaft
+    translate([0, -Clamp_Relief/2, Hinge_Z - Relief_Dz]) cube([400, Clamp_Relief, 400]);
+}
 // clamp screw at [dz aft of the hinge, y_f]: countersink on -Y, clearance in
 // the -Y half, tap drill blind in the +Y half (its outer face stays closed)
 function Clamp_Pos(c) = [R_Out + c[1], Hinge_Z - c[0]];
@@ -415,9 +444,11 @@ module Aileron_Half(half, defl=Defl)
 module Aileron(defl=Defl){ Aileron_Half(-1, defl); Aileron_Half(1, defl); }
 
 module Shaft(defl=Defl)
-    translate([0,0,Hinge_Z]) rotate([defl,0,0])
+    translate([0,0,Hinge_Z]) rotate([defl,0,0]) difference(){
         translate([Shaft_X0,0,0]) rotate([0,90,0])
             linear_extrude(height=Shaft_L, convexity=2) Shaft_Section_Pose();
+        translate([Pin_X, 0, -5]) cylinder(d=Pin_D + 0.05, h=10, $fn=24);   // cross hole for the drive dowel
+    }
 // flat toward -Z: in the rotated extrude frame local x = -Z
 module Shaft_Section_Pose() rotate([0,0,90]) Shaft_Section(Shaft_D, Shaft_Flat);
 
@@ -510,8 +541,13 @@ module Horn_Envelope0(phi=0){
             translate([-Horn_R, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Arm_W, h=Horn_Arm_T, center=true, $fn=24);
         }
-        // ball stud and ball
-        translate([-Horn_R, -Horn_Plane, Servo_ZO]) rotate([90,0,0]) cylinder(d=2.0, h=Ball_Off, $fn=16);
+        // pivot screw: nut on the case side, head beyond the ball
+        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
+            cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=6);
+        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
+            cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
+        translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
+            cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
         translate([-Horn_R, -Horn_Ball_U, Servo_ZO]) sphere(d=Ball_D, $fn=24);
     }
 }
@@ -725,8 +761,11 @@ module Hinge_Holes(){
     Teardrop_X(Brg_Relief_D, Brg_Out_X1 - Overlap, R_In + Overlap);
     Teardrop_X(Wall_Hole_D, R_In - 1, R_Out + 1);
     // crank window: everything between the housings on the +Y side of the web
-    translate([Brg_In_X0 + Brg_B + 0.05, Web_Y[1], -1])
-        cube([(Brg_Out_X1 - Brg_B) - (Brg_In_X0 + Brg_B) - 0.1, Crank_Tip_Y + 1.5 - Web_Y[1], Hinge_Z + Housing_D]);
+    intersection(){
+        translate([Brg_In_X0 + Brg_B + 0.05, Web_Y[1], -1])
+            cube([(Brg_Out_X1 - Brg_B) - (Brg_In_X0 + Brg_B) - 0.1, Crank_Tip_Y + 1.5 - Web_Y[1], Hinge_Z + Housing_D]);
+        cylinder(r=R_In - 0.5, h=Can_L, $fn=192);    // never into the wall
+    }
 }
 
 // servo bay: floor plate, two webs to the wall, lug pedestals with nut traps
@@ -848,12 +887,13 @@ echo(str("TS_PARAMS ", R_Out, " ", R_In, " ", MMT_OD, " ", MMT_Z0, " ", MMT_L, "
          Crank_Xk, " ", Servo_Theta, " ", Servo_Rc, " ", Servo_ZO, " ", Pushrod_L, " ",
          Horn_Ball_U, " ", Fin_T, " ", Can_L, " ", Total_H, " ", Rail_A, " ", Rail_Aft_Z, " ",
          Tube_Piece_L, " ", Ply_CR_Z0, " ", Flap_Max, " ", Sw_A, " ", Sw_Z, " ",
-         Flap_X_Max, " ", Fixed_Aft_X(), " ", Lipo_Z0, " ", Lipo[2]));
+         Flap_X_Max, " ", Fixed_Aft_X(), " ", Lipo_Z0, " ", Lipo[2], " ", Ball_Off, " ",
+         Horn_Arm_T, " ", Pin_D, " ", Pin_Z[0] - Pin_Z[1], " ", Clamp_Relief));
 echo(str("TS_HATCH ", Hatch_U[0], " ", Hatch_U[1], " ", Hatch_Z[0], " ", Hatch_Z[1], " ",
          Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate, " ",
          Hatch_Rebate_Fin, " ", Fillet_Max));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.3: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.1.4: fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

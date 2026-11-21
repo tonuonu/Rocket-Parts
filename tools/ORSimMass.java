@@ -38,6 +38,7 @@ public class ORSimMass {
             MassComponent mc = new MassComponent();
             mc.setName("tail steering delta");
             mc.setComponentMass(dm);
+            mc.setLength(0);   // 24.12 default is a 25 mm packed length: the CG would sit 12.5 mm aft of x
             aft.addChild(mc);
             mc.setAxialMethod(AxialMethod.ABSOLUTE);
             mc.setAxialOffset(x);

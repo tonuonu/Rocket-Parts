@@ -8,17 +8,17 @@
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "289.7 cm3"
+   "value": "283.0 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
    "passed": true,
-   "value": "7.9 cm3"
+   "value": "8.0 cm3"
   },
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "11.2 cm3"
+   "value": "11.3 cm3"
   },
   {
    "check": "Crank is one closed solid",
@@ -28,27 +28,27 @@
   {
    "check": "AileronScrewHalf_Peregrine is one closed solid",
    "passed": true,
-   "value": "8.5 cm3"
+   "value": "8.4 cm3"
   },
   {
    "check": "AileronTappedHalf_Peregrine is one closed solid",
    "passed": true,
-   "value": "8.6 cm3"
+   "value": "8.5 cm3"
   },
   {
    "check": "AileronScrewHalf_Zephyr is one closed solid",
    "passed": true,
-   "value": "5.7 cm3"
+   "value": "5.6 cm3"
   },
   {
    "check": "AileronTappedHalf_Zephyr is one closed solid",
    "passed": true,
-   "value": "5.8 cm3"
+   "value": "5.7 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
    "passed": true,
-   "value": "8.6 cm3"
+   "value": "7.6 cm3"
   },
   {
    "check": "can height fits the P1S (<= 250.5)",
@@ -118,7 +118,7 @@
   {
    "check": "can clears covers",
    "passed": true,
-   "value": 0.0007
+   "value": 0.0006
   },
   {
    "check": "can clears tube",
@@ -212,19 +212,24 @@
    "value": "seat-to-tap-bottom [5.77, 5.77, 5.77, 5.77] mm"
   },
   {
+   "check": "aileron drive: angular play < 0.5 deg at the trailing edge, clamp gap > 0",
+   "passed": true,
+   "value": "flat clearance 0.000, round 0.000 -> play 0.00 deg; split-face gap 0.25 mm"
+  },
+  {
    "check": "hatch rebates clear a 10 mm fin-root fillet by >= 2 mm",
    "passed": true,
-   "value": "nearest recess 12.4 mm from a fin face"
+   "value": "nearest recess 12.6 mm from a fin face"
   },
   {
    "check": "servos keep >= 8 mm of air to the motor tube",
    "passed": true,
-   "value": 12.73
+   "value": 12.74
   },
   {
    "check": "lipo keep >= 8 mm of air to the motor tube",
    "passed": true,
-   "value": 10.53
+   "value": 10.54
   },
   {
    "check": "switch keep >= 5 mm of air to the motor tube",
@@ -234,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8504 rays, thin: []"
+   "value": "8572 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -263,13 +268,13 @@
    "check": "no hatch screw head on the rail strip (60 +- 18.0 deg)",
    "passed": true,
    "value": [
-    88.9,
-    28.7,
-    39.7,
-    208.9,
-    152.4,
-    328.9,
-    272.4
+    90.4,
+    30.1,
+    41.1,
+    210.4,
+    153.8,
+    330.4,
+    273.8
    ]
   },
   {
@@ -301,19 +306,19 @@
    "check": "servo travel for +-15 deg aileron is within +-35 deg",
    "passed": true,
    "value": {
-    "-15.0": -22.92,
-    "-10.0": -15.11,
-    "-5.0": -7.51,
+    "-15.0": -27.06,
+    "-10.0": -17.71,
+    "-5.0": -8.77,
     "0.0": -0.0,
-    "5.0": 7.51,
-    "10.0": 15.08,
-    "15.0": 22.77
+    "5.0": 8.77,
+    "10.0": 17.67,
+    "15.0": 26.8
    }
   },
   {
-   "check": "linkage gain near neutral (servo deg per aileron deg)",
+   "check": "linkage gain near neutral (servo deg per aileron deg) within 5% of Crank_A/Horn_R = 1.75",
    "passed": true,
-   "value": 1.502
+   "value": 1.755
   },
   {
    "check": "aileron travel +-15 deg: nothing collides (aileron, crank, pushrod, horn)",
@@ -333,7 +338,7 @@
   {
    "check": "pushrod/ball-link envelope to can gap >= 1.2 mm",
    "passed": true,
-   "value": 1.21
+   "value": 3.14
   },
   {
    "check": "fins and ailerons at full travel stay off the rail",
@@ -381,14 +386,14 @@
   "Brg_Out_X1": 47.75,
   "Brg_B": 4.0,
   "Brg_D": 9.0,
-  "Crank_A": 12.0,
+  "Crank_A": 14.0,
   "Horn_R": 8.0,
-  "Crank_Xk": 37.9685,
-  "Servo_Theta": 57.5474,
+  "Crank_Xk": 35.9006,
+  "Servo_Theta": 58.9769,
   "Servo_Rc": 38.5,
   "Servo_ZO": 86.0,
   "Pushrod_L": 52.0,
-  "Horn_Ball_U": 25.6,
+  "Horn_Ball_U": 23.55,
   "Fin_T": 6.35,
   "Can_L": 220.0,
   "Total_H": 250.0,
@@ -402,6 +407,11 @@
   "Flap_X_Max": 319.983,
   "Fixed_Aft_X": 324.983,
   "Lipo_Z0": 128.0,
-  "Lipo_L": 61.0
+  "Lipo_L": 61.0,
+  "Ball_Off": 3.95,
+  "Horn_Arm_T": 2.5,
+  "Pin_D": 2.0,
+  "Pin_L": 14.0,
+  "Clamp_Relief": 0.25
  }
 }
