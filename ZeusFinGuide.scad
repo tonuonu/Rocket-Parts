@@ -37,10 +37,13 @@
 //
 //  ***** History *****
 // 0.1.0  11/9/2026  First version.
+// 0.2.0  11/21/2026 Split guide (Render_Part 3) for the mid-body fins:
+//                   two halves bolt together around the tube, so it can
+//                   be put on anywhere along the body.
 //
 // ***********************************
 
-Render_Part = 1;    // 1 = guide, 2 = fit test ring
+Render_Part = 1;    // 1 = guide, 2 = fit test ring, 3 = split guide (mid fins)
 
 $fn = $preview ? 90 : 240;
 
@@ -59,6 +62,19 @@ Flange_T  = 6;      // closed-end band that stops on the fin root
 Collar_W  = 3;      // collar wall
 Wall_T    = 3;      // guide wall
 Glue_Relief = 1.5;  // extra slot width each side next to the tube
+
+// Split guide: the two halves are clamped by M3 screws through a block
+// on each split line, halfway between two fins.
+Split_Block_W  = 16;    // across the split line, 8 mm per half
+Split_Block_R  = 47;    // block reaches out to this radius
+Split_Screw_R  = 40;    // screw axis radius
+Split_Screw_Z  = [12, 30];
+Split_Screw_D  = 3.4;   // M3 clearance
+Split_Head_D   = 6.4;   // M3 socket head counterbore
+Split_Head_Depth = 3;
+Split_Nut_AF   = 5.7;   // M3 nut 5.5 across flats + clearance
+Split_Nut_Depth  = 3;
+Split_Gap      = 10;    // between the halves on the print bed
 
 // ========== COMPUTED ==========
 
@@ -117,7 +133,60 @@ module Fit_Test(){
     Fin_Guide(h = 10, l = 12, flange = 3);
 }
 
+// Split guide for fins in the middle of the body. The split lines run
+// halfway between fins (45 degrees off the fins with four fins), so each
+// half carries whole fin slots. Close it around the tube just ahead of
+// the fins, tighten the screws until the halves touch, then slide it on
+// to the fins like the one-piece guide. Same bore: it slides, not clamps.
+Split_A = 180/Fin_Count;   // split plane angle, between fins
+
+module Split_Rotate(){ rotate([0, 0, Split_A]) children(); }
+
+module Split_Guide_Whole(){
+    difference(){
+        union(){
+            Fin_Guide();
+            // Clamp blocks on both ends of the split line.
+            Split_Rotate() for (s = [-1, 1]) rotate([0, 0, s > 0 ? 0 : 180])
+                translate([Collar_D/2 - 1, -Split_Block_W/2, 0])
+                    cube([Split_Block_R - Collar_D/2 + 1, Split_Block_W, Guide_H]);
+        }
+        translate([0, 0, -Overlap]) cylinder(d = Bore_D, h = Guide_H + 2*Overlap);
+        Split_Rotate() for (s = [-1, 1]) rotate([0, 0, s > 0 ? 0 : 180])
+            for (z = Split_Screw_Z) translate([Split_Screw_R, 0, z]){
+                // Screw across the split line (along local y).
+                rotate([90, 0, 0]) cylinder(d = Split_Screw_D,
+                    h = Split_Block_W + 2, center = true, $fn = 32);
+                // Head counterbore on +y, nut trap on -y. The hex has a
+                // corner up so its roof prints without support.
+                translate([0, Split_Block_W/2 - Split_Head_Depth, 0])
+                    rotate([-90, 0, 0])
+                        cylinder(d = Split_Head_D, h = Split_Head_Depth + 1, $fn = 48);
+                translate([0, -Split_Block_W/2 + Split_Nut_Depth, 0])
+                    rotate([90, 0, 0]) rotate([0, 0, 30])
+                        cylinder(d = Split_Nut_AF/cos(30), h = Split_Nut_Depth + 1, $fn = 6);
+            }
+    }
+}
+
+// side = +1 or -1: the half on that side of the split plane.
+module Split_Guide_Half(side){
+    intersection(){
+        Split_Guide_Whole();
+        Split_Rotate() translate([-100, side > 0 ? 0 : -100, -1])
+            cube([200, 100, Guide_H + 2]);
+    }
+}
+
+// Both halves on the bed, flange down, split faces apart.
+module Split_Guide_Print(){
+    for (s = [-1, 1]) Split_Rotate() translate([0, s*Split_Gap/2, 0])
+        rotate([0, 0, -Split_A]) Split_Guide_Half(s);
+}
+
 // ========== RENDER ==========
 
 if (Render_Part == 1) Fin_Guide();
 if (Render_Part == 2) Fit_Test();
+if (Render_Part == 3) Split_Guide_Print();
+if (Render_Part == 4) Split_Guide_Whole();   // assembled, for checks
