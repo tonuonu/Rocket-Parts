@@ -21,7 +21,7 @@ Cl_δ need scaling to this aileron and fin.
 | | Peregrine (164 m/s design) | Zephyr (Mach 0.8) |
 |---|---|---|
 | Design point | q 10.8 kPa (J350, 132.7 m/s), no compressibility | q 45.4 kPa at M 0.80 (272 m/s), loads × 1.67 (Prandtl–Glauert), so 75.7 kPa effective |
-| Fastest motor with the tail | J350W 119.7 m/s | J510W 263.1 m/s (M 0.78) |
+| Fastest motor with the tail | J350W 119.7 m/s | J510W 237.4 m/s (M 0.70) |
 | Motor mount | 38 mm × 279.4 (kit) | 38 mm × 609.6, for 38/1080-class J motors up to 584 mm |
 | Fins | 1/4 in birch ply, Peregrine outline | 1/4 in carbon-fibre plate; span 125, tip chord 90, trailing edge swept 12 mm past the base |
 | Fixed-fin flutter (TN 4197) | — | 1350 m/s, 5.0× the design speed |
@@ -29,10 +29,11 @@ Cl_δ need scaling to this aileron and fin.
 | Link ratio (crank / horn) | 14 / 9 = 1.56 | 16 / 8 = 2.00 (servo lash counts half) |
 | Roll authority at full travel | Cl 1.09 (0.073 /deg × 15°) | Cl 0.32 (0.064 /deg × 5°) = 29× the fins' own induced roll |
 | Factors at the design point (servo / bearing / shaft / horn screw) | 5.7× / 3.4 / 3.1 / 3.8 | 12.1× / 2.8 / 2.5 / 7.1 |
-| Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | 288 m/s (M 0.85) with Prandtl–Glauert |
+| Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
+| Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at ±6°** |
 | Canards | On the nose | Removed |
 | Tail mass change | +460 g | +877 g against the stock kit fin section |
-| Margin at max speed | 2.32 cal | 2.01 cal (OpenRocket, the new fins) |
+| Margin at max speed | 2.32 cal | 1.91 cal (OpenRocket model of the build) |
 
 The can, bearings, shaft, servo, crank design, hatches and wiring stay the Peregrine's. At
 ±5° the 4 mm shaft and the 684 bearings hold Mach 0.8 with a factor of 2.5 or more, so the
@@ -43,31 +44,36 @@ cannot move aft into the motor retainer's keep-out.
 ## Design choices
 
 - **Motor mount: 38 mm.**
-  - With the tail-steering mass, the fastest commercial 38 mm motors reach M 0.72–0.78 in OpenRocket 24.12 (`Zephyr-CamNose.ork` rerun by `tools/ORSimMass.java`, Långtora conditions). That is close to the target and under it:
+  - `Zephyr-CamNose.ork` (MyLevel1Peregrine) models this build part by part: OpenRocket component masses, every tail-steering part at its CAD station, 43 motors that all fit the 609.6 mm tube, Långtora conditions (ISA, 3 m/s wind) on an 8 ft rail. The fastest buildable motors reach M 0.67–0.70, under the target:
 
-    | Motor | Length | v max, with the tail | Mach | v max, stock kit fins, no tail |
-    |---|---:|---:|---:|---:|
-    | AeroTech J510W | 584 mm | 263.1 m/s | 0.78 | 317.5 m/s |
-    | Cesaroni 1115J530-15A (Pro38 6XL) | 500 mm | 259.9 m/s | 0.77 | 318.8 m/s |
-    | AeroTech J825R (38/1080) | 478 mm | 257.2 m/s | 0.76 | 327.6 m/s |
+    | Motor | Length | v max | Mach (ISA) | Rod exit | Margin at v max | Apogee |
+    |---|---:|---:|---:|---:|---:|---:|
+    | AeroTech J510W | 584 mm | 237.4 m/s | 0.70 | 31.3 m/s, 1.07 cal | 1.91 cal | 1514 m |
+    | Cesaroni 1115J530-15A (Pro38 6XL) | 500 mm | 232.4 m/s | 0.68 | 30.5 m/s, 0.98 cal | 1.89 cal | 1447 m |
+    | AeroTech J825R (38/1080) | 478 mm | 226.6 m/s | 0.67 | 35.5 m/s, 1.15 cal | 1.86 cal | 1260 m |
 
   - A 54 mm tube was not taken for its geometry. Its bore (r 28.9) takes the place of the inner bearing (r 25–29), and the servos would lose their 8 mm air gap; the hinge would need a new layout. This is reasoned by hand, not CAD-checked.
-  - 54 mm motors could reach the target. An early scan (kit-span fins, a lighter tail estimate) had several J and K motors at M 0.86–0.90, and some K motors at M 0.98–1.0.
+  - 54 mm motors would reach the target. An early scan (kit-span fins, a lighter mass estimate) had several J and K motors at M 0.86–0.90 and some K motors at M 0.98–1.0.
   - The motor tube is 24 in (609.6 mm) so that the longest pick, the J510W, sits fully inside it.
-  - Without the tail mass, the J motors would pass Mach 0.9. The hinge is cleared for this airframe only as built, with the tail steering.
+  - The hinge is sized for Mach 0.8, above every buildable motor, so a lighter build than the model (each 100 g is worth about 6 m/s) stays inside it.
 - **Fins: 1/4 in (6.35 mm) carbon-fibre plate** (woven 0/90 epoxy, ~1.5 g/cm³, in-plane shear modulus ~4 GPa assumed).
   - The aileron has to be 6.35 mm thick to hold the Ø4 shaft and the M2 clamp screws. A fixed fin of the same thickness keeps the aileron flush at Mach 0.8 and keeps the can's fin slot.
-  - At this thickness, carbon is 19 % lighter than G10 (626 g against 838 g for three fins). At equal span that is worth about 8 m/s (OpenRocket).
+  - At this thickness, carbon is 19 % lighter than G10 (626 g against 773 g for these three fins). That is worth about 8 m/s (OpenRocket).
   - 1/4 in birch ply would sit at the limit on this outline: about 415 m/s (1.5×), on an assumed G of 0.38 GPa.
 - **Fin outline.** The root chord (228.27) and root LE station (Z 245.03) are the kit's.
   - Span 125 (kit 112.9), tip chord 90, tip LE 167 aft of the root LE. The trailing edge is straight from the root TE to the tip TE, 12 mm past the base.
   - The kit's notched aft extension is gone, and with it the old aileron clip.
-  - The larger span keeps 2.01 cal at max speed despite +877 g at the tail. The kit fin with the same mass gives 1.74 cal.
+  - The larger span keeps 1.91 cal at max speed despite +877 g at the tail. The kit fin outline, at the same mass, gives 1.64 cal.
   - The swept TE puts the fixed fin's tip on the ground first: it reaches 12 mm past the base, the ailerons stop 4 mm short of it.
 - **Aileron: ±5°, the Peregrine planform rule.** It spans y 0.8–55 and runs from the hinge to the trailing edge, a chord of 17.5–29.8 mm aft of the hinge.
   - The span is fixed by field service: the 54 mm shaft must come out into the cut-out.
   - Authority is 29× the 0.011 target. Travel, not size, sets the hinge loads, so travel is what is limited.
-  - The verifier checks ±5°. Set the Vega's command limit and the servo end points to ±5°; nothing stops the linkage mechanically there.
+  - **Servo end points at ±10° of servo (±5° aileron) and the Vega's ±5° command limit are mandatory.** A mechanical stop at ±6° is the backup (next item).
+- **Mechanical travel stop at ±6°.** A Ø4 × 12 hardened dowel lies in the aileron's split plane, 13 mm below the hinge, clamped by the two halves like the drive dowel. It reaches 3.5 mm into a pocket in the outer hinge pillar. The pocket is 6.72 mm wide, so its side walls stop the pin at ±6.0° whatever the servo does. Its roof stays 2.9 mm under the outer bearing seat.
+  - At full servo stall (3.65 N·m at the aileron) the pin load is 281 N: 22 MPa of shear and 114 MPa of bending in the hardened pin; 20.0 MPa on the PC pocket wall (×2.2, in-layer); 9.1 MPa in the halves (×4.9). In practice the horn's M2 pivot screw yields first, at 1.66 N·m at the aileron, and the pocket is then at ×4.9.
+  - Aero at ±6°, α 6°, the design q: servo 10.5×, bearing C0r/P 2.4, shaft 2.2. All are ≥ 2, so the stop angle is inside the sized envelope.
+  - The verifier sweeps the servo's whole reachable throw: the pin clears the can through ±5°; nothing touches inside ±6°; the pin bites the pocket by ±6.3°; and up to the stop nothing else (aileron, crank, horn, links) touches.
+  - Field service: once the halves are off, the pin lifts out of the pocket.
 - **Servo and bearings: MKS HV6160 and NSK 684AZZ, as on the Peregrine.**
   - At the design point the servo margin is 12.1×. The bearings' C0r/P is 2.8, and the shaft's factor is 2.5.
   - A Ø5–6 shaft would need a thicker aileron (and fin) for no gain at ±5°.
@@ -76,7 +82,7 @@ cannot move aft into the motor retainer's keep-out.
   - The servo sits at 62.2° from its fin (Peregrine 60.4°). The hatch rebates then stay 15.4 mm from a fin face.
 - **Fin can: polycarbonate, as the Peregrine.**
   - Loads on the can stay small. The hatch covers see about 23 kPa of suction (Cp −0.3 × the effective q), which is 22 MPa of bending in the 1.6 mm cover (×2) and 25–37 N per M3 insert.
-  - Stagnation heating at M 0.78 is about +31 K, for seconds. PC's HDT is about 130 °C.
+  - Stagnation heating at M 0.70 is about +25 K, for seconds. PC's HDT is about 130 °C.
   - PA-CF would be stiffer but takes up moisture, and nothing here is stiffness-limited.
 - **Flutter and buzz.**
   - Fixed fin: NACA TN 4197 gives 1350 m/s, 5.0× the design speed (sea level, G 4 GPa).
@@ -86,7 +92,7 @@ cannot move aft into the motor retainer's keep-out.
     - That leaves about 0.7° of servo lash. MKS publishes no lash figure for the HV6160.
     - Bench item: with the servo powered at neutral, rock the trailing edge by hand. The total movement at a 30 mm chord must be under 0.26 mm (0.5°).
 - **Nose: the camera nose with the canards removed.**
-  - That means the canard fin set, servo cassette, 4 servos, servo pack, switch, saddle and cell keeper: 400.8 g, leaving a 920 g nose.
+  - That means the canard fin set, servo cassette and its screws, 4 servos, servo pack, switch, saddle and cell keeper: 404.6 g, leaving a 916.5 g nose.
   - The canards reverse roll control (CFD). They are printed PETG, and at Mach 0.8 they would be the weakest, flutter-prone surfaces. Ahead of the CG they also cost margin.
   - Print the plain (non-canard) shoulder and bottom slice; the OpenRocket model keeps the canard-version masses as proxies.
 
@@ -100,8 +106,8 @@ Frame: Z = 0 at the base, +Z forward; x from the nose tip = 1397.68 − Z. Fins 
 | Paper aft tube | The forward 237.2 mm of the kit's slotted AT-98/18 tube (x 940.5–1177.7). The 220 mm cut off its aft end carries all the kit slots |
 | Kit coupler (AC-98, 203.2) | At the joint with the forward AT-98/18 tube (x 940.5), glued as the kit |
 | Fixed fins | 1/4 in carbon plate to `FixedFin_Zephyr.dxf`. Through-the-wall tab Z 55–175 glued to the motor tube; root LE at Z 245.0 (x 1152.65, the drawing's station) |
-| Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° |
-| Motor tube | 38 mm × 609.6, aft end Z 12.7 (as the kit), forward end Z 622.3 (x 775.4) |
+| Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° (stop pin at Z 21, pocket in the outer hinge pillar: ±6°) |
+| Motor tube | 38 mm × 609.6, aft end Z 12.7 (as the kit), forward end Z 622.3 (x 775.4); motors hang 12.7 mm out of its aft end (as the Peregrine) |
 | Can seal | The kit's slotted ring at Z 251 (x 1146.7), on the motor tube over the can's shoulder: the can's gas seal |
 | Motor-tube top | The kit ring with the eyebolt at Z 616–622 (x 775–782): it carries the tube's forward end, seals the annulus and anchors the shock cord, in the recovery bay |
 | Rail buttons | Kit stations: aft on the can (Z 53.98, x 1343.7) in an RX-M4x8.1 boss; forward on the paper tube (x 1045.3) with the kit weld nut |
@@ -129,7 +135,8 @@ Run `tools/tailsteer_estimate.py --airframe Zephyr`.
 | 5°, α 4° | 0.217 N·m | 0.109 N·m | 26.0 N | — |
 | 5°, α 6° (sizing) | 0.234 N·m | 0.117 N·m | 27.7 N at r 81.5 | servo 12.1× (6.0 V), bearing C0r/P 2.8 (outer 80.9 N), shaft 2.5 (179 MPa), horn screw 7.1 |
 
-- **Envelope:** all factors ≥ 2 up to 288 m/s (M 0.85) at sea level with Prandtl–Glauert. At the J510W's 263.1 m/s the factors are servo 13.7×, bearing 3.1, shaft 2.8, horn screw 8.0.
+- **Envelope:** all factors ≥ 2 up to M 0.85 with Prandtl–Glauert. That is 288 m/s at ISA sea level and 277 m/s on a −5 °C day. The design point is a Mach number, and its q = 0.7 p M² at sea-level pressure does not depend on temperature. At the J510W's 237.4 m/s (ISA) the factors are servo 19.1×, bearing 4.4, shaft 3.9, horn screw 11.1. The speeds and Mach numbers in this README are ISA (the sims' atmosphere).
+- **At the stop (±6°):** servo 10.5×, bearing 2.4, shaft 2.2 (see Design choices).
 - **Crank and horn:** in flight the pushrod carries 15 N and every crank part has a factor of 22 or more. At servo stall into a jammed aileron, the horn's M2 × 10 12.9 pivot screw yields first, at 0.83 N·m of servo torque.
 - **Aileron drive:** the dowel's bearing pressure in the PC is ×17.8 in flight and ×2.5 when the horn screw yields.
 - **Landing:** the 4 mm annealed silver-steel shaft yields at about 70 N on the aileron, as on the Peregrine; it is the fuse.
@@ -155,19 +162,18 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 | Rail buttons | 3.8 g | 200 |
 | **Total** | **1541.5 g** | **155.2** |
 
-- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both.
-- **Change:** +877 g, applied in OpenRocket as one mass of 0.877 kg at x 1.2318 m (folded into the stage mass override), together with the new fin outline (`tailsteer_estimate.py --fins-csv`).
-- **Stability, OpenRocket** (`Zephyr-CamNose.ork`, J510W, new fins and mass):
+- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +877 g.
+- **OpenRocket:** `Zephyr-CamNose.ork` carries these parts as components and mass components, with OpenRocket's own masses for the kit parts (see Mass basis). Dry mass is 3.18 kg; with the J510W, 4.26 kg at liftoff.
+- **Stability** (J510W, 8 ft rail, 3 m/s wind):
 
   | State | Margin |
   |---|---|
-  | Max speed (263 m/s) | **2.01 cal** (CG 0.896, CP 1.099 m) |
-  | Rod exit, 1.2 m rod, 3 m/s wind | 0.99 cal |
-  | Rod exit, 8 ft rail | 1.13 cal |
+  | Max speed (237 m/s) | **1.91 cal** (CG 0.900, CP 1.094 m) |
+  | Rod exit (31.3 m/s) | 1.07 cal |
 
-  - The fin recheck: with the same mass, the kit fin gives 1.74 cal (CP 1.072 m at 264 m/s); the new fin (19892 mm² against 19200) puts the CP 28 mm further aft, for 2.01 cal. The kit-outline concern (the 643 mm² the old aileron clip removed) no longer applies: this outline has no clip, and OpenRocket flies the fixed fin and aileron as one outline (the 0.8 mm gaps closed), not as two fin sets.
+  - The fin recheck: the kit fin outline, at the same mass, gives 1.64 cal (CP 1.066 m); the new fin (19892 mm² against 19200) puts the CP 28 mm further aft. The kit-outline concern (the 643 mm² the old aileron clip removed) no longer applies: this outline has no clip, and OpenRocket flies the fixed fin and aileron as one outline (the 0.8 mm gaps closed), not as two fin sets.
   - The CFD CP of the kit-fin Zephyr is 1.059 m at M 0.25, 2.4 cm ahead of OpenRocket's.
-- **Mass uncertainty:** the stage mass is the RockSim file's known mass (1.096 kg kit) with the nose swapped. OpenRocket's own component sum is 402 g heavier at almost the same CG, which would mean slower flights and about the same margin.
+- **Mass basis:** OpenRocket's component masses from the RockSim file's densities: 1.498 kg for the kit with its plastic nose. That is the highest of the three figures; RockSim's own known-mass override is 1.096 kg and Apogee's page says 1.247 kg. The difference is mostly the RockSim 204 g shock cord and 161 g coupler. A lighter real build flies faster; the hinge is sized for Mach 0.8, above that.
 
 ## Wiring and separation joints
 
@@ -185,7 +191,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 - **Firmware:**
   - Limit commands to ±5°.
   - Centre the ailerons before the apogee charge; after the connector parts the servos see no pulses.
-- **Recovery:** the kit's 36 in parachute lands 3.1 kg at about 10 m/s. Use a 60 in (1.5 m) parachute (about 6 m/s). Apogee on the J510W is 1.56 km in the model, so expect long drift on a single deployment.
+- **Recovery:** a 60 in (1.5 m) parachute at apogee lands the 3.6 kg rocket at 6.5 m/s in the model (the kit's 36 in would give about 11). Apogee on the J510W is 1.5 km, so expect long drift on a single deployment.
 
 ## Build order from the bare kit
 
@@ -194,7 +200,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 3. **Tubes.**
    - Cut 220 mm off the aft end of the kit's slotted aft tube. The cut-off piece, which carries all the slots, is scrap.
    - **Check the can shoulder (OD 98.4) in this tube and the can's 101.5 OD against it.** These figures were measured on the Peregrine's tube. Sand the shoulder for a slip fit if needed.
-   - Leave the kit motor tube, its aft ring and the spacer rails out. Kit fins: not used.
+   - Leave the kit motor tube and the spacer rails out. Kit fins: not used. Both kit rings are used (steps 11 and 12).
 4. Cut three fins from 1/4 in carbon plate to `FixedFin_Zephyr.dxf`. Round the leading and tip edges to about R1.5.
 5. **Shafts:** three Ø4 h9 silver-steel rods, 54.0 mm, with a 0.5 mm D-flat. Drill the Ø2 cross hole in `ShaftDrillJig.stl`.
 6. **Bearings and cranks:** as for the Peregrine (Loctite 641; Ø2 × 10 dowel; crank arm toward the servo).
@@ -202,7 +208,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 8. **Fins:** tabs through the slots onto the motor tube.
    - Root fillets: leg at most 10 mm (the hatch rebates are 15.4 mm away), and stop 5 mm forward of the aileron cut-out (Z ≥ 43).
    - Swing the aileron through ±5° loosely before the epoxy cures.
-9. **Shafts and ailerons:** as for the Peregrine (dowel, halves, 0.8 mm root shim, then the crank set screw).
+9. **Shafts and ailerons:** as for the Peregrine (dowel, halves, 0.8 mm root shim, then the crank set screw). Before the halves close, drop the Ø4 × 12 stop pin into the pocket in the outer hinge pillar (below the shaft hole); the halves clamp it in their split-plane groove. Check that the aileron stops at about ±6° by hand.
 10. **Switch:** sector B, as for the Peregrine.
 11. **Forward end of the can.**
     - Run the signal pair through the kit's slotted ring and pot it; fill its slots with epoxy so it seals.
@@ -217,7 +223,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
     - Centre each servo at 1520 µs.
     - Drill the metal arm Ø2.1 at **8 mm** from the spline. Fit the pivot (M2 × 10 12.9, 0.3 shim, ball, nut on the case side).
     - Fit the lug bolts. Set each pushrod to 52 mm between ball centres.
-    - Program the end points to ±10° of servo (±5° of aileron) if the programmer allows.
+    - **Program the end points to ±10° of servo (±5° of aileron). This is mandatory**; the ±6° stop is only the backup. Check by commanding full travel: the aileron must stop short of the pin.
 14. **Wiring and LiPo:** in sector A, as for the Peregrine. The nose-joint connector gets its lanyards.
 15. **Rail buttons:** the aft one in the can's insert, the forward one with the kit weld nut at x 1045.3. **Retainer:** AeroPack RA38L on the motor tube's aft end.
 16. **Bench:**
@@ -232,6 +238,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | 1/4 in (6.35 mm) woven carbon-fibre plate | ~3 × 260 × 160 mm | Fixed fins (instead of birch ply) |
 | 38 mm motor tube, 609.6 mm (24 in) | 1 | Motor mount (instead of the kit's 279.4) |
 | Kit rings 38/98, both | 2 | Slotted ring: can seal at Z 251. Eyebolt ring: motor-tube top and shock-cord anchor |
+| Ø4 × 12 hardened dowel pin (ISO 8734) | 3 (+ spares) | Travel stop pins |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
 | 26 AWG twisted pair | ~1.0 m | Vega to the tail |
 | 60 in parachute | 1 | Replaces the kit's 36 in |
@@ -247,13 +254,13 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 
 ## Concerns and items to confirm
 
-- **CFD.** The hinge moments, aileron Cl_δ and fin loads are thin-airfoil estimates × 1.67 for compressibility. The running Zephyr CFD (M 0.25–0.8, kit fin, earlier aileron) gives real numbers, and the freestream Mach at which the flow first goes locally sonic. If that is below 0.78, the design point moves down.
-- **Rod exit margin:** 0.99 cal on a 1.2 m rod in 3 m/s wind, and 1.13 on 8 ft. If the wind is above 3 m/s, add 150 g of nose ballast: in an earlier run that raised the rod-exit margin by about 0.3 cal, for 8 m/s less top speed.
+- **CFD.** The hinge moments, aileron Cl_δ and fin loads are thin-airfoil estimates × 1.67 for compressibility. The running Zephyr CFD (M 0.25–0.8, kit fin, earlier aileron) gives real numbers, and the freestream Mach at which the flow first goes locally sonic. If that is below 0.70, the flight speed must come down.
+- **Rod exit margin:** 0.98–1.15 cal on an 8 ft rail in 3 m/s wind. If the wind is above 3 m/s, add 150 g of nose ballast: in an earlier run that raised the rod-exit margin by about 0.3 cal, for 8 m/s less top speed.
 - **Recovery bay:** 192 mm × Ø99 (about 1.5 l) holds the 60 in parachute, the shock cord and the protector. It is not checked: pack it before committing to the 24 in motor tube. With the J825R (478 mm) or the J530 (500 mm) as the longest motor, a shorter tube gives the bay more room.
-- **Mach 0.78, not 0.8.** No commercial 38 mm motor gets the built rocket to 0.8. A lighter tail would: each 100 g is about 6.5 m/s. The hinge is cleared to M 0.85.
+- **Mach 0.70, not 0.8.** On the component-mass basis no commercial 38 mm motor gets the built rocket above M 0.70. Reaching 0.8 needs about 500 g less mass, or a 54 mm mount (a new hinge layout). The hinge is cleared to M 0.85 either way.
 - **Tail mass +877 g.** The carbon fins are 626 g of it.
 - **Servo lash** is unpublished. The bench check decides; at a 2.0 ratio, up to about 0.7° at the servo still meets 0.5° at the aileron.
-- **No mechanical stop at ±5°.** A runaway servo can drive the aileron past the sized travel. The servo end points and the firmware limit are the protection.
+- **Travel stop:** the PC pocket wall carries full servo stall with factor 2.2. Print tolerance moves the stop angle by about ±0.5° per 0.1 mm of pocket width; check it by hand (step 9).
 - **Drift:** single deployment at apogee from about 1.5 km.
 
 ## Verification
@@ -261,14 +268,15 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 ```
 ~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export          # both airframes; exports only if every check passes
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
-java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork 0.877 1.2318 --fins FINS.csv
+java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork   # max q, CG/CP per motor
 ```
 
-`verification.json` holds the last Zephyr run: 66/66 passed (132/132 with the Peregrine's). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved, gaps over the travel, tail-first landing), run on the Zephyr render. Measured:
+`verification.json` holds the last Zephyr run: 70/70 passed (136/136 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved, gaps over the travel, tail-first landing), run on the Zephyr render, plus four for the travel stop. Measured:
+- stop pin 0.23 mm clear of the pocket at ±5°, nothing touching inside ±6°, the pin biting the pocket by ±6.3°, and nothing else touching through the servo's throw up to the stop (servo ±12.1°);
 - aileron-to-can and aileron-to-fin gaps 0.8 mm;
 - horn nut to can 0.65 mm;
 - pushrod links to can 3.3 mm;
 - fins 18 mm off the rail;
 - fixed fin 12 mm past the base, with the ailerons 15.9 mm short of it.
 
-OpenRocket: `Zephyr-CamNose.ork` in MyLevel1Peregrine (PR #46) is the kit with the camera nose, canards removed, 43 motors. The tail-steering change is applied by `ORSimMass.java` with `--fins`.
+OpenRocket: `Zephyr-CamNose.ork` in MyLevel1Peregrine (PR #46) is this build (kit tubes and buttons, camera nose without canards, the carbon fins, the 24 in motor tube, both rings, every tail-steering part), 43 motors.

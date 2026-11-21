@@ -67,6 +67,7 @@ ENVS = {
     "covers": 30, "retainer": 31, "aileron0": 32, "crank0": 33, "servo0": 34,
     "horn0": 35, "fin0": 36, "tube": 37, "ail_m": 38, "ail_p": 39, "shaft0": 40,
 }
+STOP_ENVS = {"stoppin": 41}   # rendered only where the airframe has the travel stop (Zephyr)
 DXF = {"FixedFin": 7}
 
 
@@ -154,6 +155,12 @@ def _min_gap_one_way(moving, fixed, n=4000, seed=1, dense=False):
     return float(d.min())
 
 
+def apply_rot(mesh, deg, z0):
+    c = mesh.copy()
+    c.apply_transform(rot_x(deg, z0))
+    return c
+
+
 def rot_x(deg, z0):
     return trimesh.transformations.rotation_matrix(math.radians(deg), [1, 0, 0], [0, 0, z0])
 
@@ -214,7 +221,8 @@ def verify(af, tmp):
     tmp.mkdir(parents=True, exist_ok=True)
     af_def = {"Airframe": '"%s"' % af}
     jobs = [(tmp / (n + ".stl"), pt, af_def) for n, pt in PRINTS.items()]
-    jobs += [(tmp / (n + ".stl"), pt, af_def) for n, pt in ENVS.items()]
+    envs = dict(ENVS, **(STOP_ENVS if af == "Zephyr" else {}))
+    jobs += [(tmp / (n + ".stl"), pt, af_def) for n, pt in envs.items()]
     jobs += [(tmp / (n + ".dxf"), pt, af_def, "dxf") for n, pt in DXF.items()]
     logs = {}
     with ThreadPoolExecutor(max_workers=8) as ex:
@@ -230,7 +238,7 @@ def verify(af, tmp):
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     p = dict(zip(keys, P))
-    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS)}
+    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(envs)}
 
     # ---------- printable parts
     for n in PRINTS:
@@ -597,6 +605,41 @@ def verify(af, tmp):
     record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
     record("horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
            worst_horn >= 0.3, round(worst_horn, 2))
+
+    # ---------- mechanical travel stop: the servo can drive the linkage anywhere; the stop pin
+    # must clear the can through the flight travel, engage at +-Stop_Angle, and be the first
+    # thing to touch. Every moving part is swept in 0.5 deg steps up to the stop, then 0.3 past it.
+    st = [float(x) for x in echo_values(logs["FinCan"], "TS_STOP").split()]
+    if st[0]:
+        a_stop = st[1]
+        pin0 = m["stoppin"]
+        free = min(min_gap(apply_rot(pin0, d, Z), can, n=1500) for d in (-p["Flap_Max"], p["Flap_Max"]))
+        record("stop pin clears the can over the flight travel +-%g deg" % p["Flap_Max"], free > 0.05, round(free, 2))
+        early = []
+        for d in [x * 0.5 for x in range(-int(2 * a_stop) + 1, int(2 * a_stop))]:
+            if inter(apply_rot(pin0, d, Z), can) > 1e-3:
+                early.append(d)
+        record("stop pin touches nothing inside +-%g deg (the stop angle)" % a_stop, not early, early or "free")
+        late = [inter(apply_rot(pin0, sg * (a_stop + 0.3), Z), can) for sg in (-1, 1)]
+        record("stop engages by +-%.1f deg (pin into the pocket wall)" % (a_stop + 0.3), min(late) > 1e-3,
+               [round(v, 3) for v in late])
+        sweep = sorted({x * 0.5 for x in range(-int(2 * a_stop), int(2 * a_stop) + 1)} | {-a_stop, a_stop})
+        hits2 = []
+        for d in sweep:
+            ph = solve_phi(d)
+            R = rot_x(d, Z)
+            ail = m["aileron0"].copy(); ail.apply_transform(R)
+            crk = m["crank0"].copy(); crk.apply_transform(R)
+            hrn = m["horn0"].copy()
+            hrn.apply_transform(trimesh.transformations.rotation_matrix(math.radians(ph), ax_dir, ax_pt))
+            lnk = capsule(crank_ball(d), horn_ball(ph), 3.5)
+            for n_, A, B in (("aileron/can", ail, can), ("aileron/fixed fin", ail, m["fin0"]),
+                             ("crank/can", crk, can), ("horn/can", hrn, can), ("horn/servo", hrn, stat),
+                             ("link/can", lnk, can), ("link/servo", lnk, stat), ("horn/covers", hrn, m["covers"])):
+                if inter(A, B) > 1e-3:
+                    hits2.append((d, n_))
+        record("full servo throw: up to the stop (+-%g deg aileron, servo %+.1f/%+.1f deg) nothing but the stop touches"
+               % (a_stop, solve_phi(-a_stop), solve_phi(a_stop)), not hits2, hits2[:6] or len(sweep))
 
     # rail: fins and ailerons at full travel stay off the 1010 rail (25.4 wide, face >= R_Out + 2)
     rail_box = trimesh.creation.box(extents=[40, 25.4, 900])

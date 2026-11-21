@@ -134,7 +134,7 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 | **164 m/s (16.5 kPa), limit** | 3.7× | 2.2 | 2.0 | 2.5 |
 | 200 m/s (24.5 kPa) | 2.5× | 1.5 | 1.3 | 1.7 |
 
-- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at sea level, with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. With Prandtl–Glauert compressibility (×1.09 at M 0.39) the limit is 155 m/s; the fastest motor with the tail flies 119.7 m/s.
+- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at ISA sea level (on a −5 °C day the same q comes at 158 m/s), with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. With Prandtl–Glauert compressibility (×1.09 at M 0.39) the limit is 155 m/s; the fastest motor with the tail flies 119.7 m/s.
 
 **Flutter (rough):**
 - Aileron panel, NACA TN 4197 fin formula (printed PC, G 0.6 GPa assumed): about 1280 m/s.
@@ -405,14 +405,14 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes, 66 checks each; writes STLs/DXFs only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes (66 + 70 checks); writes STLs/DXFs only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
 ```
 
 Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `openscad` on the PATH. The verifier needs a build with the manifold backend.
 
-`verification.json` holds the last Peregrine run: 66/66 passed (132/132 with the Zephyr).
+`verification.json` holds the last Peregrine run: 66/66 passed (136/136 with the Zephyr's 70).
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.

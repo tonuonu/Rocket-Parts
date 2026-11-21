@@ -3,12 +3,12 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 30
+   "value": 31
   },
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "282.5 cm3"
+   "value": "282.0 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
@@ -33,12 +33,12 @@
   {
    "check": "AileronTappedHalf is one closed solid",
    "passed": true,
-   "value": "4.3 cm3"
+   "value": "4.2 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
    "passed": true,
-   "value": "7.6 cm3"
+   "value": "7.4 cm3"
   },
   {
    "check": "ShaftDrillJig is one closed solid",
@@ -239,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8550 rays, thin: []"
+   "value": "8520 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -340,6 +340,29 @@
    "check": "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
    "passed": true,
    "value": 0.65
+  },
+  {
+   "check": "stop pin clears the can over the flight travel +-5 deg",
+   "passed": true,
+   "value": 0.23
+  },
+  {
+   "check": "stop pin touches nothing inside +-6 deg (the stop angle)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "stop engages by +-6.3 deg (pin into the pocket wall)",
+   "passed": true,
+   "value": [
+    0.122,
+    0.122
+   ]
+  },
+  {
+   "check": "full servo throw: up to the stop (+-6 deg aileron, servo -12.1/+12.1 deg) nothing but the stop touches",
+   "passed": true,
+   "value": 25
   },
   {
    "check": "fins and ailerons at full travel stay off the rail",

@@ -3,9 +3,10 @@
 // outline replaced, and print each sim's motor, max speed, Mach, air density at max q, max q,
 // liftoff mass and CG, the mass, stability, CG and CP at max speed. Used by
 // tailsteer_estimate.py (the OR tables per airframe).
-// The mass goes in as a zero-length mass component in "Aft Body tube". If the stage carries a mass
-// override that covers its subcomponents (the Zephyr model), a component would be ignored, so the
-// mass is folded into the override instead (mass and CG).
+// The mass goes in as a zero-length mass component in "Aft Body tube". If the aft tube or any
+// component above it (up to the rocket) overrides the mass or the CG of its subcomponents, a new
+// component would be hidden: the mass is folded into the topmost such override (mass and CG), and
+// the tool exits if that component overrides only one of the two.
 // --fins FILE: "x_mm,y_mm" lines, the freeform outline of "Fin set" in fin coordinates (x aft from
 // the root LE, y out from the body). The root leading edge stays where it was.
 // Run with a JDK (the JRE in OpenRocket.app has no compiler):
@@ -32,6 +33,10 @@ public class ORSimMass {
     static void usage() {
         System.err.println("usage: ORSimMass FILE.ork [dm_kg x_from_tip_m] [--fins FILE]  (the mass needs its position)");
         System.exit(1);
+    }
+
+    static double at(List<Double> l, int i) {   // a series OpenRocket did not record prints as NaN
+        return l == null || i >= l.size() || l.get(i) == null ? Double.NaN : l.get(i);
     }
 
     public static void main(String[] args) throws Exception {
@@ -78,16 +83,23 @@ public class ORSimMass {
             System.err.printf("ORSimMass: fin outline from %s, %d points, root LE kept at %.5f m%n", fins, pts.size(), fs.getComponentLocations()[0].x);
         }
         if (dm != 0) {
-            AxialStage stage = aft.getStage();
-            if (stage.isMassOverridden() && stage.isSubcomponentsOverriddenMass()) {
-                double M = stage.getOverrideMass(), cg = stage.getOverrideCGX();
-                if (!stage.isCGOverridden() || !stage.isSubcomponentsOverriddenCG()) {
-                    System.err.println("ORSimMass: the stage overrides its mass but not its CG; cannot fold the mass in");
+            RocketComponent hide = null;   // topmost component whose override covers the aft tube's contents
+            for (RocketComponent c = aft; c != null; c = c.getParent())
+                if ((c.isMassOverridden() && c.isSubcomponentsOverriddenMass()) || (c.isCGOverridden() && c.isSubcomponentsOverriddenCG()))
+                    hide = c;
+            if (hide != null) {
+                if (!(hide.isMassOverridden() && hide.isSubcomponentsOverriddenMass()
+                      && hide.isCGOverridden() && hide.isSubcomponentsOverriddenCG())) {
+                    System.err.println("ORSimMass: \"" + hide.getName() + "\" overrides only one of mass and CG for its"
+                        + " subcomponents; the mass cannot be added or folded in");
                     System.exit(2);
                 }
-                stage.setOverrideMass(M + dm);
-                stage.setOverrideCGX((M * cg + dm * x) / (M + dm));   // the stage starts at the tip
-                System.err.printf("ORSimMass: stage override %.4f kg at %.4f m -> %.4f kg at %.4f m%n", M, cg, M + dm, stage.getOverrideCGX());
+                double M = hide.getOverrideMass(), loc = hide.getComponentLocations()[0].x;
+                double cg = loc + hide.getOverrideCGX();   // the override CG is relative to the component's front
+                hide.setOverrideMass(M + dm);
+                hide.setOverrideCGX((M * cg + dm * x) / (M + dm) - loc);
+                System.err.printf("ORSimMass: override of \"%s\" %.4f kg at %.4f m -> %.4f kg at %.4f m%n",
+                    hide.getName(), M, cg, M + dm, loc + hide.getOverrideCGX());
             } else {
                 MassComponent mc = new MassComponent();
                 mc.setName("tail steering delta");
@@ -115,7 +127,7 @@ public class ORSimMass {
             String motor = sim.getActiveConfiguration().getActiveMotors().isEmpty() ? "?" :
                 sim.getActiveConfiguration().getActiveMotors().iterator().next().getMotor().getDesignation();
             System.out.printf("%s,%s,%.1f,%.3f,%.3f,%.0f,%.3f,%.4f,%.3f,%.2f,%.4f,%.4f%n", sim.getName().replace(",", " "), motor,
-                v.get(im), mach.get(im), rho.get(iq), qmax, m.get(0), cgl.get(0), m.get(im), st.get(im), cgl.get(im), cpl.get(im));
+                v.get(im), at(mach, im), at(rho, iq), qmax, at(m, 0), at(cgl, 0), at(m, im), at(st, im), at(cgl, im), at(cpl, im));
         }
     }
 }
