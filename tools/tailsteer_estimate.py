@@ -72,8 +72,8 @@ AIRFRAME = {
     "Zephyr": dict(
         ork="Zephyr-CamNose.ork",
         # ORSimMass with --fins (this outline) and the mass change, J510W; rod exit from tools/or_sim
-        or_tail="J510W: max speed 263.1 m/s, CG 0.899 / CP 1.099 m -> 1.97 cal; rod exit 0.93 cal"
-                " (1.2 m rod, 3 m/s wind), 1.09 cal on an 8 ft rail",
+        or_tail="J510W: max speed 263.1 m/s, CG 0.896 / CP 1.099 m -> 2.01 cal; rod exit 0.99 cal"
+                " (1.2 m rod, 3 m/s wind), 1.13 cal on an 8 ft rail",
         # (as saved, with the tail): ORSimMass.java, the mass folded into the stage override
         or_vmax={"J510W": (317.5, 263.1), "1115J530-15A": (318.8, 259.9), "J825R": (327.6, 257.2),
                  "J570W": (300.2, 244.3), "I600R": (240.3, 180.6)},
@@ -94,9 +94,10 @@ AIRFRAME = {
         # the CFD fin CN_alpha is for the kit fin: scaled to the 125 mm fin by Barrowman
         # (fin set with body interference, trapezoid approximation of the kit fin)
         cn_scale=1.171,
-        # 38 mm x 609.6 motor tube for 38/1080 J motors up to 584 mm; the kit's second ring
-        # carries its forward end (the eyebolt ring stays the gas seal at Z 251)
-        mmt_l=609.6, extra=[("second kit CR at the motor tube's forward end", 29.2, 12.7 + 609.6 - 3.2)],
+        # 38 mm x 609.6 motor tube for 38/1080 J motors up to 584 mm. The kit's slotted ring
+        # seals the can at Z 251; the eyebolt ring caps the tube's forward end, in the recovery bay
+        mmt_l=609.6, ring_item=("kit slotted ring at Z 251 (seal)", 29.2, 254.0),
+        extra=[("kit eyebolt ring + eyebolt at the motor tube's forward end", 29.2 + 25.1, 12.7 + 609.6 - 3.2)],
         stock_pts=[(0, 0), (150.749, 112.852), (223.749, 112.852), (269.494, 12.548),
                    (245.034, 12.548), (228.27, 0)]),
 }
@@ -618,7 +619,7 @@ def main():
                math.pi * (50.8 ** 2 - 49.53 ** 2) * p["Tube_Piece_L"] * PAPER_RHO / 1000,
                p["Can_L"] + p["Tube_Piece_L"] / 2),
               ("motor tube 38 mm x %.1f" % mmt_l, 55.2 * mmt_l / 279.4, 12.7 + mmt_l / 2),
-              ("plywood CR + eyebolt (kit)", 29.2 + 25.1, p["Ply_CR_Z0"] + 3)] + AF.get("extra", []) + [
+              AF.get("ring_item", ("plywood CR + eyebolt (kit)", 29.2 + 25.1, p["Ply_CR_Z0"] + 3))] + AF.get("extra", []) + [
               ("rail buttons (kit, unchanged)", 3.8, 200.0)]
     m_new = sum(x[1] for x in items)
     z_new = sum(x[1] * x[2] for x in items) / m_new

@@ -132,7 +132,7 @@ FinP_Base_X = 248.92;       // root TE at the tube end
 // Zephyr, Mach 0.8 build: 1/4 in (6.35 mm) carbon-fibre plate fins, root chord
 // and root LE station of the kit (Apogee DWG 04997: root LE 245.034 above the
 // tube end), span 125 (kit 112.9), tip chord 90, straight trailing edge swept
-// aft to 12 mm past the base. The larger span keeps ~1.9 cal at max speed with
+// aft to 12 mm past the base. The larger span keeps ~2.0 cal at max speed with
 // the heavier tail; the swept TE puts the fixed fin's tip, not an aileron,
 // first on the ground. (Kit outline: [[0,0],[150.749,112.852],[223.749,112.852],
 // [269.494,12.548],[245.034,12.548],[228.27,0]].)

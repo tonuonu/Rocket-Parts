@@ -32,7 +32,7 @@ Cl_δ need scaling to this aileron and fin.
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | 288 m/s (M 0.85) with Prandtl–Glauert |
 | Canards | On the nose | Removed |
 | Tail mass change | +460 g | +877 g against the stock kit fin section |
-| Margin at max speed | 2.32 cal | 1.97 cal (OpenRocket, the new fins) |
+| Margin at max speed | 2.32 cal | 2.01 cal (OpenRocket, the new fins) |
 
 The can, bearings, shaft, servo, crank design, hatches and wiring stay the Peregrine's. At
 ±5° the 4 mm shaft and the 684 bearings hold Mach 0.8 with a factor of 2.5 or more, so the
@@ -51,18 +51,18 @@ cannot move aft into the motor retainer's keep-out.
     | Cesaroni 1115J530-15A (Pro38 6XL) | 500 mm | 259.9 m/s | 0.77 | 318.8 m/s |
     | AeroTech J825R (38/1080) | 478 mm | 257.2 m/s | 0.76 | 327.6 m/s |
 
-  - 54 mm J/K motors overshoot: the K630, K650 and K670 reach M 0.98–1.0 in the same model.
-  - A 54 mm tube also leaves no room for the hinge. Its bore (r 28.9) takes the inner bearing's place at r 25–29, and the servos then lose their 8 mm air gap.
+  - A 54 mm tube was not taken for its geometry. Its bore (r 28.9) takes the place of the inner bearing (r 25–29), and the servos would lose their 8 mm air gap; the hinge would need a new layout. This is reasoned by hand, not CAD-checked.
+  - 54 mm motors could reach the target. An early scan (kit-span fins, a lighter tail estimate) had several J and K motors at M 0.86–0.90, and some K motors at M 0.98–1.0.
   - The motor tube is 24 in (609.6 mm) so that the longest pick, the J510W, sits fully inside it.
   - Without the tail mass, the J motors would pass Mach 0.9. The hinge is cleared for this airframe only as built, with the tail steering.
 - **Fins: 1/4 in (6.35 mm) carbon-fibre plate** (woven 0/90 epoxy, ~1.5 g/cm³, in-plane shear modulus ~4 GPa assumed).
   - The aileron has to be 6.35 mm thick to hold the Ø4 shaft and the M2 clamp screws. A fixed fin of the same thickness keeps the aileron flush at Mach 0.8 and keeps the can's fin slot.
-  - At this thickness, carbon is 19 % lighter than G10 (626 g against 838 g for three fins). That is worth 13 m/s.
-  - Plywood fails the flutter rule on this outline (about 370 m/s, 1.4×).
+  - At this thickness, carbon is 19 % lighter than G10 (626 g against 838 g for three fins). At equal span that is worth about 8 m/s (OpenRocket).
+  - 1/4 in birch ply would sit at the limit on this outline: about 415 m/s (1.5×), on an assumed G of 0.38 GPa.
 - **Fin outline.** The root chord (228.27) and root LE station (Z 245.03) are the kit's.
   - Span 125 (kit 112.9), tip chord 90, tip LE 167 aft of the root LE. The trailing edge is straight from the root TE to the tip TE, 12 mm past the base.
   - The kit's notched aft extension is gone, and with it the old aileron clip.
-  - The larger span keeps 1.97 cal at max speed despite +877 g at the tail. The kit fin with the same mass gives 1.70 cal.
+  - The larger span keeps 2.01 cal at max speed despite +877 g at the tail. The kit fin with the same mass gives 1.74 cal.
   - The swept TE puts the fixed fin's tip on the ground first: it reaches 12 mm past the base, the ailerons stop 4 mm short of it.
 - **Aileron: ±5°, the Peregrine planform rule.** It spans y 0.8–55 and runs from the hinge to the trailing edge, a chord of 17.5–29.8 mm aft of the hinge.
   - The span is fixed by field service: the 54 mm shaft must come out into the cut-out.
@@ -102,10 +102,10 @@ Frame: Z = 0 at the base, +Z forward; x from the nose tip = 1397.68 − Z. Fins 
 | Fixed fins | 1/4 in carbon plate to `FixedFin_Zephyr.dxf`. Through-the-wall tab Z 55–175 glued to the motor tube; root LE at Z 245.0 (x 1152.65, the drawing's station) |
 | Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° |
 | Motor tube | 38 mm × 609.6, aft end Z 12.7 (as the kit), forward end Z 622.3 (x 775.4) |
-| Forward seal | Kit ring with the eyebolt at Z 251 (x 1146.7): gas seal and shock-cord anchor |
-| Motor-tube top | The kit's second ring at Z 616–622 (x 775–782), carrying the tube's forward end; the wire pass is potted |
+| Can seal | The kit's slotted ring at Z 251 (x 1146.7), on the motor tube over the can's shoulder: the can's gas seal |
+| Motor-tube top | The kit ring with the eyebolt at Z 616–622 (x 775–782): it carries the tube's forward end, seals the annulus and anchors the shock cord, in the recovery bay |
 | Rail buttons | Kit stations: aft on the can (Z 53.98, x 1343.7) in an RX-M4x8.1 boss; forward on the paper tube (x 1045.3) with the kit weld nut |
-| Recovery bay | x 483 (nose shoulder end) to 775 (motor-tube top), about 290 mm (192 mm clear of the 100 mm nose shoulder) |
+| Recovery bay | From the nose shoulder's end (x 583) to the motor-tube top (x 775): 192 mm × Ø99 |
 
 ## Parts to print
 
@@ -153,19 +153,19 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 | Motor tube 38 × 609.6 | 120.4 g | 317.5 |
 | Kit rings ×2 + eyebolt | 83.5 g | — |
 | Rail buttons | 3.8 g | 200 |
-| **Total** | **1541.5 g** | **149.2** |
+| **Total** | **1541.5 g** | **155.2** |
 
 - **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both.
-- **Change:** +877 g, applied in OpenRocket as one mass of 0.877 kg at x 1.2423 m (folded into the stage mass override), together with the new fin outline (`tailsteer_estimate.py --fins-csv`).
+- **Change:** +877 g, applied in OpenRocket as one mass of 0.877 kg at x 1.2318 m (folded into the stage mass override), together with the new fin outline (`tailsteer_estimate.py --fins-csv`).
 - **Stability, OpenRocket** (`Zephyr-CamNose.ork`, J510W, new fins and mass):
 
   | State | Margin |
   |---|---|
-  | Max speed (263 m/s) | **1.97 cal** (CG 0.899, CP 1.099 m) |
-  | Rod exit, 1.2 m rod, 3 m/s wind | 0.93 cal |
-  | Rod exit, 8 ft rail | 1.09 cal |
+  | Max speed (263 m/s) | **2.01 cal** (CG 0.896, CP 1.099 m) |
+  | Rod exit, 1.2 m rod, 3 m/s wind | 0.99 cal |
+  | Rod exit, 8 ft rail | 1.13 cal |
 
-  - The fin recheck: with the same mass, the kit fin gives 1.70 cal (CP 1.071 m at 264 m/s); the new fin (19892 mm² against 19200) puts the CP 28 mm further aft, for 1.97 cal. The kit-outline concern (the 643 mm² the old aileron clip removed) no longer applies: this outline has no clip, and OpenRocket flies the fixed fin and aileron as one outline (the 0.8 mm gaps closed), not as two fin sets.
+  - The fin recheck: with the same mass, the kit fin gives 1.74 cal (CP 1.072 m at 264 m/s); the new fin (19892 mm² against 19200) puts the CP 28 mm further aft, for 2.01 cal. The kit-outline concern (the 643 mm² the old aileron clip removed) no longer applies: this outline has no clip, and OpenRocket flies the fixed fin and aileron as one outline (the 0.8 mm gaps closed), not as two fin sets.
   - The CFD CP of the kit-fin Zephyr is 1.059 m at M 0.25, 2.4 cm ahead of OpenRocket's.
 - **Mass uncertainty:** the stage mass is the RockSim file's known mass (1.096 kg kit) with the nose swapped. OpenRocket's own component sum is 402 g heavier at almost the same CG, which would mean slower flights and about the same margin.
 
@@ -176,9 +176,9 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | Station (mm from tip) | Joint | Opens | Crossing |
 |---|---|---|---|
 | 483.3 | Nose shoulder / forward tube | At apogee: the Vega's nose charge | Potted pass through the nose bulkhead, then a pull-apart JST RCY pair just aft of it, with Kevlar lanyards to each side |
-| 775–782 | Kit ring at the motor-tube top | — | Potted pass |
+| 775–782 | Kit eyebolt ring at the motor-tube top (annulus seal) | — | Potted pass |
 | 940.5 | Forward tube / aft tube (kit coupler) | Never (glued) | None. Tape the pair to the tube wall |
-| 1146.7 | Kit ring with the eyebolt (gas seal) | — | Potted pass into the can annulus |
+| 1146.7 | Kit slotted ring (can seal) | — | Potted pass into the can annulus |
 
 - **Cable:** about 1.0 m of 26 AWG silicone twisted pair (signal + ground), taped along the tube wall in the recovery bay.
 - **Power, switch, fuse and capacitor:** as the Peregrine.
@@ -205,13 +205,13 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 9. **Shafts and ailerons:** as for the Peregrine (dowel, halves, 0.8 mm root shim, then the crank set screw).
 10. **Switch:** sector B, as for the Peregrine.
 11. **Forward end of the can.**
-    - Run the signal pair through the eyebolt ring and pot it.
-    - Epoxy the ring onto the motor tube at Z 251–257.4. Tie the shock cord to the eyebolt.
+    - Run the signal pair through the kit's slotted ring and pot it; fill its slots with epoxy so it seals.
+    - Epoxy the ring onto the motor tube at Z 251–257.4.
     - Glue the 237.2 mm tube piece over the shoulder and the ring.
     - Fillet the fin roots Z 220–245 onto the paper.
 12. **Upper end.**
     - Glue the kit coupler into the tube piece's forward end as the kit does (half out).
-    - Epoxy the kit's second ring onto the motor tube's forward end (Z 616–622), with the signal pair potted through it.
+    - Epoxy the kit's eyebolt ring onto the motor tube's forward end (Z 616–622), eyebolt forward, with the signal pair potted through it. Tie the shock cord to the eyebolt.
     - Slide the forward kit tube over ring and coupler and glue it.
 13. **Servos.**
     - Centre each servo at 1520 µs.
@@ -231,7 +231,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 |---|---:|---|
 | 1/4 in (6.35 mm) woven carbon-fibre plate | ~3 × 260 × 160 mm | Fixed fins (instead of birch ply) |
 | 38 mm motor tube, 609.6 mm (24 in) | 1 | Motor mount (instead of the kit's 279.4) |
-| Kit's second ring 38/98 | 1 | Motor-tube top (the kit part, reused) |
+| Kit rings 38/98, both | 2 | Slotted ring: can seal at Z 251. Eyebolt ring: motor-tube top and shock-cord anchor |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
 | 26 AWG twisted pair | ~1.0 m | Vega to the tail |
 | 60 in parachute | 1 | Replaces the kit's 36 in |
@@ -248,7 +248,8 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 ## Concerns and items to confirm
 
 - **CFD.** The hinge moments, aileron Cl_δ and fin loads are thin-airfoil estimates × 1.67 for compressibility. The running Zephyr CFD (M 0.25–0.8, kit fin, earlier aileron) gives real numbers, and the freestream Mach at which the flow first goes locally sonic. If that is below 0.78, the design point moves down.
-- **Rod exit margin:** 0.93 cal on a 1.2 m rod in 3 m/s wind, and 1.09 on 8 ft. If the wind is above 3 m/s, add 150 g of nose ballast: rod exit then rises to 1.40, for 8 m/s less top speed.
+- **Rod exit margin:** 0.99 cal on a 1.2 m rod in 3 m/s wind, and 1.13 on 8 ft. If the wind is above 3 m/s, add 150 g of nose ballast: in an earlier run that raised the rod-exit margin by about 0.3 cal, for 8 m/s less top speed.
+- **Recovery bay:** 192 mm × Ø99 (about 1.5 l) holds the 60 in parachute, the shock cord and the protector. It is not checked: pack it before committing to the 24 in motor tube. With the J825R (478 mm) or the J530 (500 mm) as the longest motor, a shorter tube gives the bay more room.
 - **Mach 0.78, not 0.8.** No commercial 38 mm motor gets the built rocket to 0.8. A lighter tail would: each 100 g is about 6.5 m/s. The hinge is cleared to M 0.85.
 - **Tail mass +877 g.** The carbon fins are 626 g of it.
 - **Servo lash** is unpublished. The bench check decides; at a 2.0 ratio, up to about 0.7° at the servo still meets 0.5° at the aileron.
@@ -260,7 +261,7 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 ```
 ~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export          # both airframes; exports only if every check passes
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
-java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork 0.877 1.2423 --fins FINS.csv
+java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork 0.877 1.2318 --fins FINS.csv
 ```
 
 `verification.json` holds the last Zephyr run: 66/66 passed (132/132 with the Peregrine's). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved, gaps over the travel, tail-first landing), run on the Zephyr render. Measured:
