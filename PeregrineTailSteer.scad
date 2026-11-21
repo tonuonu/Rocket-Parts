@@ -3,7 +3,7 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.1  11/21/2026
+// Revision: 0.1.2  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -12,8 +12,9 @@
 // PC fin can that replaces the aft 220 mm of the aft body tube. Each of the
 // three fixed plywood fins carries a trailing-edge aileron. The aileron hangs
 // on a 4 mm steel shaft that runs radially into the can in two NSK 684AZZ
-// shielded bearings (4 x 9 x 4). Inside the can a printed crank on the shaft
-// is driven by an axial M2 pushrod from an MKS HV6160 servo lying flat in the
+// shielded bearings (4 x 9 x 4); the aileron is two halves clamped round the
+// shaft. Inside the can a printed clevis crank on the shaft is driven by an
+// axial M2 pushrod from an MKS HV6160 servo lying flat in the
 // annulus between the motor mount and the wall. All three servos share one
 // signal from the Vega; power is a 2S LiPo in the can. Servos and LiPo are
 // reached through hatches.
@@ -37,6 +38,10 @@
 // 0.1.0  11/21/2026  First design.
 // 0.1.1  11/21/2026  Review: ailerons clipped Skid_Margin ahead of the fixed fin's aft-most
 //                    point (Zephyr); set-screw pocket assert against the arm and stud hole.
+// 0.1.2  11/21/2026  Review 2: field-serviceable hinge with the fins glued (54 mm shaft
+//                    that slides out into the cut-out, aileron split in two clamped
+//                    halves); clevis crank on a Ø2 dowel, standing on the print bed;
+//                    hinge pillars fused to the web.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -44,7 +49,8 @@
 // Render_Part = 2;  // servo hatch cover (sectors B and C)
 // Render_Part = 3;  // servo + LiPo hatch cover (sector A, at the rail)
 // Render_Part = 4;  // crank, print hub-up
-// Render_Part = 5;  // aileron, print standing on its root
+// Render_Part = 5;  // aileron screw half (-Y), print on its outer face
+// Render_Part = 8;  // aileron tapped half (+Y), print on its outer face
 // Render_Part = 6;  // bearing-fit coupon (one hinge block)
 // Render_Part = 7;  // fixed fin 2D outline for laser/CNC cutting (DXF)
 // ***********************************
@@ -115,6 +121,12 @@ Flap_Gap      = 0.8;        // to the fixed fin, LE and outer edge
 Flap_LE_R     = Fin_T/2;    // round leading edge about the shaft
 Hinge_X       = Fin_Base_X - Hinge_Z;   // in fin coordinates
 Flap_Max      = 15;         // mechanical travel checked, +-deg
+// The aileron is two halves split on the fin's mid-plane, clamped round the
+// shaft by M2 countersunk screws from the -Y face into tapped holes in the +Y
+// half. Undo them and the halves come off sideways, then the shaft slides out
+// into the notch; nothing glued has to move.
+Clamp_Screws  = [[7, 12], [7, 42], [22, 26], [22, 48]];   // [x aft of the hinge, y_f]
+Clamp_Clear_D = 2.2; Clamp_Tap_D = 1.6; Clamp_Head_D = 3.8; Clamp_Tap_L = 2.6;
 // Tail-first landing: the fixed fin must reach further aft than any aileron
 // point. The aileron is clipped Skid_Margin forward of the notched fixed fin's
 // aft-most point. Peregrine: no clip (fixed fin tip 35 mm aft of the
@@ -144,8 +156,11 @@ Brg_Out_X1  = R_In - 0.6;   // outer bearing, outboard face
 Housing_Wall = 2.0;
 Housing_D   = Brg_Seat_D + 2*Housing_Wall;
 Shaft_X0    = Brg_In_X0 - 0.3;
-Shaft_X1    = R_Out + Flap_Span - 2;
-Shaft_L     = Shaft_X1 - Shaft_X0;
+// Field service: the fixed fin covers the hinge axis above the notch, so the
+// shaft must come out into the notch. Pulled outward until its inner end
+// clears the wall, it has to fit between the wall and the notch's top edge.
+Shaft_L     = 54;
+Shaft_X1    = Shaft_X0 + Shaft_L;
 Wall_Hole_D = Shaft_D + 1.0;
 Brg_Spacing = (Brg_Out_X1 - Brg_B/2) - (Brg_In_X0 + Brg_B/2);
 Web_Y       = [-8.1, -6.5]; // hinge-block web on the -y side
@@ -186,12 +201,22 @@ Crank_Hub_D  = 9;
 Crank_Collar_D = 5.2;       // bears on the inner races only
 Crank_X0     = Brg_In_X0 + Brg_B + 0.15;
 Crank_X1     = Brg_Out_X1 - Brg_B - 0.15;
-Crank_Arm_T  = 4.0;         // along X
-Crank_Arm_H  = 8;           // along Z
-Crank_Ball_Off = 6.2;        // ball centre from the crank arm mid-plane
-Crank_Arm_Xm = Crank_Xk - Crank_Ball_Off;
+// Clevis arm: the ball link's 4.8 mm pivot ball sits between two cheeks on a
+// Ø2 hardened dowel pin (double shear), centred on the pushrod line, so the
+// arm sees no torsion and the pin no cantilever. The cheeks join in a closed
+// window, so the outer cheek's underside is a short bridge when printed.
+Clevis_Gap   = 5.2;         // ball-link eye 4.6 + 0.6
+Cheek_T      = 2.5;
+Crank_Arm_H  = 9;           // along Z
+Crank_Arm_Y0 = 3.0;         // arm starts here (inside the hub), clear of the set-screw pocket
+Crank_Arm_X1 = Crank_Xk + Clevis_Gap/2 + Cheek_T;      // outer cheek face
+Crank_Win_Y  = [Crank_A - Link_Eye_D/2 - 1, Crank_A + Link_Eye_D/2 + 1];
+Crank_Tip_Y  = Crank_Win_Y[1] + 2;
+Pivot_D      = 2.0;         // dowel, press fit (Ø1.95 printed, ream to fit)
+Crank_Arm_Xm = Crank_Xk - Clevis_Gap/2 - Cheek_T/2;    // inner cheek mid-plane (kept for the echo)
+Crank_Arm_T  = Cheek_T;
 Crank_Boss   = [7.2, 7.2, 8];   // set-screw boss: X, Y, depth below the axis (ruthex W 1.6)
-Crank_Boss_Xm = (Crank_Arm_Xm + Crank_Arm_T/2 + Crank_X1 - 0.45)/2;
+Crank_Boss_Xm = (Crank_X0 + Crank_X1)/2;
 Set_Insert   = [4.0, 5.0];  // ruthex RX-M3x4.0 SHORT: hole, pocket depth (L+1)
 
 // Servo bay (in the servo frame: lx outward, ly toward larger angle)
@@ -243,19 +268,21 @@ Sw_Env = [16, 23.5];        // rear envelope: dia, depth behind the bezel seat
 // ============================================
 assert(Total_H <= 250.5, "TOO TALL FOR P1S");
 assert(Brg_Out_X1 - Brg_B > Crank_X1, "crank overlaps the outer bearing");
-assert(Crank_Arm_Xm - Crank_Arm_T/2 > Crank_X0, "crank arm hangs off the hub");
-assert(Crank_Xk - Link_Eye_D/2 > Crank_Arm_Xm + Crank_Arm_T/2 + 0.5, "link eye hits the crank arm");
-assert(Crank_Xk + Link_Eye_D/2 < Brg_Out_X1 - Brg_B - 0.5 || Crank_A - Link_Eye_D/2 > Housing_D/2 + 0.5,
-       "link eye hits the outer housing");
+assert(Crank_Arm_X1 < Crank_X1 - 0.3, "outer cheek runs past the hub end");
+assert(Crank_Win_Y[0] > Crank_Hub_D/2 + 1, "clevis window cuts into the hub");
+assert(Crank_A - Link_Eye_D/2 > Housing_D/2 + 0.5, "link eye hits the outer housing");
+assert(Shaft_L <= Flap_Span + Flap_Gap - 0.8, "shaft too long to come out into the notch");
+assert(Shaft_X1 > R_Out + Flap_Root_Gap + 20, "shaft engages the aileron by less than 20 mm");
 assert(Hinge_Z - Flap_LE_R - Flap_Gap > 0, "hinge too low");
 assert(Fin_Tab_Z[0] - Hinge_Z > Housing_D/2 + 8, "fin tab runs into the hinge block");
 assert(Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Z[0] - Hatch_Rebate, "rail boss under the hatch");
 assert(Servo_Rc + Servo_W/2 < R_In, "servo outside the wall");
 assert(Shaft_X0 > MMT_Bore_R + 1, "shaft into the motor tube");
-// set-screw insert pocket (Crank_Boss_Xm +- Set_Insert[0]/2) keeps ruthex W 1.6 to the arm
-// and clears the ball-stud hole, which runs 1 mm past the arm's outboard face
-assert(Crank_Boss_Xm - Set_Insert[0]/2 - 1.6 >= Crank_Arm_Xm + Crank_Arm_T/2, "set-screw pocket too close to the crank arm");
-assert(Crank_Boss_Xm - Set_Insert[0]/2 > Crank_Arm_Xm + Crank_Arm_T/2 + 1, "set-screw pocket meets the ball-stud hole");
+// set-screw insert pocket: on the aft side at |Y| <= Set_Insert[0]/2; the arm
+// starts at Y = Crank_Arm_Y0 and the pivot hole is at Y = Crank_A, so the
+// pocket clears both (in Y, whatever the X overlap)
+assert(Set_Insert[0]/2 + 0.5 <= Crank_Arm_Y0, "set-screw pocket meets the crank arm");
+assert(Crank_A - Pivot_D/2 > Set_Insert[0]/2 + 1, "set-screw pocket meets the pivot hole");
 assert(Crank_Boss_Xm + Crank_Boss[0]/2 < Crank_X1 - 0.45, "set-screw boss runs past the hub");
 
 // ============================================
@@ -277,7 +304,11 @@ if (Render_Part == 1) TS_Can();
 if (Render_Part == 2) TS_Hatch_Print(false);
 if (Render_Part == 3) TS_Hatch_Print(true);
 if (Render_Part == 4) TS_Crank_Print();
-if (Render_Part == 5) TS_Aileron_Print();
+if (Render_Part == 5) TS_Aileron_Print(-1);   // screw half
+if (Render_Part == 8) TS_Aileron_Print(1);    // tapped half
+if (Render_Part == 40) Shaft(Defl);
+if (Render_Part == 38) Aileron_Half(-1, Defl);
+if (Render_Part == 39) Aileron_Half(1, Defl);
 if (Render_Part == 6) TS_Coupon();
 if (Render_Part == 7) TS_Fixed_Fin_2D();
 if (Render_Part == 20) for (k=[0:2]) Fin_Frame(k) Servo_Frame() Servo_Envelope();
@@ -348,9 +379,25 @@ module Aileron_Bore()
     translate([R_Out + Flap_Root_Gap - 1, 0, Hinge_Z]) rotate([0,90,0])
         linear_extrude(height = Shaft_X1 + 0.5 - (R_Out + Flap_Root_Gap - 1), convexity=4)
             rotate(90) Shaft_Section(Shaft_D + 0.15, Shaft_Flat - 0.05);
-module Aileron(defl=Defl)
+// clamp screw at [dz aft of the hinge, y_f]: countersink on -Y, clearance in
+// the -Y half, tap drill blind in the +Y half (its outer face stays closed)
+function Clamp_Pos(c) = [R_Out + c[1], Hinge_Z - c[0]];
+module Clamp_Holes(half)   // half: -1 = screw side, +1 = tapped side
+    for (c=Clamp_Screws) let(q=Clamp_Pos(c)) translate([q[0], 0, q[1]]) rotate([90,0,0])
+        if (half < 0) {
+            translate([0,0,-Overlap]) cylinder(d=Clamp_Clear_D, h=Fin_T, $fn=20);
+            translate([0,0,Fin_T/2 - (Clamp_Head_D - Clamp_Clear_D)/2])
+                cylinder(d1=Clamp_Clear_D, d2=Clamp_Head_D + 0.2, h=(Clamp_Head_D - Clamp_Clear_D)/2 + 0.1 + Overlap, $fn=24);
+        } else translate([0,0,-Clamp_Tap_L]) cylinder(d=Clamp_Tap_D, h=Clamp_Tap_L + Overlap, $fn=16);
+module Aileron_Half(half, defl=Defl)
     translate([0,0,Hinge_Z]) rotate([defl,0,0]) translate([0,0,-Hinge_Z])
-        difference(){ Aileron_Body(); Aileron_Bore(); }
+        difference(){
+            intersection(){ Aileron_Body();
+                translate([0, half > 0 ? 0 : -Fin_T, -400]) cube([400, Fin_T, 800]); }
+            Aileron_Bore();
+            Clamp_Holes(half);
+        }
+module Aileron(defl=Defl){ Aileron_Half(-1, defl); Aileron_Half(1, defl); }
 
 module Shaft(defl=Defl)
     translate([0,0,Hinge_Z]) rotate([defl,0,0])
@@ -374,26 +421,33 @@ module Crank_Body(){
         cylinder(d=Crank_Hub_D, h=Crank_X1 - Crank_X0 - 0.9);
     for (x=[Crank_X0, Crank_X1 - 0.45]) translate([x,0,Hinge_Z]) rotate([0,90,0])
         cylinder(d=Crank_Collar_D, h=0.45 + Overlap);
-    // arm and set-screw boss run down to the inboard collar plane, so the
-    // crank prints hub-up with nothing overhanging
-    ax0 = Crank_X0 + 0.25;
-    hull(){
-        translate([ax0, 0, Hinge_Z - Crank_Arm_H/2])
-            cube([Crank_Arm_Xm + Crank_Arm_T/2 - ax0, 1, Crank_Arm_H]);
-        translate([ax0, Crank_A, Hinge_Z]) rotate([0,90,0])
-            cylinder(d=Crank_Arm_H, h=Crank_Arm_Xm + Crank_Arm_T/2 - ax0);
+    // clevis arm and set-screw boss stand on the inboard collar plane (the
+    // print bed), recessed round the bearing face over the collar's height
+    difference(){
+        union(){
+            hull(){
+                translate([Crank_X0, Crank_Arm_Y0, Hinge_Z - Crank_Arm_H/2])
+                    cube([Crank_Arm_X1 - Crank_X0, 1, Crank_Arm_H]);
+                translate([Crank_X0, Crank_Tip_Y - Crank_Arm_H/2, Hinge_Z]) rotate([0,90,0])
+                    cylinder(d=Crank_Arm_H, h=Crank_Arm_X1 - Crank_X0);
+            }
+            translate([Crank_X0, -Crank_Boss[1]/2, Hinge_Z - Crank_Boss[2]])
+                cube([Crank_Boss_Xm + Crank_Boss[0]/2 - Crank_X0, Crank_Boss[1], Crank_Boss[2]]);
+        }
+        // bearing-face recess: nothing but the collar within r 4.9 over x0..x0+0.45
+        translate([Crank_X0 - 1, 0, Hinge_Z]) rotate([0,90,0]) cylinder(r=Brg_D/2 + 0.4, h=1.45, $fn=48);
+        // clevis window for the ball-link eye, through along Z
+        translate([Crank_Xk - Clevis_Gap/2, Crank_Win_Y[0], Hinge_Z - Crank_Arm_H])
+            cube([Clevis_Gap, Crank_Win_Y[1] - Crank_Win_Y[0], 2*Crank_Arm_H]);
     }
-    // set-screw boss, aft side
-    translate([ax0, -Crank_Boss[1]/2, Hinge_Z - Crank_Boss[2]])
-        cube([Crank_Boss_Xm + Crank_Boss[0]/2 - ax0, Crank_Boss[1], Crank_Boss[2]]);
 }
 module Crank_Holes(){
     // D-bore
     translate([Crank_X0 - 1,0,Hinge_Z]) rotate([0,90,0])
         linear_extrude(height=Crank_X1 - Crank_X0 + 2) Shaft_Section_Pose_Bore();
-    // ball stud M2, through along X, nut on the inboard face
-    translate([Crank_X0 - 1, Crank_A, Hinge_Z]) rotate([0,90,0])
-        cylinder(d=2.2, h=Crank_Arm_Xm + Crank_Arm_T/2 - Crank_X0 + 2, $fn=24);
+    // pivot pin through both cheeks along X (press fit)
+    translate([Crank_Xk - Clevis_Gap/2 - Cheek_T - 1, Crank_A, Hinge_Z]) rotate([0,90,0])
+        cylinder(d=Pivot_D - 0.05, h=Clevis_Gap + 2*Cheek_T + 2, $fn=24);
     // set screw: insert pocket from the aft face, then M3 clearance to the bore
     translate([Crank_Boss_Xm, 0, Hinge_Z - Crank_Boss[2] - Overlap])
         cylinder(d=Set_Insert[0], h=Set_Insert[1] + Overlap, $fn=32);
@@ -614,15 +668,15 @@ module Hinge_Block(){
     // inner housing + pillar (cut round the retainer, 45 deg underside)
     difference(){
         union(){
-            translate([MMT_Bore_R - 0.5, -Housing_D/2 + 0.1, 0])
-                cube([Brg_In_X0 + Brg_B - MMT_Bore_R + 0.5, Housing_D - 0.2, Hinge_Z + 1]);
+            translate([MMT_Bore_R - 0.5, Web_Y[1] - 0.5, 0])
+                cube([Brg_In_X0 + Brg_B - MMT_Bore_R + 0.5, Housing_D/2 - 0.1 - (Web_Y[1] - 0.5), Hinge_Z + 1]);
             Teardrop_X(Housing_D, MMT_Bore_R - 0.5, Brg_In_X0 + Brg_B);
         }
         Retainer_Cut();
     }
     // outer housing + pillar, merged with the wall
-    translate([Brg_Out_X1 - Brg_B, -Housing_D/2 + 0.1, 0])
-        cube([R_In - (Brg_Out_X1 - Brg_B) + 0.5, Housing_D - 0.2, Hinge_Z + 1]);
+    translate([Brg_Out_X1 - Brg_B, Web_Y[1] - 0.5, 0])
+        cube([R_In - (Brg_Out_X1 - Brg_B) + 0.5, Housing_D/2 - 0.1 - (Web_Y[1] - 0.5), Hinge_Z + 1]);
     Teardrop_X(Housing_D, Brg_Out_X1 - Brg_B, R_In + 0.5);
     // web
     difference(){
@@ -651,7 +705,7 @@ module Hinge_Holes(){
     Teardrop_X(Wall_Hole_D, R_In - 1, R_Out + 1);
     // crank window: everything between the housings on the +Y side of the web
     translate([Brg_In_X0 + Brg_B + 0.05, Web_Y[1], -1])
-        cube([(Brg_Out_X1 - Brg_B) - (Brg_In_X0 + Brg_B) - 0.1, Crank_A + Crank_Arm_H/2 + 1.5 - Web_Y[1], Hinge_Z + Housing_D]);
+        cube([(Brg_Out_X1 - Brg_B) - (Brg_In_X0 + Brg_B) - 0.1, Crank_Tip_Y + 1.5 - Web_Y[1], Hinge_Z + Housing_D]);
 }
 
 // servo bay: floor plate, two webs to the wall, lug pedestals with nut traps
@@ -735,8 +789,9 @@ module TS_Hatch_Print(bat)
         Hatch_Cover(bat);
 module TS_Crank_Print()
     translate([0,0,-Crank_X0]) rotate([0,-90,0]) translate([0,0,-Hinge_Z]) Crank(0);
-module TS_Aileron_Print()
-    translate([0,0,-(R_Out + Flap_Root_Gap)]) rotate([0,-90,0]) translate([0,0,-Hinge_Z]) Aileron(0);
+// each half lies on its outer face, split face (with the groove) up
+module TS_Aileron_Print(half)
+    translate([0,0,Fin_T/2]) rotate([half > 0 ? -90 : 90, 0, 0]) Aileron_Half(half, 0);
 module TS_Coupon() intersection(){
     TS_Can();
     translate([MMT_Bore_R - 1, -9, 0]) cube([R_Out - MMT_Bore_R + 2, 15.8, Hinge_Z + Housing_D/2*sqrt(2) + 2]);
@@ -776,6 +831,6 @@ echo(str("TS_PARAMS ", R_Out, " ", R_In, " ", MMT_OD, " ", MMT_Z0, " ", MMT_L, "
 echo(str("TS_HATCH ", Hatch_U[0], " ", Hatch_U[1], " ", Hatch_Z[0], " ", Hatch_Z[1], " ",
          Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.1: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.1.2: fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

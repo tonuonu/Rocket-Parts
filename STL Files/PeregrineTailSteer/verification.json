@@ -3,12 +3,12 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 31
+   "value": 36
   },
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "288.8 cm3"
+   "value": "287.4 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
@@ -23,17 +23,27 @@
   {
    "check": "Crank is one closed solid",
    "passed": true,
-   "value": "1.4 cm3"
+   "value": "2.2 cm3"
   },
   {
-   "check": "Aileron_Peregrine is one closed solid",
+   "check": "AileronScrewHalf_Peregrine is one closed solid",
    "passed": true,
-   "value": "16.8 cm3"
+   "value": "8.5 cm3"
   },
   {
-   "check": "Aileron_Zephyr is one closed solid",
+   "check": "AileronTappedHalf_Peregrine is one closed solid",
    "passed": true,
-   "value": "11.2 cm3"
+   "value": "8.6 cm3"
+  },
+  {
+   "check": "AileronScrewHalf_Zephyr is one closed solid",
+   "passed": true,
+   "value": "5.7 cm3"
+  },
+  {
+   "check": "AileronTappedHalf_Zephyr is one closed solid",
+   "passed": true,
+   "value": "5.8 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
@@ -188,7 +198,7 @@
    "passed": true,
    "value": [
     24.7,
-    103.75
+    78.7
    ]
   },
   {
@@ -266,6 +276,11 @@
    "check": "LiPo lifts out through its hatch (0.5-30 mm, no contact)",
    "passed": true,
    "value": "free"
+  },
+  {
+   "check": "shaft extraction path clear with the fins glued (aileron halves off sideways, shaft out 26.6 mm into the notch, then sideways)",
+   "passed": true,
+   "value": "clear"
   },
   {
    "check": "pushrod axial at neutral (balls in line)",
@@ -351,7 +366,7 @@
   "Flap_LE_R": 3.175,
   "Shaft_D": 4.0,
   "Shaft_X0": 24.7,
-  "Shaft_X1": 103.75,
+  "Shaft_X1": 78.7,
   "Brg_In_X0": 25.0,
   "Brg_Out_X1": 47.75,
   "Brg_B": 4.0,

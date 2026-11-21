@@ -45,15 +45,17 @@ PRINTS = {   # name: (Render_Part, defines)
     "HatchServo": (2, {}),
     "HatchServoLipo": (3, {}),
     "Crank": (4, {}),
-    "Aileron_Peregrine": (5, {}),
-    "Aileron_Zephyr": (5, {"Fin_Set": '"Zephyr"'}),
+    "AileronScrewHalf_Peregrine": (5, {}),
+    "AileronTappedHalf_Peregrine": (8, {}),
+    "AileronScrewHalf_Zephyr": (5, {"Fin_Set": '"Zephyr"'}),
+    "AileronTappedHalf_Zephyr": (8, {"Fin_Set": '"Zephyr"'}),
     "BearingCoupon": (6, {}),
 }
 ENVS = {
     "servos": 20, "horns": 21, "bearings": 22, "shafts": 23, "cranks": 24,
     "ailerons": 25, "fins": 26, "mmt": 27, "lipo": 28, "switch": 29,
     "covers": 30, "retainer": 31, "aileron0": 32, "crank0": 33, "servo0": 34,
-    "horn0": 35, "fin0": 36, "tube": 37,
+    "horn0": 35, "fin0": 36, "tube": 37, "ail_m": 38, "ail_p": 39, "shaft0": 40,
 }
 ZEPHYR = {"z_aileron0": 32, "z_fin0": 36, "z_fins": 26, "z_ailerons": 25}
 DXF = {"FixedFin_Peregrine": {}, "FixedFin_Zephyr": {"Fin_Set": '"Zephyr"'}}
@@ -169,12 +171,13 @@ def main():
     record("hatch covers print standing (<= 250)", max(m["HatchServo"].extents[2],
            m["HatchServoLipo"].extents[2]) <= 250, round(m["HatchServoLipo"].extents[2], 1))
     can = m["FinCan"]
-    # supportless: every downward-facing patch (steeper than 45 deg, off the bed)
-    # is a narrow ledge or a short bridge: mean width 2A/P <= 7 mm
+    # supportless: every downward-facing patch (steeper than 45 deg, more than
+    # 0.1 mm, i.e. under one layer, above the bed) is a narrow ledge or a short
+    # bridge: mean width 2A/P <= 7 mm
     worst_w = (0, None)
     for n in PRINTS:
         mm = m[n]
-        sel = (mm.face_normals[:, 2] < -0.71) & (mm.triangles_center[:, 2] > mm.bounds[0, 2] + 0.3)
+        sel = (mm.face_normals[:, 2] < -0.71) & (mm.triangles_center[:, 2] > mm.bounds[0, 2] + 0.1)
         if not sel.any():
             continue
         sub = mm.submesh([np.where(sel)[0]], append=True)
@@ -327,10 +330,40 @@ def main():
         stuck = []
         for t_ in np.arange(0.5, 30.1, 0.5):
             b_ = body.copy(); b_.apply_translation(out_dir * t_)
-            v = sum(inter(pp, can) for pp in [q for q in b_.split(only_watertight=False)] if pp.is_volume)
+            pieces = b_.split(only_watertight=False)
+            if not all(q.is_volume for q in pieces):
+                stuck.append((float(t_), "non-volume piece"))
+                break
+            v = sum(inter(q, can) for q in pieces)
             if v > 1e-3:
                 stuck.append((float(t_), round(v, 2)))
         record("%s lifts out through its hatch (0.5-30 mm, no contact)" % name, not stuck, stuck[:4] or "free")
+
+    # ---------- field service of a hinge, fins glued in place: the aileron halves
+    # come off sideways (+-Y), then the shaft slides outward until its inner end
+    # clears the wall and leaves the notch sideways. Insertion is the reverse.
+    blocked = []
+    for name, half, sgn in (("screw half", m["ail_m"], -1), ("tapped half", m["ail_p"], 1)):
+        for t_ in np.arange(0.5, 12.1, 0.5):
+            h1 = half.copy(); h1.apply_translation([0, sgn * t_, 0])
+            for n_, B in (("can", can), ("fixed fin", m["fin0"])):
+                if inter(h1, B) > 1e-3:
+                    blocked.append((name, float(t_), n_))
+    shaft0 = m["shaft0"]
+    travel = p["R_Out"] + 0.5 - p["Shaft_X0"]
+    for t_ in np.arange(0.5, travel + 0.01, 0.5):
+        s1 = shaft0.copy(); s1.apply_translation([t_, 0, 0])
+        for n_, B in (("can", can), ("fixed fin", m["fin0"])):
+            if inter(s1, B) > 1e-3:
+                blocked.append(("shaft out", float(t_), n_))
+    for t_ in np.arange(0.5, 10.1, 0.5):
+        for sgn in (-1, 1):
+            s1 = shaft0.copy(); s1.apply_translation([travel, sgn * t_, 0])
+            for n_, B in (("can", can), ("fixed fin", m["fin0"])):
+                if inter(s1, B) > 1e-3:
+                    blocked.append(("shaft sideways", float(t_), n_))
+    record("shaft extraction path clear with the fins glued (aileron halves off sideways, shaft out"
+           " %.1f mm into the notch, then sideways)" % travel, not blocked, blocked[:4] or "clear")
 
     # ---------- linkage kinematics and travel
     a_, h_, Lp = p["Crank_A"], p["Horn_R"], p["Pushrod_L"]
