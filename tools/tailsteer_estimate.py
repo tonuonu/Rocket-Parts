@@ -70,7 +70,8 @@ def scad_params(fin_set):
     keys = ("R_Out R_In MMT_OD MMT_Z0 MMT_L Hinge_Z Hinge_X Fin_Base_X Flap_Span Flap_Root_Gap "
             "Flap_Gap Flap_LE_R Shaft_D Shaft_X0 Shaft_X1 Brg_In_X0 Brg_Out_X1 Brg_B Brg_D Crank_A "
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
-            "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z").split()
+            "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
+            "Lipo_Z0 Lipo_L").split()
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "p.echo")
         subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Fin_Set="%s"' % fin_set,
@@ -126,10 +127,36 @@ def flap_strips(p, pts, n=120):
         y = y0 + (i + 0.5) * (y1 - y0) / n
         xs = crossings(pts, y)
         le, te = xs[0], xs[1]          # first segment: leading edge to trailing edge
-        cf = te - p["Hinge_X"]
+        cf = min(te, p.get("Flap_X_Max", 1e9)) - p["Hinge_X"]   # aileron clipped ahead of the fixed fin tip
         if cf > 0:
             out.append((y, te - le, cf, (y1 - y0) / n))
     return out
+
+
+def region_moments(pts, y0, y1, xmin=-1e9, xmax=1e9, n=2000):
+    """Area (mm2) and x-centroid of the outline clipped to xmin <= x <= xmax, y0 <= y <= y1."""
+    A = Mx = 0.0
+    dy = (y1 - y0) / n
+    for i in range(n):
+        y = y0 + (i + 0.5) * dy
+        xs = crossings(pts, y)
+        for j in range(0, len(xs) - 1, 2):
+            a, b = max(xs[j], xmin), min(xs[j + 1], xmax)
+            if b > a:
+                A += (b - a) * dy
+                Mx += (b - a) * dy * (a + b) / 2
+    return A, (Mx / A if A else 0.0)
+
+
+def render_mass_cg(part, rho, defines=()):
+    """Render a Render_Part of PeregrineTailSteer.scad (assembled pose) and return mass, centroid Z."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "p.stl")
+        extra = [x for d in defines for x in ("-D", d)]
+        subprocess.run([OPENSCAD, "--backend=manifold", "--render", "--export-format", "binstl", "-o", out,
+                        "-D", "Render_Part=%d" % part, *extra, str(REPO / "PeregrineTailSteer.scad")],
+                       capture_output=True, text=True, check=True)
+        return stl_mass_cg(out, rho)
 
 
 def stl_mass_cg(path, rho):
@@ -269,10 +296,16 @@ def main():
     print("  landing/handling: the shaft yields at %.0f N on the aileron centre of pressure;"
           " bearings then see %.0f / %.0f N (static factor %.1f / %.1f)" %
           (Fy_, Ro_l, Ri_l, BEARING["C0r"] / Ro_l, BEARING["C0r"] / Ri_l))
-    aft_fixed = max(x for x, _ in pts) - p["Fin_Base_X"]
-    aft_flap = max(crossings(pts, p["Flap_Span"])[1], crossings(pts, p["Flap_Root_Gap"] + 0.01)[1]) - p["Fin_Base_X"]
-    print("  the fixed fin reaches %.1f mm aft of the base, the aileron %.1f mm: tail-first, the fixed"
-          " fin touches first" % (aft_fixed, aft_flap))
+    # tail-first landing: aft-most points of the notched fixed fin and of the aileron planform
+    aft_fixed = p["Fixed_Aft_X"] - p["Fin_Base_X"]
+    aft_flap = 0.0
+    for i in range(2001):
+        y = p["Flap_Root_Gap"] + i * (p["Flap_Span"] - p["Flap_Root_Gap"]) / 2000
+        xs = crossings(pts, y) or [0, 0]
+        aft_flap = max(aft_flap, min(xs[1], p["Flap_X_Max"]))
+    aft_flap -= p["Fin_Base_X"]
+    print("  aft of the base: notched fixed fin %.1f mm, aileron %.1f mm (clipped %.0f mm ahead of the"
+          " fixed fin): tail-first, the fixed fin touches first" % (aft_fixed, aft_flap, aft_fixed - aft_flap))
 
     # ---- printed-part stresses
     print("\nPrinted PC (allowables ~%.0f MPa in-layer, ~%.0f across layers, estimates):" %
@@ -303,10 +336,11 @@ def main():
     # ---- thermal
     print("\nServo and LiPo heating (lumped, assumptions in the README):")
     sb = 5.67e-8
-    for name, A_face, m_g, c_ in (("servo", 33 * 35.2e-6, 30.7, 0.9), ("LiPo", 61 * 16e-6, 28.0, 1.0)):
+    # faces toward the motor tube: servo 33 x 35.2 (L x H), LiPo 61 x 15 (length x width along u)
+    for name, A_face, m_g, c_ in (("servo", 33 * 35.2e-6, 30.7, 0.9), ("LiPo", 61 * 15e-6, 28.0, 1.0)):
         T = 303.0
         Tw = 303.0
-        cw = 1.6e-3 * 1.2e3 * 1.25 * A_face     # floor plate behind it, J/K (PC 1.25 J/gK)
+        cw = 1.6e-3 * A_face * 1200 * 1250   # floor plate behind it: m3 x kg/m3 x J/(kg K) = J/K
         dt = 0.05
         hist = {}
         for step in range(int(600 / dt) + 1):
@@ -328,29 +362,33 @@ def main():
     print("\nMass and CG (Z above the base; x from the tip = %.2f - Z):" % (BASE_X * 1e3))
     items = []
     fill = PC["rho_solid"] * PC["fill"]
-    for n_, cnt in (("FinCan", 1), ("HatchServo", 2), ("HatchServoLipo", 1), ("Crank", 3)):
-        m_, z_ = stl_mass_cg(STL / (n_ + ".stl"), fill if n_ == "FinCan" else PC["rho_solid"])
-        if n_.startswith("Hatch"):
-            z_ = (p["Servo_ZO"] + 10.5) if n_ == "HatchServo" else 130.0
-        if n_ == "Crank":
-            z_ = p["Hinge_Z"]
-        items.append(("%s (PC%s) x%d" % (n_, ", %.0f%% fill" % (PC["fill"] * 100) if n_ == "FinCan" else " solid", cnt), m_ * cnt, z_))
-    m_, z_ = stl_mass_cg(STL / "Aileron_Peregrine.stl", PC["rho_solid"])
-    items.append(("ailerons (PC solid) x3", 3 * m_, p["Hinge_Z"] - 12))
-    # fixed fins: plywood, outline minus the aileron cut-out plus the new tab
-    S_cut = 0.0
-    for y, c, cf, dy in flap_strips(dict(p, Flap_Span=p["Flap_Span"] + p["Flap_Gap"],
-                                         Hinge_X=p["Hinge_X"] - p["Flap_LE_R"] - p["Flap_Gap"]), pts, 200):
-        S_cut += cf * dy
-    tab = (175 - 55) * (R - (p["MMT_OD"] / 2 + 0.2))
-    m_fin = (S_fin - S_cut + tab) * p["Fin_T"] * PLY_RHO / 1000
-    items.append(("fixed fins, 1/4 in birch ply x3", 3 * m_fin, 120.0))
+    m_, z_ = stl_mass_cg(STL / "FinCan.stl", fill)          # printed upright: Z is the assembled Z
+    items.append(("FinCan (PC, %.0f%% fill)" % (PC["fill"] * 100), m_, z_))
+    m_, z_ = render_mass_cg(30, PC["rho_solid"])             # three covers, assembled pose
+    items.append(("hatch covers x3 (PC solid)", m_, z_))
+    m_, z_ = render_mass_cg(24, PC["rho_solid"])             # three cranks, assembled pose
+    items.append(("cranks x3 (PC solid)", m_, z_))
+    ymax = max(y for _, y in pts)
+    zx = lambda x: p["Fin_Base_X"] - x                       # fin x -> Z above the base
+    # ailerons: mass from the STL volume, centroid from the planform
+    m_, _ = stl_mass_cg(STL / ("Aileron_%s.stl" % fs), PC["rho_solid"])
+    _, xa = region_moments(pts, p["Flap_Root_Gap"], p["Flap_Span"], p["Hinge_X"] - p["Flap_LE_R"], p["Flap_X_Max"])
+    items.append(("ailerons x3 (PC solid)", 3 * m_, zx(xa)))
+    # fixed fins: outline minus the notch plus the new tab (plywood, from the outlines)
+    A_o, x_o = region_moments(pts, 0, ymax)
+    A_n, x_n = region_moments(pts, 0, p["Flap_Span"] + p["Flap_Gap"],
+                              xmin=p["Hinge_X"] - p["Flap_LE_R"] - p["Flap_Gap"])
+    tab_d = R - (p["MMT_OD"] / 2 + 0.2)
+    A_t, x_t = (175 - 55) * tab_d, p["Fin_Base_X"] - (55 + 175) / 2
+    A_f = A_o - A_n + A_t
+    x_f = (A_o * x_o - A_n * x_n + A_t * x_t) / A_f
+    items.append(("fixed fins x3, 1/4 in birch ply (notched, new tab)", 3 * A_f * p["Fin_T"] * PLY_RHO / 1000, zx(x_f)))
     items += [("shafts 4 x %.0f mm steel x3" % (p["Shaft_X1"] - p["Shaft_X0"]),
                3 * math.pi * 4 * (p["Shaft_X1"] - p["Shaft_X0"]) * 7.85e-3, p["Hinge_Z"]),
               ("bearings %s x6" % BEARING["name"], 6 * BEARING["mass"], p["Hinge_Z"]),
               ("servos %s x3" % SERVO["name"], 3 * SERVO["mass"], p["Servo_ZO"] + 10.5),
               ("ball links, studs, M2 rods, nuts x3 (est)", 3 * 4.0, (p["Hinge_Z"] + p["Servo_ZO"]) / 2),
-              ("LiPo Tattu 450 mAh 2S (spec)", 28.0, 158.5),
+              ("LiPo Tattu 450 mAh 2S (spec)", 28.0, p["Lipo_Z0"] + p["Lipo_L"] / 2),
               ("switch, fuse, 1000 uF, harness (est)", 22.0, 175.0),
               ("inserts, screws, nuts (est)", 14.0, 110.0),
               ("paper tube %.1f mm (kept from the flown tube)" % p["Tube_Piece_L"],
@@ -366,9 +404,13 @@ def main():
     print("  %-52s %7.1f g at Z %6.1f" % ("NEW AFT SECTION", m_new, z_new))
     # current fixed-fin aft section (.ork components)
     tube = math.pi * (50.8 ** 2 - 49.53 ** 2) * 457.2 * PAPER_RHO / 1000
-    fins_old = 3 * (S_fin + 124.46 * 30.0355) * 6.35 * PLY_RHO / 1000
+    # .ork fin: full outline plus the TTW tab (from 92.075 behind the root LE, 124.46 x 30.0355)
+    A_ot, x_ot = 124.46 * 30.0355, 92.075 + 124.46 / 2
+    A_old = A_o + A_ot
+    x_old = (A_o * x_o + A_ot * x_ot) / A_old
+    fins_old = 3 * A_old * 6.35 * PLY_RHO / 1000
     old = [("aft tube 457.2 (.ork paper)", tube, 228.6),
-           ("fins x3 with tab (.ork ply)", fins_old, 120.0),
+           ("fins x3 with tab (.ork ply)", fins_old, zx(x_old)),
            ("motor tube (.ork)", 55.2, 152.4),
            ("centering rings x2 (.ork ply)", 58.5, (28.6 + 158.75) / 2),
            ("eyebolt (.ork)", 25.1, 161.9),

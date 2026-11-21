@@ -3,7 +3,7 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.0  11/21/2026
+// Revision: 0.1.1  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -35,6 +35,8 @@
 //
 //  ***** History *****
 // 0.1.0  11/21/2026  First design.
+// 0.1.1  11/21/2026  Review: ailerons clipped Skid_Margin ahead of the fixed fin's aft-most
+//                    point (Zephyr); set-screw pocket assert against the arm and stud hole.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -113,6 +115,19 @@ Flap_Gap      = 0.8;        // to the fixed fin, LE and outer edge
 Flap_LE_R     = Fin_T/2;    // round leading edge about the shaft
 Hinge_X       = Fin_Base_X - Hinge_Z;   // in fin coordinates
 Flap_Max      = 15;         // mechanical travel checked, +-deg
+// Tail-first landing: the fixed fin must reach further aft than any aileron
+// point. The aileron is clipped Skid_Margin forward of the notched fixed fin's
+// aft-most point. Peregrine: no clip (fixed fin tip 35 mm aft of the
+// aileron). Zephyr: the clip removes the aileron's share of the kit fin's
+// aft extension below the notch.
+Skid_Margin   = 5;
+function Fixed_Aft_X() = let(yt = Flap_Span + Flap_Gap, xn = Hinge_X - Flap_LE_R - Flap_Gap,
+        P = Fin_Pts, n = len(P),
+        v = [for (q=P) if (q[1] > yt || q[0] < xn) q[0]],
+        c = [for (i=[0:n-1]) let(a=P[i], b=P[(i+1)%n]) if ((a[1]-yt)*(b[1]-yt) < 0)
+                a[0] + (yt - a[1])*(b[0] - a[0])/(b[1] - a[1])])
+    max(concat(v, c));
+Flap_X_Max    = Fixed_Aft_X() - Skid_Margin;   // aileron planform ends here (fin x)
 
 // ============================================
 // SHAFT and BEARINGS
@@ -237,7 +252,10 @@ assert(Fin_Tab_Z[0] - Hinge_Z > Housing_D/2 + 8, "fin tab runs into the hinge bl
 assert(Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Z[0] - Hatch_Rebate, "rail boss under the hatch");
 assert(Servo_Rc + Servo_W/2 < R_In, "servo outside the wall");
 assert(Shaft_X0 > MMT_Bore_R + 1, "shaft into the motor tube");
-assert(Crank_Boss_Xm - Crank_Boss[0]/2 > Crank_Arm_Xm + Crank_Arm_T/2 + 0.5, "set-screw boss runs into the crank arm");
+// set-screw insert pocket (Crank_Boss_Xm +- Set_Insert[0]/2) keeps ruthex W 1.6 to the arm
+// and clears the ball-stud hole, which runs 1 mm past the arm's outboard face
+assert(Crank_Boss_Xm - Set_Insert[0]/2 - 1.6 >= Crank_Arm_Xm + Crank_Arm_T/2, "set-screw pocket too close to the crank arm");
+assert(Crank_Boss_Xm - Set_Insert[0]/2 > Crank_Arm_Xm + Crank_Arm_T/2 + 1, "set-screw pocket meets the ball-stud hole");
 assert(Crank_Boss_Xm + Crank_Boss[0]/2 < Crank_X1 - 0.45, "set-screw boss runs past the hub");
 
 // ============================================
@@ -303,7 +321,7 @@ module Flap_Planform_2D()
     intersection(){
         Fin_Outline_2D();
         translate([Hinge_X - Flap_LE_R, Flap_Root_Gap])
-            square([400, Flap_Span - Flap_Root_Gap]);
+            square([Flap_X_Max - (Hinge_X - Flap_LE_R), Flap_Span - Flap_Root_Gap]);
     }
 module Tab_2D()
     translate([Fin_Base_X - Fin_Tab_Z[1], -Fin_Tab_Depth])
@@ -753,10 +771,11 @@ echo(str("TS_PARAMS ", R_Out, " ", R_In, " ", MMT_OD, " ", MMT_Z0, " ", MMT_L, "
          Brg_In_X0, " ", Brg_Out_X1, " ", Brg_B, " ", Brg_D, " ", Crank_A, " ", Horn_R, " ",
          Crank_Xk, " ", Servo_Theta, " ", Servo_Rc, " ", Servo_ZO, " ", Pushrod_L, " ",
          Horn_Ball_U, " ", Fin_T, " ", Can_L, " ", Total_H, " ", Rail_A, " ", Rail_Aft_Z, " ",
-         Tube_Piece_L, " ", Ply_CR_Z0, " ", Flap_Max, " ", Sw_A, " ", Sw_Z));
+         Tube_Piece_L, " ", Ply_CR_Z0, " ", Flap_Max, " ", Sw_A, " ", Sw_Z, " ",
+         Flap_X_Max, " ", Fixed_Aft_X(), " ", Lipo_Z0, " ", Lipo[2]));
 echo(str("TS_HATCH ", Hatch_U[0], " ", Hatch_U[1], " ", Hatch_Z[0], " ", Hatch_Z[1], " ",
          Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.0: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.1.1: fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

@@ -154,7 +154,8 @@ def main():
     keys = ("R_Out R_In MMT_OD MMT_Z0 MMT_L Hinge_Z Hinge_X Fin_Base_X Flap_Span Flap_Root_Gap "
             "Flap_Gap Flap_LE_R Shaft_D Shaft_X0 Shaft_X1 Brg_In_X0 Brg_Out_X1 Brg_B Brg_D Crank_A "
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
-            "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z").split()
+            "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
+            "Lipo_Z0 Lipo_L").split()
     p = dict(zip(keys, P))
     m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS) + list(ZEPHYR)}
 
@@ -268,7 +269,7 @@ def main():
                 # first hit is the seat bore (r ~4.55, up to 6.5 in the teardrop tip)
                 if len(h) >= 2 and 4.4 < h[0] < 6.5:
                     hz.append(h[1] - h[0])
-    record("bearing housing walls >= 1.8 mm", min(hz) >= 1.8, round(min(hz), 2))
+    record("bearing housing walls >= 1.95 mm (2.0 nominal)", min(hz) >= 1.95, round(min(hz), 2))
 
     # insert pockets: material all round at the manufacturer wall W
     def ring_ok(axis_o, axis_d, depth, r_wall, n_ang=24, n_dep=6):
@@ -312,11 +313,17 @@ def main():
     record("no hatch screw head on the rail strip (60 +- %.1f deg)" % strip, not bad,
            [round(h[0], 1) for h in heads])
 
-    # ---------- service: servo (with its horn) and LiPo lift straight out through the hatches
-    th0 = math.radians(p["Servo_Theta"])
-    out_dir = np.array([math.cos(th0), math.sin(th0), 0.0])
-    for name, parts in (("servo with horn", [m["servo0"], m["horn0"]]), ("LiPo", [m["lipo"]])):
+    # ---------- service: servos (with horns) and the LiPo lift straight out through their hatches.
+    # Sector A has the T-shaped servo + LiPo hatch, sector B a gable-topped servo hatch.
+    def about_z(deg):
+        return trimesh.transformations.rotation_matrix(math.radians(deg), [0, 0, 1])
+    for name, parts, sector in (("sector A servo with horn", [m["servo0"], m["horn0"]], 0),
+                                ("sector B servo with horn", [m["servo0"], m["horn0"]], 1),
+                                ("LiPo", [m["lipo"]], 0)):
+        th0 = math.radians(p["Servo_Theta"] + 120 * sector)
+        out_dir = np.array([math.cos(th0), math.sin(th0), 0.0])
         body = trimesh.util.concatenate(parts)
+        body.apply_transform(about_z(120 * sector))
         stuck = []
         for t_ in np.arange(0.5, 30.1, 0.5):
             b_ = body.copy(); b_.apply_translation(out_dir * t_)
@@ -379,9 +386,11 @@ def main():
         worst_link = min(worst_link, min_gap(lnk, can, n=1500))
     record("aileron travel +-%.0f deg: nothing collides (aileron, crank, pushrod, horn)" % p["Flap_Max"],
            not hits, hits[:6] if hits else len(defl))
-    record("aileron to can gap >= 0.5 mm over the travel", worst_flap_can >= 0.5, round(worst_flap_can, 2))
-    record("aileron to fixed fin gap >= 0.5 mm over the travel", worst_flap_fin >= 0.5, round(worst_flap_fin, 2))
-    record("pushrod/ball-link envelope to can gap >= 0.5 mm", worst_link >= 0.5, round(worst_link, 2))
+    record("aileron to can gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_can >= 0.78,
+           round(worst_flap_can, 3))
+    record("aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_fin >= 0.78,
+           round(worst_flap_fin, 3))
+    record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
 
     # rail: fins and ailerons at full travel stay off the 1010 rail (25.4 wide, face >= R_Out + 2)
     rail_box = trimesh.creation.box(extents=[40, 25.4, 900])
@@ -396,6 +405,16 @@ def main():
             gaps.append(min_gap(one, rail_box, n=800))
     gaps.append(min_gap(m["fins"], rail_box, n=3000))
     record("fins and ailerons at full travel stay off the rail", min(gaps) > 10, round(min(gaps), 1))
+
+    # ---------- tail-first landing: the fixed fin reaches further aft than every aileron point
+    for fs_, fin_, ail_ in (("Peregrine", m["fin0"], m["aileron0"]), ("Zephyr", m["z_fin0"], m["z_aileron0"])):
+        lead = []
+        for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
+            a1 = ail_.copy(); a1.apply_transform(rot_x(d, Z))
+            lead.append(a1.bounds[0, 2] - fin_.bounds[0, 2])
+        record("%s: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg"
+               % (fs_, p["Flap_Max"]), min(lead) >= 3.0,
+               "fixed fin Z %.1f, aileron lead %s mm" % (fin_.bounds[0, 2], [round(float(x), 1) for x in lead]))
 
     # ---------- Zephyr fin set
     zh = []
@@ -412,7 +431,9 @@ def main():
     print("%d/%d checks passed" % (n_ok, len(results)))
     if a.json:
         Path(a.json).write_text(json.dumps({"checks": results, "params": p}, indent=1))
-    if a.export:
+    if a.export and n_ok != len(results):
+        print("not exported: checks failed, the committed STLs/DXFs stay as they are")
+    elif a.export:
         OUT_STL.mkdir(parents=True, exist_ok=True)
         for n in PRINTS:
             shutil.copy(tmp / (n + ".stl"), OUT_STL / (n + ".stl"))

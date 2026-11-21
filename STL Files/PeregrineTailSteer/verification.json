@@ -33,7 +33,7 @@
   {
    "check": "Aileron_Zephyr is one closed solid",
    "passed": true,
-   "value": "15.3 cm3"
+   "value": "11.2 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
@@ -217,7 +217,7 @@
    "value": "8258 rays, thin: []"
   },
   {
-   "check": "bearing housing walls >= 1.8 mm",
+   "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
    "passed": true,
    "value": 2.0
   },
@@ -253,7 +253,12 @@
    ]
   },
   {
-   "check": "servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "check": "sector A servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "sector B servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
    "passed": true,
    "value": "free"
   },
@@ -291,17 +296,17 @@
    "value": 7
   },
   {
-   "check": "aileron to can gap >= 0.5 mm over the travel",
+   "check": "aileron to can gap >= 0.78 mm over the travel (0.8 by design)",
    "passed": true,
    "value": 0.8
   },
   {
-   "check": "aileron to fixed fin gap >= 0.5 mm over the travel",
+   "check": "aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)",
    "passed": true,
    "value": 0.8
   },
   {
-   "check": "pushrod/ball-link envelope to can gap >= 0.5 mm",
+   "check": "pushrod/ball-link envelope to can gap >= 1.2 mm",
    "passed": true,
    "value": 1.21
   },
@@ -309,6 +314,16 @@
    "check": "fins and ailerons at full travel stay off the rail",
    "passed": true,
    "value": 18.1
+  },
+  {
+   "check": "Peregrine: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
+   "passed": true,
+   "value": "fixed fin Z -76.1, aileron lead [37.3, 35.5, 37.3] mm"
+  },
+  {
+   "check": "Zephyr: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
+   "passed": true,
+   "value": "fixed fin Z -4.7, aileron lead [5.3, 5.0, 5.3] mm"
   },
   {
    "check": "Zephyr: ailerons free through the travel (can, fixed fin)",
@@ -358,6 +373,10 @@
   "Ply_CR_Z0": 251.0,
   "Flap_Max": 15.0,
   "Sw_A": 180.0,
-  "Sw_Z": 178.0
+  "Sw_Z": 178.0,
+  "Flap_X_Max": 319.983,
+  "Fixed_Aft_X": 324.983,
+  "Lipo_Z0": 128.0,
+  "Lipo_L": 61.0
  }
 }

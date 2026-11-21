@@ -70,7 +70,7 @@ All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. Th
 | `HatchServoLipo.stl` | 1 | Standing. Solid | 14 g |
 | `Crank.stl` | 3 | Hub up, inboard collar on the bed. Solid | 2 g |
 | `Aileron_Peregrine.stl` | 3 | Standing on the root, D-bore vertical. Solid (8 walls, as the PC fins), brim 3 mm | 20 g |
-| `Aileron_Zephyr.stl` | 3 | Zephyr only. Same settings | 18 g |
+| `Aileron_Zephyr.stl` | 3 | Zephyr only. Same settings. Clipped 5 mm ahead of the fixed fin tip | 14 g |
 
 Cut from 1/4 in plywood:
 - `FixedFin_Peregrine.dxf`: 3 off. The aileron cut-out and the through-the-wall tab are included.
@@ -85,7 +85,7 @@ These are numbers from `tools/tailsteer_estimate.py`, which reads the SCAD echo 
 ### Roll authority (estimate)
 
 - **Method:** strip theory over the aileron span. Thin-airfoil flap effectiveness τ(c_f/c) × 0.85 for gaps and viscosity, scaled to the CFD fin lift slope (0.38 × 2π on the fin's own area).
-- **Result:** Cl_δ = **+0.073 /deg** for the Peregrine and +0.080 /deg for the Zephyr.
+- **Result:** Cl_δ = **+0.073 /deg** for the Peregrine and +0.069 /deg for the Zephyr (clipped ailerons, see Landing).
 - **Against the canards:**
   - 24× the magnitude of the canards' net −0.0030 /deg, and with the correct sign;
   - 8.3× the canards alone (+0.0087 /deg).
@@ -98,12 +98,12 @@ This is a linear upper estimate. Real flap effectiveness on a low-aspect fin wit
 
 The deflection part uses unreduced 2-D thin-airfoil hinge moments. The incidence part is scaled to the CFD 3-D slope (× 0.38). Real hinge moments are usually 0.5–0.7 of 2-D thin-airfoil values, so these are conservative.
 
-Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33 Peregrine, 0.08–0.23 Zephyr):
+Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33 Peregrine, 0.08–0.19 Zephyr):
 
 | Fin set | Ch_δ | Ch_α |
 |---|---|---|
 | Peregrine | −0.90 to −0.98 /rad | −0.41 to −0.67 /rad |
-| Zephyr | −0.88 to −0.94 /rad | −0.31 to −0.54 /rad |
+| Zephyr | −0.88 to −0.92 /rad | −0.31 to −0.49 /rad |
 
 | Case | Hinge moment | Servo torque (÷ 1.5) | HV6160 stall at 6.0 / 7.4 / 8.4 V | Margin |
 |---|---:|---:|---|---:|
@@ -132,7 +132,11 @@ Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.1
 - **Landing and handling:** the shaft yields at about 68 N on the aileron's centre of pressure. The bearings then carry 200 / 133 N, close to C0r on the outer one. The shaft is the fuse.
 - That holds only for annealed silver steel. Do **not** substitute a hardened linear shaft or a hardened D-cut shaft: with one, the outer bearing passes C0r before the shaft yields.
 - A hard side landing on an aileron can bend the shaft. To replace it: undo the set screw from the open aft end, pull the shaft out through the wall, fit a new 79 mm rod. Check the bearings at the same time.
-- Tail first, the fixed fin reaches 76 mm aft of the base and the aileron only 40 mm. The fin tip touches the ground first. On the Zephyr the figures are 24.5 and 5.1 mm.
+- **Tail first, the fixed fin must touch the ground before any aileron.** The model clips each aileron `Skid_Margin` = 5 mm ahead of the aft-most point of the notched fixed fin. The verifier checks this for both fin sets at 0° and ±15°.
+  - **Peregrine:** the notched fixed fin reaches 76.1 mm aft of the base and the aileron 40.5 mm, so the clip does not bite.
+  - **Zephyr:** on the kit outline the aileron's aft corner (y_f 12.5) would reach 24.4 mm aft of the base. The notched fixed fin reaches only 4.7 mm. The clip trims the Zephyr aileron at the fixed fin's tip minus 5 mm, so it now ends 0.3 mm *ahead* of the base.
+  - The Zephyr aileron is 1739 mm² (it was 2378) and Cl_δ is +0.069 /deg.
+  - Against the kit outline, the Zephyr fin loses 643 mm² (3.3 %) of area around Z −8. That moves its CP slightly forward: check the Zephyr margin in OpenRocket with `FixedFin_Zephyr.dxf` + `Aileron_Zephyr.stl` before flying.
 
 ### Printed-part stress (PC; about 45 MPa in-layer and 20 MPa across layers, estimates)
 
@@ -149,7 +153,7 @@ Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.1
 
 **Walls (verifier):**
 - Outer wall ≥ 2.25 mm everywhere it is plain (2.4 nominal).
-- Bearing housings ≥ 2.0 mm round the seats; they are teardrop-topped for printing.
+- Bearing housings: checked ≥ 1.95 mm round the seats, 2.0 mm measured. They are teardrop-topped for printing.
 - Insert bosses keep ruthex W all round: RX-M3x5.7 1.6 mm, RX-M4x8.1 2.1 mm.
 
 ### Heat (servos and LiPo against the motor)
@@ -172,23 +176,23 @@ Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.1
 
 | Time | Servo | LiPo |
 |---|---:|---:|
-| Apogee, about 12 s | +0.1 °C | +0.1 °C |
-| Landing | +0.9 °C | +0.7 °C |
-| After 10 min on the ground | +10.9 °C | +9.2 °C |
+| Apogee, about 12 s | +0.0 °C | +0.0 °C |
+| Landing | +0.2 °C | +0.1 °C |
+| After 10 min on the ground | +9.0 °C | +7.1 °C |
 
 Optional: aluminium tape on the motor tube in the servo and LiPo sectors (ε about 0.05) cuts the radiated part about tenfold.
 
 ### Mass, CG and stability
 
-New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.20 g/cm³, solid.
+New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.20 g/cm³, solid. Fin and aileron centroids come from their outlines; the can, hatch covers and cranks from their meshes in the assembled pose.
 
 | Item | Mass | Z |
 |---|---:|---:|
 | FinCan | 346.6 g | 106.9 |
-| Hatches (2 + 1) | 35.1 g | 96–130 |
-| Cranks ×3 | 5.0 g | 34 |
-| Ailerons ×3 | 60.6 g | 22 |
-| Fixed fins ×3 (notched, with tab) | 328.7 g | 120 |
+| Hatch covers ×3 | 35.0 g | 112.2 |
+| Cranks ×3 | 5.0 g | 32.7 |
+| Ailerons ×3 | 60.6 g | 10.2 |
+| Fixed fins ×3 (notched, with tab) | 328.3 g | 90.7 |
 | Shafts ×3, bearings ×6 | 29.5 g | 34 |
 | Servos ×3 | 92.1 g | 96.5 |
 | Links, studs, rods ×3 (est.) | 12.0 g | 60 |
@@ -197,19 +201,19 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 | Inserts, screws, nuts (est.) | 14.0 g | 110 |
 | Paper tube 237.2 mm | 106.5 g | 338.6 |
 | Motor tube, plywood CR + eyebolt, rail buttons (kit) | 113.3 g | — |
-| **Total** | **1193.2 g** | **135.2** |
+| **Total** | **1192.8 g** | **126.6** |
 
 **Against the current section:**
-- The current fixed-fin section, from its .ork components, is 718.9 g at Z 153.2. Epoxy and paint are left out on both sides.
-- **Change:** +474 g, centred about 18 mm further aft.
+- The current fixed-fin section, from its .ork components, is 718.9 g at Z 132.2. Epoxy and paint are left out on both sides.
+- **Change:** +474 g, with the section's own centroid 5.6 mm further aft.
 - The signal pair through the rocket adds about 10 g, spread along its length.
 
 **Stability:** OpenRocket J350 simulation, CP 1.219 m.
 
 | State | Mass | CG | Margin |
 |---|---|---|---|
-| Liftoff | 4.491 → 4.965 kg | 0.968 → 1.023 m | 2.47 → **1.93 cal** |
-| Max speed / burnout | 4.122 → 4.596 kg | 0.922 → 0.986 m | 2.92 → **2.29 cal** |
+| Liftoff | 4.491 → 4.965 kg | 0.968 → 1.022 m | 2.47 → **1.94 cal** |
+| Max speed / burnout | 4.122 → 4.596 kg | 0.922 → 0.985 m | 2.92 → **2.30 cal** |
 
 - The aileron gaps leave the fin outline unchanged, so the CP does not move.
 - The CFD CP is 4 cm further aft (1.262 m), which gives 2.7 cal at max speed.
@@ -360,12 +364,12 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 59 checks, writes STLs/DXFs here
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 62 checks; writes STLs/DXFs here only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --fin-set Zephyr
 ```
 
-`verification.json` holds the last run: 59/59 passed.
+`verification.json` holds the last run: 62/62 passed.
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.
@@ -376,12 +380,13 @@ Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manif
 - The air gaps to the motor tube hold.
 - Wall thickness and insert walls hold.
 - The rail-button insert sits on the 60° line at the .ork station, and no screw head lies on the rail strip.
-- Each servo, with its horn on, and the LiPo lift straight out through their hatches without touching the can.
+- The servo with its horn on lifts straight out through its hatch without touching the can. This is checked for sector A (T-shaped hatch) and sector B (gable hatch); sector C is identical to B. The LiPo lifts out of sector A the same way.
 - At every 5° step through ±15°, with the linkage solved:
   - nothing collides: aileron, crank, pushrod or horn;
-  - aileron to can and aileron to fixed fin stay ≥ 0.8 mm;
-  - the pushrod clears the can by 1.2 mm.
+  - aileron to can and aileron to fixed fin: checked ≥ 0.78 mm, 0.8 measured (0.8 by design);
+  - pushrod and ball links to can: checked ≥ 1.2 mm, 1.21 measured.
 - The ailerons stay 18 mm off the rail.
 - The Zephyr ailerons are free through the travel.
+- For both fin sets the fixed fin reaches ≥ 3 mm further aft than every aileron point at 0 and ±15°: Peregrine 35.5 mm, Zephyr 5.0 mm.
 
 All of this is CAD, not printed fit, strength or flight behaviour.
