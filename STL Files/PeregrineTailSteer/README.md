@@ -2,8 +2,8 @@
 
 This is a replacement aft section for the Apogee Peregrine with the camera nose
 and CATS Vega. Each of the three fixed fins carries a trailing-edge aileron, and
-the three ailerons together give roll control. The unbuilt Apogee Zephyr can take
-the same can from new; its fin set is a parameter (`Fin_Set = "Zephyr"`).
+the three ailerons together give roll control. The Apogee Zephyr has its own Mach 0.8
+build from the same SCAD (`Airframe = "Zephyr"`): see `../ZephyrTailSteer/README.md`.
 
 Status: CAD-verified design. Nothing is printed or bench-tested yet. The checks
 below are hand estimates and CAD checks, not test results.
@@ -70,11 +70,9 @@ All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. Th
 | `HatchServoLipo.stl` | 1 | Standing. Solid | 13 g |
 | `Crank.stl` | 3 | Hub up: the inboard collar, the clevis arm and the set-screw boss all stand on the bed. Solid. Ream the Ø1.95 pivot hole to a press fit on the Ø2 × 10 dowel (the bore is 10.2 mm: both cheeks 2.5 at the pivot) | 3 g |
 | `AileronScrewHalf_Peregrine.stl` + `AileronTappedHalf_Peregrine.stl` | 3 each | Flat, outer face down, groove up. Solid. Tap the four Ø1.6 holes in the tapped half M2 | 10 + 10 g |
-| `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` | 3 each | Zephyr only. Same settings. Clipped 5 mm ahead of the fixed fin tip | 7 + 7 g |
 
 Cut from 1/4 in plywood:
 - `FixedFin_Peregrine.dxf`: 3 off. The aileron cut-out and the through-the-wall tab are included.
-- `FixedFin_Zephyr.dxf`: 3 off, Zephyr only.
 
 ## Checks
 
@@ -85,7 +83,7 @@ These are numbers from `tools/tailsteer_estimate.py`, which reads the SCAD echo 
 ### Roll authority (estimate)
 
 - **Method:** strip theory over the aileron span. Thin-airfoil flap effectiveness τ(c_f/c) × 0.85 for gaps and viscosity, scaled to the CFD fin lift slope (0.38 × 2π on the fin's own area).
-- **Result:** |Cl_δ| = **0.073 /deg** for the Peregrine and 0.067 /deg for the Zephyr (clipped ailerons, chord ratios on the clipped fin; see Landing). The sense is in Layout, "Roll sense".
+- **Result:** |Cl_δ| = **0.073 /deg**. The sense is in Layout, "Roll sense".
 - **Against the canards (magnitudes):**
   - 24× the canards' net 0.0030 /deg (which is reversed);
   - 8.3× the canards alone (0.0087 /deg).
@@ -98,12 +96,11 @@ This is a linear upper estimate. Real flap effectiveness on a low-aspect fin wit
 
 The deflection part uses unreduced 2-D thin-airfoil hinge moments. The incidence part is scaled to the CFD 3-D slope (× 0.38). Real hinge moments are usually 0.5–0.7 of 2-D thin-airfoil values, so these are conservative.
 
-Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33 Peregrine, 0.08–0.20 Zephyr):
+Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33):
 
 | Fin set | Ch_δ | Ch_α |
 |---|---|---|
 | Peregrine | −0.90 to −0.98 /rad | −0.41 to −0.67 /rad |
-| Zephyr | −0.88 to −0.92 /rad | −0.31 to −0.49 /rad |
 
 | Case | Hinge moment | Servo torque (÷ 1.56) | HV6160 stall at 6.0 / 7.4 / 8.4 V | Margin |
 |---|---:|---:|---|---:|
@@ -137,10 +134,10 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 | **164 m/s (16.5 kPa), limit** | 3.7× | 2.2 | 2.0 | 2.5 |
 | 200 m/s (24.5 kPa) | 2.5× | 1.5 | 1.3 | 1.7 |
 
-- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at sea level, with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. The Zephyr's smaller ailerons are cleared to 27.4 kPa (212 m/s).
+- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at sea level, with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. With Prandtl–Glauert compressibility (×1.09 at M 0.39) the limit is 155 m/s; the fastest motor with the tail flies 119.7 m/s.
 
 **Flutter (rough):**
-- Aileron panel, NACA TN 4197 fin formula (printed PC, G 0.6 GPa assumed): about 1280 m/s (Zephyr 1470).
+- Aileron panel, NACA TN 4197 fin formula (printed PC, G 0.6 GPa assumed): about 1280 m/s.
 - Fixed fin, same formula (birch ply, G 0.38 GPa, taper 0.3 assumed): about 475 m/s.
 - Aileron hinge mode: I = 1.8·10⁻⁵ kg·m² about the hinge. With the linkage at 77 N·m/rad (the servo holding full torque within 3°, assumed), it sits near 328 Hz. The aileron is not mass-balanced, so linkage free play is what matters: keep it under 0.5° at the trailing edge. This is no flutter analysis.
 
@@ -167,11 +164,7 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
   3. Lift the drive dowel out of the shaft. Pull the shaft outward 25.9 mm, until its inner end clears the wall. The 54 mm shaft then lies wholly in the aileron cut-out, below the fixed fin's notch edge, and comes out sideways.
   4. Fit a new 54 mm rod the same way in reverse. Check the bearings at the same time.
   The fixed fin covers the hinge axis outboard of the cut-out (r > 106.6), which is why the shaft is 54 mm and the aileron is split. The verifier steps this whole path.
-- **Tail first, the fixed fin must touch the ground before any aileron.** The model clips each aileron `Skid_Margin` = 5 mm ahead of the aft-most point of the notched fixed fin. The verifier checks this for both fin sets at 0° and ±15°.
-  - **Peregrine:** the notched fixed fin reaches 76.1 mm aft of the base and the aileron 40.5 mm, so the clip does not bite.
-  - **Zephyr:** on the kit outline the aileron's aft corner (y_f 12.5) would reach 24.4 mm aft of the base. The notched fixed fin reaches only 4.7 mm. The clip trims the Zephyr aileron at the fixed fin's tip minus 5 mm, so it now ends 0.3 mm *ahead* of the base.
-  - The Zephyr aileron is 1739 mm² (it was 2378) and |Cl_δ| is 0.067 /deg.
-  - Against the kit outline, the Zephyr fin loses 643 mm² (3.3 %) of area around Z −8. That moves its CP slightly forward: check the Zephyr margin in OpenRocket with the outlines of `FixedFin_Zephyr.dxf` and the aileron halves `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` before flying.
+- **Tail first, the fixed fin must touch the ground before any aileron.** The model clips each aileron `Skid_Margin` = 5 mm ahead of the aft-most point of the notched fixed fin. The verifier checks this at 0° and ±15°: the notched fixed fin reaches 76.1 mm aft of the base and the aileron 40.5 mm, so the clip does not bite.
 
 ### Printed-part stress (PC; about 45 MPa in-layer and 20 MPa across layers, estimates)
 
@@ -351,10 +344,7 @@ flown separable, add a third connector there.
 13. **Wiring.** Harness, fuse and capacitor go in sector A. Fit the LiPo on its floor with a 10 mm Velcro strap through the slots and a foam pad under the hatch.
 14. **Rail button:** as now. **Motor retainer:** a new AeroPack RA38L (the flown printed one went with the scrapped aft piece). Epoxy its body onto the motor tube's aft end, which stands 12.7 mm proud of the base inside the can; the can keeps Ø52 clear to Z 26.4 for it.
 
-**Zephyr** (from new):
-- Use the same can and hatches with `AileronScrewHalf_Zephyr.stl`, `AileronTappedHalf_Zephyr.stl` and `FixedFin_Zephyr.dxf`.
-- Cut the kit's aft tube 220 mm short.
-- The kit motor tube must reach Z 258 (≥ 246 mm long from its aft end at Z 12.7) to carry the plywood CR.
+**Zephyr:** a separate build from new, with its own STLs: `../ZephyrTailSteer/README.md`.
 
 ## Hardware
 
@@ -415,14 +405,14 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 71 checks; writes STLs/DXFs here only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes, 66 checks each; writes STLs/DXFs only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
-~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --fin-set Zephyr
+~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
 ```
 
 Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `openscad` on the PATH. The verifier needs a build with the manifold backend.
 
-`verification.json` holds the last run: 71/71 passed.
+`verification.json` holds the last Peregrine run: 66/66 passed (132/132 with the Zephyr).
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.
@@ -444,7 +434,6 @@ Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `
 - Aileron drive play from the groove geometry: 0.00° (line-to-line), with the clamp gap at the split face 0.25 mm.
 - The fins and ailerons stay 12 mm off the rail (both-way sampled).
 - With the fins glued, the aileron halves come off sideways and the shaft slides out into the cut-out and leaves sideways, without touching the can or the fixed fin.
-- The Zephyr ailerons are free through the travel.
-- For both fin sets the fixed fin reaches ≥ 3 mm further aft than every aileron point at 0 and ±15°: Peregrine 35.5 mm, Zephyr 5.0 mm.
+- The fixed fin reaches ≥ 3 mm further aft than every aileron point at 0 and ±15° (35.5 mm).
 
 All of this is CAD, not printed fit, strength or flight behaviour.

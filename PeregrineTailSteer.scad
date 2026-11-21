@@ -3,13 +3,14 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.6  11/21/2026
+// Revision: 0.2.0  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
 //
-// Tail steering for the Apogee Peregrine (camera nose, CATS Vega): a printed
-// PC fin can that replaces the aft 220 mm of the aft body tube. Each of the
+// Tail steering for the Apogee Peregrine and the Apogee Zephyr (camera nose,
+// CATS Vega): a printed PC fin can that replaces the aft 220 mm of the aft
+// body tube. Each of the
 // three fixed plywood fins carries a trailing-edge aileron. The aileron hangs
 // on a 4 mm steel shaft that runs radially into the can in two NSK 684AZZ
 // shielded bearings (4 x 9 x 4); the aileron is two halves clamped round the
@@ -54,6 +55,8 @@
 // 0.1.6  11/21/2026  Review 6 nits: inner clevis cheek spot-faced to Cheek_T at the
 //                    pivot (bore 10.2 for the Ø2 x 10 dowel); horn stack derived from
 //                    Horn_Arm_T/Ball_D/Horn_Shim; TS_CRANK echo for the estimate.
+// 0.2.0  11/21/2026  Airframe = "Peregrine" | "Zephyr": the Zephyr Mach 0.8 build from new
+//                    (carbon fins, +-5 deg, link 2.0, 24 in motor tube); Peregrine unchanged.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -74,13 +77,24 @@ Overlap = 0.05;
 // ============================================
 // AIRFRAME (PeregrineFinCan.scad v0.5.0 test-print values; .ork 101.6/99.06)
 // ============================================
+// The Apogee Peregrine and Zephyr (kit 04997) share their aft section: the
+// same AT-98/18 slotted tube, AT-38/11 motor tube 12.7 mm inside the tube end,
+// plywood rings at 25.4 and 155.575 mm and rail buttons at 104.775 and
+// 403.225 mm from the aft tube's front (PeregrineL2-CamNose.ork and Apogee's
+// Zephyr.rkt agree to the 0.001 mm). Airframe = "Zephyr" is a Mach 0.8 build
+// from the kit: its own fins (FinZ_Pts), +-5 deg aileron travel, a 2.0 link
+// ratio (crank 16, horn 8, so the servo angle and the can differ) and a 24 in
+// motor tube. Airframe = "Peregrine" leaves every Peregrine part as it was.
+Airframe  = "Peregrine";    // "Peregrine" or "Zephyr"
+assert(Airframe == "Peregrine" || Airframe == "Zephyr", "Airframe must be Peregrine or Zephyr");
 Body_OD   = 101.5;          // measured kit tube OD
 Body_ID   = 99.0;           // measured kit tube ID
 R_Out     = Body_OD/2;
 Wall      = 2.4;            // 6 perimeters (L2-PrintSettings.md)
 R_In      = R_Out - Wall;
 MMT_OD    = 41.53;          // Apogee 38 mm motor tube (.ork 0.0207645 m radius)
-MMT_L     = 279.4;          // 11 in, kit length (.ork)
+// Peregrine: 11 in, kit length (.ork). Zephyr: 24 in, for 38/1080 J motors up to 584 mm
+MMT_L     = Airframe == "Zephyr" ? 609.6 : 279.4;
 MMT_Z0    = 12.7;           // aft end above the base (.ork: bottom -0.0127)
 Glue_Gap  = 0.2;            // radial epoxy gap at every MMT contact
 MMT_Bore_R = MMT_OD/2 + Glue_Gap;
@@ -108,20 +122,25 @@ Fin_A      = [0, 120, 240];
 // ============================================
 // FIN OUTLINE (.ork freeform points, mm; x aft from root LE, y out)
 // ============================================
-Fin_Set = "Peregrine";      // "Peregrine" or "Zephyr"
+Fin_Set = Airframe;         // "Peregrine" or "Zephyr"
 FinP_Pts = [[0,0],[50.8,41.91],[93.98,76.2],[127.0,95.25],[152.4,105.41],
             [177.8,111.76],[203.2,114.3],[228.6,112.776],[254.0,107.442],
             [279.4,98.552],[304.8,85.09],[317.5,76.454],[324.104,71.12],
             [324.983,69.4722],[323.342,68.326],[304.8,63.754],[279.4,49.276],
             [266.7,36.576],[259.08,25.4],[254.0,15.494],[248.92,0]];
 FinP_Base_X = 248.92;       // root TE at the tube end
-// Apogee Zephyr (cfd/airframes/zephyr_camnose.json): body end at x 245.034
-FinZ_Pts = [[0,0],[150.749,112.852],[223.749,112.852],[269.494,12.548],
-            [245.034,12.548],[228.27,0]];
+// Zephyr, Mach 0.8 build: 1/4 in (6.35 mm) carbon-fibre plate fins, root chord
+// and root LE station of the kit (Apogee DWG 04997: root LE 245.034 above the
+// tube end), span 125 (kit 112.9), tip chord 90, straight trailing edge swept
+// aft to 12 mm past the base. The larger span keeps ~1.9 cal at max speed with
+// the heavier tail; the swept TE puts the fixed fin's tip, not an aileron,
+// first on the ground. (Kit outline: [[0,0],[150.749,112.852],[223.749,112.852],
+// [269.494,12.548],[245.034,12.548],[228.27,0]].)
+FinZ_Pts = [[0,0],[167,125],[257,125],[228.27,0]];
 FinZ_Base_X = 245.034;
 Fin_Pts    = Fin_Set=="Zephyr" ? FinZ_Pts : FinP_Pts;
 Fin_Base_X = Fin_Set=="Zephyr" ? FinZ_Base_X : FinP_Base_X;
-Fin_T      = 6.35;          // 1/4 in Baltic birch plywood, as both kits
+Fin_T      = 6.35;          // 1/4 in: Baltic birch plywood (Peregrine), carbon-fibre plate (Zephyr)
 Fin_Slot_W = Fin_T + 0.5;
 Fin_Tab_Z  = [55, 175];     // through-the-wall tab, glued to the motor tube
 Fin_Slot_End_Clear = 0.5;
@@ -137,7 +156,9 @@ Flap_Root_Gap = 0.8;        // root edge above the body surface
 Flap_Gap      = 0.8;        // to the fixed fin, LE and outer edge
 Flap_LE_R     = Fin_T/2;    // round leading edge about the shaft
 Hinge_X       = Fin_Base_X - Hinge_Z;   // in fin coordinates
-Flap_Max      = 15;         // mechanical travel checked, +-deg
+// travel checked, +-deg. Zephyr: +-5 sizes the hinge for Mach 0.8 with factor >= 2 and
+// still gives ~30x the fins' own induced roll (tools/tailsteer_estimate.py)
+Flap_Max      = Airframe == "Zephyr" ? 5 : 15;
 // The aileron is two halves split on the fin's mid-plane, clamped round the
 // shaft by M2 countersunk screws from the -Y face into tapped holes in the +Y
 // half. Undo them and the halves come off sideways, then the shaft slides out
@@ -167,9 +188,8 @@ assert(Clamp_Screw_L <= Fin_T/2 + Clamp_Tap_L - 0.3, "clamp screw bottoms out in
 assert(Fin_T/2 - Clamp_Tap_L >= 0.5, "tap hole leaves under 0.5 mm of +Y skin");
 // Tail-first landing: the fixed fin must reach further aft than any aileron
 // point. The aileron is clipped Skid_Margin forward of the notched fixed fin's
-// aft-most point. Peregrine: no clip (fixed fin tip 35 mm aft of the
-// aileron). Zephyr: the clip removes the aileron's share of the kit fin's
-// aft extension below the notch.
+// aft-most point. Neither fin set is clipped: the Peregrine's fixed fin tip
+// reaches 35 mm aft of the aileron, the Zephyr's swept TE 16 mm.
 Skid_Margin   = 5;
 function Fixed_Aft_X() = let(yt = Flap_Span + Flap_Gap, xn = Hinge_X - Flap_LE_R - Flap_Gap,
         P = Fin_Pts, n = len(P),
@@ -214,7 +234,7 @@ Servo_Lug_Hole_D = 3; Servo_Lug_Hole_X = 31.2; Servo_Lug_Spacing = 39;
 Servo_Wire = [2.2, 10, 7, 4];   // stub beyond the bottom: depth, centre (along L from spline), length, width
 // Horn: the servo's own metal arm, M2 ball stud at Horn_R
 Horn_Hub_D = 8; Horn_Hub_H = 3; Horn_Arm_W = 5.5; Horn_Arm_T = 2.5;
-Horn_R     = 9;             // pivot from the spline axis: its nut clears the servo case at full travel
+Horn_R     = Airframe == "Zephyr" ? 8 : 9;   // pivot from the spline axis: its nut clears the servo case at full travel
 Horn_Plane = Servo_Case_H/2 + 2.0;   // horn mid-plane above the case centre
 Ball_D     = 4.8;           // M2 ball stud
 // Horn pivot: the 4.8 mm pivot ball on an M2 x 10 12.9 screw through the servo's
@@ -230,7 +250,11 @@ assert(Horn_Screw_L <= 10, "horn pivot needs a longer screw than M2 x 10");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
-Crank_A    = 14;            // crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the servo, and its hatch, further from the fin)
+// crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the
+// servo, and its hatch, further from the fin). Zephyr: 16 with an 8 mm horn, a 2.0
+// link ratio, so the servo's gear lash counts half at the aileron (its +-5 deg travel
+// needs only +-10 deg of servo).
+Crank_A    = Airframe == "Zephyr" ? 16 : 14;
 // Servo placement: the case lies flat (W radial) with its centre at Servo_Rc
 // in the fin frame; the horn points inward. The angle is solved so the horn
 // ball sits axially over the crank ball (pushrod parallel to the axis).
@@ -948,6 +972,6 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
          Shaft_Flat, " ", Cheek_T_In));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.6: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

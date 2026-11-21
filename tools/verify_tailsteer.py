@@ -10,8 +10,9 @@ each aileron is free through +-Flap_Max with the linkage solved at every
 step (crank, pushrod, horn, servo), with a gap of at least 0.78 mm to the can
 and the fixed fin (0.8 by design) and 1.2 mm from the pushrod links to the can; the aft rail button sits on the 60 deg line at the .ork
 station, its insert pocket is sound, hatch screw heads stay off the rail
-strip and the fins never reach the rail. The Zephyr fin set is rendered and
-its ailerons checked the same way.
+strip and the fins never reach the rail. Every check runs for each airframe
+(Airframe = Peregrine, and Zephyr, the Mach 0.8 build), each into its own
+folder.
 
 Servo, horn, LiPo and switch solids are envelopes (MKS HV6160 drawing,
 Tattu 450 mAh 2S long pack, Schurter 0033.4513). This verifies CAD, not
@@ -19,8 +20,10 @@ printed fits, strength or flight behaviour.
 
 Requires numpy, trimesh, manifold3d, rtree, scipy, shapely.
 OpenSCAD: $OPENSCAD, else /Applications/OpenSCAD-dev.app, else openscad on PATH.
-Usage: verify_tailsteer.py [--output-dir DIR] [--json FILE] [--export]
-  --export  also writes the STLs and DXFs to "STL Files/PeregrineTailSteer/"
+Usage: verify_tailsteer.py [--airframe Peregrine|Zephyr|both] [--output-dir DIR] [--json FILE] [--export]
+  --export  also writes each airframe's STLs, DXF and verification.json to
+            "STL Files/PeregrineTailSteer/" and "STL Files/ZephyrTailSteer/",
+            only if every check of every airframe run passes
 """
 import argparse
 import json
@@ -43,29 +46,32 @@ SCAD = REPO / "PeregrineTailSteer.scad"
 OPENSCAD_DEV = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
 OPENSCAD = (os.environ.get("OPENSCAD")
             or (OPENSCAD_DEV if os.path.exists(OPENSCAD_DEV) else shutil.which("openscad")))
-OUT_STL = REPO / "STL Files" / "PeregrineTailSteer"
+AIRFRAMES = ("Peregrine", "Zephyr")
+OUT_STL = {af: REPO / "STL Files" / ("%sTailSteer" % af) for af in AIRFRAMES}
 results = []
 
-PRINTS = {   # name: (Render_Part, defines)
-    "FinCan": (1, {}),
-    "HatchServo": (2, {}),
-    "HatchServoLipo": (3, {}),
-    "Crank": (4, {}),
-    "AileronScrewHalf_Peregrine": (5, {}),
-    "AileronTappedHalf_Peregrine": (8, {}),
-    "AileronScrewHalf_Zephyr": (5, {"Fin_Set": '"Zephyr"'}),
-    "AileronTappedHalf_Zephyr": (8, {"Fin_Set": '"Zephyr"'}),
-    "BearingCoupon": (6, {}),
-    "ShaftDrillJig": (9, {}),
+PRINTS = {   # name: Render_Part
+    "FinCan": 1,
+    "HatchServo": 2,
+    "HatchServoLipo": 3,
+    "Crank": 4,
+    "AileronScrewHalf": 5,
+    "AileronTappedHalf": 8,
+    "BearingCoupon": 6,
+    "ShaftDrillJig": 9,
 }
+PER_AIRFRAME = ("AileronScrewHalf", "AileronTappedHalf")   # exported with the airframe's suffix
 ENVS = {
     "servos": 20, "horns": 21, "bearings": 22, "shafts": 23, "cranks": 24,
     "ailerons": 25, "fins": 26, "mmt": 27, "lipo": 28, "switch": 29,
     "covers": 30, "retainer": 31, "aileron0": 32, "crank0": 33, "servo0": 34,
     "horn0": 35, "fin0": 36, "tube": 37, "ail_m": 38, "ail_p": 39, "shaft0": 40,
 }
-ZEPHYR = {"z_aileron0": 32, "z_fin0": 36, "z_fins": 26, "z_ailerons": 25}
-DXF = {"FixedFin_Peregrine": {}, "FixedFin_Zephyr": {"Fin_Set": '"Zephyr"'}}
+DXF = {"FixedFin": 7}
+
+
+def out_name(n, af):
+    return "%s_%s" % (n, af) if n in PER_AIRFRAME or n in DXF else n
 
 
 def record(name, ok, value=None):
@@ -164,20 +170,52 @@ def capsule(p0, p1, r):
 
 
 def main():
+    global results
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--airframe", default="both", choices=list(AIRFRAMES) + ["both"])
     ap.add_argument("--output-dir")
     ap.add_argument("--json")
     ap.add_argument("--export", action="store_true")
     a = ap.parse_args()
     if not OPENSCAD:
         raise SystemExit("OpenSCAD not found: set OPENSCAD to its binary")
-    tmp = Path(a.output_dir) if a.output_dir else Path(tempfile.mkdtemp(prefix="tailsteer-"))
-    tmp.mkdir(parents=True, exist_ok=True)
+    root = Path(a.output_dir) if a.output_dir else Path(tempfile.mkdtemp(prefix="tailsteer-"))
+    afs = AIRFRAMES if a.airframe == "both" else (a.airframe,)
+    runs = {}
+    for af in afs:
+        print("== %s" % af, flush=True)
+        results = []
+        p = verify(af, root / af)
+        runs[af] = {"checks": results, "params": p}
+    n_all = sum(len(r["checks"]) for r in runs.values())
+    n_ok = sum(c["passed"] for r in runs.values() for c in r["checks"])
+    for af, r in runs.items():
+        print("%s: %d/%d checks passed" % (af, sum(c["passed"] for c in r["checks"]), len(r["checks"])))
+    print("%d/%d checks passed" % (n_ok, n_all))
+    if a.json:
+        Path(a.json).write_text(json.dumps(runs, indent=1))
+    if a.export and n_ok != n_all:
+        print("not exported: checks failed, the committed STLs/DXFs stay as they are")
+    elif a.export:
+        for af, r in runs.items():
+            out, tmp = OUT_STL[af], root / af
+            out.mkdir(parents=True, exist_ok=True)
+            for n in PRINTS:
+                shutil.copy(tmp / (n + ".stl"), out / (out_name(n, af) + ".stl"))
+            for n in DXF:
+                shutil.copy(tmp / (n + ".dxf"), out / (out_name(n, af) + ".dxf"))
+            (out / "verification.json").write_text(json.dumps(r, indent=1))
+            print("exported to", out)
+    raise SystemExit(0 if n_ok == n_all else 1)
 
-    jobs = [(tmp / (n + ".stl"), p, d) for n, (p, d) in PRINTS.items()]
-    jobs += [(tmp / (n + ".stl"), p, {}) for n, p in ENVS.items()]
-    jobs += [(tmp / (n + ".stl"), p, {"Fin_Set": '"Zephyr"'}) for n, p in ZEPHYR.items()]
-    jobs += [(tmp / (n + ".dxf"), 7, d, "dxf") for n, d in DXF.items()]
+
+def verify(af, tmp):
+    """Render one airframe into tmp and run every check on it; returns its parameters."""
+    tmp.mkdir(parents=True, exist_ok=True)
+    af_def = {"Airframe": '"%s"' % af}
+    jobs = [(tmp / (n + ".stl"), pt, af_def) for n, pt in PRINTS.items()]
+    jobs += [(tmp / (n + ".stl"), pt, af_def) for n, pt in ENVS.items()]
+    jobs += [(tmp / (n + ".dxf"), pt, af_def, "dxf") for n, pt in DXF.items()]
     logs = {}
     with ThreadPoolExecutor(max_workers=8) as ex:
         futs = {ex.submit(run_scad, *j): j[0].stem for j in jobs}
@@ -192,7 +230,7 @@ def main():
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     p = dict(zip(keys, P))
-    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS) + list(ZEPHYR)}
+    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS)}
 
     # ---------- printable parts
     for n in PRINTS:
@@ -575,41 +613,14 @@ def main():
     record("fins and ailerons at full travel stay off the rail", min(gaps) > 10, round(min(gaps), 1))
 
     # ---------- tail-first landing: the fixed fin reaches further aft than every aileron point
-    for fs_, fin_, ail_ in (("Peregrine", m["fin0"], m["aileron0"]), ("Zephyr", m["z_fin0"], m["z_aileron0"])):
-        lead = []
-        for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
-            a1 = ail_.copy(); a1.apply_transform(rot_x(d, Z))
-            lead.append(a1.bounds[0, 2] - fin_.bounds[0, 2])
-        record("%s: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg"
-               % (fs_, p["Flap_Max"]), min(lead) >= 3.0,
-               "fixed fin Z %.1f, aileron lead %s mm" % (fin_.bounds[0, 2], [round(float(x), 1) for x in lead]))
-
-    # ---------- Zephyr fin set
-    zh = []
+    lead = []
     for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
-        ail = m["z_aileron0"].copy(); ail.apply_transform(rot_x(d, Z))
-        for n_, B in (("can", can), ("fixed fin", m["z_fin0"])):
-            if inter(ail, B) > 1e-3:
-                zh.append((d, n_))
-    record("Zephyr: ailerons free through the travel (can, fixed fin)", not zh, zh or "ok")
-    clear("Zephyr: can clears the fixed fins", can, m["z_fins"])
-
-    # ---------- report
-    n_ok = sum(r["passed"] for r in results)
-    print("%d/%d checks passed" % (n_ok, len(results)))
-    if a.json:
-        Path(a.json).write_text(json.dumps({"checks": results, "params": p}, indent=1))
-    if a.export and n_ok != len(results):
-        print("not exported: checks failed, the committed STLs/DXFs stay as they are")
-    elif a.export:
-        OUT_STL.mkdir(parents=True, exist_ok=True)
-        for n in PRINTS:
-            shutil.copy(tmp / (n + ".stl"), OUT_STL / (n + ".stl"))
-        for n in DXF:
-            shutil.copy(tmp / (n + ".dxf"), OUT_STL / (n + ".dxf"))
-        (OUT_STL / "verification.json").write_text(json.dumps({"checks": results, "params": p}, indent=1))
-        print("exported to", OUT_STL)
-    raise SystemExit(0 if n_ok == len(results) else 1)
+        a1 = m["aileron0"].copy(); a1.apply_transform(rot_x(d, Z))
+        lead.append(a1.bounds[0, 2] - m["fin0"].bounds[0, 2])
+    record("fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg" % p["Flap_Max"],
+           min(lead) >= 3.0,
+           "fixed fin Z %.1f, aileron lead %s mm" % (m["fin0"].bounds[0, 2], [round(float(x), 1) for x in lead]))
+    return p
 
 
 if __name__ == "__main__":

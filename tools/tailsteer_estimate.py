@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-"""Hand estimates for the PeregrineTailSteer ailerons: roll authority, hinge
-moment against servo torque, bearing and shaft loads, printed-part stresses,
-servo heating, mass and CG against the current fixed-fin aft section, and
-the stability margin.
+"""Hand estimates for the PeregrineTailSteer ailerons, per airframe (Peregrine,
+Zephyr): roll authority, hinge moment against servo torque, bearing and
+shaft loads, printed-part stresses, servo heating, mass and CG against the
+stock fixed-fin aft section, and the stability margin.
 
 Geometry comes from PeregrineTailSteer.scad (its TS_PARAMS echo) and, for
-masses, from the STLs in "STL Files/PeregrineTailSteer/" (run
+masses, from the STLs in "STL Files/<Airframe>TailSteer/" (run
 tools/verify_tailsteer.py --export first). Loads come from the CFD study in
-MyLevel1Peregrine (cfd/REPORT.md, results/*.csv): max dynamic pressure is
-the J350 flight peak, Mach 0.39, q = 10.79 kPa, and the fin normal force
-slope is the CFD fin-set CN_alpha. Rocket mass, CG and CP are the saved
-OpenRocket J350 simulation in PeregrineL2-CamNose.ork.
+MyLevel1Peregrine (cfd/REPORT.md, results/*.csv) for the fin normal force
+slope, and from the airframe's OpenRocket model (tools/ORSimMass.java): the
+design point is the fastest motor's max speed at sea-level density
+(Peregrine), or Mach 0.8 with Prandtl-Glauert on every load (Zephyr). Rocket
+mass, CG and CP are that model's design simulation.
 
 Everything here is an ESTIMATE: strip theory with thin-airfoil flap
 effectiveness scaled to the CFD fin lift slope for authority, and 2-D
 thin-airfoil hinge moments (no 3-D or viscous relief, so conservative) for
 servo and structure sizing.
 
-Usage: tailsteer_estimate.py [--fin-set Peregrine|Zephyr]
+Usage: tailsteer_estimate.py [--airframe Peregrine|Zephyr] [--fins-csv FILE]
+  --fins-csv  writes the fin outline OpenRocket should fly with the tail
+              steering (fixed fin + aileron, mm, x aft from the root LE): the
+              kit outline less what the aileron clip removes
 """
 import argparse
 import math
@@ -38,29 +42,72 @@ STL = REPO / "STL Files" / "PeregrineTailSteer"
 RHO, A_SOUND = 1.225, 340.29
 D_REF = 0.1016
 A_REF = math.pi * D_REF ** 2 / 4
-# Design load case. Max speed of every simulation in PeregrineL2-CamNose.ork
-# (OpenRocket 24.12, tools/ORSimMass.java), as saved and with the tail-steering
-# mass change added (+0.460 kg at 1.531 m from the tip, as a zero-length mass). The highest is the J350;
-# the J420R that L2-PrintSettings.md names reaches 130.0 m/s in the .ork, not the
-# ~200 m/s that file quotes for an earlier, lighter design. Design q uses the
-# J350 as saved (lighter, faster) at sea-level density.
-OR_VMAX = {   # motor: (vmax as saved, vmax with the tail), m/s
-    "J350W": (132.7, 119.7), "J420R": (130.0, 117.1), "HP-J270W": (128.6, None),
-    "I327DM": (106.2, 95.2), "H550ST": (70.6, None)}
-V_DESIGN = 132.7
-Q_MAX = 0.5 * RHO * V_DESIGN ** 2   # 10.79 kPa
+# Per airframe: the OpenRocket model, its fastest motors (tools/ORSimMass.java, as saved
+# and with the tail-steering change), the design motor and the stability inputs.
+AIRFRAME = {
+    # Max speed of every simulation in PeregrineL2-CamNose.ork (OpenRocket 24.12), as saved
+    # and with the tail-steering mass change added (+0.460 kg at 1.531 m from the tip, as a
+    # zero-length mass). The highest is the J350; the J420R that L2-PrintSettings.md names
+    # reaches 130.0 m/s in the .ork, not the ~200 m/s that file quotes for an earlier,
+    # lighter design. Design q uses the J350 as saved (lighter, faster) at sea-level density.
+    "Peregrine": dict(
+        ork="PeregrineL2-CamNose.ork",
+        or_vmax={"J350W": (132.7, 119.7), "J420R": (130.0, 117.1), "HP-J270W": (128.6, None),
+                 "I327DM": (106.2, 95.2), "H550ST": (70.6, None)},
+        v_design=132.7,
+        load_note="highest .ork max speed 132.7 m/s (J350; J420R 130.0 m/s); with the tail mass"
+                  " the J350 drops to 119.7 m/s",
+        env_v=(119.7, 200.0), roll_v=(85.1, 132.7),
+        # sim "Langtora Airfield 21 Feb 2026" (J350W)
+        or_states={"liftoff": (4.491, 0.968), "max speed / burnout": (4.122, 0.922)},
+        or_cp=1.219, cfd_cp=1.262, base_x=1.65168, sim_label="J350",
+        canard_net=-0.0030, canard_alone=0.0087,       # canards + fins / canards alone, M 0.25, delta 5 (REPORT.md B)
+        or_tab=(92.075, 124.46, 30.0355),              # .ork fin tab: from the root LE, length, depth
+        tube_note="kept from the flown tube", compress=False,
+        fin_rho=None, fin_name="1/4 in birch ply", fin_G=None, cn_scale=1.0),
+    # Zephyr-CamNose.ork (MyLevel1Peregrine): Apogee's RockSim kit with the camera nose, no
+    # canards, the fastest H/I of Apogee's list and every 38 mm AeroTech/Cesaroni J. Max
+    # speed as saved and with the tail (the mass change folded into the stage override and
+    # the fin outline of --fins-csv).
+    "Zephyr": dict(
+        ork="Zephyr-CamNose.ork",
+        # ORSimMass with --fins (this outline) and the mass change, J510W; rod exit from tools/or_sim
+        or_tail="J510W: max speed 263.1 m/s, CG 0.899 / CP 1.099 m -> 1.97 cal; rod exit 0.93 cal"
+                " (1.2 m rod, 3 m/s wind), 1.09 cal on an 8 ft rail",
+        # (as saved, with the tail): ORSimMass.java, the mass folded into the stage override
+        or_vmax={"J510W": (317.5, 263.1), "1115J530-15A": (318.8, 259.9), "J825R": (327.6, 257.2),
+                 "J570W": (300.2, 244.3), "I600R": (240.3, 180.6)},
+        v_design=0.8 * 340.29,        # design point: Mach 0.8 at sea level, above every motor with the tail
+        load_note="fastest with the tail steering J510W 263.1 m/s (M 0.78), CTI J530 259.9, J825R 257.2;"
+                  " the design point is Mach 0.8",
+        env_v=(263.1, 272.2), roll_v=(85.1, 272.2),
+        # sim "J510W-18 (Langtora 21 Feb 2026 conditions)", as saved (kit fins, no tail)
+        or_states={"liftoff": (2.876, 0.8376), "max speed / burnout": (2.268, 0.7674)},
+        or_cp=1.0827, cfd_cp=1.059, base_x=1.39768, sim_label="J510W",
+        canard_net=-0.0035, canard_alone=0.0087,       # REPORT.md, Zephyr section (M 0.25, delta 5)
+        or_tab=(98.425, 124.46, 30.0355),              # Zephyr.rkt fin tab
+        tube_note="cut from the kit's slotted tube, above the slots",
+        # loads x Prandtl-Glauert at the design Mach (1.67 at M 0.8; the brief's 1.5 is less)
+        compress=True,
+        # woven 0/90 carbon/epoxy plate: 1.5 g/cm3, in-plane shear modulus ~4 GPa (assumed, typical 3.5-5)
+        fin_rho=1.5, fin_name="1/4 in carbon plate", fin_G=4.0e9,
+        # the CFD fin CN_alpha is for the kit fin: scaled to the 125 mm fin by Barrowman
+        # (fin set with body interference, trapezoid approximation of the kit fin)
+        cn_scale=1.171,
+        # 38 mm x 609.6 motor tube for 38/1080 J motors up to 584 mm; the kit's second ring
+        # carries its forward end (the eyebolt ring stays the gas seal at Z 251)
+        mmt_l=609.6, extra=[("second kit CR at the motor tube's forward end", 29.2, 12.7 + 609.6 - 3.2)],
+        stock_pts=[(0, 0), (150.749, 112.852), (223.749, 112.852), (269.494, 12.548),
+                   (245.034, 12.548), (228.27, 0)]),
+}
+V_DESIGN = Q_MAX = OR_STATES = OR_CP = BASE_X = None   # set per airframe in main()
+CANARD_NET_PER_DEG = CANARD_ALONE_PER_DEG = None
 FACTOR_MIN = 2.0                    # servo margin, bearing C0r/P and shaft factor all >= this
 # fin-set normal force at alpha 4 deg minus alpha 0, M 0.25, pitch plane phi = 60
 CN_FINS = {"Peregrine": (0.731968 - 0.00956957), "Zephyr": (0.713916 - (-0.00538825))}
-CANARD_NET_PER_DEG = -0.0030        # canards + fins, M 0.25, delta 5 (REPORT.md B)
-CANARD_ALONE_PER_DEG = 0.0087       # canards' own Cl_delta (REPORT.md B)
 ALPHA_DESIGN = 4.0                  # deg, as the CFD incidence cases
 ALPHA_MARGIN = 1.5                  # on the CFD fin load
 VISCOUS = 0.85                      # flap effectiveness factor (gap, viscous), estimate
-# ---- OpenRocket PeregrineL2-CamNose.ork, sim "Langtora Airfield 21 Feb 2026" (J350W)
-OR_STATES = {"liftoff": (4.491, 0.968), "max speed / burnout": (4.122, 0.922)}
-OR_CP = 1.219                       # m from the tip at max speed (CFD: 1.262-1.264)
-BASE_X = 1.65168                    # tip to base, m
 # ---- parts
 SERVO = dict(name="MKS HV6160", stall_Nm={6.0: 1.422, 7.4: 1.667, 8.4: 1.824}, mass=30.7,
              speed_s60=0.133)       # retailer/servodatabase figures; 8.4 V torque 18.6 kg cm
@@ -75,12 +122,11 @@ FIN_PTS = {
                   (279.4, 98.552), (304.8, 85.09), (317.5, 76.454), (324.104, 71.12),
                   (324.983, 69.4722), (323.342, 68.326), (304.8, 63.754), (279.4, 49.276),
                   (266.7, 36.576), (259.08, 25.4), (254.0, 15.494), (248.92, 0)],
-    "Zephyr": [(0, 0), (150.749, 112.852), (223.749, 112.852), (269.494, 12.548),
-               (245.034, 12.548), (228.27, 0)],
+    "Zephyr": [(0, 0), (167.0, 125.0), (257.0, 125.0), (228.27, 0)],     # Mach 0.8 build (SCAD FinZ_Pts)
 }
 
 
-def scad_params(fin_set):
+def scad_params(airframe):
     keys = ("R_Out R_In MMT_OD MMT_Z0 MMT_L Hinge_Z Hinge_X Fin_Base_X Flap_Span Flap_Root_Gap "
             "Flap_Gap Flap_LE_R Shaft_D Shaft_X0 Shaft_X1 Brg_In_X0 Brg_Out_X1 Brg_B Brg_D Crank_A "
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
@@ -93,7 +139,7 @@ def scad_params(fin_set):
     p = {}
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "p.echo")
-        subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Fin_Set="%s"' % fin_set,
+        subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Airframe="%s"' % airframe,
                         str(REPO / "PeregrineTailSteer.scad")], capture_output=True, text=True, check=True)
         for line in open(out):
             for tag, ks in (("TS_PARAMS", keys), ("TS_CRANK", crank_keys)):
@@ -198,22 +244,53 @@ def stl_mass_cg(path, rho):
     return vol / 1000 * rho, cz / vol
 
 
+def or_outline(p, pts):
+    """The fin OpenRocket flies with the tail steering: the kit outline less the part aft of
+    Flap_X_Max below the aileron's outer gap (the clip; nothing for the Peregrine). The
+    aileron's 0.8 mm gaps are left closed."""
+    from shapely.geometry import Polygon, box
+    yt = p["Flap_Span"] + p["Flap_Gap"]
+    out = Polygon(pts).difference(box(p["Flap_X_Max"], -1, 1000, yt))
+    xy = [(round(x, 3), round(y, 3)) for x, y in list(out.exterior.coords)[:-1]]
+    i0 = xy.index((0.0, 0.0))               # start at the root LE, run the way the kit outline runs
+    xy = xy[i0:] + xy[:i0]
+    if Polygon(xy).exterior.is_ccw != Polygon(pts).exterior.is_ccw:
+        xy = [xy[0]] + xy[:0:-1]
+    return xy, out.area
+
+
 def main():
+    global V_DESIGN, Q_MAX, OR_STATES, OR_CP, BASE_X, CANARD_NET_PER_DEG, CANARD_ALONE_PER_DEG, STL
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--fin-set", default="Peregrine", choices=sorted(FIN_PTS))
+    ap.add_argument("--airframe", "--fin-set", dest="airframe", default="Peregrine", choices=sorted(AIRFRAME))
+    ap.add_argument("--fins-csv")
+    ap.add_argument("--stl-dir", help="STLs to weigh (default: the airframe's export folder)")
     a = ap.parse_args()
-    fs = a.fin_set
+    fs = a.airframe
+    AF = AIRFRAME[fs]
+    V_DESIGN = AF["v_design"]
+    PG_DESIGN = 1 / math.sqrt(1 - (V_DESIGN / A_SOUND) ** 2) if AF["compress"] else 1.0
+    Q_MAX = 0.5 * RHO * V_DESIGN ** 2 * PG_DESIGN      # effective: loads scale with q x PG
+    OR_STATES, OR_CP, BASE_X = AF["or_states"], AF["or_cp"], AF["base_x"]
+    CANARD_NET_PER_DEG, CANARD_ALONE_PER_DEG = AF["canard_net"], AF["canard_alone"]
+    STL = Path(a.stl_dir) if a.stl_dir else REPO / "STL Files" / ("%sTailSteer" % fs)
     p = scad_params(fs)
     pts = FIN_PTS[fs]
+    xy, a_or = or_outline(p, pts)
+    if a.fins_csv:
+        Path(a.fins_csv).write_text("# %s fin with the tail steering, mm (x aft from the root LE, y out)\n" % fs
+                                    + "".join("%.3f,%.3f\n" % q for q in xy))
+    print("OpenRocket outline with the tail steering: %.0f mm2 (kit %.0f mm2, %+.0f mm2)"
+          % (a_or, area(pts), a_or - area(pts)))
     R = p["R_Out"]
     S_fin = area(pts)
-    cna_fin = CN_FINS[fs] / math.radians(ALPHA_DESIGN) / 1.5     # one fin, full incidence, ref A
+    cna_fin = CN_FINS[fs] * AF["cn_scale"] / math.radians(ALPHA_DESIGN) / 1.5     # one fin, full incidence, ref A
     cla_own = cna_fin * A_REF / (S_fin * 1e-6)
     k3 = cla_own / (2 * math.pi)
     strips = flap_strips(p, pts)
     Sf = sum(cf * dy for _, _, cf, dy in strips)
     E_all = [cf / c for _, c, cf, _ in strips]
-    print("== %s fin set, aileron hinge %.2f mm from the root LE (%.1f mm above the base)" %
+    print("== %s, aileron hinge %.2f mm from the root LE (%.1f mm above the base)" %
           (fs, p["Hinge_X"], p["Hinge_Z"]))
     print("Fin %.0f mm2; aileron %.0f mm2 per fin (%.1f%%), span %.1f-%.1f mm off the body, "
           "chord %.1f-%.1f mm, flap/fin chord %.2f-%.2f" %
@@ -234,8 +311,10 @@ def main():
     print("  vs canards: net |%.4f| /deg -> %.0fx; canards alone |%.4f| /deg -> %.1fx"
           % (abs(CANARD_NET_PER_DEG), abs(cl_deg / CANARD_NET_PER_DEG),
              CANARD_ALONE_PER_DEG, cl_deg / CANARD_ALONE_PER_DEG))
-    print("  1 deg at M 0.25 (q %.0f Pa): %.3f N m; at M 0.39: %.3f N m" %
+    print("  1 deg at M 0.25 (q %.0f Pa): %.3f N m; at the design point: %.3f N m" %
           (q25, cl_deg * q25 * A_REF * D_REF, cl_deg * Q_MAX * A_REF * D_REF))
+    print("  at full travel (%g deg): Cl %.3f = %.1fx the fins' own induced roll at 4 deg incidence"
+          " (Cl ~0.011, the brief's figure)" % (p["Flap_Max"], cl_deg * p["Flap_Max"], cl_deg * p["Flap_Max"] / 0.011))
     # roll damping of the 3 fins (strip, own-area slope) for a steady-rate scale
     n = 300
     ymax = max(y for _, y in pts)
@@ -245,7 +324,7 @@ def main():
         xs = crossings(pts, y)
         c = sum(xs[j + 1] - xs[j] for j in range(0, len(xs) - 1, 2))
         damp += 3 * cla_own * c * 1e-3 * ((R + y) * 1e-3) ** 2 * (ymax / n) * 1e-3
-    for v in (85.1, 132.7):
+    for v in AF["roll_v"]:
         qq = 0.5 * RHO * v * v
         M = cl_d * math.radians(1) * qq * A_REF * D_REF
         pss = M / (0.5 * RHO * v * damp)
@@ -267,16 +346,17 @@ def main():
             F += f * dy * 1e-3
             Fy += f * dy * 1e-3 * y
         return H, F, Fy / F
-    print("\nLoad case: highest .ork max speed %.1f m/s (J350; J420R %.1f m/s); with the tail mass"
-          " the J350 drops to %.1f m/s. Design q = %.2f kPa at sea level."
-          % (V_DESIGN, OR_VMAX["J420R"][0], OR_VMAX["J350W"][1], Q_MAX / 1e3))
+    print("\nLoad case (%s): %s. Design q = %.2f kPa at sea level (%.1f m/s, M %.2f)%s."
+          % (AF["ork"], AF["load_note"], Q_MAX / PG_DESIGN / 1e3, V_DESIGN, V_DESIGN / A_SOUND,
+             "" if PG_DESIGN == 1 else ", x %.2f Prandtl-Glauert = %.1f kPa effective for every load below"
+             % (PG_DESIGN, Q_MAX / 1e3)))
     print("Hinge moment and aileron load at q = %.2f kPa, 2-D thin airfoil (conservative):" % (Q_MAX / 1e3))
     chd = [-thin_airfoil(e, 0, 1)[1] / e ** 2 for e in (min(E_all), max(E_all))]
     cha = [-thin_airfoil(e, 1, 0)[1] / e ** 2 for e in (min(E_all), max(E_all))]
     print("  thin-airfoil Ch_delta %.2f to %.2f /rad, Ch_alpha %.2f to %.2f /rad (on the flap chord, c_f/c %.2f-%.2f);"
           " alpha part x %.2f (3-D slope)" % (chd[0], chd[1], cha[0], cha[1], min(E_all), max(E_all), k3))
     worst = None
-    for dl, al in ((10, ALPHA_DESIGN), (p["Flap_Max"], ALPHA_DESIGN * ALPHA_MARGIN)):
+    for dl, al in ((min(10, p["Flap_Max"]), ALPHA_DESIGN), (p["Flap_Max"], ALPHA_DESIGN * ALPHA_MARGIN)):
         H, F, yc = loads(dl, al)
         Ts = H / (p["Crank_A"] / p["Horn_R"])
         print("  aileron %4.1f deg, alpha %.1f deg: hinge %.3f N m, aileron normal force %.1f N at r %.1f mm"
@@ -308,8 +388,8 @@ def main():
     print("  flight (%.0f deg, alpha %.0f deg): aileron %.1f N at r %.1f, pushrod %.1f N at %.1f mm"
           " along the shaft" % (dl, al, F, xf, Fp, p["Crank_Xk"]))
     print("  outer bearing %.1f N (static factor C0r/P %.1f), inner %.1f N (%.1f); dynamic: oscillation"
-          " under +-15 deg, life is not a limit at Cr/P %.1f" %
-          (Ro, BEARING["C0r"] / Ro, Ri, BEARING["C0r"] / Ri, BEARING["Cr"] / Ro))
+          " under +-%g deg, life is not a limit at Cr/P %.1f" %
+          (Ro, BEARING["C0r"] / Ro, Ri, BEARING["C0r"] / Ri, p["Flap_Max"], BEARING["Cr"] / Ro))
     # shaft bending at the outer bearing
     Z = math.pi * p["Shaft_D"] ** 3 / 32 * 0.88    # D-flat reduces the section ~12%
     M_out = F * (xf - xo) * 1e-3
@@ -407,14 +487,36 @@ def main():
     f_shaft = SHAFT_YIELD / sig
     f_min = min(f_servo, f_brg, f_shaft, f_stud)
     q_lim = Q_MAX * f_min / FACTOR_MIN
-    print("\nLoad envelope (15 deg, alpha 6 deg; loads scale with q):")
-    print("  at %.2f kPa: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f, horn screw %.1f"
-          % (Q_MAX / 1e3, f_servo, f_brg, f_shaft, f_stud))
-    print("  all >= %.1f up to q = %.1f kPa = %.0f m/s at sea level" % (FACTOR_MIN, q_lim / 1e3, math.sqrt(2 * q_lim / RHO)))
-    for v in (OR_VMAX["J350W"][1], 200.0):
-        k = (0.5 * RHO * v * v) / Q_MAX
-        print("  at %.0f m/s (q %.1f kPa): servo %.1fx, C0r/P %.1f, shaft %.1f, horn screw %.1f"
-              % (v, k * Q_MAX / 1e3, f_servo / k, f_brg / k, f_shaft / k, f_stud / k))
+    pg = lambda v: 1 / math.sqrt(1 - (v / A_SOUND) ** 2)
+    q_eff = lambda v: 0.5 * RHO * v * v * (pg(v) if AF["compress"] else 1.0)
+    print("\nLoad envelope (%g deg, alpha 6 deg; loads scale with q%s):"
+          % (p["Flap_Max"], " x Prandtl-Glauert" if AF["compress"] else ""))
+    print("  at %.2f kPa%s: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f, horn screw %.1f"
+          % (Q_MAX / 1e3, " effective" if AF["compress"] else "", f_servo, f_brg, f_shaft, f_stud))
+    if AF["compress"]:
+        print("  all >= %.1f up to an effective q of %.1f kPa (speed below, with Prandtl-Glauert)"
+              % (FACTOR_MIN, q_lim / 1e3))
+    else:
+        print("  all >= %.1f up to q = %.1f kPa = %.0f m/s at sea level" % (FACTOR_MIN, q_lim / 1e3, math.sqrt(2 * q_lim / RHO)))
+    for v in AF["env_v"]:
+        k = q_eff(v) / Q_MAX
+        print("  at %.0f m/s (q %.1f kPa%s): servo %.1fx, C0r/P %.1f, shaft %.1f, horn screw %.1f"
+              % (v, 0.5 * RHO * v * v / 1e3, ", M %.2f" % (v / A_SOUND) if AF["compress"] else "",
+                 f_servo / k, f_brg / k, f_shaft / k, f_stud / k))
+    # compressibility: Prandtl-Glauert scales every aero load by 1/sqrt(1 - M^2)
+    if not AF["compress"]:
+        print("  with Prandtl-Glauert (loads x 1/sqrt(1 - M^2)): at the design %.1f m/s (M %.2f, x %.2f) servo %.1fx,"
+              " C0r/P %.1f, shaft %.1f, horn screw %.1f" % (V_DESIGN, V_DESIGN / A_SOUND, pg(V_DESIGN),
+              f_servo / pg(V_DESIGN), f_brg / pg(V_DESIGN), f_shaft / pg(V_DESIGN), f_stud / pg(V_DESIGN)))
+    lo, hi = 1.0, A_SOUND * 0.95
+    for _ in range(60):
+        v = (lo + hi) / 2
+        if f_min * Q_MAX / (0.5 * RHO * v * v) / pg(v) >= FACTOR_MIN:
+            lo = v
+        else:
+            hi = v
+    print("  all >= %.1f with Prandtl-Glauert up to %.0f m/s at sea level (q %.1f kPa)"
+          % (FACTOR_MIN, lo, 0.5 * RHO * lo * lo / 1e3))
 
     # ---- flutter, rough. Panel flutter by the NACA TN 4197 fin formula (as used in
     # Apogee's flutter calculator) for the aileron and the fixed fin, and the
@@ -429,8 +531,10 @@ def main():
     span_a = p["Flap_Span"] - p["Flap_Root_Gap"]
     v_ail = tn4197(0.6e9, span_a, Sf, cfs[0], cfs[-1], p["Fin_T"])
     ymax_f = max(y for _, y in pts)
-    v_fin = tn4197(0.38e9, ymax_f, S_fin - Sf, crossings(pts, 0.5)[-1] - crossings(pts, 0.5)[0],
-                   0.3 * (crossings(pts, 0.5)[-1] - crossings(pts, 0.5)[0]), p["Fin_T"])
+    cr_f = crossings(pts, 0.5)[-1] - crossings(pts, 0.5)[0]
+    xt_ = crossings(pts, ymax_f - 0.5)
+    taper = (xt_[-1] - xt_[0]) / cr_f if AF["fin_G"] else 0.3
+    v_fin = tn4197(AF["fin_G"] or 0.38e9, ymax_f, S_fin - Sf, cr_f, taper * cr_f, p["Fin_T"])
     rho_pc = PC["rho_solid"] * 1e3
     I_h = sum(rho_pc * (p["Fin_T"] * 1e-3) * (dy * 1e-3) * ((cf * 1e-3) ** 3 / 3) for _, _, cf, dy in strips)
     k_servo = SERVO["stall_Nm"][7.4] / math.radians(3.0)     # holds full torque within ~3 deg (assumed)
@@ -438,7 +542,11 @@ def main():
     f_h = math.sqrt(k_h / I_h) / (2 * math.pi)
     print("\nFlutter (rough):")
     print("  aileron panel, NACA TN 4197 (printed PC, G 0.6 GPa assumed): %.0f m/s" % v_ail)
-    print("  fixed fin, NACA TN 4197 (birch ply, G 0.38 GPa, taper 0.3 assumed): %.0f m/s" % v_fin)
+    if AF["fin_G"]:
+        print("  fixed fin, NACA TN 4197 (%s, G %.1f GPa assumed, taper %.2f, sea level): %.0f m/s = %.1fx the design %.0f m/s"
+              % (AF["fin_name"], AF["fin_G"] / 1e9, taper, v_fin, v_fin / V_DESIGN, V_DESIGN))
+    else:
+        print("  fixed fin, NACA TN 4197 (birch ply, G 0.38 GPa, taper 0.3 assumed): %.0f m/s" % v_fin)
     print("  aileron hinge mode: I %.1e kg m2 about the hinge, linkage %.0f N m/rad (servo holds full torque"
           " within 3 deg, assumed) -> %.0f Hz; not mass-balanced" % (I_h, k_h, f_h))
 
@@ -467,22 +575,24 @@ def main():
         print("  %s: +%.1f C at 15 s (apogee ~12 s), +%.1f C at 60 s (landing), +%.1f C at 10 min"
               % (name, hist[15], hist[60], hist[600]))
 
-    # ---- mass and CG (Peregrine only: needs the exported STLs)
-    if fs != "Peregrine":
+    # ---- mass and CG (needs the exported STLs)
+    if not (STL / "FinCan.stl").exists():
+        print("\nMass and CG: no STLs in %s (run tools/verify_tailsteer.py --export first)" % STL)
         return
     print("\nMass and CG (Z above the base; x from the tip = %.2f - Z):" % (BASE_X * 1e3))
     items = []
     fill = PC["rho_solid"] * PC["fill"]
     m_, z_ = stl_mass_cg(STL / "FinCan.stl", fill)          # printed upright: Z is the assembled Z
     items.append(("FinCan (PC, %.0f%% fill)" % (PC["fill"] * 100), m_, z_))
-    m_, z_ = render_mass_cg(30, PC["rho_solid"])             # three covers, assembled pose
+    m_, z_ = render_mass_cg(30, PC["rho_solid"], ['Airframe="%s"' % fs])   # three covers, assembled pose
     items.append(("hatch covers x3 (PC solid)", m_, z_))
-    m_, z_ = render_mass_cg(24, PC["rho_solid"])             # three cranks, assembled pose
+    m_, z_ = render_mass_cg(24, PC["rho_solid"], ['Airframe="%s"' % fs])   # three cranks, assembled pose
     items.append(("cranks x3 (PC solid)", m_, z_))
     ymax = max(y for _, y in pts)
     zx = lambda x: p["Fin_Base_X"] - x                       # fin x -> Z above the base
     # ailerons: mass from the STL volume, centroid from the planform
-    m_ = sum(stl_mass_cg(STL / ("Aileron%sHalf_%s.stl" % (h, fs)), PC["rho_solid"])[0] for h in ("Screw", "Tapped"))
+    ail = lambda h: next(q for q in (STL / ("Aileron%sHalf_%s.stl" % (h, fs)), STL / ("Aileron%sHalf.stl" % h)) if q.exists())
+    m_ = sum(stl_mass_cg(ail(h), PC["rho_solid"])[0] for h in ("Screw", "Tapped"))
     _, xa = region_moments(pts, p["Flap_Root_Gap"], p["Flap_Span"], p["Hinge_X"] - p["Flap_LE_R"], p["Flap_X_Max"])
     items.append(("ailerons x3 (PC solid)", 3 * m_, zx(xa)))
     # fixed fins: outline minus the notch plus the new tab (plywood, from the outlines)
@@ -493,7 +603,9 @@ def main():
     A_t, x_t = (175 - 55) * tab_d, p["Fin_Base_X"] - (55 + 175) / 2
     A_f = A_o - A_n + A_t
     x_f = (A_o * x_o - A_n * x_n + A_t * x_t) / A_f
-    items.append(("fixed fins x3, 1/4 in birch ply (notched, new tab)", 3 * A_f * p["Fin_T"] * PLY_RHO / 1000, zx(x_f)))
+    items.append(("fixed fins x3, %s (notched, new tab)" % AF["fin_name"],
+                  3 * A_f * p["Fin_T"] * (AF["fin_rho"] or PLY_RHO) / 1000, zx(x_f)))
+    mmt_l = AF.get("mmt_l", 279.4)
     items += [("shafts 4 x %.0f mm steel x3" % (p["Shaft_X1"] - p["Shaft_X0"]),
                3 * math.pi * 4 * (p["Shaft_X1"] - p["Shaft_X0"]) * 7.85e-3, p["Hinge_Z"]),
               ("bearings %s x6" % BEARING["name"], 6 * BEARING["mass"], p["Hinge_Z"]),
@@ -502,11 +614,11 @@ def main():
               ("LiPo Tattu 450 mAh 2S (spec)", 28.0, p["Lipo_Z0"] + p["Lipo_L"] / 2),
               ("switch, fuse, 1000 uF, harness (est)", 22.0, 175.0),
               ("inserts, screws, nuts (est)", 14.0, 110.0),
-              ("paper tube %.1f mm (kept from the flown tube)" % p["Tube_Piece_L"],
+              ("paper tube %.1f mm (%s)" % (p["Tube_Piece_L"], AF["tube_note"]),
                math.pi * (50.8 ** 2 - 49.53 ** 2) * p["Tube_Piece_L"] * PAPER_RHO / 1000,
                p["Can_L"] + p["Tube_Piece_L"] / 2),
-              ("motor tube 38 mm x 279.4 (kit)", 55.2, 12.7 + 139.7),
-              ("plywood CR + eyebolt (kit)", 29.2 + 25.1, p["Ply_CR_Z0"] + 3),
+              ("motor tube 38 mm x %.1f" % mmt_l, 55.2 * mmt_l / 279.4, 12.7 + mmt_l / 2),
+              ("plywood CR + eyebolt (kit)", 29.2 + 25.1, p["Ply_CR_Z0"] + 3)] + AF.get("extra", []) + [
               ("rail buttons (kit, unchanged)", 3.8, 200.0)]
     m_new = sum(x[1] for x in items)
     z_new = sum(x[1] * x[2] for x in items) / m_new
@@ -515,10 +627,12 @@ def main():
     print("  %-52s %7.1f g at Z %6.1f" % ("NEW AFT SECTION", m_new, z_new))
     # current fixed-fin aft section (.ork components)
     tube = math.pi * (50.8 ** 2 - 49.53 ** 2) * 457.2 * PAPER_RHO / 1000
-    # .ork fin: full outline plus the TTW tab (from 92.075 behind the root LE, 124.46 x 30.0355)
-    A_ot, x_ot = 124.46 * 30.0355, 92.075 + 124.46 / 2
-    A_old = A_o + A_ot
-    x_old = (A_o * x_o + A_ot * x_ot) / A_old
+    # .ork fin: full outline plus the TTW tab (from or_tab[0] behind the root LE, or_tab[1] x or_tab[2])
+    t0, tl, td = AF["or_tab"]
+    A_ot, x_ot = tl * td, t0 + tl / 2
+    A_so, x_so = region_moments(AF.get("stock_pts", pts), 0, max(y for _, y in AF.get("stock_pts", pts)))
+    A_old = A_so + A_ot
+    x_old = (A_so * x_so + A_ot * x_ot) / A_old
     fins_old = 3 * A_old * 6.35 * PLY_RHO / 1000
     old = [("aft tube 457.2 (.ork paper)", tube, 228.6),
            ("fins x3 with tab (.ork ply)", fins_old, zx(x_old)),
@@ -532,13 +646,18 @@ def main():
           % (m_old, z_old))
     dm = m_new - m_old
     print("  change: %+.1f g; signal cable through the rocket ~10 g more (spread)" % dm)
-    print("\nStability (OpenRocket J350 sim; CP %.3f m, CFD CP 1.262 m):" % OR_CP)
+    print("  as one mass for tools/ORSimMass.java: %+.3f kg at %.4f m from the tip"
+          % (dm / 1000, (m_new * (BASE_X - z_new / 1000) - m_old * (BASE_X - z_old / 1000)) / dm))
+    print("\nStability (OpenRocket %s sim; CP %.3f m, CFD CP %.3f m; mass shift only, the fin CP change is"
+          " in the OpenRocket rerun):" % (AF["sim_label"], OR_CP, AF["cfd_cp"]))
     for st, (M, cg) in OR_STATES.items():
         x_new_item = BASE_X - z_new / 1000
         x_old_item = BASE_X - z_old / 1000
         cg2 = (M * cg - m_old / 1000 * x_old_item + m_new / 1000 * x_new_item) / (M + dm / 1000)
         print("  %-20s mass %.3f -> %.3f kg, CG %.3f -> %.3f m (%+.1f mm), margin %.2f -> %.2f cal"
               % (st, M, M + dm / 1000, cg, cg2, (cg2 - cg) * 1e3, (OR_CP - cg) / D_REF, (OR_CP - cg2) / D_REF))
+    if AF.get("or_tail"):
+        print("  OpenRocket rerun with the new fins and the mass change: " + AF["or_tail"])
 
 
 if __name__ == "__main__":
