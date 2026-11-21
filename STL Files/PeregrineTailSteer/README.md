@@ -33,11 +33,11 @@ from the nose tip are x = 1651.68 − Z.
 | Printed PC can (`FinCan.stl`) | Z 0–220 at the full 101.5 OD (x 1431.7–1651.7). A 30 mm shoulder (OD 98.4) carries the paper tube |
 | Paper aft tube | The forward 237.2 mm of the flown aft tube (x 1194.5–1431.7), so the overall length stays 1651.68 |
 | Fixed fins | 1/4 in (6.35 mm) Baltic birch plywood, the kit material of both rockets. Through-the-wall tab Z 55–175, glued to the motor tube. The root LE stays at x 1402.76 (Z 248.9), so the CFD and OpenRocket CP still apply |
-| Ailerons (`Aileron*Half_*.stl`) | Solid PC, two halves split on the fin's mid-plane and clamped round the shaft by 4 × M2 × 5 countersunk screws (from the −Y face into tapped holes in the +Y half; 5.8 mm from the head seat to the tap bottom, 0.6 mm of +Y skin left). The D-groove is line-to-line with the shaft and the split faces stand 0.25 mm apart round it, so the screws squeeze the halves onto the shaft (play 0 in CAD). A Ø2 × 14 hardened dowel through a cross hole in the shaft, lying along the chord in the split plane, carries the torque. Hinge line radial at Z 34. They span 0.8–55 mm off the body; chord 34–74 mm (Peregrine). 2623 mm² each, 11 % of the fin |
-| Hinge | Ø4 × 54 mm silver-steel shaft with a D-flat, radial. It runs in two NSK 684AZZ bearings in the can (centres at r 27.0 and 45.75), then 27 mm into the aileron's D-groove. 54 mm is the longest shaft that can be pulled out into the aileron cut-out (see Field service) |
+| Ailerons (`Aileron*Half_*.stl`) | Solid PC, two halves split on the fin's mid-plane and clamped round the shaft by 4 × M2 × 5 countersunk screws (from the −Y face into tapped holes in the +Y half; 5.8 mm from the head seat to the tap bottom, 0.6 mm of +Y skin left). The D-groove is line-to-line with the shaft and runs 1.5 mm past the shaft end. Only round the shaft (from the leading edge to 6.5 mm aft of the hinge, and out to 1.5 mm past the shaft end) the split faces stand 0.25 mm apart; elsewhere they touch. The two inner screws sit 4.5 mm aft of the axis over the shaft, which takes their load; the two outer ones sit on face-to-face contact (play 0 in CAD). A Ø2 × 14 hardened dowel through a cross hole in the shaft, lying along the chord in the split plane, carries the torque. Hinge line radial at Z 34. They span 0.8–55 mm off the body; chord 34–74 mm (Peregrine). 2623 mm² each, 11 % of the fin |
+| Hinge | Ø4 × 54 mm silver-steel shaft with a D-flat, radial, its inner end 0.3 mm inside the inner bearing (0.9 mm clear of the housing floor). It runs in two NSK 684AZZ bearings in the can (centres at r 27.0 and 45.75), then 28 mm into the aileron's D-groove. The dowel's cross hole is 44.45 mm from the shaft's inner end. 54 mm is the longest shaft that can be pulled out into the aileron cut-out (see Field service) |
 | Crank | Printed PC, on the shaft between the bearings, M3 set screw on the flat. Clevis arm 14 mm toward the servo: the ball link's 4.8 mm pivot ball sits between two 2.5 mm cheeks on a Ø2 hardened dowel, centred on the pushrod line, so the arm sees no torsion and the pin is in double shear |
-| Pushrod | M2 rod, 52 mm between ball centres, M2 ball links at both ends. It runs parallel to the axis at r 38.5, 21.3° from its fin (crank ball 35.9 mm out along the shaft, 14 mm off the fin plane). At the horn the pivot ball sits 3.95 mm off the arm's mid-plane on an M2 × 10 12.9 screw through the servo's metal arm: nut on the case side, arm, 0.3 mm shim, ball, head |
-| Servo | MKS HV6160 lying flat in the annulus (case r 33–43.5), centred 59.0° from its fin, output pointing at the fin. Horn ball at 8 mm. Link ratio 1.75:1 (aileron torque / servo torque) |
+| Pushrod | M2 rod, 52 mm between ball centres, M2 ball links at both ends. It runs parallel to the axis at r 37.7, 21.8° from its fin (crank ball 35.1 mm out along the shaft, 14 mm off the fin plane). At the horn the pivot ball sits 3.95 mm off the arm's mid-plane on an M2 × 10 12.9 screw through the servo's metal arm: nut on the case side, arm, 0.3 mm shim, ball, head |
+| Servo | MKS HV6160 lying flat in the annulus (case r 33–43.5), centred 60.4° from its fin, output pointing at the fin. Horn ball at 9 mm (its nut clears the servo case at full travel). Link ratio 1.56:1 (aileron torque / servo torque) |
 | Hatches | One per servo, flush in a 1.6 mm rebate, held by M3 screws in ruthex inserts. The sector-A hatch also covers the LiPo. On the fin side the rebate is only 3 mm wide, so the cover ends 12.6 mm from the fin face, clear of a 10 mm fin-root fillet |
 | Motor | 38 mm motor tube (kit, 279.4 mm), aft end 12.7 mm above the base, glued as in a normal build. A new AeroPack RA38L retainer (OD 50.0, 12.7 long, ≥ 9.5 mm of tube exposed) goes on the tube end; the can keeps a Ø52 keep-out from the base to Z 26.4 |
 | Thrust path | Motor thrust ring → motor tube → fin tabs and hinge pillars (epoxy) → can → shoulder → paper tube. The bearings carry only aileron loads |
@@ -47,7 +47,7 @@ from the nose tip are x = 1651.68 − Z.
 **Sectors.**
 - Sector A (0–120°): servo 0 plus the LiPo (Tattu 450 mAh 2S 75C long pack, 61 × 16 × 15 mm). The fuse, capacitor and harness are under the same T-shaped hatch.
   - This hatch lies under the 60° rail line. With three identical units 120° apart, one hatch always does.
-  - The cover is flush, and its three screw heads sit off the rail strip (60 ± 18°).
+  - The cover is flush, and its three screw heads sit off the rail strip (60 ± 18°). The LiPo part's screw sits on its far edge, where the rebate is 9.5 mm wide.
 - Sector B: servo 1 and the power switch (Schurter 0033.4513 at 180°, Z 178).
 - Sector C: servo 2.
 - The fin ribs stop at Z 177.5, so the leads cross between sectors above that.
@@ -64,6 +64,7 @@ All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. Th
 | File | Qty | Orientation and settings | Mass (solid PC) |
 |---|---:|---|---:|
 | `BearingCoupon.stl` | 1 | Print first. One hinge block: check the bearing seats, the shaft through the wall and the crank | 10 g |
+| `ShaftDrillJig.stl` | 1 | As is (D-channel flat on the bottom, teardrop top). Lay the shaft flat-down in the channel with its inner end on the stop and drill Ø2 through the guide: the hole lands 44.45 mm from the inner end, through the axis and square to the flat | 9 g |
 | `FinCan.stl` | 1 | Aft end down. 250.0 mm tall (P1S). 6 walls, 70 % gyroid, 0.12 mm, brim 5 mm, enclosed. Its walls are 1.6–2.4 mm, so it is nearly all perimeters | 340 g |
 | `HatchServo.stl` | 2 | Standing, as it sits on the rocket. Solid | 10 g |
 | `HatchServoLipo.stl` | 1 | Standing. Solid | 13 g |
@@ -84,7 +85,7 @@ These are numbers from `tools/tailsteer_estimate.py`, which reads the SCAD echo 
 ### Roll authority (estimate)
 
 - **Method:** strip theory over the aileron span. Thin-airfoil flap effectiveness τ(c_f/c) × 0.85 for gaps and viscosity, scaled to the CFD fin lift slope (0.38 × 2π on the fin's own area).
-- **Result:** |Cl_δ| = **0.073 /deg** for the Peregrine and 0.069 /deg for the Zephyr (clipped ailerons, see Landing). The sense is in Layout, "Roll sense".
+- **Result:** |Cl_δ| = **0.073 /deg** for the Peregrine and 0.067 /deg for the Zephyr (clipped ailerons, chord ratios on the clipped fin; see Landing). The sense is in Layout, "Roll sense".
 - **Against the canards (magnitudes):**
   - 24× the canards' net 0.0030 /deg (which is reversed);
   - 8.3× the canards alone (0.0087 /deg).
@@ -97,21 +98,21 @@ This is a linear upper estimate. Real flap effectiveness on a low-aspect fin wit
 
 The deflection part uses unreduced 2-D thin-airfoil hinge moments. The incidence part is scaled to the CFD 3-D slope (× 0.38). Real hinge moments are usually 0.5–0.7 of 2-D thin-airfoil values, so these are conservative.
 
-Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33 Peregrine, 0.08–0.19 Zephyr):
+Hinge-moment coefficients, on the local aileron chord, strip by strip (c_f/c 0.14–0.33 Peregrine, 0.08–0.20 Zephyr):
 
 | Fin set | Ch_δ | Ch_α |
 |---|---|---|
 | Peregrine | −0.90 to −0.98 /rad | −0.41 to −0.67 /rad |
 | Zephyr | −0.88 to −0.92 /rad | −0.31 to −0.49 /rad |
 
-| Case | Hinge moment | Servo torque (÷ 1.75) | HV6160 stall at 6.0 / 7.4 / 8.4 V | Margin |
+| Case | Hinge moment | Servo torque (÷ 1.56) | HV6160 stall at 6.0 / 7.4 / 8.4 V | Margin |
 |---|---:|---:|---|---:|
-| 10° aileron, α 4° | 0.257 N·m | 0.147 N·m | 1.42 / 1.67 / 1.82 N·m | 9.7× / 11.3× / 12.4× |
-| 15° (mechanical limit), α 6° (4° × 1.5) | 0.386 N·m | 0.221 N·m | as above | 6.4× / 7.6× / 8.3× |
+| 10° aileron, α 4° | 0.257 N·m | 0.165 N·m | 1.42 / 1.67 / 1.82 N·m | 8.6× / 10.1× / 11.0× |
+| 15° (mechanical limit), α 6° (4° × 1.5) | 0.386 N·m | 0.248 N·m | as above | 5.7× / 6.7× / 7.4× |
 
 - **Stall torque source:** 14.5 / 17.0 kg·cm at 6.0 / 7.4 V (servodatabase, as for the canards) and 18.6 kg·cm at 8.4 V (retailer).
-- **Rate:** about 260 °/s at the aileron, unloaded.
-- **Travel:** the servo turns ±26.9° for ±15° of aileron. The gain near neutral is 1.75.
+- **Rate:** about 290 °/s at the aileron, unloaded.
+- **Travel:** the servo turns ±23.8° for ±15° of aileron. The gain near neutral is 1.56.
 
 ### Load case and envelope
 
@@ -131,17 +132,17 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 
 | Speed (q) | Servo margin at 6.0 V | Bearing C0r/P | Shaft factor | Horn screw factor |
 |---|---:|---:|---:|---:|
-| 120 m/s (8.8 kPa), J350 with the tail | 7.9× | 4.1 | 3.8 | 4.6 |
-| 132.7 m/s (10.79 kPa), design | 6.4× | 3.4 | 3.1 | 3.8 |
-| **164 m/s (16.5 kPa), limit** | 4.2× | 2.2 | 2.0 | 2.5 |
-| 200 m/s (24.5 kPa) | 2.8× | 1.5 | 1.3 | 1.7 |
+| 120 m/s (8.8 kPa), J350 with the tail | 7.0× | 4.2 | 3.8 | 4.6 |
+| 132.7 m/s (10.79 kPa), design | 5.7× | 3.4 | 3.1 | 3.8 |
+| **164 m/s (16.5 kPa), limit** | 3.7× | 2.2 | 2.0 | 2.5 |
+| 200 m/s (24.5 kPa) | 2.5× | 1.5 | 1.3 | 1.7 |
 
-- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at sea level, with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. The Zephyr's smaller ailerons are cleared to 27.6 kPa (212 m/s).
+- **Limit:** the Peregrine hinge is cleared to q = 16.5 kPa, 164 m/s at sea level, with every factor ≥ 2 (the shaft sets it; the horn screw is 2.5 there). Do not fly a motor that simulates faster than that without re-sizing the shaft and bearings. The Zephyr's smaller ailerons are cleared to 27.4 kPa (212 m/s).
 
 **Flutter (rough):**
 - Aileron panel, NACA TN 4197 fin formula (printed PC, G 0.6 GPa assumed): about 1280 m/s (Zephyr 1470).
 - Fixed fin, same formula (birch ply, G 0.38 GPa, taper 0.3 assumed): about 475 m/s.
-- Aileron hinge mode: I = 1.8·10⁻⁵ kg·m² about the hinge. With the linkage at 98 N·m/rad (the servo holding full torque within 3°, assumed), it sits near 369 Hz. The aileron is not mass-balanced, so linkage free play is what matters: keep it under 0.5° at the trailing edge. This is no flutter analysis.
+- Aileron hinge mode: I = 1.8·10⁻⁵ kg·m² about the hinge. With the linkage at 77 N·m/rad (the servo holding full torque within 3°, assumed), it sits near 328 Hz. The aileron is not mass-balanced, so linkage free play is what matters: keep it under 0.5° at the trailing edge. This is no flutter analysis.
 
 ### Bearings and shaft
 
@@ -151,7 +152,7 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 - ~/mdoc has no bearing datasheets.
 
 **Flight case (15°, α 6°):**
-- The aileron load is 22.0 N at r 82.6. Add the pushrod force of 27.6 N, acting 35.9 mm out along the shaft.
+- The aileron load is 22.0 N at r 82.6. Add the pushrod force of 27.6 N, acting 35.1 mm out along the shaft.
 - **Outer bearing:** 67 N, static factor C0r/P = **3.4**.
 - **Inner bearing:** 46 N, factor 4.9. The aileron is cantilevered, so the outer bearing carries the couple F·(a+L)/L.
 - Under ±15° oscillation, life is not a limit: Cr/P = 10.6.
@@ -163,13 +164,13 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 - A hard side landing on an aileron can bend the shaft. **Field service, fins glued in place:**
   1. Undo the four M2 clamp screws. The aileron halves come off sideways (±Y).
   2. Undo the crank set screw from the open aft end.
-  3. Pull the shaft outward 26.6 mm, until its inner end clears the wall. The 54 mm shaft then lies wholly in the aileron cut-out, below the fixed fin's notch edge, and comes out sideways.
+  3. Lift the drive dowel out of the shaft. Pull the shaft outward 25.9 mm, until its inner end clears the wall. The 54 mm shaft then lies wholly in the aileron cut-out, below the fixed fin's notch edge, and comes out sideways.
   4. Fit a new 54 mm rod the same way in reverse. Check the bearings at the same time.
   The fixed fin covers the hinge axis outboard of the cut-out (r > 106.6), which is why the shaft is 54 mm and the aileron is split. The verifier steps this whole path.
 - **Tail first, the fixed fin must touch the ground before any aileron.** The model clips each aileron `Skid_Margin` = 5 mm ahead of the aft-most point of the notched fixed fin. The verifier checks this for both fin sets at 0° and ±15°.
   - **Peregrine:** the notched fixed fin reaches 76.1 mm aft of the base and the aileron 40.5 mm, so the clip does not bite.
   - **Zephyr:** on the kit outline the aileron's aft corner (y_f 12.5) would reach 24.4 mm aft of the base. The notched fixed fin reaches only 4.7 mm. The clip trims the Zephyr aileron at the fixed fin's tip minus 5 mm, so it now ends 0.3 mm *ahead* of the base.
-  - The Zephyr aileron is 1739 mm² (it was 2378) and Cl_δ is +0.069 /deg.
+  - The Zephyr aileron is 1739 mm² (it was 2378) and |Cl_δ| is 0.067 /deg.
   - Against the kit outline, the Zephyr fin loses 643 mm² (3.3 %) of area around Z −8. That moves its CP slightly forward: check the Zephyr margin in OpenRocket with the outlines of `FixedFin_Zephyr.dxf` and the aileron halves `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` before flying.
 
 ### Printed-part stress (PC; about 45 MPa in-layer and 20 MPa across layers, estimates)
@@ -179,17 +180,17 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 | Bearing seats, bearing pressure | Flight 68 / 45 N | 1.9 / 1.3 MPa |
 | Bearing seats at shaft yield | 200 / 133 N | 5.6 / 3.7 MPa |
 | Inner housing into its web (69 mm²) and the motor-tube glue | 45 N | 0.7 MPa |
-| Crank clevis cheeks, 2.5 × 9 mm each, in-layer | Flight pushrod 28 N / stall 228 N | 1.8 / 15.2 MPa (×24 / ×3.0) |
-| Crank arm root, 11.9 × 9 mm | Flight / stall | 1.6 / 13.5 MPa (×27 / ×3.3) |
-| Crank Ø2 hardened dowel (double shear, ball load over 4.6 mm; yield 1200 MPa assumed) | Flight / stall | 47 / 392 MPa (×25 / ×3.1) |
-| Dowel bearing in the PC cheeks | Flight / stall | 2.8 / 22.8 MPa |
-| Horn: M2 × 10 12.9 screw through the servo arm, ball 3.95 mm off the arm's mid-plane (the CAD `Ball_Off`; yield 1080 MPa) | Flight / stall | 287 MPa (×3.8) / yields at 0.83 N·m servo torque |
+| Crank clevis cheeks, 2.5 × 9 mm each, in-layer | Flight pushrod 28 N / stall 203 N | 1.8 / 13.5 MPa (×24 / ×3.3) |
+| Crank arm root, 11.1 × 9 mm | Flight / stall | 1.8 / 13.0 MPa (×25 / ×3.5) |
+| Crank Ø2 hardened dowel (double shear, ball load over 4.6 mm; yield 1200 MPa assumed) | Flight / stall | 47 / 348 MPa (×25 / ×3.4) |
+| Dowel bearing in the PC cheeks | Flight / stall | 2.8 / 20.3 MPa |
+| Horn: M2 × 10 12.9 screw through the servo arm, ball 3.95 mm off the arm's mid-plane (the CAD `Ball_Off`; yield 1080 MPa) | Flight / stall | 287 MPa (×3.8) / yields at 0.93 N·m servo torque |
 | Servo lug pedestals | Stall reaction 1.82 N·m over 39 mm = 47 N per M2.5 bolt | 2.9 MPa bearing |
-| Aileron drive, Ø2 × 14 dowel bearing in the halves (pressure growing linearly over the 11.8 mm aft of the axis) | Flight 0.39 / horn-screw yield 1.45 / stall 3.19 N·m at the aileron | 4 / 16 / 35 MPa (×11 / ×2.9 / ×1.3) |
-| The same torque on the D-flat alone (2.65 mm wide, triangular contact, resultant 0.9 mm off the axis) | Flight / horn-screw yield / stall | 24 / 90 / 197 MPa: why the dowel drives, not the flat |
+| Aileron drive, Ø2 × 14 dowel bearing in the halves (pressure growing linearly over the 11.8 mm aft of the axis) | Flight 0.39 / horn-screw yield 1.45 / stall 2.84 N·m at the aileron | 4 / 16 / 31 MPa (×11 / ×2.9 / ×1.5) |
+| The same torque on the D-flat alone (2.65 mm wide, triangular contact, resultant 0.9 mm off the axis) | Flight / horn-screw yield / stall | 23 / 88 / 172 MPa: why the dowel drives, not the flat |
 | Aileron plate, chordwise at the bore | 8.4 kPa mean | 3.4 MPa |
 
-The clevis removes the cantilevered crank stud and the arm torsion that the first layout had. Stall means a jammed aileron at full servo torque (228 N in the pushrod). **In a jam the horn screw yields first**, at 0.83 N·m of servo torque (3.8× the flight need): the aileron then sees 1.45 N·m, at which the drive dowel's PC bearing is 16 MPa (×2.9) and every crank part is under a third of its limit. Full stall torque never reaches the aileron. The screw is cheap to replace.
+The clevis removes the cantilevered crank stud and the arm torsion that the first layout had. Stall means a jammed aileron at full servo torque (203 N in the pushrod). **In a jam the horn screw yields first**, at 0.93 N·m of servo torque (3.8× the flight need): the aileron then sees 1.45 N·m, at which the drive dowel's PC bearing is 16 MPa (×2.9) and every crank part is under a third of its limit. Full stall torque never reaches the aileron. The screw is cheap to replace.
 
 **Walls (verifier):**
 - Outer wall ≥ 2.25 mm everywhere it is plain (2.4 nominal).
@@ -228,10 +229,10 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 
 | Item | Mass | Z |
 |---|---:|---:|
-| FinCan | 339.6 g | 108.7 |
-| Hatch covers ×3 | 32.8 g | 113.0 |
-| Cranks ×3 | 7.8 g | 33.3 |
-| Ailerons ×3 (6 halves) | 60.9 g | 10.2 |
+| FinCan | 339.2 g | 108.8 |
+| Hatch covers ×3 | 33.0 g | 113.4 |
+| Cranks ×3 | 7.4 g | 33.3 |
+| Ailerons ×3 (6 halves) | 61.3 g | 10.2 |
 | Fixed fins ×3 (notched, with tab) | 328.3 g | 90.7 |
 | Shafts ×3 (54 mm), bearings ×6 | 22.1 g | 34 |
 | Servos ×3 | 92.1 g | 96.5 |
@@ -241,7 +242,7 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 | Inserts, screws, nuts (est.) | 14.0 g | 110 |
 | Paper tube 237.2 mm | 106.5 g | 338.6 |
 | Motor tube, plywood CR + eyebolt, rail buttons (kit) | 113.3 g | — |
-| **Total** | **1179.3 g** | **127.6** |
+| **Total** | **1179.1 g** | **127.6** |
 
 **Against the current section:**
 - The current fixed-fin section, from its .ork components, is 718.9 g at Z 132.2. Epoxy and paint are left out on both sides.
@@ -329,10 +330,11 @@ flown separable, add a third connector there.
    - **Root fillets: leg at most 10 mm.** The hatch covers' fin-side edges start 12.6 mm from each fin face; a larger fillet would glue a cover shut. The verifier checks this clearance.
    - **Stop the root and slot fillets 5 mm forward of the aileron cut-out edge** (Z ≥ 43 on the fixed fin's root), so no epoxy reaches the aileron gap. Before the epoxy cures, fit a shaft and the aileron halves loosely and swing them through ±15° to check the gaps; remove them again for step 9.
    - The fin's cut-out edge must be parallel to the hinge line.
-9. **Shafts and ailerons** (after the fins; this is also the field-service path).
-   - Hold the shaft in the aileron cut-out and push it in through the wall, the outer bearing, the crank and the inner bearing, flat facing aft.
-   - Tighten the M3 × 5 cup-point set screw from the aft end. It must turn freely through ±15°.
-   - Slip the Ø2 × 14 dowel through the shaft's cross hole (drill it Ø2.0 through the shaft 19 mm outboard of the aileron root, square to the flat), lay the two aileron halves over shaft and dowel from either side, 0.8 mm shim at the root, and fit the four M2 × 5 countersunk screws. Tighten them until the halves grip the shaft; the 0.25 mm split gap round the shaft must stay open. Do not use M2 × 6: it bottoms out in the tap hole before the head seats.
+9. **Shafts and ailerons** (after the fins; this is also the field-service path). The dowel fixes the shaft to the aileron, so the aileron's 0.8 mm root gap sets where the shaft sits; the crank is locked last.
+   - Drill each shaft's Ø2 cross hole in `ShaftDrillJig.stl`: 44.45 mm from the inner end, through the axis, square to the flat. Within ±0.5 mm is fine: the shaft's inner end has 0.9 mm to the housing floor and its outer end 1.5 mm to the groove's end.
+   - Hold the shaft in the aileron cut-out and push it in through the wall, the outer bearing, the crank and the inner bearing, flat facing aft. Leave the crank set screw loose.
+   - Slip the Ø2 × 14 dowel through the shaft's cross hole. Lay the two aileron halves over shaft and dowel from either side with a 0.8 mm shim at the root, and fit the four M2 × 5 countersunk screws. Tighten them until the halves grip the shaft; the 0.25 mm split gap round the shaft must stay open. Do not use M2 × 6: it bottoms out in the tap hole before the head seats.
+   - Now tighten the crank's M3 × 5 cup-point set screw from the aft end, crank arm toward the servo, and pull the shim. It must turn freely through ±15°.
    - Set it flush with its fin, with a straightedge across both, before the pushrod goes on. Check ±15° free with the 0.8 mm gaps.
 10. **Switch** (before the forward end is closed; behind the switch the annulus is out of reach of the hatches). Drill the Ø6 pilot in sector B to Ø12.7 and file the R1.2 key upward, as on the nose. Fit the switch and its nut, with its leads long enough to reach sector A over the fin-rib tops.
 11. **Forward end.**
@@ -342,7 +344,7 @@ flown separable, add a third connector there.
     - Fillet the fins' forward roots, Z 220–249, onto the paper.
 12. **Servos.**
     - Centre each servo at 1520 µs.
-    - Fit the metal arm pointing inward. Drill it Ø2.1 at 8 mm from the spline. Fit the pivot: M2 × 10 12.9 socket screw from the fin side through the pivot ball, a 0.3 mm shim and the arm, M2 nut on the case side (thread-locked).
+    - Fit the metal arm pointing inward. Drill it Ø2.1 at 9 mm from the spline. Fit the pivot: M2 × 10 12.9 socket screw from the fin side through the pivot ball, a 0.3 mm shim and the arm, M2 nut on the case side (thread-locked).
     - Glue the M2.5 nuts into the lug traps.
     - Fit the servo and drive the M2.5 × 10 lug bolts from outside.
     - Set each pushrod to 52 mm between ball centres, so the aileron sits at neutral.
@@ -361,7 +363,7 @@ flown separable, add a third connector there.
 | NSK 684AZZ (4 × 9 × 4, ZZ) | 6 | Hinge bearings |
 | Ø4 h9 silver steel (1.2210), 54 mm | 3 (+ spares) | Hinge shafts; 0.5 mm D-flat filed full length |
 | MKS HV6160 + its metal single arm | 3 | Aileron servos |
-| M2 ball links for 4.8 mm balls + 4.8 mm pivot balls with a Ø2 bore | 6 each | Pushrod ends, at the horn (8 mm) and the crank (14 mm) |
+| M2 ball links for 4.8 mm balls + 4.8 mm pivot balls with a Ø2 bore | 6 each | Pushrod ends, at the horn (9 mm) and the crank (14 mm) |
 | Ø2 × 10 hardened dowel pin (ISO 8734) | 3 | Crank clevis pivot, press fit |
 | Ø2 × 14 hardened dowel pin (ISO 8734) | 3 (+ spares) | Aileron drive through the shaft, slip fit |
 | M2 shim washer 0.3 mm (DIN 988) | 3 | Horn pivot, between arm and ball |
@@ -388,7 +390,7 @@ flown separable, add a third connector there.
 - **Mass.** +460 g at the tail. The margin stays near 2 cal, but apogee drops. The can is mostly 2.4 mm PC wall (about 165 g); a thinner wall would break `L2-PrintSettings.md`.
 - **Landing.** The 4 mm shaft is the weakest link if an aileron is hit, and it yields at about 70 N. Carry spare shafts and bearings. A shaft swaps in the field without touching a glued part.
 - **Speed limit.** The hinge is cleared to 164 m/s (q 16.5 kPa). The fastest motor in the .ork reaches 132.7 m/s, or 119.7 m/s with the tail.
-- **Horn screw.** At full servo stall into a jammed aileron, the horn's M2 pivot screw yields at 0.83 N·m of servo torque; nothing else does.
+- **Horn screw.** At full servo stall into a jammed aileron, the horn's M2 pivot screw yields at 0.93 N·m of servo torque; nothing else does.
 - **Free play.** Ball links plus servo gear lash make up the aileron free play. Flutter is only roughly estimated (Load case and envelope). Check that free play is under 0.5° at the trailing edge.
 - **Authority estimate.** It is about 8× the canards' own. Linear strip theory overestimates partial-span flaps on low-aspect fins. One CFD case at δ = 5° would give the real number.
 - **Bench items.**
@@ -413,17 +415,17 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 68 checks; writes STLs/DXFs here only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 71 checks; writes STLs/DXFs here only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --fin-set Zephyr
 ```
 
-`verification.json` holds the last run: 68/68 passed.
+`verification.json` holds the last run: 71/71 passed.
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.
 - Everything is supportless (overhangs counted from 0.1 mm above the bed, width from the largest inscribed circle).
-- The aileron clamp screws stop at least 0.3 mm short of the tap bottom (measured by ray).
+- The aileron clamp screws stop at least 0.3 mm short of the tap bottom (measured by ray), and each sits over the shaft or over solid face contact.
 - The hatch rebates clear a 10 mm fin-root fillet by at least 2 mm (measured on the skin).
 - The can clears the motor tube, retainer, servos, horns, shafts, cranks, ailerons, fins, LiPo, switch, hatch covers and paper tube.
 - Both bearing seats are supported.
@@ -435,7 +437,8 @@ Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manif
 - At every 5° step through ±15°, with the linkage solved:
   - nothing collides: aileron, crank, pushrod or horn;
   - aileron to can and aileron to fixed fin: checked ≥ 0.78 mm, 0.8 measured (0.8 by design), sampled both ways (points on each body against the other);
-  - pushrod and ball links to can: checked ≥ 1.2 mm, 3.1 measured (capsule circumscribed, so faceting can only add clearance error on the safe side).
+  - horn (pivot nut as its across-corners circle) to can: checked ≥ 0.3 mm, 0.65 measured;
+  - pushrod and ball links to can: checked ≥ 1.2 mm, 3.2 measured (capsule circumscribed, so faceting can only add clearance error on the safe side).
 - Aileron drive play from the groove geometry: 0.00° (line-to-line), with the clamp gap at the split face 0.25 mm.
 - The fins and ailerons stay 12 mm off the rail (both-way sampled).
 - With the fins glued, the aileron halves come off sideways and the shaft slides out into the cut-out and leaves sideways, without touching the can or the fixed fin.

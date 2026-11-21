@@ -3,12 +3,12 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 36
+   "value": 37
   },
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "283.0 cm3"
+   "value": "282.7 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
@@ -18,17 +18,17 @@
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "11.3 cm3"
+   "value": "11.5 cm3"
   },
   {
    "check": "Crank is one closed solid",
    "passed": true,
-   "value": "2.2 cm3"
+   "value": "2.1 cm3"
   },
   {
    "check": "AileronScrewHalf_Peregrine is one closed solid",
    "passed": true,
-   "value": "8.4 cm3"
+   "value": "8.5 cm3"
   },
   {
    "check": "AileronTappedHalf_Peregrine is one closed solid",
@@ -38,7 +38,7 @@
   {
    "check": "AileronScrewHalf_Zephyr is one closed solid",
    "passed": true,
-   "value": "5.6 cm3"
+   "value": "5.7 cm3"
   },
   {
    "check": "AileronTappedHalf_Zephyr is one closed solid",
@@ -49,6 +49,11 @@
    "check": "BearingCoupon is one closed solid",
    "passed": true,
    "value": "7.6 cm3"
+  },
+  {
+   "check": "ShaftDrillJig is one closed solid",
+   "passed": true,
+   "value": "9.6 cm3"
   },
   {
    "check": "can height fits the P1S (<= 250.5)",
@@ -197,8 +202,8 @@
    "check": "shaft spans both bearings and stops inside the aileron",
    "passed": true,
    "value": [
-    24.7,
-    78.7
+    25.3,
+    79.3
    ]
   },
   {
@@ -212,6 +217,11 @@
    "value": "seat-to-tap-bottom [5.77, 5.77, 5.77, 5.77] mm"
   },
   {
+   "check": "every aileron clamp screw sits over the shaft or over solid face contact",
+   "passed": true,
+   "value": "ok"
+  },
+  {
    "check": "aileron drive: angular play < 0.5 deg at the trailing edge, clamp gap > 0",
    "passed": true,
    "value": "flat clearance 0.000, round 0.000 -> play 0.00 deg; split-face gap 0.25 mm"
@@ -219,12 +229,12 @@
   {
    "check": "hatch rebates clear a 10 mm fin-root fillet by >= 2 mm",
    "passed": true,
-   "value": "nearest recess 12.6 mm from a fin face"
+   "value": "nearest recess 13.8 mm from a fin face"
   },
   {
    "check": "servos keep >= 8 mm of air to the motor tube",
    "passed": true,
-   "value": 12.74
+   "value": 12.73
   },
   {
    "check": "lipo keep >= 8 mm of air to the motor tube",
@@ -239,7 +249,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8572 rays, thin: []"
+   "value": "8480 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -268,13 +278,13 @@
    "check": "no hatch screw head on the rail strip (60 +- 18.0 deg)",
    "passed": true,
    "value": [
-    90.4,
-    30.1,
-    41.1,
-    210.4,
-    153.8,
-    330.4,
-    273.8
+    91.8,
+    31.5,
+    79.6,
+    211.8,
+    155.2,
+    331.8,
+    275.2
    ]
   },
   {
@@ -293,7 +303,7 @@
    "value": "free"
   },
   {
-   "check": "shaft extraction path clear with the fins glued (aileron halves off sideways, shaft out 26.6 mm into the notch, then sideways)",
+   "check": "shaft extraction path clear with the fins glued (aileron halves off sideways, shaft out 25.9 mm into the notch, then sideways)",
    "passed": true,
    "value": "clear"
   },
@@ -306,19 +316,19 @@
    "check": "servo travel for +-15 deg aileron is within +-35 deg",
    "passed": true,
    "value": {
-    "-15.0": -27.06,
-    "-10.0": -17.71,
-    "-5.0": -8.77,
+    "-15.0": -23.84,
+    "-10.0": -15.69,
+    "-5.0": -7.79,
     "0.0": -0.0,
-    "5.0": 8.77,
-    "10.0": 17.67,
-    "15.0": 26.8
+    "5.0": 7.79,
+    "10.0": 15.65,
+    "15.0": 23.65
    }
   },
   {
-   "check": "linkage gain near neutral (servo deg per aileron deg) within 5% of Crank_A/Horn_R = 1.75",
+   "check": "linkage gain near neutral (servo deg per aileron deg) within 5% of Crank_A/Horn_R = 1.56",
    "passed": true,
-   "value": 1.755
+   "value": 1.558
   },
   {
    "check": "aileron travel +-15 deg: nothing collides (aileron, crank, pushrod, horn)",
@@ -338,7 +348,12 @@
   {
    "check": "pushrod/ball-link envelope to can gap >= 1.2 mm",
    "passed": true,
-   "value": 3.14
+   "value": 3.16
+  },
+  {
+   "check": "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+   "passed": true,
+   "value": 0.65
   },
   {
    "check": "fins and ailerons at full travel stay off the rail",
@@ -380,16 +395,16 @@
   "Flap_Gap": 0.8,
   "Flap_LE_R": 3.175,
   "Shaft_D": 4.0,
-  "Shaft_X0": 24.7,
-  "Shaft_X1": 78.7,
+  "Shaft_X0": 25.3,
+  "Shaft_X1": 79.3,
   "Brg_In_X0": 25.0,
   "Brg_Out_X1": 47.75,
   "Brg_B": 4.0,
   "Brg_D": 9.0,
   "Crank_A": 14.0,
-  "Horn_R": 8.0,
-  "Crank_Xk": 35.9006,
-  "Servo_Theta": 58.9769,
+  "Horn_R": 9.0,
+  "Crank_Xk": 35.055,
+  "Servo_Theta": 60.371,
   "Servo_Rc": 38.5,
   "Servo_ZO": 86.0,
   "Pushrod_L": 52.0,

@@ -4,7 +4,7 @@
 // max q, max q, liftoff mass and stability at max speed. Used by tailsteer_estimate.py (OR_VMAX).
 // Run with a JDK (the JRE in OpenRocket.app has no compiler):
 //   java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java FILE.ork [dm_kg x_from_tip_m]
-//   e.g. PeregrineL2-CamNose.ork 0.474 1.5335 (the tail-steering change)
+//   e.g. PeregrineL2-CamNose.ork 0.460 1.531 (the tail-steering change)
 import info.openrocket.core.document.OpenRocketDocument;
 import info.openrocket.core.document.Simulation;
 import info.openrocket.core.file.GeneralRocketLoader;

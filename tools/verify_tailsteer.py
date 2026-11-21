@@ -52,6 +52,7 @@ PRINTS = {   # name: (Render_Part, defines)
     "AileronScrewHalf_Zephyr": (5, {"Fin_Set": '"Zephyr"'}),
     "AileronTappedHalf_Zephyr": (8, {"Fin_Set": '"Zephyr"'}),
     "BearingCoupon": (6, {}),
+    "ShaftDrillJig": (9, {}),
 }
 ENVS = {
     "servos": 20, "horns": 21, "bearings": 22, "shafts": 23, "cranks": 24,
@@ -273,6 +274,23 @@ def main():
     ok = all(r is not None and screw_l <= r - 0.3 for r in room)
     record("aileron clamp screws M2x%g stop >= 0.3 mm short of the tap bottom" % screw_l, ok,
            "seat-to-tap-bottom %s mm" % [None if r is None else round(r, 2) for r in room])
+    # each clamp screw is over the shaft (within its engaged length and <= 5 mm aft of
+    # the axis, so the shaft reacts it) or over solid contact (split faces touching on a
+    # ring 3 mm round the screw)
+    bad = []
+    for i in range(0, len(pos), 2):
+        x0_, z0_ = pos[i], pos[i + 1]
+        over_shaft = (p["R_Out"] + p["Flap_Root_Gap"] <= x0_ <= p["Shaft_X1"]) and (Z - z0_) <= 5.0
+        touch = 0
+        for a_ in np.radians(np.arange(0, 360, 45)):
+            o_ = np.array([x0_ + 3 * math.cos(a_), -10.0, z0_ + 3 * math.sin(a_)])
+            loc, _, _ = ail.ray.intersects_location([o_], [[0, 1, 0]], multiple_hits=True)
+            inner = sorted(float(y) for y in loc[:, 1] if -1 < y < 1)
+            if len(inner) < 2 or inner[-1] - inner[0] < 0.02:
+                touch += 1
+        if not (over_shaft or touch >= 6):
+            bad.append((round(x0_, 1), round(z0_, 1), over_shaft, touch))
+    record("every aileron clamp screw sits over the shaft or over solid face contact", not bad, bad or "ok")
 
     # ---------- aileron drive play: rays from the shaft axis to the D-groove in the
     # assembled halves, against the shaft profile (r 2, flat at 1.5 toward -Z). The
@@ -296,7 +314,7 @@ def main():
             (c_flat if on_flat else c_round).append(r_b - r_s)
     cf_, cr_ = max(c_flat), max(c_round)
     play = math.degrees(math.asin(min(1.0, max(0.0, cf_ + cr_) / half_chord)))
-    o_ = np.array([65.0, -10.0, Z - 8])
+    o_ = np.array([57.0, -10.0, Z - 5.5])   # inside the relief band, clear of screws and dowel
     loc, _, _ = ail.ray.intersects_location([o_], [[0, 1, 0]], multiple_hits=True)
     ys = sorted(float(y) for y in loc[:, 1])
     inner = [y for y in ys if -1 < y < 1]
@@ -504,7 +522,7 @@ def main():
     ax_dir = np.array([-math.sin(th), math.cos(th), 0.0])
     ax_pt = np.array([rc * math.cos(th), rc * math.sin(th), zo])
     stat = m["servo0"]
-    worst_flap_can = worst_flap_fin = worst_link = 99.0
+    worst_flap_can = worst_flap_fin = worst_link = worst_horn = 99.0
     hits = []
     for d in defl:
         R = rot_x(d, Z)
@@ -524,6 +542,7 @@ def main():
         worst_flap_can = min(worst_flap_can, min_gap(ail, can))
         worst_flap_fin = min(worst_flap_fin, min_gap(ail, m["fin0"]))
         worst_link = min(worst_link, min_gap(lnk, can, n=1500))
+        worst_horn = min(worst_horn, min_gap(hrn, can, n=1500))   # (the horn sits on the servo spline)
     record("aileron travel +-%.0f deg: nothing collides (aileron, crank, pushrod, horn)" % p["Flap_Max"],
            not hits, hits[:6] if hits else len(defl))
     record("aileron to can gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_can >= 0.78,
@@ -531,6 +550,8 @@ def main():
     record("aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_fin >= 0.78,
            round(worst_flap_fin, 3))
     record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
+    record("horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+           worst_horn >= 0.3, round(worst_horn, 2))
 
     # rail: fins and ailerons at full travel stay off the 1010 rail (25.4 wide, face >= R_Out + 2)
     rail_box = trimesh.creation.box(extents=[40, 25.4, 900])

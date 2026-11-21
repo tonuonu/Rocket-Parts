@@ -138,7 +138,8 @@ def flap_strips(p, pts, n=120):
         y = y0 + (i + 0.5) * (y1 - y0) / n
         xs = crossings(pts, y)
         le, te = xs[0], xs[1]          # first segment: leading edge to trailing edge
-        cf = min(te, p.get("Flap_X_Max", 1e9)) - p["Hinge_X"]   # aileron clipped ahead of the fixed fin tip
+        te = min(te, p.get("Flap_X_Max", 1e9))   # the clip removes the fin aft of it (Zephyr)
+        cf = te - p["Hinge_X"]
         if cf > 0:
             out.append((y, te - le, cf, (y1 - y0) / n))
     return out
