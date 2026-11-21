@@ -1,0 +1,432 @@
+{
+ "checks": [
+  {
+   "check": "all parts render without warnings",
+   "passed": true,
+   "value": 37
+  },
+  {
+   "check": "FinCan is one closed solid",
+   "passed": true,
+   "value": "282.7 cm3"
+  },
+  {
+   "check": "HatchServo is one closed solid",
+   "passed": true,
+   "value": "8.0 cm3"
+  },
+  {
+   "check": "HatchServoLipo is one closed solid",
+   "passed": true,
+   "value": "11.5 cm3"
+  },
+  {
+   "check": "Crank is one closed solid",
+   "passed": true,
+   "value": "2.1 cm3"
+  },
+  {
+   "check": "AileronScrewHalf_Peregrine is one closed solid",
+   "passed": true,
+   "value": "8.5 cm3"
+  },
+  {
+   "check": "AileronTappedHalf_Peregrine is one closed solid",
+   "passed": true,
+   "value": "8.5 cm3"
+  },
+  {
+   "check": "AileronScrewHalf_Zephyr is one closed solid",
+   "passed": true,
+   "value": "5.7 cm3"
+  },
+  {
+   "check": "AileronTappedHalf_Zephyr is one closed solid",
+   "passed": true,
+   "value": "5.7 cm3"
+  },
+  {
+   "check": "BearingCoupon is one closed solid",
+   "passed": true,
+   "value": "7.6 cm3"
+  },
+  {
+   "check": "ShaftDrillJig is one closed solid",
+   "passed": true,
+   "value": "9.6 cm3"
+  },
+  {
+   "check": "can height fits the P1S (<= 250.5)",
+   "passed": true,
+   "value": 250.0
+  },
+  {
+   "check": "hatch covers print standing (<= 250)",
+   "passed": true,
+   "value": 148.0
+  },
+  {
+   "check": "supportless: no downward patch wider than 7 mm (inscribed circle)",
+   "passed": true,
+   "value": "widest 6.8 mm, FinCan at Z 175.5"
+  },
+  {
+   "check": "can clears mmt",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears retainer",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears servos",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears horns",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears shafts",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears cranks",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears ailerons",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears fins",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears lipo",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears switch",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "can clears covers",
+   "passed": true,
+   "value": 0.0006
+  },
+  {
+   "check": "can clears tube",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "bearings sit in their seats without interference",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear fins",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear lipo",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "horns clear lipo",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "lipo clear covers",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear covers",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "horns clear covers",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cranks clear bearings",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "cranks clear shafts",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "ailerons clear fins",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "ailerons clear shafts",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servos clear horns",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "both bearing seats touch the lower half of the outer ring (gap <= 0.1)",
+   "passed": true,
+   "value": [
+    0.019,
+    0.019
+   ]
+  },
+  {
+   "check": "shaft spans both bearings and stops inside the aileron",
+   "passed": true,
+   "value": [
+    25.3,
+    79.3
+   ]
+  },
+  {
+   "check": "can bore leaves the 0.2 mm epoxy gap on the motor tube",
+   "passed": true,
+   "value": 20.954
+  },
+  {
+   "check": "aileron clamp screws M2x5 stop >= 0.3 mm short of the tap bottom",
+   "passed": true,
+   "value": "seat-to-tap-bottom [5.77, 5.77, 5.77, 5.77] mm"
+  },
+  {
+   "check": "every aileron clamp screw sits over the shaft or over solid face contact",
+   "passed": true,
+   "value": "ok"
+  },
+  {
+   "check": "aileron drive: angular play < 0.5 deg at the trailing edge, clamp gap > 0",
+   "passed": true,
+   "value": "flat clearance 0.000, round 0.000 -> play 0.00 deg; split-face gap 0.25 mm"
+  },
+  {
+   "check": "hatch rebates clear a 10 mm fin-root fillet by >= 2 mm",
+   "passed": true,
+   "value": "nearest recess 13.8 mm from a fin face"
+  },
+  {
+   "check": "servos keep >= 8 mm of air to the motor tube",
+   "passed": true,
+   "value": 12.73
+  },
+  {
+   "check": "lipo keep >= 8 mm of air to the motor tube",
+   "passed": true,
+   "value": 10.54
+  },
+  {
+   "check": "switch keep >= 5 mm of air to the motor tube",
+   "passed": true,
+   "value": 6.49
+  },
+  {
+   "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
+   "passed": true,
+   "value": "8480 rays, thin: []"
+  },
+  {
+   "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
+   "passed": true,
+   "value": 2.0
+  },
+  {
+   "check": "rail-button insert pocket has 2.1 mm of wall all round (RX-M4x8.1)",
+   "passed": true,
+   "value": 1.0
+  },
+  {
+   "check": "rail-button pocket is open on the 60 deg line at the .ork station",
+   "passed": true,
+   "value": [
+    60.0,
+    53.975
+   ]
+  },
+  {
+   "check": "hatch insert pockets have 1.6 mm of wall all round (RX-M3x5.7)",
+   "passed": true,
+   "value": 1.0
+  },
+  {
+   "check": "no hatch screw head on the rail strip (60 +- 18.0 deg)",
+   "passed": true,
+   "value": [
+    91.8,
+    31.5,
+    79.6,
+    211.8,
+    155.2,
+    331.8,
+    275.2
+   ]
+  },
+  {
+   "check": "sector A servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "sector B servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "LiPo lifts out through its hatch (0.5-30 mm, no contact)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "shaft extraction path clear with the fins glued (aileron halves off sideways, shaft out 25.9 mm into the notch, then sideways)",
+   "passed": true,
+   "value": "clear"
+  },
+  {
+   "check": "pushrod axial at neutral (balls in line)",
+   "passed": true,
+   "value": 0.0
+  },
+  {
+   "check": "servo travel for +-15 deg aileron is within +-35 deg",
+   "passed": true,
+   "value": {
+    "-15.0": -23.84,
+    "-10.0": -15.69,
+    "-5.0": -7.79,
+    "0.0": -0.0,
+    "5.0": 7.79,
+    "10.0": 15.65,
+    "15.0": 23.65
+   }
+  },
+  {
+   "check": "linkage gain near neutral (servo deg per aileron deg) within 5% of Crank_A/Horn_R = 1.56",
+   "passed": true,
+   "value": 1.558
+  },
+  {
+   "check": "aileron travel +-15 deg: nothing collides (aileron, crank, pushrod, horn)",
+   "passed": true,
+   "value": 7
+  },
+  {
+   "check": "aileron to can gap >= 0.78 mm over the travel (0.8 by design)",
+   "passed": true,
+   "value": 0.8
+  },
+  {
+   "check": "aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)",
+   "passed": true,
+   "value": 0.8
+  },
+  {
+   "check": "pushrod/ball-link envelope to can gap >= 1.2 mm",
+   "passed": true,
+   "value": 3.16
+  },
+  {
+   "check": "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+   "passed": true,
+   "value": 0.65
+  },
+  {
+   "check": "fins and ailerons at full travel stay off the rail",
+   "passed": true,
+   "value": 12.0
+  },
+  {
+   "check": "Peregrine: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
+   "passed": true,
+   "value": "fixed fin Z -76.1, aileron lead [37.3, 35.5, 37.3] mm"
+  },
+  {
+   "check": "Zephyr: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
+   "passed": true,
+   "value": "fixed fin Z -4.7, aileron lead [5.3, 5.0, 5.3] mm"
+  },
+  {
+   "check": "Zephyr: ailerons free through the travel (can, fixed fin)",
+   "passed": true,
+   "value": "ok"
+  },
+  {
+   "check": "Zephyr: can clears the fixed fins",
+   "passed": true,
+   "value": 0.0
+  }
+ ],
+ "params": {
+  "R_Out": 50.75,
+  "R_In": 48.35,
+  "MMT_OD": 41.53,
+  "MMT_Z0": 12.7,
+  "MMT_L": 279.4,
+  "Hinge_Z": 34.0,
+  "Hinge_X": 214.92,
+  "Fin_Base_X": 248.92,
+  "Flap_Span": 55.0,
+  "Flap_Root_Gap": 0.8,
+  "Flap_Gap": 0.8,
+  "Flap_LE_R": 3.175,
+  "Shaft_D": 4.0,
+  "Shaft_X0": 25.3,
+  "Shaft_X1": 79.3,
+  "Brg_In_X0": 25.0,
+  "Brg_Out_X1": 47.75,
+  "Brg_B": 4.0,
+  "Brg_D": 9.0,
+  "Crank_A": 14.0,
+  "Horn_R": 9.0,
+  "Crank_Xk": 35.055,
+  "Servo_Theta": 60.371,
+  "Servo_Rc": 38.5,
+  "Servo_ZO": 86.0,
+  "Pushrod_L": 52.0,
+  "Horn_Ball_U": 23.55,
+  "Fin_T": 6.35,
+  "Can_L": 220.0,
+  "Total_H": 250.0,
+  "Rail_A": 60.0,
+  "Rail_Aft_Z": 53.975,
+  "Tube_Piece_L": 237.2,
+  "Ply_CR_Z0": 251.0,
+  "Flap_Max": 15.0,
+  "Sw_A": 180.0,
+  "Sw_Z": 178.0,
+  "Flap_X_Max": 319.983,
+  "Fixed_Aft_X": 324.983,
+  "Lipo_Z0": 128.0,
+  "Lipo_L": 61.0,
+  "Ball_Off": 3.95,
+  "Horn_Arm_T": 2.5,
+  "Pin_D": 2.0,
+  "Pin_L": 14.0,
+  "Clamp_Relief": 0.25
+ }
+}
