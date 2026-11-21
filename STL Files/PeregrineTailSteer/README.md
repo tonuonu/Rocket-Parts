@@ -38,7 +38,7 @@ from the nose tip are x = 1651.68 − Z.
 | Crank | Printed PC, on the shaft between the bearings, M3 set screw on the flat. Clevis arm 14 mm toward the servo: the ball link's 4.8 mm pivot ball sits between two 2.5 mm cheeks on a Ø2 hardened dowel, centred on the pushrod line, so the arm sees no torsion and the pin is in double shear |
 | Pushrod | M2 rod, 52 mm between ball centres, M2 ball links at both ends. It runs parallel to the axis at r 37.7, 21.8° from its fin (crank ball 35.1 mm out along the shaft, 14 mm off the fin plane). At the horn the pivot ball sits 3.95 mm off the arm's mid-plane on an M2 × 10 12.9 screw through the servo's metal arm: nut on the case side, arm, 0.3 mm shim, ball, head |
 | Servo | MKS HV6160 lying flat in the annulus (case r 33–43.5), centred 60.4° from its fin, output pointing at the fin. Horn ball at 9 mm (its nut clears the servo case at full travel). Link ratio 1.56:1 (aileron torque / servo torque) |
-| Hatches | One per servo, flush in a 1.6 mm rebate, held by M3 screws in ruthex inserts. The sector-A hatch also covers the LiPo. On the fin side the rebate is only 3 mm wide, so the cover ends 12.6 mm from the fin face, clear of a 10 mm fin-root fillet |
+| Hatches | One per servo, flush in a 1.6 mm rebate, held by M3 screws in ruthex inserts. The sector-A hatch also covers the LiPo. On the fin side the rebate is only 3 mm wide, so the nearest recess is 13.8 mm from the fin face (the verifier's measurement), clear of a 10 mm fin-root fillet + 2 mm |
 | Motor | 38 mm motor tube (kit, 279.4 mm), aft end 12.7 mm above the base, glued as in a normal build. A new AeroPack RA38L retainer (OD 50.0, 12.7 long, ≥ 9.5 mm of tube exposed) goes on the tube end; the can keeps a Ø52 keep-out from the base to Z 26.4 |
 | Thrust path | Motor thrust ring → motor tube → fin tabs and hinge pillars (epoxy) → can → shoulder → paper tube. The bearings carry only aileron loads |
 | Forward seal | Kit plywood centering ring with the eyebolt, solid, at Z 251 (x 1400.7). It is the drogue gas seal; the wire pass through it is potted |
@@ -68,7 +68,7 @@ All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. Th
 | `FinCan.stl` | 1 | Aft end down. 250.0 mm tall (P1S). 6 walls, 70 % gyroid, 0.12 mm, brim 5 mm, enclosed. Its walls are 1.6–2.4 mm, so it is nearly all perimeters | 340 g |
 | `HatchServo.stl` | 2 | Standing, as it sits on the rocket. Solid | 10 g |
 | `HatchServoLipo.stl` | 1 | Standing. Solid | 13 g |
-| `Crank.stl` | 3 | Hub up: the inboard collar, the clevis arm and the set-screw boss all stand on the bed. Solid. Ream the Ø1.95 pivot hole to a press fit on the Ø2 dowel | 3 g |
+| `Crank.stl` | 3 | Hub up: the inboard collar, the clevis arm and the set-screw boss all stand on the bed. Solid. Ream the Ø1.95 pivot hole to a press fit on the Ø2 × 10 dowel (the bore is 10.2 mm: both cheeks 2.5 at the pivot) | 3 g |
 | `AileronScrewHalf_Peregrine.stl` + `AileronTappedHalf_Peregrine.stl` | 3 each | Flat, outer face down, groove up. Solid. Tap the four Ø1.6 holes in the tapped half M2 | 10 + 10 g |
 | `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` | 3 each | Zephyr only. Same settings. Clipped 5 mm ahead of the fixed fin tip | 7 + 7 g |
 
@@ -180,10 +180,10 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
 | Bearing seats, bearing pressure | Flight 68 / 45 N | 1.9 / 1.3 MPa |
 | Bearing seats at shaft yield | 200 / 133 N | 5.6 / 3.7 MPa |
 | Inner housing into its web (69 mm²) and the motor-tube glue | 45 N | 0.7 MPa |
-| Crank clevis cheeks, 2.5 × 9 mm each, in-layer | Flight pushrod 28 N / stall 203 N | 1.8 / 13.5 MPa (×24 / ×3.3) |
+| Crank clevis cheeks, 2.5 × 9 mm each at the pivot, in-layer (the inner one is 3.3 mm away from its spot face) | Flight pushrod 28 N / stall 203 N | 1.8 / 13.5 MPa (×24 / ×3.3) |
 | Crank arm root, 11.1 × 9 mm | Flight / stall | 1.8 / 13.0 MPa (×25 / ×3.5) |
-| Crank Ø2 hardened dowel (double shear, ball load over 4.6 mm; yield 1200 MPa assumed) | Flight / stall | 47 / 348 MPa (×25 / ×3.4) |
-| Dowel bearing in the PC cheeks | Flight / stall | 2.8 / 20.3 MPa |
+| Crank Ø2 hardened dowel (double shear, ball load over 4.6 mm; yield 1200 MPa assumed) | Flight / stall | 47 / 342 MPa (×26 / ×3.5) |
+| Dowel bearing in the PC cheeks (2.4 mm of the Ø2 × 10 dowel in each) | Flight / stall | 2.9 / 21.1 MPa |
 | Horn: M2 × 10 12.9 screw through the servo arm, ball 3.95 mm off the arm's mid-plane (the CAD `Ball_Off`; yield 1080 MPa) | Flight / stall | 287 MPa (×3.8) / yields at 0.93 N·m servo torque |
 | Servo lug pedestals | Stall reaction 1.82 N·m over 39 mm = 47 N per M2.5 bolt | 2.9 MPa bearing |
 | Aileron drive, Ø2 × 14 dowel bearing in the halves (pressure growing linearly over the 11.8 mm aft of the axis) | Flight 0.39 / horn-screw yield 1.45 / stall 2.84 N·m at the aileron | 4 / 16 / 31 MPa (×11 / ×2.9 / ×1.5) |
@@ -242,7 +242,7 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 | Inserts, screws, nuts (est.) | 14.0 g | 110 |
 | Paper tube 237.2 mm | 106.5 g | 338.6 |
 | Motor tube, plywood CR + eyebolt, rail buttons (kit) | 113.3 g | — |
-| **Total** | **1179.1 g** | **127.6** |
+| **Total** | **1179.0 g** | **127.6** |
 
 **Against the current section:**
 - The current fixed-fin section, from its .ork components, is 718.9 g at Z 132.2. Epoxy and paint are left out on both sides.
@@ -319,7 +319,7 @@ flown separable, add a third connector there.
 5. **Shafts:** cut three Ø4 h9 silver-steel rods to 54.0 mm. File a 0.5 mm flat along the full length and deburr.
 6. **Bearings and cranks.** The aft end of the annulus is open.
    - Pass both bearings up through the crank window and push them into their seats with Loctite 641.
-   - Press the Ø2 × 10 dowel through one cheek of each crank. Put the ball link's 4.8 mm pivot ball between the cheeks and press the dowel home.
+   - Press the Ø2 × 10 dowel through one cheek of each crank. Put the ball link's 4.8 mm pivot ball between the cheeks and press the dowel home, 0.1 mm below both cheek faces (the inner cheek has a Ø4.5 spot face on its bed side, so the bore is 10.2 mm long).
    - Put the crank in the window, arm toward the servo. The shaft goes in after the fins (step 9).
 7. **Motor tube.**
    - Optionally, tape the servo and LiPo sectors with aluminium tape.
@@ -327,7 +327,7 @@ flown separable, add a third connector there.
 8. **Fins.**
    - Push the tabs through the slots onto the motor tube and epoxy them, with tab-to-tube and slot fillets.
    - Square them with a fin guide.
-   - **Root fillets: leg at most 10 mm.** The hatch covers' fin-side edges start 12.6 mm from each fin face; a larger fillet would glue a cover shut. The verifier checks this clearance.
+   - **Root fillets: leg at most 10 mm.** The hatch rebates start 13.8 mm from each fin face (measured by the verifier, which requires ≥ fillet leg + 2 mm); a larger fillet would glue a cover shut.
    - **Stop the root and slot fillets 5 mm forward of the aileron cut-out edge** (Z ≥ 43 on the fixed fin's root), so no epoxy reaches the aileron gap. Before the epoxy cures, fit a shaft and the aileron halves loosely and swing them through ±15° to check the gaps; remove them again for step 9.
    - The fin's cut-out edge must be parallel to the hinge line.
 9. **Shafts and ailerons** (after the fins; this is also the field-service path). The dowel fixes the shaft to the aileron, so the aileron's 0.8 mm root gap sets where the shaft sits; the crank is locked last.
@@ -419,6 +419,8 @@ Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manif
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --fin-set Zephyr
 ```
+
+Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `openscad` on the PATH. The verifier needs a build with the manifold backend.
 
 `verification.json` holds the last run: 71/71 passed.
 

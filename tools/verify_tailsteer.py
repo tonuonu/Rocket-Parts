@@ -18,12 +18,14 @@ Tattu 450 mAh 2S long pack, Schurter 0033.4513). This verifies CAD, not
 printed fits, strength or flight behaviour.
 
 Requires numpy, trimesh, manifold3d, rtree, scipy, shapely.
+OpenSCAD: $OPENSCAD, else /Applications/OpenSCAD-dev.app, else openscad on PATH.
 Usage: verify_tailsteer.py [--output-dir DIR] [--json FILE] [--export]
   --export  also writes the STLs and DXFs to "STL Files/PeregrineTailSteer/"
 """
 import argparse
 import json
 import math
+import os
 import shutil
 import subprocess
 import tempfile
@@ -38,7 +40,9 @@ from shapely.ops import polylabel, unary_union
 
 REPO = Path(__file__).resolve().parents[1]
 SCAD = REPO / "PeregrineTailSteer.scad"
-OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+OPENSCAD_DEV = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+OPENSCAD = (os.environ.get("OPENSCAD")
+            or (OPENSCAD_DEV if os.path.exists(OPENSCAD_DEV) else shutil.which("openscad")))
 OUT_STL = REPO / "STL Files" / "PeregrineTailSteer"
 results = []
 
@@ -165,6 +169,8 @@ def main():
     ap.add_argument("--json")
     ap.add_argument("--export", action="store_true")
     a = ap.parse_args()
+    if not OPENSCAD:
+        raise SystemExit("OpenSCAD not found: set OPENSCAD to its binary")
     tmp = Path(a.output_dir) if a.output_dir else Path(tempfile.mkdtemp(prefix="tailsteer-"))
     tmp.mkdir(parents=True, exist_ok=True)
 
@@ -509,7 +515,8 @@ def main():
     b0, h0 = crank_ball(0), horn_ball(0)
     record("pushrod axial at neutral (balls in line)", np.hypot(*(b0 - h0)[:2]) < 0.05,
            round(float(np.hypot(*(b0 - h0)[:2])), 4))
-    defl = [-p["Flap_Max"] + 5 * i for i in range(int(2 * p["Flap_Max"] / 5) + 1)]
+    fm = p["Flap_Max"]
+    defl = sorted({-fm, fm, 0.0, -5.0, 5.0} | {5.0 * k for k in range(-int(fm // 5), int(fm // 5) + 1)})
     phis = {d: solve_phi(d) for d in defl}
     record("servo travel for +-%.0f deg aileron is within +-35 deg" % p["Flap_Max"],
            max(abs(v) for v in phis.values()) <= 35,

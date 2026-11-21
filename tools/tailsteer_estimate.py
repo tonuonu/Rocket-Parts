@@ -21,6 +21,7 @@ Usage: tailsteer_estimate.py [--fin-set Peregrine|Zephyr]
 """
 import argparse
 import math
+import shutil
 import os
 import struct
 import subprocess
@@ -28,7 +29,9 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-OPENSCAD = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+OPENSCAD_DEV = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
+OPENSCAD = (os.environ.get("OPENSCAD")
+            or (OPENSCAD_DEV if os.path.exists(OPENSCAD_DEV) else shutil.which("openscad")))
 STL = REPO / "STL Files" / "PeregrineTailSteer"
 
 # ---- CFD study (MyLevel1Peregrine cfd/results/cfd_cases.csv, drag_stability.csv)
@@ -83,15 +86,23 @@ def scad_params(fin_set):
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
+    crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
+                  "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
+    if not OPENSCAD:
+        raise RuntimeError("OpenSCAD not found: set OPENSCAD to its binary")
+    p = {}
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "p.echo")
         subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Fin_Set="%s"' % fin_set,
                         str(REPO / "PeregrineTailSteer.scad")], capture_output=True, text=True, check=True)
         for line in open(out):
-            if "TS_PARAMS" in line:
-                v = [float(x) for x in line.split("TS_PARAMS", 1)[1].strip().strip('"').split()]
-                return dict(zip(keys, v))
-    raise RuntimeError("no TS_PARAMS echo")
+            for tag, ks in (("TS_PARAMS", keys), ("TS_CRANK", crank_keys)):
+                if tag in line:
+                    v = [float(x) for x in line.split(tag, 1)[1].strip().strip('"').split()]
+                    p.update(zip(ks, v))
+    if "R_Out" not in p or "Clevis_Gap" not in p:
+        raise RuntimeError("no TS_PARAMS / TS_CRANK echo")
+    return p
 
 
 def crossings(pts, y):
@@ -327,26 +338,29 @@ def main():
     print("\nPrinted PC (allowables ~%.0f MPa in-layer, ~%.0f across layers, estimates):" %
           (PC["sigma_in"], PC["sigma_cross"]))
     print("  bearing seats: %.2f MPa outer, %.2f inner (P/(D B)); at shaft yield %.1f / %.1f MPa"
-          % (Ro / (9 * 4), Ri / (9 * 4), Ro_l / 36, Ri_l / 36))
-    web = 1.6 * (p["Hinge_Z"] + 9.26)
+          % tuple(v / (p["Brg_D"] * p["Brg_B"]) for v in (Ro, Ri, Ro_l, Ri_l)))
+    web = p["Web_T"] * p["Web_Top"]
     print("  inner housing -> web and motor-tube glue: %.1f N over web %.0f mm2 (%.2f MPa) + glue face"
           % (Ri, web, Ri / web))
     # crank: clevis, pivot ball on a dowel between two cheeks, centred on the
     # pushrod line (no arm torsion); horn: the servo's metal arm with an M2 12.9
     # screw through it as a cantilevered stud
-    gap, cheek, arm_h, win0 = 5.2, 2.5, 9.0, p["Crank_A"] - 3.5 - 1
-    arm_w = p["Crank_Xk"] + gap / 2 + cheek - (p["Brg_In_X0"] + p["Brg_B"] + 0.15)
-    eye, pin_d, pin_yield = 4.6, 2.0, 1200.0       # hardened dowel (ISO 8734), yield assumed
+    gap, cheek, arm_h, win0 = p["Clevis_Gap"], p["Cheek_T"], p["Crank_Arm_H"], p["Crank_Win_Y0"]
+    arm_w = p["Crank_Arm_W"]
+    eye, pin_d, pin_yield = p["Link_Eye_W"], p["Pivot_D"], 1200.0   # hardened dowel (ISO 8734), yield assumed
+    pin_eng = (p["Pivot_L"] - gap) / 2             # dowel length in each cheek
     # M2 x 10 12.9 through the horn arm; the ball load acts Ball_Off (CAD) from the arm mid-plane
     stud_minor, stud_yield, stud_arm = 1.57, 1080.0, p["Ball_Off"]
-    print("  crank (clevis: cheeks %.1f x %.0f, Ø%.0f dowel, eye %.1f; no torsion) and horn stud:" % (cheek, arm_h, pin_d, eye))
+    print("  crank (clevis: cheeks %.1f x %.0f at the pivot (inner %.1f elsewhere), Ø%.0f x %.0f dowel, %.1f in each"
+          " cheek, eye %.1f; no torsion) and horn stud:"
+          % (cheek, arm_h, p["Cheek_T_In"], pin_d, p["Pivot_L"], pin_eng, eye))
     for lab, T_ in (("flight", Ts), ("servo stall 8.4 V", SERVO["stall_Nm"][8.4])):
         Fpp = T_ / (p["Horn_R"] * 1e-3)
         s_cheek = (Fpp / 2) * (p["Crank_A"] - win0) / (cheek * arm_h ** 2 / 6)
-        s_root = Fpp * (p["Crank_A"] - 4.5) / (arm_w * arm_h ** 2 / 6)
-        L_pin = gap + cheek
+        s_root = Fpp * (p["Crank_A"] - p["Crank_Hub_R"]) / (arm_w * arm_h ** 2 / 6)
+        L_pin = gap + pin_eng                     # between the cheeks' bearing centres
         s_pin = Fpp * (L_pin / 4 - eye / 8) / (math.pi * pin_d ** 3 / 32)
-        s_brg = (Fpp / 2) / (pin_d * cheek)
+        s_brg = (Fpp / 2) / (pin_d * pin_eng)
         s_stud = Fpp * stud_arm / (math.pi * stud_minor ** 3 / 32)
         print("    %s: pushrod %.0f N | cheek %.1f MPa (x%.1f) | arm root %.1f MPa (x%.1f) | pin %.0f MPa"
               " (x%.1f) | pin bearing in PC %.1f MPa | horn M2 stud %.0f MPa (x%.2f)"
@@ -365,9 +379,10 @@ def main():
     # halves with pressure growing linearly from the axis to the pin's aft end.
     ratio = p["Crank_A"] / p["Horn_R"]
     eng = p["Shaft_X1"] - (R + p["Flap_Root_Gap"])
-    flat_w = 2 * math.sqrt((p["Shaft_D"] / 2) ** 2 - (p["Shaft_D"] / 2 - 0.5) ** 2)
-    pin_aft = p["Pin_L"] - 2.2                    # pin length aft of the axis
-    k_pin = p["Pin_D"] / pin_aft * ((pin_aft ** 3 - 2.0 ** 3) / 3)   # T = sigma_max * k_pin (from r 2 = shaft surface)
+    rs = p["Shaft_D"] / 2
+    flat_w = 2 * math.sqrt(rs ** 2 - (rs - p["Shaft_Flat"]) ** 2)
+    pin_aft = p["Pin_L"] - p["Pin_Z0"]            # pin length aft of the axis
+    k_pin = p["Pin_D"] / pin_aft * ((pin_aft ** 3 - rs ** 3) / 3)   # T = sigma_max * k_pin (from the shaft surface)
     print("  aileron drive (flat %.2f mm wide, %.0f mm engaged; Ø%.0f dowel %.0f mm aft of the axis):"
           % (flat_w, eng, p["Pin_D"], pin_aft))
     for lab, T_ in (("flight", H), ("horn-screw yield", T_stud * ratio), ("servo stall 8.4 V", SERVO["stall_Nm"][8.4] * ratio)):
