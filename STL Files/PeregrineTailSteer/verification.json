@@ -8,17 +8,17 @@
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "287.4 cm3"
+   "value": "289.7 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
    "passed": true,
-   "value": "8.6 cm3"
+   "value": "7.9 cm3"
   },
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "11.9 cm3"
+   "value": "11.2 cm3"
   },
   {
    "check": "Crank is one closed solid",
@@ -61,9 +61,9 @@
    "value": 148.0
   },
   {
-   "check": "supportless: no downward patch wider than 7 mm (2A/P)",
+   "check": "supportless: no downward patch wider than 7 mm (inscribed circle)",
    "passed": true,
-   "value": "widest 5.6 mm, FinCan at Z 175.5"
+   "value": "widest 6.8 mm, FinCan at Z 175.5"
   },
   {
    "check": "can clears mmt",
@@ -207,6 +207,16 @@
    "value": 20.954
   },
   {
+   "check": "aileron clamp screws M2x5 stop >= 0.3 mm short of the tap bottom",
+   "passed": true,
+   "value": "seat-to-tap-bottom [5.77, 5.77, 5.77, 5.77] mm"
+  },
+  {
+   "check": "hatch rebates clear a 10 mm fin-root fillet by >= 2 mm",
+   "passed": true,
+   "value": "nearest recess 12.4 mm from a fin face"
+  },
+  {
    "check": "servos keep >= 8 mm of air to the motor tube",
    "passed": true,
    "value": 12.73
@@ -224,7 +234,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8258 rays, thin: []"
+   "value": "8504 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -254,12 +264,12 @@
    "passed": true,
    "value": [
     88.9,
-    27.9,
+    28.7,
     39.7,
     208.9,
-    151.1,
+    152.4,
     328.9,
-    271.1
+    272.4
    ]
   },
   {
@@ -328,7 +338,7 @@
   {
    "check": "fins and ailerons at full travel stay off the rail",
    "passed": true,
-   "value": 18.1
+   "value": 12.0
   },
   {
    "check": "Peregrine: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",

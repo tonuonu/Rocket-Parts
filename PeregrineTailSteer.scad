@@ -3,7 +3,7 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.2  11/21/2026
+// Revision: 0.1.3  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -42,6 +42,8 @@
 //                    that slides out into the cut-out, aileron split in two clamped
 //                    halves); clevis crank on a Ø2 dowel, standing on the print bed;
 //                    hinge pillars fused to the web.
+// 0.1.3  11/21/2026  Review 3: M2x5 aileron clamp screws (M2x6 bottomed out); hatch
+//                    fin-side edge at u 33.5 with a 2 mm rebate, clear of a 10 mm root fillet.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -127,6 +129,12 @@ Flap_Max      = 15;         // mechanical travel checked, +-deg
 // into the notch; nothing glued has to move.
 Clamp_Screws  = [[7, 12], [7, 42], [22, 26], [22, 48]];   // [x aft of the hinge, y_f]
 Clamp_Clear_D = 2.2; Clamp_Tap_D = 1.6; Clamp_Head_D = 3.8; Clamp_Tap_L = 2.6;
+// M2 x 5 countersunk (ISO 7046-1 / ISO 14581, head 3.8): the length runs from the
+// head's top face, flush with the -Y face, to the tip. It must stop 0.3 mm short
+// of the tap hole's bottom; the +Y half keeps Fin_T/2 - Clamp_Tap_L of skin.
+Clamp_Screw_L = 5;
+assert(Clamp_Screw_L <= Fin_T/2 + Clamp_Tap_L - 0.3, "clamp screw bottoms out in the tap hole");
+assert(Fin_T/2 - Clamp_Tap_L >= 0.5, "tap hole leaves under 0.5 mm of +Y skin");
 // Tail-first landing: the fixed fin must reach further aft than any aileron
 // point. The aileron is clipped Skid_Margin forward of the notched fixed fin's
 // aft-most point. Peregrine: no clip (fixed fin tip 35 mm aft of the
@@ -242,11 +250,18 @@ Lipo_Lx0 = Bay_Floor_X[1] + 0.3;
 Strap_Slot = [2.5, 14];
 
 // Hatch openings (servo frame, u = -ly)
-Hatch_U   = [-23.5, 35.0];    // servo part: arc at R_Out from the servo angle; the horn ball lifts out past +34
+Hatch_U   = [-23.5, 33.5];    // servo part: arc at R_Out from the servo angle; the horn ball lifts out from 33.0 (verifier)
 Hatch_Z   = [Servo_Zc - Servo_Lug_L/2 - 1, Servo_Zc + Servo_Lug_L/2 + 1];   // passes the lugs
 Hatch_Bat_U = [-11.5, 11.5];  // sector A battery part
 Hatch_Bat_Z1 = 192;
 Hatch_Rebate = 7.5;           // cover overlap round the opening
+// On the fin-side edge the rebate is narrow, so a fin-root fillet with a 10 mm
+// leg still ends 2 mm short of the cover: the fin face is at u = Servo_Theta's
+// arc minus Fin_T/2 (no screw sits on that edge).
+Hatch_Rebate_Fin = 2.0;      // cover seat 1.75 mm on this edge (no screw on it)
+Fillet_Max = 10;              // fin-root fillet leg the hatches leave room for (+2 mm)
+assert(Servo_Theta*PI/180*R_Out - Fin_T/2 - (Hatch_U[1] + Hatch_Rebate_Fin) >= Fillet_Max + 2,
+       "hatch rebate too close to the fin root fillet");
 Hatch_Screw_In = 4.3;         // screw axis from the opening edge (insert wall 1.6 + 0.7)
 Hatch_Rebate_D = 1.6;         // cover thickness = rebate depth
 Hatch_Doubler = [8.5, 2.0];   // band round the opening inside the wall: width, thickness
@@ -531,11 +546,16 @@ function Hatch_Pts(bat) = let(u0=Hatch_U[0], u1=Hatch_U[1], z0=Hatch_Z[0], z1=Ha
     bat ? [[u0,z0],[u1,z0],[u1,z1],[b1, z1+(u1-b1)],[b1,bz],[bm,bz+bh],[b0,bz],[b0, z1+(b0-u0)],[u0,z1]]
         : [[u0,z0],[u1,z0],[u1,z1],[um,z1+hw],[u0,z1]];   // 45 deg gable top: supportless
 function Hatch_Ctr(bat) = bat ? [0, Hatch_Z[1] + 5] : [(Hatch_U[0]+Hatch_U[1])/2, (Hatch_Z[0]+Hatch_Z[1])/2];
-// miter offset of a CCW polygon, outward by g
-function Off_Pts(P, g) = [for (i=[0:len(P)-1]) let(
-        a=P[(i-1+len(P))%len(P)], v=P[i], b=P[(i+1)%len(P)],
-        d1=(v-a)/norm(v-a), d2=(b-v)/norm(b-v), n1=[d1[1],-d1[0]], n2=[d2[1],-d2[0]])
-    v + g*(n1+n2)/(1 + n1*n2)];
+// offset of a CCW polygon, edge i (P[i] -> P[i+1]) moved outward by G[i]; each
+// vertex goes to the intersection of its two offset edges
+function Off_Pts(P, G) = [for (i=[0:len(P)-1]) let(
+        n=len(P), a=P[(i-1+n)%n], v=P[i], b=P[(i+1)%n],
+        g1=G[(i-1+n)%n], g2=G[i],
+        d1=(v-a)/norm(v-a), d2=(b-v)/norm(b-v), n1=[d1[1],-d1[0]], n2=[d2[1],-d2[0]],
+        c=n1*n2)
+    v + n1*(g1 - c*g2)/(1 - c*c) + n2*(g2 - c*g1)/(1 - c*c)];
+// per-edge offsets: g everywhere, gf on the fin-side edge (P[1] -> P[2], u = Hatch_U[1])
+function Hatch_G(bat, g, gf) = [for (i=[0:len(Hatch_Pts(bat))-1]) i == 1 ? gf : g];
 function Sub_Pts(P, step=2) = [for (i=[0:len(P)-1]) let(a=P[i], b=P[(i+1)%len(P)],
         n=max(1, ceil(norm(b-a)/step))) for (k=[0:n-1]) a + (b-a)*k/n];
 function Ang_U(u) = Servo_Theta - u/R_Out*180/PI;
@@ -547,9 +567,10 @@ module Radial_Prism(P, c, r0=28, r1=75) let(N=len(P))
                             [for (i=[0:N-1]) [2*N+1, N+i, N+(i+1)%N]],
                             [for (i=[0:N-1]) each [[i,(i+1)%N,N+(i+1)%N],[i,N+(i+1)%N,N+i]]]),
                convexity=6);
-module Hatch_Shell(bat, grow, ra, rb)
+module Hatch_Shell(bat, grow, ra, rb, grow_fin=undef)
     intersection(){
-        Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat), grow)), Hatch_Ctr(bat));
+        Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
+            Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin))), Hatch_Ctr(bat));
         Tube_Shell(ra, rb);
     }
 // undo the servo frame (for axis-centred solids inside Servo_Frame)
@@ -577,7 +598,7 @@ module Hatch_Screw_Axes(bat, d, a, b)
         rotate([0,90,0]) cylinder(d=d, h=b - a, $fn=24);
 module Hatch_Cover(bat=false)
     difference(){
-        Hatch_Shell(bat, Hatch_Rebate - Hatch_Gap, Hatch_Seat_R, R_Out);
+        Hatch_Shell(bat, Hatch_Rebate - Hatch_Gap, Hatch_Seat_R, R_Out, Hatch_Rebate_Fin - Hatch_Gap);
         Hatch_Screw_Axes(bat, Hatch_Screw, -1, 5);
     }
 // band round the opening inside the wall + radial screw bosses on 45 deg corbels
@@ -633,7 +654,7 @@ module TS_Can() difference(){
     }
     for (k=[0:2]) Fin_Frame(k){
         Hatch_Shell(k==0, 0, R_In - Hatch_Doubler[1] - 0.5, R_Out + 1);   // opening (wall and band only)
-        Hatch_Shell(k==0, Hatch_Rebate, Hatch_Seat_R, R_Out + 1);          // rebate
+        Hatch_Shell(k==0, Hatch_Rebate, Hatch_Seat_R, R_Out + 1, Hatch_Rebate_Fin);   // rebate
         Hatch_Screw_Axes(k==0, Hatch_Insert[0], -Hatch_Insert[1], 0.5);
     }
     for (k=[0:2]) Fin_Frame(k) Servo_Frame(){
@@ -829,8 +850,10 @@ echo(str("TS_PARAMS ", R_Out, " ", R_In, " ", MMT_OD, " ", MMT_Z0, " ", MMT_L, "
          Tube_Piece_L, " ", Ply_CR_Z0, " ", Flap_Max, " ", Sw_A, " ", Sw_Z, " ",
          Flap_X_Max, " ", Fixed_Aft_X(), " ", Lipo_Z0, " ", Lipo[2]));
 echo(str("TS_HATCH ", Hatch_U[0], " ", Hatch_U[1], " ", Hatch_Z[0], " ", Hatch_Z[1], " ",
-         Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate));
+         Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate, " ",
+         Hatch_Rebate_Fin, " ", Fillet_Max));
+echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.2: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.1.3: fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

@@ -7,8 +7,8 @@ ailerons, fixed fins, LiPo, switch and hatch covers; every bearing sits in
 its seat; walls (outer wall, bearing housings, insert bosses) are at least
 their minimum; servos, LiPo and switch keep their air gap to the motor tube;
 each aileron is free through +-Flap_Max with the linkage solved at every
-step (crank, pushrod, horn, servo), with a gap of at least 0.5 mm to the can
-and the fixed fin; the aft rail button sits on the 60 deg line at the .ork
+step (crank, pushrod, horn, servo), with a gap of at least 0.78 mm to the can
+and the fixed fin (0.8 by design) and 1.2 mm from the pushrod links to the can; the aft rail button sits on the 60 deg line at the .ork
 station, its insert pocket is sound, hatch screw heads stay off the rail
 strip and the fins never reach the rail. The Zephyr fin set is rendered and
 its ailerons checked the same way.
@@ -17,7 +17,7 @@ Servo, horn, LiPo and switch solids are envelopes (MKS HV6160 drawing,
 Tattu 450 mAh 2S long pack, Schurter 0033.4513). This verifies CAD, not
 printed fits, strength or flight behaviour.
 
-Requires numpy, trimesh, manifold3d, rtree, scipy.
+Requires numpy, trimesh, manifold3d, rtree, scipy, shapely.
 Usage: verify_tailsteer.py [--output-dir DIR] [--json FILE] [--export]
   --export  also writes the STLs and DXFs to "STL Files/PeregrineTailSteer/"
 """
@@ -33,6 +33,8 @@ from pathlib import Path
 import numpy as np
 import trimesh
 from scipy.optimize import brentq
+from shapely.geometry import Polygon
+from shapely.ops import polylabel, unary_union
 
 REPO = Path(__file__).resolve().parents[1]
 SCAD = REPO / "PeregrineTailSteer.scad"
@@ -101,11 +103,34 @@ def clear(name, a, b, tol=1e-3):
     return v
 
 
+_SAMPLES = {}
+
+
+def _samples(mesh, n, seed):
+    key = (id(mesh), n, seed)
+    if key not in _SAMPLES:
+        pts, _ = trimesh.sample.sample_surface_even(mesh, n, seed=seed)
+        _SAMPLES[key] = np.vstack([pts, mesh.vertices])
+    return _SAMPLES[key]
+
+
 def min_gap(moving, fixed, n=4000, seed=1):
-    """Smallest distance from points on `moving` to the surface of `fixed`
-    (0 if any sample lies inside `fixed`)."""
-    pts, _ = trimesh.sample.sample_surface_even(moving, n, seed=seed)
-    pts = np.vstack([pts, moving.vertices])
+    """Smallest surface-to-surface distance between `moving` and `fixed`,
+    sampled both ways (points on each body against the other), 0 if they
+    overlap."""
+    return min(_min_gap_one_way(moving, fixed, n, seed),
+               _min_gap_one_way(fixed, moving, n, seed, dense=True))
+
+
+def _min_gap_one_way(moving, fixed, n=4000, seed=1, dense=False):
+    """Distance from points on `moving` to the surface of `fixed`. With dense,
+    `moving` is a large body: it is sampled finely and only the points near
+    `fixed` are used."""
+    if dense:
+        pts = _samples(moving, 60000, seed)
+    else:
+        pts, _ = trimesh.sample.sample_surface_even(moving, n, seed=seed)
+        pts = np.vstack([pts, moving.vertices])
     lo, hi = fixed.bounds[0] - 5, fixed.bounds[1] + 5
     near = pts[np.all((pts > lo) & (pts < hi), axis=1)]
     if len(near) == 0:      # far away: distance from the box is a lower bound
@@ -173,7 +198,8 @@ def main():
     can = m["FinCan"]
     # supportless: every downward-facing patch (steeper than 45 deg, more than
     # 0.1 mm, i.e. under one layer, above the bed) is a narrow ledge or a short
-    # bridge: mean width 2A/P <= 7 mm
+    # bridge: its true narrow width (twice the largest inscribed circle of its
+    # plan view) is <= 7 mm
     worst_w = (0, None)
     for n in PRINTS:
         mm = m[n]
@@ -182,12 +208,18 @@ def main():
             continue
         sub = mm.submesh([np.where(sel)[0]], append=True)
         for q in sub.split(only_watertight=False):
-            per = q.outline().length if len(q.faces) else 0
-            w = 2 * q.area / per if per > 0 else 0
+            plan = unary_union([Polygon(t[:, :2]).buffer(0.01) for t in q.triangles
+                                if Polygon(t[:, :2]).area > 1e-9])
+            w = 0.0
+            for poly in getattr(plan, "geoms", [plan]):
+                if poly.is_empty:
+                    continue
+                c_ = polylabel(poly, tolerance=0.02)
+                w = max(w, 2 * poly.boundary.distance(c_) - 0.02)
             if w > worst_w[0]:
                 c = q.bounds.mean(0)
                 worst_w = (w, "%s at Z %.1f" % (n, c[2]))
-    record("supportless: no downward patch wider than 7 mm (2A/P)", worst_w[0] <= 7.0,
+    record("supportless: no downward patch wider than 7 mm (inscribed circle)", worst_w[0] <= 7.0,
            "widest %.1f mm, %s" % worst_w)
 
     # ---------- static fits
@@ -221,6 +253,47 @@ def main():
     rmin = float(np.min(np.hypot(can.vertices[:, 0], can.vertices[:, 1])))
     record("can bore leaves the 0.2 mm epoxy gap on the motor tube", abs(rmin - (p["MMT_OD"] / 2 + 0.2)) < 0.05,
            round(rmin, 3))
+
+    # ---------- aileron clamp screws: measured tap depth vs screw length. A ray
+    # along +Y on each screw axis passes the clearance hole and countersink in the
+    # -Y half and stops at the tap hole's bottom in the +Y half. The head's top
+    # face is flush with the -Y face (y = -Fin_T/2).
+    cl = [float(x) for x in echo_values(logs["FinCan"], "TS_CLAMP").replace("[", " ").replace("]", " ")
+          .replace(",", " ").split()]
+    screw_l, fin_t, pos = cl[0], cl[1], cl[2:]
+    ail = trimesh.util.concatenate([m["ail_m"], m["ail_p"]])
+    room = []
+    for i in range(0, len(pos), 2):
+        o = np.array([pos[i], -10.0, pos[i + 1]])
+        loc, _, _ = ail.ray.intersects_location([o], [[0, 1, 0]], multiple_hits=True)
+        ys = sorted(float(y) for y in loc[:, 1])
+        bottom = next((y for y in ys if y > 0.05), None)     # first hit past the split face
+        room.append(None if bottom is None else bottom + fin_t / 2)
+    ok = all(r is not None and screw_l <= r - 0.3 for r in room)
+    record("aileron clamp screws M2x%g stop >= 0.3 mm short of the tap bottom" % screw_l, ok,
+           "seat-to-tap-bottom %s mm" % [None if r is None else round(r, 2) for r in room])
+
+    # ---------- fin-root fillets: the hatch rebates and openings stay clear of a
+    # Fillet_Max leg + 2 mm, measured on the outer skin from each fin face
+    hv = [float(x) for x in echo_values(logs["FinCan"], "TS_HATCH").split()]
+    fillet_max = hv[-1]
+    angs = np.radians(np.arange(5.0, 30.0, 0.2))   # from just past the fin slot (3.9 deg)
+    zs = np.arange(40.0, 215.0, 2.5)
+    worst_f = 99.0
+    for k in range(3):
+        for side in (-1, 1):
+            A, Zg = np.meshgrid(angs, zs)
+            th_ = math.radians(120 * k) + side * A.ravel()
+            org = np.c_[60 * np.cos(th_), 60 * np.sin(th_), Zg.ravel()]
+            d_ = -np.c_[np.cos(th_), np.sin(th_), np.zeros(th_.size)]
+            loc, ir, _ = can.ray.intersects_location(org, d_, multiple_hits=False)
+            r_hit = np.full(len(org), 0.0)
+            r_hit[ir] = 60 - np.linalg.norm(loc - org[ir], axis=1)
+            recess = r_hit < p["R_Out"] - 0.3
+            if recess.any():
+                worst_f = min(worst_f, float(np.min(A.ravel()[recess])) * p["R_Out"] - p["Fin_T"] / 2)
+    record("hatch rebates clear a %.0f mm fin-root fillet by >= 2 mm" % fillet_max, worst_f >= fillet_max + 2,
+           "nearest recess %.1f mm from a fin face" % worst_f)
 
     # ---------- air gaps to the motor tube (thermal)
     def rmin_surface(mesh):

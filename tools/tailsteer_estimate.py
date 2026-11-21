@@ -36,7 +36,7 @@ RHO, A_SOUND = 1.225, 340.29
 D_REF = 0.1016
 A_REF = math.pi * D_REF ** 2 / 4
 # Design load case. Max speed of every simulation in PeregrineL2-CamNose.ork
-# (OpenRocket 24.12, tools/or_sim_mass.java), as saved and with the tail-steering
+# (OpenRocket 24.12, tools/ORSimMass.java), as saved and with the tail-steering
 # mass change added (+0.474 kg at 1.5335 m from the tip). The highest is the J350;
 # the J420R that L2-PrintSettings.md names reaches 130.0 m/s in the .ork, not the
 # ~200 m/s that file quotes for an earlier, lighter design. Design q uses the

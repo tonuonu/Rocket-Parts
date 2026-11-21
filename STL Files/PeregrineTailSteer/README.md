@@ -33,12 +33,12 @@ from the nose tip are x = 1651.68 − Z.
 | Printed PC can (`FinCan.stl`) | Z 0–220 at the full 101.5 OD (x 1431.7–1651.7). A 30 mm shoulder (OD 98.4) carries the paper tube |
 | Paper aft tube | The forward 237.2 mm of the flown aft tube (x 1194.5–1431.7), so the overall length stays 1651.68 |
 | Fixed fins | 1/4 in (6.35 mm) Baltic birch plywood, the kit material of both rockets. Through-the-wall tab Z 55–175, glued to the motor tube. The root LE stays at x 1402.76 (Z 248.9), so the CFD and OpenRocket CP still apply |
-| Ailerons (`Aileron*Half_*.stl`) | Solid PC, two halves split on the fin's mid-plane and clamped round the shaft by 4 × M2 countersunk screws (from the −Y face into tapped holes in the +Y half). Hinge line radial at Z 34. They span 0.8–55 mm off the body; chord 34–74 mm (Peregrine). 2623 mm² each, 11 % of the fin |
+| Ailerons (`Aileron*Half_*.stl`) | Solid PC, two halves split on the fin's mid-plane and clamped round the shaft by 4 × M2 × 5 countersunk screws (from the −Y face into tapped holes in the +Y half; 5.8 mm from the head seat to the tap bottom, 0.6 mm of +Y skin left). Hinge line radial at Z 34. They span 0.8–55 mm off the body; chord 34–74 mm (Peregrine). 2623 mm² each, 11 % of the fin |
 | Hinge | Ø4 × 54 mm silver-steel shaft with a D-flat, radial. It runs in two NSK 684AZZ bearings in the can (centres at r 27.0 and 45.75), then 27 mm into the aileron's D-groove. 54 mm is the longest shaft that can be pulled out into the aileron cut-out (see Field service) |
 | Crank | Printed PC, on the shaft between the bearings, M3 set screw on the flat. Clevis arm 12 mm toward the servo: the ball link's 4.8 mm pivot ball sits between two 2.5 mm cheeks on a Ø2 hardened dowel, centred on the pushrod line, so the arm sees no torsion and the pin is in double shear |
 | Pushrod | M2 rod, 52 mm between ball centres, M2 ball links at both ends. It runs parallel to the axis at r 39.8, 17.5° from its fin (crank ball 38.0 mm out along the shaft, 12 mm off the fin plane). At the horn the pivot ball sits on an M2 × 8 12.9 screw through the servo's metal arm |
 | Servo | MKS HV6160 lying flat in the annulus (case r 33–43.5), centred 57.5° from its fin, output pointing at the fin. Horn ball at 8 mm. Link ratio 1.5:1 (aileron torque / servo torque) |
-| Hatches | One per servo, flush in a 1.6 mm rebate, held by M3 screws in ruthex inserts. The sector-A hatch also covers the LiPo |
+| Hatches | One per servo, flush in a 1.6 mm rebate, held by M3 screws in ruthex inserts. The sector-A hatch also covers the LiPo. On the fin side the rebate is only 2 mm wide, so the cover ends 12.4 mm from the fin face, clear of a 10 mm fin-root fillet |
 | Motor | 38 mm motor tube (kit, 279.4 mm), aft end 12.7 mm above the base, glued as in a normal build. The motor retainer goes on the tube end, as now |
 | Thrust path | Motor thrust ring → motor tube → fin tabs and hinge pillars (epoxy) → can → shoulder → paper tube. The bearings carry only aileron loads |
 | Forward seal | Kit plywood centering ring with the eyebolt, solid, at Z 251 (x 1400.7). It is the drogue gas seal; the wire pass through it is potted |
@@ -59,14 +59,14 @@ from the nose tip are x = 1651.68 − Z.
 
 ## Parts to print
 
-All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. The verifier checks that no downward-facing patch more than 0.1 mm (under one layer) above the bed is wider than 7 mm. The widest is 5.6 mm: the slot ceilings and the bridge over the crank window.
+All parts are PC (`L2-PrintSettings.md`). Every part prints without supports. The verifier checks that no downward-facing patch more than 0.1 mm (under one layer) above the bed is wider than 7 mm, measured as twice its largest inscribed circle. The widest is 6.8 mm: the 6.85 mm slot ceilings, which print as bridges.
 
 | File | Qty | Orientation and settings | Mass (solid PC) |
 |---|---:|---|---:|
 | `BearingCoupon.stl` | 1 | Print first. One hinge block: check the bearing seats, the shaft through the wall and the crank | 10 g |
-| `FinCan.stl` | 1 | Aft end down. 250.0 mm tall (P1S). 6 walls, 70 % gyroid, 0.12 mm, brim 5 mm, enclosed. Its walls are 1.6–2.4 mm, so it is nearly all perimeters | 345 g |
+| `FinCan.stl` | 1 | Aft end down. 250.0 mm tall (P1S). 6 walls, 70 % gyroid, 0.12 mm, brim 5 mm, enclosed. Its walls are 1.6–2.4 mm, so it is nearly all perimeters | 348 g |
 | `HatchServo.stl` | 2 | Standing, as it sits on the rocket. Solid | 10 g |
-| `HatchServoLipo.stl` | 1 | Standing. Solid | 14 g |
+| `HatchServoLipo.stl` | 1 | Standing. Solid | 13 g |
 | `Crank.stl` | 3 | Hub up: the inboard collar, the clevis arm and the set-screw boss all stand on the bed. Solid. Ream the Ø1.95 pivot hole to a press fit on the Ø2 dowel | 3 g |
 | `AileronScrewHalf_Peregrine.stl` + `AileronTappedHalf_Peregrine.stl` | 3 each | Flat, outer face down, groove up. Solid. Tap the four Ø1.6 holes in the tapped half M2 | 10 + 10 g |
 | `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` | 3 each | Zephyr only. Same settings. Clipped 5 mm ahead of the fixed fin tip | 7 + 7 g |
@@ -170,7 +170,7 @@ All simulations in `PeregrineL2-CamNose.ork` were rerun in OpenRocket 24.12 (`to
   - **Peregrine:** the notched fixed fin reaches 76.1 mm aft of the base and the aileron 40.5 mm, so the clip does not bite.
   - **Zephyr:** on the kit outline the aileron's aft corner (y_f 12.5) would reach 24.4 mm aft of the base. The notched fixed fin reaches only 4.7 mm. The clip trims the Zephyr aileron at the fixed fin's tip minus 5 mm, so it now ends 0.3 mm *ahead* of the base.
   - The Zephyr aileron is 1739 mm² (it was 2378) and Cl_δ is +0.069 /deg.
-  - Against the kit outline, the Zephyr fin loses 643 mm² (3.3 %) of area around Z −8. That moves its CP slightly forward: check the Zephyr margin in OpenRocket with `FixedFin_Zephyr.dxf` + `Aileron_Zephyr.stl` before flying.
+  - Against the kit outline, the Zephyr fin loses 643 mm² (3.3 %) of area around Z −8. That moves its CP slightly forward: check the Zephyr margin in OpenRocket with the outlines of `FixedFin_Zephyr.dxf` and the aileron halves `AileronScrewHalf_Zephyr.stl` + `AileronTappedHalf_Zephyr.stl` before flying.
 
 ### Printed-part stress (PC; about 45 MPa in-layer and 20 MPa across layers, estimates)
 
@@ -227,8 +227,8 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 
 | Item | Mass | Z |
 |---|---:|---:|
-| FinCan | 344.9 g | 107.3 |
-| Hatch covers ×3 | 35.0 g | 112.2 |
+| FinCan | 347.6 g | 107.3 |
+| Hatch covers ×3 | 32.4 g | 113.2 |
 | Cranks ×3 | 8.0 g | 33.3 |
 | Ailerons ×3 (6 halves) | 61.5 g | 10.2 |
 | Fixed fins ×3 (notched, with tab) | 328.3 g | 90.7 |
@@ -240,7 +240,7 @@ New aft section, with Z above the base. Plywood is 0.725 g/cm³ (.ork) and PC 1.
 | Inserts, screws, nuts (est.) | 14.0 g | 110 |
 | Paper tube 237.2 mm | 106.5 g | 338.6 |
 | Motor tube, plywood CR + eyebolt, rail buttons (kit) | 113.3 g | — |
-| **Total** | **1187.6 g** | **127.0** |
+| **Total** | **1187.8 g** | **127.0** |
 
 **Against the current section:**
 - The current fixed-fin section, from its .ork components, is 718.9 g at Z 132.2. Epoxy and paint are left out on both sides.
@@ -325,11 +325,12 @@ flown separable, add a third connector there.
 8. **Fins.**
    - Push the tabs through the slots onto the motor tube and epoxy them, with tab-to-tube and slot fillets.
    - Square them with a fin guide.
+   - **Root fillets: leg at most 10 mm.** The hatch covers' fin-side edges start 12.4 mm from each fin face; a larger fillet would glue a cover shut. The verifier checks this clearance.
    - The fin's cut-out edge must be parallel to the hinge line.
 9. **Shafts and ailerons** (after the fins; this is also the field-service path).
    - Hold the shaft in the aileron cut-out and push it in through the wall, the outer bearing, the crank and the inner bearing, flat facing aft.
    - Tighten the M3 × 5 cup-point set screw from the aft end. It must turn freely through ±15°.
-   - Lay the two aileron halves on the shaft stub from either side, 0.8 mm shim at the root, and fit the four M2 × 6 countersunk screws.
+   - Lay the two aileron halves on the shaft stub from either side, 0.8 mm shim at the root, and fit the four M2 × 5 countersunk screws. Do not use M2 × 6: it bottoms out in the tap hole before the head seats.
    - Set it flush with its fin, with a straightedge across both, before the pushrod goes on. Check ±15° free with the 0.8 mm gaps.
 10. **Switch** (before the forward end is closed; behind the switch the annulus is out of reach of the hatches). Drill the Ø6 pilot in sector B to Ø12.7 and file the R1.2 key upward, as on the nose. Fit the switch and its nut, with its leads long enough to reach sector A over the fin-rib tops.
 11. **Forward end.**
@@ -361,7 +362,7 @@ flown separable, add a third connector there.
 | M2 ball links for 4.8 mm balls + 4.8 mm pivot balls with a Ø2 bore | 6 each | Pushrod ends, at the horn (8 mm) and the crank (12 mm) |
 | Ø2 × 10 hardened dowel pin (ISO 8734) | 3 | Crank clevis pivot, press fit |
 | M2 × 8 socket screw, 12.9, + M2 nut | 3 each | Horn pivot through the servo's metal arm |
-| M2 × 6 countersunk screw (ISO 10642) | 12 | Aileron half clamps, 4 per aileron |
+| M2 × 5 countersunk screw (ISO 7046-1 or ISO 14581, head Ø3.8) | 12 | Aileron half clamps, 4 per aileron |
 | M2 stainless threaded rod, about 42 mm, + 2 lock nuts each | 3 | Pushrods, 52 mm between ball centres |
 | ruthex RX-M3x4.0 SHORT + M3 × 5 cup-point set screw (ISO 4029) | 3 each | Crank to shaft flat |
 | M2.5 × 10 screws + M2.5 hex nuts | 6 each | Servo lugs; nuts glued in the traps |
@@ -404,19 +405,21 @@ With no includes, the renders print no library echoes and no warnings.
 
 ## Verification
 
-Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy).
+Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 65 checks; writes STLs/DXFs here only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # renders, 67 checks; writes STLs/DXFs here only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --fin-set Zephyr
 ```
 
-`verification.json` holds the last run: 65/65 passed.
+`verification.json` holds the last run: 67/67 passed.
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.
-- Everything is supportless (overhangs counted from 0.1 mm above the bed).
+- Everything is supportless (overhangs counted from 0.1 mm above the bed, width from the largest inscribed circle).
+- The aileron clamp screws stop at least 0.3 mm short of the tap bottom (measured by ray).
+- The hatch rebates clear a 10 mm fin-root fillet by at least 2 mm (measured on the skin).
 - The can clears the motor tube, retainer, servos, horns, shafts, cranks, ailerons, fins, LiPo, switch, hatch covers and paper tube.
 - Both bearing seats are supported.
 - The motor-tube epoxy gap is 0.2 mm.
@@ -426,9 +429,9 @@ Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manif
 - The servo with its horn on lifts straight out through its hatch without touching the can. This is checked for sector A (T-shaped hatch) and sector B (gable hatch); sector C is identical to B. The LiPo lifts out of sector A the same way.
 - At every 5° step through ±15°, with the linkage solved:
   - nothing collides: aileron, crank, pushrod or horn;
-  - aileron to can and aileron to fixed fin: checked ≥ 0.78 mm, 0.8 measured (0.8 by design);
+  - aileron to can and aileron to fixed fin: checked ≥ 0.78 mm, 0.8 measured (0.8 by design), sampled both ways (points on each body against the other);
   - pushrod and ball links to can: checked ≥ 1.2 mm, 1.21 measured.
-- The ailerons stay 18 mm off the rail.
+- The fins and ailerons stay 12 mm off the rail (both-way sampled).
 - With the fins glued, the aileron halves come off sideways and the shaft slides out into the cut-out and leaves sideways, without touching the can or the fixed fin.
 - The Zephyr ailerons are free through the travel.
 - For both fin sets the fixed fin reaches ≥ 3 mm further aft than every aileron point at 0 and ±15°: Peregrine 35.5 mm, Zephyr 5.0 mm.

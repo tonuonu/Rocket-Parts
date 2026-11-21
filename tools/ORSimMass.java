@@ -31,6 +31,10 @@ public class ORSimMass {
         if (dm != 0) {
             BodyTube aft = null;
             for (RocketComponent c : rocket) if (c instanceof BodyTube && c.getName().equals("Aft Body tube")) aft = (BodyTube) c;
+            if (aft == null) {
+                System.err.println("ORSimMass: no body tube named \"Aft Body tube\" in " + a[0] + "; cannot add the mass");
+                System.exit(2);
+            }
             MassComponent mc = new MassComponent();
             mc.setName("tail steering delta");
             mc.setComponentMass(dm);
