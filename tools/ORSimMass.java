@@ -21,13 +21,17 @@ import java.util.List;
 
 public class ORSimMass {
     public static void main(String[] a) throws Exception {
+        if (a.length != 1 && a.length != 3) {
+            System.err.println("usage: ORSimMass FILE.ork [dm_kg x_from_tip_m]  (the mass needs its position)");
+            System.exit(1);
+        }
         info.openrocket.swing.startup.GuiModule gm = new info.openrocket.swing.startup.GuiModule();
         Injector inj = Guice.createInjector(gm, new PluginModule());
         Application.setInjector(inj);
         gm.startLoader();
         OpenRocketDocument doc = new GeneralRocketLoader(new File(a[0])).load();
         Rocket rocket = doc.getRocket();
-        double dm = a.length > 1 ? Double.parseDouble(a[1]) : 0, x = a.length > 2 ? Double.parseDouble(a[2]) : 0;
+        double dm = a.length == 3 ? Double.parseDouble(a[1]) : 0, x = a.length == 3 ? Double.parseDouble(a[2]) : 0;
         if (dm != 0) {
             BodyTube aft = null;
             for (RocketComponent c : rocket) if (c instanceof BodyTube && c.getName().equals("Aft Body tube")) aft = (BodyTube) c;

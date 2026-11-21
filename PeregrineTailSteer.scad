@@ -3,7 +3,7 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.5  11/21/2026
+// Revision: 0.1.6  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
@@ -51,6 +51,9 @@
 // 0.1.5  11/21/2026  Review 5: split-face relief only round the shaft, clamp screws over
 //                    the shaft or solid contact; shaft 0.6 further in, D-bore 1.5 past
 //                    its end; shaft drill jig; horn radius 9 (nut clears the case).
+// 0.1.6  11/21/2026  Review 6 nits: inner clevis cheek spot-faced to Cheek_T at the
+//                    pivot (bore 10.2 for the Ø2 x 10 dowel); horn stack derived from
+//                    Horn_Arm_T/Ball_D/Horn_Shim; TS_CRANK echo for the estimate.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -221,10 +224,11 @@ Ball_D     = 4.8;           // M2 ball stud
 Horn_Shim  = 0.3;
 Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
 Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
-Ball_Off   = 2.5/2 + Horn_Shim + 4.8/2;
-Horn_Screw_L = 2.5 + Horn_Shim + 4.8 + Horn_Nut[1] + 0.5;   // grip + 0.5 protrusion
+Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
+Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;   // grip + 0.5 protrusion
 assert(Horn_Screw_L <= 10, "horn pivot needs a longer screw than M2 x 10");
 Link_Eye_D = 7.0;           // ball-link body envelope
+Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
 Crank_A    = 14;            // crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the servo, and its hatch, further from the fin)
 // Servo placement: the case lies flat (W radial) with its centre at Servo_Rc
@@ -249,14 +253,23 @@ Crank_X1     = Brg_Out_X1 - Brg_B - 0.15;
 // Ø2 hardened dowel pin (double shear), centred on the pushrod line, so the
 // arm sees no torsion and the pin no cantilever. The cheeks join in a closed
 // window, so the outer cheek's underside is a short bridge when printed.
-Clevis_Gap   = 5.2;         // ball-link eye 4.6 + 0.6
-Cheek_T      = 2.5;
+Clevis_Gap   = Link_Eye_W + 0.6;
+Cheek_T      = 2.5;         // both cheeks at the pivot
 Crank_Arm_H  = 9;           // along Z
 Crank_Arm_Y0 = 3.0;         // arm starts here (inside the hub), clear of the set-screw pocket
 Crank_Arm_X1 = Crank_Xk + Clevis_Gap/2 + Cheek_T;      // outer cheek face
 Crank_Win_Y  = [Crank_A - Link_Eye_D/2 - 1, Crank_A + Link_Eye_D/2 + 1];
 Crank_Tip_Y  = Crank_Win_Y[1] + 2;
 Pivot_D      = 2.0;         // dowel, press fit (Ø1.95 printed, ream to fit)
+Pivot_L      = 10;          // Ø2 x 10 dowel (ISO 8734), centred: 0.1 below each cheek face
+// The arm stands on the print bed at Crank_X0, so the inner cheek is thicker
+// than Cheek_T; a spot face on its bed side brings it to Cheek_T at the pivot,
+// so the bore is Clevis_Gap + 2 Cheek_T long and the dowel sits in both cheeks alike.
+Cheek_T_In   = Crank_Xk - Clevis_Gap/2 - Crank_X0;
+Pivot_Spot_D = Pivot_D + 2.5;
+assert(Pivot_L <= Clevis_Gap + 2*Cheek_T && (Pivot_L - Clevis_Gap)/2 >= Cheek_T - 0.25,
+       "pivot dowel does not fit the bore, or engages a cheek by less than Cheek_T - 0.25");
+assert(Cheek_T_In >= Cheek_T, "inner cheek thinner than Cheek_T");
 Crank_Arm_Xm = Crank_Xk - Clevis_Gap/2 - Cheek_T/2;    // inner cheek mid-plane (kept for the echo)
 Crank_Arm_T  = Cheek_T;
 Crank_Boss   = [7.2, 7.2, 8];   // set-screw boss: X, Y, depth below the axis (ruthex W 1.6)
@@ -505,9 +518,12 @@ module Crank_Holes(){
     // D-bore
     translate([Crank_X0 - 1,0,Hinge_Z]) rotate([0,90,0])
         linear_extrude(height=Crank_X1 - Crank_X0 + 2) Shaft_Section_Pose_Bore();
-    // pivot pin through both cheeks along X (press fit)
-    translate([Crank_Xk - Clevis_Gap/2 - Cheek_T - 1, Crank_A, Hinge_Z]) rotate([0,90,0])
-        cylinder(d=Pivot_D - 0.05, h=Clevis_Gap + 2*Cheek_T + 2, $fn=24);
+    // pivot pin through both cheeks along X (press fit), and the spot face that
+    // brings the inner cheek to Cheek_T at the pin
+    translate([Crank_X0 - 1, Crank_A, Hinge_Z]) rotate([0,90,0])
+        cylinder(d=Pivot_D - 0.05, h=Crank_Arm_X1 - Crank_X0 + 2, $fn=24);
+    translate([Crank_X0 - 1, Crank_A, Hinge_Z]) rotate([0,90,0])
+        cylinder(d=Pivot_Spot_D, h=1 + Cheek_T_In - Cheek_T, $fn=32);
     // set screw: insert pocket from the aft face, then M3 clearance to the bore
     translate([Crank_Boss_Xm, 0, Hinge_Z - Crank_Boss[2] - Overlap])
         cylinder(d=Set_Insert[0], h=Set_Insert[1] + Overlap, $fn=32);
@@ -926,8 +942,12 @@ echo(str("TS_PARAMS ", R_Out, " ", R_In, " ", MMT_OD, " ", MMT_Z0, " ", MMT_L, "
 echo(str("TS_HATCH ", Hatch_U[0], " ", Hatch_U[1], " ", Hatch_Z[0], " ", Hatch_Z[1], " ",
          Hatch_Bat_U[0], " ", Hatch_Bat_U[1], " ", Hatch_Bat_Z1, " ", Hatch_Rebate, " ",
          Hatch_Rebate_Fin, " ", Fillet_Max));
+echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_W, " ",
+         Crank_Win_Y[0], " ", Crank_Hub_D/2, " ", Crank_Arm_X1 - Crank_X0, " ", Pivot_D, " ",
+         Pivot_L, " ", Pin_Z[0], " ", Web_Y[1] - Web_Y[0], " ", Hinge_Z + Housing_D/2*sqrt(2), " ",
+         Shaft_Flat, " ", Cheek_T_In));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.5: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.1.6: fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));

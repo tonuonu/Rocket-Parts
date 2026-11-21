@@ -23,7 +23,7 @@
   {
    "check": "Crank is one closed solid",
    "passed": true,
-   "value": "2.1 cm3"
+   "value": "2.0 cm3"
   },
   {
    "check": "AileronScrewHalf_Peregrine is one closed solid",
