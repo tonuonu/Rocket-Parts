@@ -321,7 +321,7 @@
    "value": 1.558
   },
   {
-   "check": "aileron travel +-15 deg: nothing collides (aileron, crank, pushrod, horn)",
+   "check": "aileron travel +-15 deg in 7 steps: nothing collides (aileron, crank, pushrod, horn)",
    "passed": true,
    "value": 7
   },

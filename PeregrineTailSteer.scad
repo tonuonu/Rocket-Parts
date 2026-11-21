@@ -185,18 +185,6 @@ Relief_X_Pad  = 1.5;        //   and from the root to Shaft_X1 + Relief_X_Pad
 Bore_Pad      = 1.5;        // D-bore runs this far past the shaft end (build tolerance)
 Pin_D = 2; Pin_Yf = 19; Pin_Z = [2.2, -11.8];   // dowel: dia, y_f, z range rel. hinge
 Pin_X = R_Out + Pin_Yf;
-// Mechanical travel stop (Zephyr): a Ø4 x 12 hardened dowel clamped in the aileron's
-// split plane like the drive dowel, Stop_Dz below the hinge, reaches Stop_Pin_In
-// into a pocket in the outer hinge pillar. The pocket's side walls stop the aileron
-// at +-Stop_Angle whatever the servo does. The pin lifts out once the halves are off.
-Stop_On     = Airframe == "Zephyr";
-Stop_Angle  = 6;
-Stop_Pin_D  = 4;
-Stop_Dz     = 13;                // below the hinge, along the chord (the pocket roof stays 2.9 mm under the bearing seat)
-Stop_Pin_In = 3.5;               // into the pocket (radially inward of R_Out)
-Stop_Pin_Out = 12 - Stop_Pin_In - Flap_Root_Gap;   // into the aileron (12 mm dowel)
-Stop_Pocket_W = 2*(Stop_Pin_D/2 + Stop_Dz*sin(Stop_Angle));
-Stop_Pocket_Depth = Stop_Pin_In + 0.5;
 assert(Clamp_Screw_L <= Fin_T/2 + Clamp_Tap_L - 0.3, "clamp screw bottoms out in the tap hole");
 assert(Fin_T/2 - Clamp_Tap_L >= 0.5, "tap hole leaves under 0.5 mm of +Y skin");
 // Tail-first landing: the fixed fin must reach further aft than any aileron
@@ -329,6 +317,22 @@ Ped_Z_Fwd   = [Servo_ZO - Servo_Spline_Off + Servo_L + 0.3, Servo_Zc + Servo_Lug
 Bay_Top_A   = 200;          // sector A: floor carries the LiPo up to here
 Bay_Top     = 121;          // sectors B and C
 
+// Mechanical travel stop (Zephyr): two M2 nuts, each over a Ø6 washer, locked on the
+// pushrod either side of a shelf on the servo bay's fin-side web. The rod passes the
+// shelf in a Ø3 hole; at +-Stop_Angle of aileron a washer lands on the shelf. The stop
+// reaction goes from the rod into the can: the crank, shaft, bearings and aileron see
+// only the aero load, and the horn's M2 pivot screw (the existing fuse) caps the shelf
+// load at its yield.
+Stop_On      = Airframe == "Zephyr";
+Stop_Angle   = 6.5;
+Stop_Gap     = Crank_A*sin(Stop_Angle);   // rod travel to the stop (the crank ball's rise)
+Stop_Shelf_Z = [57, 63];                  // between the two ball-link bodies
+Stop_Washer  = [6, 2.1];                  // M2 large washer + nut: dia, stack height
+Stop_Hole_D  = 3.0;
+Stop_Shelf_Lx = [-Horn_R - 3.75, -Horn_R + 3.75];          // around the rod (servo frame)
+Stop_Shelf_Ly = [Bay_Ly[0] + Bay_Web_T, -Horn_Ball_U + 3.25]; // from the fin-side web past the rod
+Stop_Corbel  = 3.5;                       // 45 deg corbel under the shelf's web edge
+
 // LiPo: Tattu 450 mAh 2S 75C long pack (61 x 16 x 15 mm, 28 g), on sector A floor
 Lipo = [15, 16, 61];        // along u (tangential), lx (radial), Z
 Lipo_Z0 = 128;
@@ -410,7 +414,6 @@ if (Render_Part == 4) TS_Crank_Print();
 if (Render_Part == 5) TS_Aileron_Print(-1);   // screw half
 if (Render_Part == 8) TS_Aileron_Print(1);    // tapped half
 if (Render_Part == 40) Shaft(Defl);
-if (Render_Part == 41) Stop_Pin(Defl);   // Zephyr only
 if (Render_Part == 38) Aileron_Half(-1, Defl);
 if (Render_Part == 39) Aileron_Half(1, Defl);
 if (Render_Part == 6) TS_Coupon();
@@ -487,20 +490,7 @@ module Aileron_Bore(){
     translate([Pin_X, 0, Hinge_Z + Pin_Z[1]]) cylinder(d=Pin_D + 0.05, h=Pin_Z[0] - Pin_Z[1], $fn=24);
     // split-face relief round the shaft
     translate([0, -Clamp_Relief/2, Hinge_Z - Relief_Dz]) cube([Shaft_X1 + Relief_X_Pad, Clamp_Relief, 400]);
-    // stop pin, clamped in the split plane
-    if (Stop_On) translate([R_Out + Flap_Root_Gap - 1, 0, Hinge_Z - Stop_Dz]) rotate([0,90,0])
-        cylinder(d=Stop_Pin_D + 0.05, h=1 + Stop_Pin_Out + 0.3, $fn=24);
 }
-module Stop_Pin(defl=Defl)
-    translate([0,0,Hinge_Z]) rotate([defl,0,0]) translate([R_Out - Stop_Pin_In, 0, -Stop_Dz]) rotate([0,90,0])
-        cylinder(d=Stop_Pin_D, h=Stop_Pin_In + Flap_Root_Gap + Stop_Pin_Out, $fn=24);
-// pocket in the outer hinge pillar: side walls at the stop, 45 deg gable roof (supportless)
-module Stop_Pocket()
-    translate([R_Out - Stop_Pocket_Depth, 0, Hinge_Z - Stop_Dz]) rotate([0,90,0]) rotate([0,0,90])
-        linear_extrude(height=Stop_Pocket_Depth + 1)
-            polygon([[-Stop_Pocket_W/2, -(Stop_Pin_D/2 + 0.3)], [Stop_Pocket_W/2, -(Stop_Pin_D/2 + 0.3)],
-                     [Stop_Pocket_W/2, Stop_Pin_D/2 + 0.3], [0, Stop_Pin_D/2 + 0.3 + Stop_Pocket_W/2],
-                     [-Stop_Pocket_W/2, Stop_Pin_D/2 + 0.3]]);
 // clamp screw at [dz aft of the hinge, y_f]: countersink on -Y, clearance in
 // the -Y half, tap drill blind in the +Y half (its outer face stays closed)
 function Clamp_Pos(c) = [R_Out + c[1], Hinge_Z - c[0]];
@@ -770,7 +760,6 @@ module TS_Can() difference(){
     for (k=[0:2]) Fin_Frame(k){
         Fin_Slot();
         Hinge_Holes();
-        if (Stop_On) Stop_Pocket();
         // aileron sweep and root clearance (nothing of the can outside R_Out anyway)
     }
     for (k=[0:2]) Fin_Frame(k){
@@ -781,6 +770,8 @@ module TS_Can() difference(){
     for (k=[0:2]) Fin_Frame(k) Servo_Frame(){
         Lug_Holes();
         if (k==0) Strap_Slots();
+        if (Stop_On) translate([-Horn_R, -Horn_Ball_U, Stop_Shelf_Z[0] - 1])
+            cylinder(d=Stop_Hole_D, h=Stop_Shelf_Z[1] - Stop_Shelf_Z[0] + 2, $fn=24);
     }
     Rail_Hole();
     Switch_Hole();
@@ -869,6 +860,17 @@ module Servo_Bay(bat=false) Servo_Frame(){
     for (ly=[Bay_Ly[0], Bay_Ly[1]]) intersection(){
         translate([Bay_Floor_X[0], ly, 0]) cube([30, Bay_Web_T, top]);
         Fin_Inv() cylinder(r=R_In + Overlap, h=Can_L, $fn=192);
+    }
+    // travel-stop shelf (Zephyr): flat underside round the rod, 45 deg corbel at the web
+    if (Stop_On) {
+        translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0]])
+            cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Stop_Shelf_Ly[1] - Stop_Shelf_Ly[0] + Overlap, Stop_Shelf_Z[1] - Stop_Shelf_Z[0]]);
+        hull(){
+            translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0] - Stop_Corbel])
+                cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Overlap, Stop_Corbel + Overlap]);
+            translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0]])
+                cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Stop_Corbel, Overlap]);
+        }
     }
     // spine on the floor face under both lugs, aft pedestal from the bed
     translate([Spine_X[0], Ped_Ly[0], 0]) cube([Spine_X[1] - Spine_X[0], Ped_Ly[1] - Ped_Ly[0], Ped_Z_Fwd[1]]);
@@ -998,8 +1000,9 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
          Crank_Win_Y[0], " ", Crank_Hub_D/2, " ", Crank_Arm_X1 - Crank_X0, " ", Pivot_D, " ",
          Pivot_L, " ", Pin_Z[0], " ", Web_Y[1] - Web_Y[0], " ", Hinge_Z + Housing_D/2*sqrt(2), " ",
          Shaft_Flat, " ", Cheek_T_In));
-echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Angle, " ", Stop_Pin_D, " ", Stop_Dz, " ", Stop_Pin_In, " ",
-         Stop_Pin_Out, " ", Stop_Pocket_W, " ", Stop_Pocket_Depth));
+echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Angle, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
+         Stop_Washer[0], " ", Stop_Washer[1], " ", Stop_Hole_D, " ", Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], " ",
+         -Horn_Ball_U - Stop_Shelf_Ly[0] - Stop_Corbel));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,

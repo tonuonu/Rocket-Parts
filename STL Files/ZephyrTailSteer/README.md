@@ -30,7 +30,7 @@ Cl_δ need scaling to this aileron and fin.
 | Roll authority at full travel | Cl 1.09 (0.073 /deg × 15°) | Cl 0.32 (0.064 /deg × 5°) = 29× the fins' own induced roll |
 | Factors at the design point (servo / bearing / shaft / horn screw) | 5.7× / 3.4 / 3.1 / 3.8 | 12.1× / 2.8 / 2.5 / 7.1 |
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
-| Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at ±6°** |
+| Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at ±6.5°** on the pushrod |
 | Canards | On the nose | Removed |
 | Tail mass change | +460 g | +877 g against the stock kit fin section |
 | Margin at max speed | 2.32 cal | 1.91 cal (OpenRocket model of the build) |
@@ -64,16 +64,23 @@ cannot move aft into the motor retainer's keep-out.
   - Span 125 (kit 112.9), tip chord 90, tip LE 167 aft of the root LE. The trailing edge is straight from the root TE to the tip TE, 12 mm past the base.
   - The kit's notched aft extension is gone, and with it the old aileron clip.
   - The larger span keeps 1.91 cal at max speed despite +877 g at the tail. The kit fin outline, at the same mass, gives 1.64 cal.
-  - The swept TE puts the fixed fin's tip on the ground first: it reaches 12 mm past the base, the ailerons stop 4 mm short of it.
+  - The swept TE puts the fixed fin's tip on the ground first: it reaches 12 mm past the base, while the ailerons end 4 mm ahead of the base, 16 mm short of the fin tip.
 - **Aileron: ±5°, the Peregrine planform rule.** It spans y 0.8–55 and runs from the hinge to the trailing edge, a chord of 17.5–29.8 mm aft of the hinge.
   - The span is fixed by field service: the 54 mm shaft must come out into the cut-out.
   - Authority is 29× the 0.011 target. Travel, not size, sets the hinge loads, so travel is what is limited.
-  - **Servo end points at ±10° of servo (±5° aileron) and the Vega's ±5° command limit are mandatory.** A mechanical stop at ±6° is the backup (next item).
-- **Mechanical travel stop at ±6°.** A Ø4 × 12 hardened dowel lies in the aileron's split plane, 13 mm below the hinge, clamped by the two halves like the drive dowel. It reaches 3.5 mm into a pocket in the outer hinge pillar. The pocket is 6.72 mm wide, so its side walls stop the pin at ±6.0° whatever the servo does. Its roof stays 2.9 mm under the outer bearing seat.
-  - At full servo stall (3.65 N·m at the aileron) the pin load is 281 N: 22 MPa of shear and 114 MPa of bending in the hardened pin; 20.0 MPa on the PC pocket wall (×2.2, in-layer); 9.1 MPa in the halves (×4.9). In practice the horn's M2 pivot screw yields first, at 1.66 N·m at the aileron, and the pocket is then at ×4.9.
-  - Aero at ±6°, α 6°, the design q: servo 10.5×, bearing C0r/P 2.4, shaft 2.2. All are ≥ 2, so the stop angle is inside the sized envelope.
-  - The verifier sweeps the servo's whole reachable throw: the pin clears the can through ±5°; nothing touches inside ±6°; the pin bites the pocket by ±6.3°; and up to the stop nothing else (aileron, crank, horn, links) touches.
-  - Field service: once the halves are off, the pin lifts out of the pocket.
+  - **Servo end points at ±10° of servo (±5° aileron) and the Vega's ±5° command limit are mandatory.** A mechanical stop at ±6.5° is the backup (next item).
+- **Mechanical travel stop at ±6.5°, on the pushrod.**
+  - **How it works:** two M2 nuts, each over a Ø6 washer, are locked on the pushrod either side of a 6 mm PC shelf. The shelf grows out of the servo bay's fin-side web at Z 57–63, and the rod passes it through a Ø3 hole. Each washer sits 1.81 mm off the shelf at neutral, which is the rod's travel at 6.5° of aileron (crank 16 × sin 6.5°).
+  - **Why here:** the stop's reaction goes from the rod straight into the can. The crank, shaft, bearings and aileron never carry more than the aero load. An earlier pin stop at the aileron root sent T / 13 mm through the shaft outboard of the outer bearing: about 330 N at full stall, past C0r. A crank stop would also have kept the force off the shaft, but a shelf under the crank arm blocks fitting the crank from the aft end.
+  - **Shaft and bearings at the stop:** aero at ±6.5°, α 6°, the design q gives outer bearing C0r/P 2.2, shaft 2.0, servo 9.8×.
+  - **The stop's own load:**
+    - At full servo stall the rod pushes 228 N into the shelf: 17.0 MPa of bending (×2.7, in-layer), 10.8 MPa under the washer, and the 19 mm of M2 rod above the shelf is far from buckling (Euler 1200 N).
+    - In practice the horn's M2 pivot screw, the existing fuse, yields first, at a rod force of 104 N. The shelf is then at ×5.8.
+  - **What the verifier checks:** it sweeps the servo's whole reachable throw in 0.25° steps.
+    - The stacks clear the shelf through ±5° and touch nothing inside ±6.5°.
+    - A washer lands on the shelf by ±6.8°.
+    - Up to the stop nothing else touches (aileron, crank, horn, ball links, rod, stacks).
+    - It also measures the shelf section.
 - **Servo and bearings: MKS HV6160 and NSK 684AZZ, as on the Peregrine.**
   - At the design point the servo margin is 12.1×. The bearings' C0r/P is 2.8, and the shaft's factor is 2.5.
   - A Ø5–6 shaft would need a thicker aileron (and fin) for no gain at ±5°.
@@ -106,7 +113,8 @@ Frame: Z = 0 at the base, +Z forward; x from the nose tip = 1397.68 − Z. Fins 
 | Paper aft tube | The forward 237.2 mm of the kit's slotted AT-98/18 tube (x 940.5–1177.7). The 220 mm cut off its aft end carries all the kit slots |
 | Kit coupler (AC-98, 203.2) | At the joint with the forward AT-98/18 tube (x 940.5), glued as the kit |
 | Fixed fins | 1/4 in carbon plate to `FixedFin_Zephyr.dxf`. Through-the-wall tab Z 55–175 glued to the motor tube; root LE at Z 245.0 (x 1152.65, the drawing's station) |
-| Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° (stop pin at Z 21, pocket in the outer hinge pillar: ±6°) |
+| Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° (mechanical stop ±6.5° on the pushrod) |
+| Stop shelf | On each servo bay's fin-side web, Z 57–63, round the pushrod (Ø3 hole), with the stop nuts above and below it |
 | Motor tube | 38 mm × 609.6, aft end Z 12.7 (as the kit), forward end Z 622.3 (x 775.4); motors hang 12.7 mm out of its aft end (as the Peregrine) |
 | Can seal | The kit's slotted ring at Z 251 (x 1146.7), on the motor tube over the can's shoulder: the can's gas seal |
 | Motor-tube top | The kit ring with the eyebolt at Z 616–622 (x 775–782): it carries the tube's forward end, seals the annulus and anchors the shock cord, in the recovery bay |
@@ -136,7 +144,7 @@ Run `tools/tailsteer_estimate.py --airframe Zephyr`.
 | 5°, α 6° (sizing) | 0.234 N·m | 0.117 N·m | 27.7 N at r 81.5 | servo 12.1× (6.0 V), bearing C0r/P 2.8 (outer 80.9 N), shaft 2.5 (179 MPa), horn screw 7.1 |
 
 - **Envelope:** all factors ≥ 2 up to M 0.85 with Prandtl–Glauert. That is 288 m/s at ISA sea level and 277 m/s on a −5 °C day. The design point is a Mach number, and its q = 0.7 p M² at sea-level pressure does not depend on temperature. At the J510W's 237.4 m/s (ISA) the factors are servo 19.1×, bearing 4.4, shaft 3.9, horn screw 11.1. The speeds and Mach numbers in this README are ISA (the sims' atmosphere).
-- **At the stop (±6°):** servo 10.5×, bearing 2.4, shaft 2.2 (see Design choices).
+- **At the stop (±6.5°):** servo 9.8×, bearing 2.2, shaft 2.0; the stop's reaction stays in the rod and the can (see Design choices).
 - **Crank and horn:** in flight the pushrod carries 15 N and every crank part has a factor of 22 or more. At servo stall into a jammed aileron, the horn's M2 × 10 12.9 pivot screw yields first, at 0.83 N·m of servo torque.
 - **Aileron drive:** the dowel's bearing pressure in the PC is ×17.8 in flight and ×2.5 when the horn screw yields.
 - **Landing:** the 4 mm annealed silver-steel shaft yields at about 70 N on the aileron, as on the Peregrine; it is the fuse.
@@ -208,7 +216,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 8. **Fins:** tabs through the slots onto the motor tube.
    - Root fillets: leg at most 10 mm (the hatch rebates are 15.4 mm away), and stop 5 mm forward of the aileron cut-out (Z ≥ 43).
    - Swing the aileron through ±5° loosely before the epoxy cures.
-9. **Shafts and ailerons:** as for the Peregrine (dowel, halves, 0.8 mm root shim, then the crank set screw). Before the halves close, drop the Ø4 × 12 stop pin into the pocket in the outer hinge pillar (below the shaft hole); the halves clamp it in their split-plane groove. Check that the aileron stops at about ±6° by hand.
+9. **Shafts and ailerons:** as for the Peregrine (dowel, halves, 0.8 mm root shim, then the crank set screw). 
 10. **Switch:** sector B, as for the Peregrine.
 11. **Forward end of the can.**
     - Run the signal pair through the kit's slotted ring and pot it; fill its slots with epoxy so it seals.
@@ -222,8 +230,9 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 13. **Servos.**
     - Centre each servo at 1520 µs.
     - Drill the metal arm Ø2.1 at **8 mm** from the spline. Fit the pivot (M2 × 10 12.9, 0.3 shim, ball, nut on the case side).
-    - Fit the lug bolts. Set each pushrod to 52 mm between ball centres.
-    - **Program the end points to ±10° of servo (±5° of aileron). This is mandatory**; the ±6° stop is only the backup. Check by commanding full travel: the aileron must stop short of the pin.
+    - Stop stacks: before fitting the second ball link, thread a nut and a Ø6 washer onto the rod, pass the rod through the shelf hole, and add a washer and a nut. Fit the links (52 mm between ball centres), centre the aileron, and set each washer 1.81 mm off the shelf with a feeler (a 1.8 mm drill shank). Lock the nuts with thread locker.
+    - Fit the lug bolts.
+    - **Program the end points to ±10° of servo (±5° of aileron). This is mandatory**; the ±6° stop is only the backup. Check by commanding full travel: the washers must not touch the shelf.
 14. **Wiring and LiPo:** in sector A, as for the Peregrine. The nose-joint connector gets its lanyards.
 15. **Rail buttons:** the aft one in the can's insert, the forward one with the kit weld nut at x 1045.3. **Retainer:** AeroPack RA38L on the motor tube's aft end.
 16. **Bench:**
@@ -238,7 +247,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | 1/4 in (6.35 mm) woven carbon-fibre plate | ~3 × 260 × 160 mm | Fixed fins (instead of birch ply) |
 | 38 mm motor tube, 609.6 mm (24 in) | 1 | Motor mount (instead of the kit's 279.4) |
 | Kit rings 38/98, both | 2 | Slotted ring: can seal at Z 251. Eyebolt ring: motor-tube top and shock-cord anchor |
-| Ø4 × 12 hardened dowel pin (ISO 8734) | 3 (+ spares) | Travel stop pins |
+| M2 nut + M2 large washer (Ø6) | 6 each | Travel stop stacks on the pushrods |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
 | 26 AWG twisted pair | ~1.0 m | Vega to the tail |
 | 60 in parachute | 1 | Replaces the kit's 36 in |
@@ -260,7 +269,7 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 - **Mach 0.70, not 0.8.** On the component-mass basis no commercial 38 mm motor gets the built rocket above M 0.70. Reaching 0.8 needs about 500 g less mass, or a 54 mm mount (a new hinge layout). The hinge is cleared to M 0.85 either way.
 - **Tail mass +877 g.** The carbon fins are 626 g of it.
 - **Servo lash** is unpublished. The bench check decides; at a 2.0 ratio, up to about 0.7° at the servo still meets 0.5° at the aileron.
-- **Travel stop:** the PC pocket wall carries full servo stall with factor 2.2. Print tolerance moves the stop angle by about ±0.5° per 0.1 mm of pocket width; check it by hand (step 9).
+- **Travel stop:** the stop angle is set by the nut positions (0.1 mm of gap is about 0.36°), not by print tolerance. Re-check the gaps after any pushrod adjustment.
 - **Drift:** single deployment at apogee from about 1.5 km.
 
 ## Verification
@@ -271,8 +280,8 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork   # max q, CG/CP per motor
 ```
 
-`verification.json` holds the last Zephyr run: 70/70 passed (136/136 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved, gaps over the travel, tail-first landing), run on the Zephyr render, plus four for the travel stop. Measured:
-- stop pin 0.23 mm clear of the pocket at ±5°, nothing touching inside ±6°, the pin biting the pocket by ±6.3°, and nothing else touching through the servo's throw up to the stop (servo ±12.1°);
+`verification.json` holds the last Zephyr run: 71/71 passed (137/137 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus five for the travel stop. Measured:
+- stop stacks 0.41 mm clear of the shelf at ±5°, nothing touching inside ±6.5°, a washer on the shelf by ±6.8°, nothing else touching over the servo's throw up to the stop (servo ±13.1°, 53 steps), shelf 6.0 mm deep where the washer lands;
 - aileron-to-can and aileron-to-fin gaps 0.8 mm;
 - horn nut to can 0.65 mm;
 - pushrod links to can 3.3 mm;

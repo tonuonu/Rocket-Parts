@@ -3,12 +3,12 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 31
+   "value": 30
   },
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "282.0 cm3"
+   "value": "283.9 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
@@ -33,12 +33,12 @@
   {
    "check": "AileronTappedHalf is one closed solid",
    "passed": true,
-   "value": "4.2 cm3"
+   "value": "4.3 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
    "passed": true,
-   "value": "7.4 cm3"
+   "value": "7.6 cm3"
   },
   {
    "check": "ShaftDrillJig is one closed solid",
@@ -239,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8520 rays, thin: []"
+   "value": "8550 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -307,7 +307,25 @@
    "passed": true,
    "value": {
     "-5.0": -10.04,
+    "-4.5": -9.03,
+    "-4.0": -8.02,
+    "-3.5": -7.01,
+    "-3.0": -6.01,
+    "-2.5": -5.0,
+    "-2.0": -4.0,
+    "-1.5": -3.0,
+    "-1.0": -2.0,
+    "-0.5": -1.0,
     "0.0": -0.0,
+    "0.5": 1.0,
+    "1.0": 2.0,
+    "1.5": 3.0,
+    "2.0": 4.0,
+    "2.5": 5.0,
+    "3.0": 6.01,
+    "3.5": 7.01,
+    "4.0": 8.02,
+    "4.5": 9.03,
     "5.0": 10.04
    }
   },
@@ -317,9 +335,9 @@
    "value": 2.008
   },
   {
-   "check": "aileron travel +-5 deg: nothing collides (aileron, crank, pushrod, horn)",
+   "check": "aileron travel +-5 deg in 21 steps: nothing collides (aileron, crank, pushrod, horn, stop stacks)",
    "passed": true,
-   "value": 3
+   "value": 21
   },
   {
    "check": "aileron to can gap >= 0.78 mm over the travel (0.8 by design)",
@@ -342,27 +360,32 @@
    "value": 0.65
   },
   {
-   "check": "stop pin clears the can over the flight travel +-5 deg",
+   "check": "stop stacks clear the shelf over the flight travel +-5 deg",
    "passed": true,
-   "value": 0.23
+   "value": 0.41
   },
   {
-   "check": "stop pin touches nothing inside +-6 deg (the stop angle)",
+   "check": "stop stacks touch nothing inside +-6.5 deg (the stop angle)",
    "passed": true,
    "value": "free"
   },
   {
-   "check": "stop engages by +-6.3 deg (pin into the pocket wall)",
+   "check": "stop engages by +-6.8 deg (a washer on the shelf)",
    "passed": true,
    "value": [
-    0.122,
-    0.122
+    1.796,
+    1.769
    ]
   },
   {
-   "check": "full servo throw: up to the stop (+-6 deg aileron, servo -12.1/+12.1 deg) nothing but the stop touches",
+   "check": "full servo throw: up to the stop (+-6.5 deg aileron, servo -13.1/+13.1 deg, 53 steps) nothing but the stop touches",
    "passed": true,
-   "value": 25
+   "value": 53
+  },
+  {
+   "check": "stop shelf is >= 5.9 mm deep where the washer lands (measured)",
+   "passed": true,
+   "value": 6.0
   },
   {
    "check": "fins and ailerons at full travel stay off the rail",

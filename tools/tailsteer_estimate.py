@@ -128,7 +128,8 @@ def scad_params(airframe):
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
-    stop_keys = "Stop_On Stop_Angle Stop_Pin_D Stop_Dz Stop_Pin_In Stop_Pin_Out Stop_Pocket_W Stop_Pocket_Depth".split()
+    stop_keys = ("Stop_On Stop_Angle Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
+                 " Stop_Shelf_W Stop_Shelf_Arm").split()
     crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
                   "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
     if not OPENSCAD:
@@ -528,30 +529,37 @@ def main():
           " (q %.1f kPa at sea-level pressure)" % (FACTOR_MIN, lo / A_SOUND, lo, lo / A_SOUND * a_cold,
                                                    0.5 * RHO * lo * lo / 1e3))
 
-    # ---- mechanical travel stop (Zephyr): a pin in the aileron's split plane, Stop_Dz below the
-    # hinge, in a pocket of the outer hinge pillar; the pocket's walls stop the aileron at +-Stop_Angle
+    # ---- mechanical travel stop (Zephyr): nut-and-washer stacks on the pushrod either side of a
+    # shelf on the servo bay's fin-side web. The stop reaction goes from the rod into the can, so
+    # the crank, shaft, bearings and aileron carry only the aero load at the stop angle.
     if p.get("Stop_On"):
         a_s = p["Stop_Angle"]
-        H_s, F_s, yc_s = loads(a_s, ALPHA_DESIGN * ALPHA_MARGIN)
         ratio_s = p["Crank_A"] / p["Horn_R"]
-        Ro_s, _ = reactions(F_s, H_s / (p["Crank_A"] * 1e-3), R + yc_s, p["Crank_Xk"])
+        H_s, F_s, yc_s = loads(a_s, ALPHA_DESIGN * ALPHA_MARGIN)
+        Fp_s = H_s / (p["Crank_A"] * 1e-3)
+        Ro_s, Ri_s = reactions(F_s, Fp_s, R + yc_s, p["Crank_Xk"])
         sig_s = F_s * (R + yc_s - xo) * 1e-3 * 1e3 / Z
-        print("\nTravel stop at +-%g deg (pin Ø%g, %g mm below the hinge, %g mm into the pocket):"
-              % (a_s, p["Stop_Pin_D"], p["Stop_Dz"], p["Stop_Pin_In"]))
-        print("  aero at the stop angle, alpha 6 deg, %.1f kPa effective: hinge %.3f N m, servo %.1fx, bearing C0r/P %.1f,"
-              " shaft %.1f" % (Q_MAX / 1e3, H_s, SERVO["stall_Nm"][6.0] / (H_s / ratio_s), BEARING["C0r"] / Ro_s,
-                               SHAFT_YIELD / sig_s))
-        for lab, T_ in (("servo stall 8.4 V", SERVO["stall_Nm"][8.4] * ratio_s), ("horn-screw yield", T_stud * ratio_s)):
-            Fpin = T_ / (p["Stop_Dz"] * 1e-3)
-            d_ = p["Stop_Pin_D"]
-            arm = p["Flap_Root_Gap"] + p["Stop_Pin_In"] / 2      # pin root (aileron face) to the pocket load
-            s_sh = Fpin / (math.pi * d_ ** 2 / 4)
-            s_b = Fpin * arm / (math.pi * d_ ** 3 / 32)
-            s_pk = Fpin / (d_ * p["Stop_Pin_In"])
-            s_ai = Fpin / (d_ * p["Stop_Pin_Out"])
-            print("  %s, %.2f N m at the aileron: pin load %.0f N | pin shear %.0f MPa, bending %.0f MPa (hardened,"
-                  " yield ~1200) | pocket wall (PC in-layer) %.1f MPa (x%.1f) | pin bearing in the halves %.1f MPa (x%.1f)"
-                  % (lab, T_, Fpin, s_sh, s_b, s_pk, PC["sigma_in"] / s_pk, s_ai, PC["sigma_in"] / s_ai))
+        print("\nTravel stop at +-%g deg of aileron (pushrod stacks %.2f mm off a %.0f mm shelf at Z %.0f-%.0f):"
+              % (a_s, p["Stop_Gap"], p["Stop_Shelf_Z1"] - p["Stop_Shelf_Z0"], p["Stop_Shelf_Z0"], p["Stop_Shelf_Z1"]))
+        print("  shaft and bearings at the stop angle, alpha 6 deg, %.1f kPa effective (aero %.1f N at r %.1f +"
+              " pushrod %.1f N; the stop reaction stays in the rod and the can):" % (Q_MAX / 1e3, F_s, R + yc_s, Fp_s))
+        print("    outer bearing %.1f N (C0r/P %.1f), inner %.1f N (%.1f); shaft %.0f MPa (factor %.1f); servo %.1fx"
+              % (Ro_s, BEARING["C0r"] / Ro_s, Ri_s, BEARING["C0r"] / Ri_s, sig_s, SHAFT_YIELD / sig_s,
+                 SERVO["stall_Nm"][6.0] / (H_s / ratio_s)))
+        w_, t_, arm_ = p["Stop_Shelf_W"], p["Stop_Shelf_Z1"] - p["Stop_Shelf_Z0"], p["Stop_Shelf_Arm"]
+        a_w = math.pi * ((p["Stop_Washer_D"] / 2) ** 2 - (p["Stop_Hole_D"] / 2) ** 2)
+        d_root = 1.6                                   # M2 thread root
+        for lab, Fr in (("servo stall 8.4 V", SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)),
+                        ("horn-screw yield (the fuse)", T_stud / (p["Horn_R"] * 1e-3))):
+            s_sh = Fr * arm_ * 6 / (w_ * t_ ** 2)
+            s_wa = Fr / a_w
+            L_b = p["Servo_ZO"] - p["Stop_Shelf_Z1"]
+            P_cr = math.pi ** 2 * 200e3 * (math.pi * d_root ** 4 / 64) / L_b ** 2
+            print("  %s: rod %.0f N into the shelf | shelf bending %.1f MPa (x%.1f, PC in-layer; %.0f x %.0f section,"
+                  " %.2f mm lever) | washer on the PC %.1f MPa | M2 rod in compression %.0f N vs Euler %.0f N"
+                  % (lab, Fr, s_sh, PC["sigma_in"] / s_sh, w_, t_, arm_, s_wa, Fr, P_cr))
+        print("  crank, shaft, bearings and aileron: aero only at the stop (above); the old pin stop put T/13 mm"
+              " through the shaft outboard of the outer bearing")
 
     # ---- flutter, rough. Panel flutter by the NACA TN 4197 fin formula (as used in
     # Apogee's flutter calculator) for the aileron and the fixed fin, and the
