@@ -247,13 +247,16 @@ Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
 Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
 Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
 // Zephyr: a horn clevis. A 2 mm 7075 strap sits on the far side of the ball (0.3 shim),
-// from the pivot to a second hole Horn_Strap_X from the spline, where a Ø5 spacer and an
-// M2 screw into the arm's tapped hole hold it. The pivot screw (ISO 7380 M2 x 12) is in
-// double shear: the stop path holds full servo stall. The strap stays clear of the wall,
-// which comes in close beyond the case end.
+// from the pivot out to a second hole Horn_Strap_X from the spline, beyond the pivot, where
+// a Ø5 spacer and an M2 screw into the arm's tapped hole hold it (an 18 mm MKS metal single
+// arm). Inboard of the pivot there is no room: the ball's link eye, the spline hub and its
+// retaining screw. The pivot screw (ISO 7380 M2 x 12) is in double shear, so the stop path
+// holds full servo stall.
 Horn_Clevis  = Airframe == "Zephyr";
 Horn_Strap   = [2.0, 0.3];   // strap thickness, shim between ball and strap
-Horn_Strap_X = 4;            // the strap's second hole, from the spline axis
+Horn_Strap_X = 14.5;         // the strap's second hole, from the spline axis (link eye clear by 0.5)
+Horn_Arm_L   = Horn_Clevis ? Horn_Strap_X : Horn_R;   // arm hull out to here
+Horn_Screw_Head = [5.5, 3.0];   // arm retaining screw head on the spline (M3 cap head: the larger of M2.5/M3)
 Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5
                + (Horn_Clevis ? Horn_Strap[1] + Horn_Strap[0] : 0);   // grip + 0.5 protrusion
 assert(Horn_Screw_L <= (Horn_Clevis ? 12 : 10), "horn pivot screw too short");
@@ -626,9 +629,12 @@ module Horn_Envelope0(phi=0){
         hull(){
             translate([0, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Arm_W, h=Horn_Arm_T, center=true, $fn=24);
-            translate([-Horn_R, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
+            translate([-Horn_Arm_L, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Arm_W, h=Horn_Arm_T, center=true, $fn=24);
         }
+        if (Horn_Clevis)   // the arm's retaining screw head on the spline
+            translate([0, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=Horn_Screw_Head[0], h=Horn_Screw_Head[1] + Overlap, $fn=24);
         // pivot screw: nut on the case side, head beyond the ball
         translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
             cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
@@ -636,8 +642,9 @@ module Horn_Envelope0(phi=0){
             cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
         if (Horn_Clevis) {
             // strap and its spacer on the centre screw; ISO 7380 button head beyond the strap
+            // 5.5 wide at the pivot, 5 at the spacer end (it clears the fin rib by 0.45)
             hull() for (x=[-Horn_Strap_X, -Horn_R]) translate([x, -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1]), Servo_ZO])
-                rotate([90,0,0]) cylinder(d=Horn_Arm_W, h=Horn_Strap[0], $fn=24);
+                rotate([90,0,0]) cylinder(d=x == -Horn_R ? Horn_Arm_W : 5, h=Horn_Strap[0], $fn=24);
             translate([-Horn_Strap_X, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=5, h=Horn_Ball_U + Ball_D/2 + Horn_Strap[1] - Horn_Plane - Horn_Arm_T/2 + 2*Overlap, $fn=24);
             for (x=[-Horn_Strap_X, -Horn_R])

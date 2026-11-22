@@ -357,7 +357,7 @@
   {
    "check": "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
    "passed": true,
-   "value": 0.65
+   "value": 0.42
   },
   {
    "check": "stop stacks to can gap >= 0.1 mm over the flight travel +-5 deg",
@@ -365,27 +365,32 @@
    "value": 0.27
   },
   {
-   "check": "stop lands at +-6.39 deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal 6.44",
+   "check": "stop lands at -6.39 deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal 6.44",
+   "passed": true,
+   "value": -6.39
+  },
+  {
+   "check": "stop lands at +6.39 deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal 6.44",
    "passed": true,
    "value": 6.39
   },
   {
-   "check": "stop stacks touch nothing up to +-6.34 deg (the landing angle less 0.05)",
+   "check": "stop stacks touch nothing from -6.34 to +6.34 deg (each landing angle less 0.05)",
    "passed": true,
    "value": "free"
   },
   {
-   "check": "stop engages by +-6.7 deg (a washer on the shelf)",
+   "check": "stop engages by -6.69 / +6.69 deg (a washer on the shelf)",
    "passed": true,
    "value": [
     1.475,
-    1.457
+    1.471
    ]
   },
   {
-   "check": "full servo throw: up to the stop (+-6.39153 deg aileron, servo -12.9/+12.9 deg, 53 steps) nothing but the stop touches",
+   "check": "full servo throw: up to each stop (-6.39 / +6.39 deg aileron, servo -12.9 / +12.9 deg, 55 steps) nothing but the stop touches",
    "passed": true,
-   "value": 53
+   "value": 55
   },
   {
    "check": "stop shelf: the washer lands on a flat face supported on both sides within 1 mm of the footprint (a 6 mm bridge, measured)",

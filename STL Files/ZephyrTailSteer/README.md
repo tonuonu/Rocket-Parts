@@ -30,7 +30,7 @@ Cl_δ need scaling to this aileron and fin.
 | Aileron | 2623 mm², ±15° | 1282 mm², **±5°** |
 | Link ratio (crank / horn) | 14 / 9 = 1.56 | 16 / 8 = 2.00 (servo lash counts half) |
 | Roll authority at full travel | Cl 1.09 (0.073 /deg × 15°) | Cl 0.32 (0.064 /deg × 5°) = 29× the fins' own induced roll |
-| Factors at the design point (servo / bearing / shaft / horn screw) | 5.7× / 3.4 / 3.1 / 3.8 | 12.1× / 2.8 / 2.5 / 7.1 |
+| Factors at the design point (servo / bearing / shaft / horn screw) | 5.7× / 3.4 / 3.1 / 3.8 | 12.1× / 2.8 / 2.5 / 143 (the clevis pivot in double shear) |
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
 | Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at about ±6.4°** on the pushrod |
 | Canards | On the nose | Removed |
@@ -86,11 +86,11 @@ cannot move aft into the motor retainer's keep-out.
       | M2 rod, tension | 113 MPa | ×4.0 |
       | M2 rod, compression (19.1 mm from the upper stack to the horn ball) | 228 N against Euler 1740 N | ×7.6 |
       | Horn pivot (double shear in the clevis) | 59 MPa | ×9.2 |
-      | Servo arm (7075), its own half plus the strap's | 239 MPa | ×2.1 |
-      | Clevis strap (7075) | 124 MPa | ×4.0 |
+      | Servo arm (7075), at the hub: the whole F × 8 mm | 318 MPa | ×1.6 |
+      | Clevis strap (7075), 6.5 mm from its spacer to the pivot (5 mm wide there) | 222 MPa | ×2.2 |
       | Horn-end ball link | 342 N (×1.5) | metal-body links, pull-tested |
 
-    - **Horn clevis:** the old single-shear M2 stud would have yielded at 104 N, so a drive into the stop would have bent it. The pivot is now a clevis like the crank end. A 2 mm 7075 strap sits on the far side of the ball (0.3 shim). It runs from the pivot to a second hole 4 mm from the spline, where a Ø5 × 5.4 spacer and an M2 screw into a tapped hole in the arm hold it. Further out the wall comes too close to the strap beyond the case end. The ISO 7380 M2 × 12 pivot screw is in double shear, and the pivot only yields at 16.7 N·m of servo torque (9× stall).
+    - **Horn clevis:** the old single-shear M2 stud would have yielded at 104 N, so a drive into the stop would have bent it. The pivot is now a clevis like the crank end. A 2 mm 7075 strap sits on the far side of the ball (0.3 shim). It runs from the pivot outward to a second hole 14.5 mm from the spline, where a Ø5 × 5.4 spacer and an M2 screw into a tapped hole in the arm hold it; the arm is MKS's 18 mm metal single arm. There is no room inboard of the pivot: the ball's link eye (the spacer clears it by 0.5 mm), the spline hub and the arm's retaining screw (modelled as an M3 cap head, Ø5.5 × 3, the larger of the likely sizes; check it). The ISO 7380 M2 × 12 pivot screw is in double shear, and the pivot only yields at 16.7 N·m of servo torque (9× stall).
   - **What the verifier checks:** it sweeps the servo's whole reachable throw in 0.25° steps.
     - The stacks stay ≥ 0.1 mm off the can through ±5° and touch nothing up to ±6.45°.
     - The washers land at ±6.39° (measured to 0.01°) and bite by 0.3° past it.
@@ -131,7 +131,7 @@ Frame: Z = 0 at the base, +Z forward; x from the nose tip = 1397.68 − Z. Fins 
 | Fixed fins | 1/4 in carbon plate to `FixedFin_Zephyr.dxf`. Through-the-wall tab Z 55–175 glued to the motor tube; root LE at Z 245.0 (x 1152.65, the drawing's station) |
 | Ailerons | Peregrine design, 1282 mm² each; hinge radial at Z 34; ±5° (mechanical stop about ±6.4° on the pushrod) |
 | Stop shelf | Bridges the servo bay's fin-side web and the floor end, Z 57–63, round the pushrod (Ø3 hole), with the stop nuts above and below it |
-| Horn | Metal arm, pivot at 8 mm; clevis strap on the far side of the ball, from the pivot to a tapped hole at 4 mm |
+| Horn | MKS 18 mm metal single arm, pivot at 8 mm; clevis strap on the far side of the ball, from the pivot out to a tapped hole at 14.5 mm |
 | Motor tube | 38 mm × 609.6, aft end Z 12.7 (as the kit), forward end Z 622.3 (x 775.4); motors hang 12.7 mm out of its aft end (as the Peregrine) |
 | Can seal | The kit's slotted ring at Z 251 (x 1146.7), on the motor tube over the can's shoulder: the can's gas seal |
 | Motor-tube top | The kit ring with the eyebolt at Z 616–622 (x 775–782): it carries the tube's forward end, seals the annulus and anchors the shock cord, in the recovery bay |
@@ -158,9 +158,9 @@ Run `tools/tailsteer_estimate.py --airframe Zephyr`.
 | Case | Hinge | Servo (÷ 2.0) | Aileron force | Factors |
 |---|---|---|---|---|
 | 5°, α 4° | 0.217 N·m | 0.109 N·m | 26.0 N | — |
-| 5°, α 6° (sizing) | 0.234 N·m | 0.117 N·m | 27.7 N at r 81.5 | servo 12.1× (6.0 V), bearing C0r/P 2.8 (outer 80.9 N), shaft 2.5 (179 MPa), horn screw 7.1 |
+| 5°, α 6° (sizing) | 0.234 N·m | 0.117 N·m | 27.7 N at r 81.5 | servo 12.1× (6.0 V), bearing C0r/P 2.8 (outer 80.9 N), shaft 2.5 (179 MPa), horn pivot 143 (double shear) |
 
-- **Envelope:** all factors ≥ 2 up to M 0.85 with Prandtl–Glauert. That is 288 m/s at ISA sea level and 277 m/s on a −5 °C day. The design point is a Mach number, and its q = 0.7 p M² at sea-level pressure does not depend on temperature. At the J510W's 237.4 m/s (ISA) the factors are servo 19.1×, bearing 4.4, shaft 3.9, horn screw 11.1. The speeds and Mach numbers in this README are ISA (the sims' atmosphere).
+- **Envelope:** all factors ≥ 2 up to M 0.85 with Prandtl–Glauert. That is 288 m/s at ISA sea level and 277 m/s on a −5 °C day. The design point is a Mach number, and its q = 0.7 p M² at sea-level pressure does not depend on temperature. At the J510W's 237.4 m/s (ISA) the factors are servo 19.1×, bearing 4.4, shaft 3.9, horn pivot 224. The speeds and Mach numbers in this README are ISA (the sims' atmosphere).
 - **At the stop (6.44°):** servo 9.9×, bearing 2.3, shaft 2.0; the stop's reaction stays in the rod and the can (see Design choices).
 - **Crank and horn:** in flight the pushrod carries 15 N and every crank part has a factor of 22 or more. At full stall (228 N): crank cheeks ×3.0, arm root ×2.5, pivot dowel ×3.1, its seat in the PC ×1.9; the horn clevis ×9.2.
 - **Aileron drive:** the dowel's bearing pressure in the PC is ×17.8 in flight. In a jam the shaft yields in torsion first (2.87 N·m at the aileron).
@@ -246,7 +246,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
     - Slide the forward kit tube over ring and coupler and glue it.
 13. **Servos.**
     - Centre each servo at 1520 µs.
-    - Drill the metal arm Ø2.1 at **8 mm** from the spline, and drill and tap an M2 hole at 4 mm. Cut the clevis strap from 2 mm 7075, 5.5 mm wide, with two holes 4 mm apart.
+    - Use MKS's 18 mm metal single arm. Drill it Ø2.1 at **8 mm** from the spline, and drill and tap an M2 hole at 14.5 mm. Cut the clevis strap from 2 mm 7075, 5.5 mm wide at the pivot and 5 mm at the other end, with two holes 6.5 mm apart.
     - Fit the pivot: ISO 7380 M2 × 12 button head through the strap, a 0.3 shim, the ball, a 0.3 shim, the arm and an M2 nut on the case side (thread-locked).
     - Fit the strap's other end: an ISO 7380 M2 × 10 through the strap and a Ø5 × 5.4 mm spacer into the arm's tapped hole (thread-locked).
     - Stop stacks: before fitting the second ball link, thread a nut and a Ø6 washer onto the rod, pass the rod through the shelf hole, and add a washer and a nut. Fit the links (52 mm between ball centres), centre the aileron, and set each washer 1.80 mm off the shelf with a feeler (a 1.8 mm drill shank). Lock the nuts with thread locker.
@@ -267,7 +267,8 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | 38 mm motor tube, 609.6 mm (24 in) | 1 | Motor mount (instead of the kit's 279.4) |
 | Kit rings 38/98, both | 2 | Slotted ring: can seal at Z 251. Eyebolt ring: motor-tube top and shock-cord anchor |
 | M2 nut + M2 large washer (Ø6) | 6 each | Travel stop stacks on the pushrods |
-| 7075 strap 2 × 5.5 mm, holes 4 mm apart + Ø5 × 5.4 spacer + ISO 7380 M2 × 10 | 3 each | Horn clevis (into a tapped hole in the arm) |
+| MKS metal single arm, 18 mm | 3 | Horn (instead of the stock arm) |
+| 7075 strap 2 × 5.5 mm, holes 6.5 mm apart + Ø5 × 5.4 spacer + ISO 7380 M2 × 10 | 3 each | Horn clevis (into a tapped hole in the arm at 14.5 mm) |
 | ISO 7380 M2 × 12 (10.9) | 3 | Horn pivot through the clevis (replaces the M2 × 10 12.9) |
 | Metal-body M2 ball links, steel ball | 3 (horn end) | Stop load path: must hold 342 N (pull-test them) |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
@@ -302,9 +303,9 @@ The kit's plastic nose cone, spacer rails and fins are not used.
 java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zephyr-CamNose.ork   # max q, CG/CP per motor
 ```
 
-`verification.json` holds the last Zephyr run: 72/72 passed (138/138 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus six for the travel stop. Measured:
-- stop stacks ≥ 0.27 mm off the can through ±5°; landing at ±6.39°, nothing touching up to ±6.34°, biting by ±6.7°; nothing else touching over the servo's throw up to the stop (servo ±12.9°, 53 steps, the full pair list including rod and stacks against servo, covers and LiPo); the landing face flat across the washer footprint and falling away 1 mm on both sides (a 6 mm bridge);
-- the servo with the clevised horn lifts out of both hatch types;
+`verification.json` holds the last Zephyr run: 73/73 passed (139/139 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus seven for the travel stop. Measured:
+- stop stacks ≥ 0.27 mm off the can through ±5°; landing at −6.39° and +6.39° (each side measured and swept to its own angle), nothing touching up to ±6.34°, biting by ±6.69°; nothing else touching over the servo's throw up to the stop (servo ±12.9°, 53 steps, the full pair list including rod and stacks against servo, covers and LiPo); the landing face flat across the washer footprint and falling away 1 mm on both sides (a 6 mm bridge);
+- the servo with the clevised horn (and its retaining-screw head) lifts out of both hatch types; horn to can 0.42 mm over the travel;
 - aileron-to-can and aileron-to-fin gaps 0.8 mm;
 - horn nut to can 0.65 mm;
 - pushrod links to can 3.3 mm;

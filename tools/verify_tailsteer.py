@@ -663,23 +663,25 @@ def verify(af, tmp):
                 mid = (lo + hi) / 2
                 lo, hi = (lo, mid) if inter(pose(sg * mid)["stk"], can) > 1e-3 else (mid, hi)
             return hi
-        a_c = min(first_contact(-1), first_contact(1))
-        record("stop lands at +-%.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
-               % (a_c, a_stop), p["Flap_Max"] + 0.5 <= a_c <= a_stop + 0.3, round(a_c, 2))
-        sweep = sorted({x * 0.25 for x in range(-int(4 * a_c), int(4 * a_c) + 1)} | {-(a_c - 0.05), a_c - 0.05})
-        inside = [d for d in sweep if abs(d) <= a_c - 0.05 + 1e-9]
+        a_cm, a_cp = first_contact(-1), first_contact(1)
+        for sg, a_c in ((-1, a_cm), (1, a_cp)):
+            record("stop lands at %+.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
+                   % (sg * a_c, a_stop), p["Flap_Max"] + 0.5 <= a_c <= a_stop + 0.3, round(sg * a_c, 2))
+        # each side swept to its own landing angle
+        sweep = sorted({x * 0.25 for x in range(-int(4 * a_cm), int(4 * a_cp) + 1)}
+                       | {-(a_cm - 0.05), a_cp - 0.05, -a_cm, a_cp})
+        inside = [d for d in sweep if -(a_cm - 0.05) - 1e-9 <= d <= a_cp - 0.05 + 1e-9]
         early = [d for d in inside if inter(pose(d)["stk"], can) > 1e-3]
-        record("stop stacks touch nothing up to +-%.2f deg (the landing angle less 0.05)" % (a_c - 0.05), not early,
-               early or "free")
-        a_stop = a_c
-        late = [inter(pose(sg * (a_stop + 0.3))["stk"], can) for sg in (-1, 1)]
-        record("stop engages by +-%.1f deg (a washer on the shelf)" % (a_stop + 0.3), min(late) > 1e-3,
-               [round(v, 3) for v in late])
+        record("stop stacks touch nothing from %+.2f to %+.2f deg (each landing angle less 0.05)"
+               % (-(a_cm - 0.05), a_cp - 0.05), not early, early or "free")
+        late = [inter(pose(-(a_cm + 0.3))["stk"], can), inter(pose(a_cp + 0.3)["stk"], can)]
+        record("stop engages by %+.2f / %+.2f deg (a washer on the shelf)" % (-(a_cm + 0.3), a_cp + 0.3),
+               min(late) > 1e-3, [round(v, 3) for v in late])
         hits2 = []
         for d in sweep:
             hits2 += collisions(d, pose(d), skip=("stop stack/can",))
-        record("full servo throw: up to the stop (+-%g deg aileron, servo %+.1f/%+.1f deg, %d steps) nothing but"
-               " the stop touches" % (a_stop, solve_phi(-a_stop), solve_phi(a_stop), len(sweep)),
+        record("full servo throw: up to each stop (%+.2f / %+.2f deg aileron, servo %+.1f / %+.1f deg, %d steps) nothing"
+               " but the stop touches" % (-a_cm, a_cp, solve_phi(-a_cm), solve_phi(a_cp), len(sweep)),
                not hits2, hits2[:6] or len(sweep))
         # the lower washer's landing face, measured: rays up from below the shelf. Flat at the shelf's
         # underside across the washer footprint, and supported on both sides (45 deg corbels reaching

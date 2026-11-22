@@ -128,7 +128,7 @@ def scad_params(airframe):
             "Horn_R Crank_Xk Servo_Theta Servo_Rc Servo_ZO Pushrod_L Horn_Ball_U Fin_T Can_L Total_H "
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
-    stop_keys = ("Stop_On Stop_Angle Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
+    stop_keys = ("Stop_On Stop_Contact Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
                  " Stop_Shelf_W Stop_Shelf_Arm Horn_Clevis Horn_Strap_T Horn_Screw_L Horn_Strap_X").split()
     crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
                   "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
@@ -271,8 +271,10 @@ def or_outline(p, pts):
         return [(round(x, 3), round(y, 3)) for x, y in pts], area(pts)
     from shapely.geometry import Polygon, box        # only when the clip bites
     out = Polygon(pts).difference(box(X, -1, 1000, Y))
+    if out.geom_type == "MultiPolygon":             # keep the piece on the root (it holds the root LE)
+        out = max(out.geoms, key=lambda g: g.area)
     xy = [(round(x, 3), round(y, 3)) for x, y in list(out.exterior.coords)[:-1]]
-    i0 = xy.index((0.0, 0.0))               # start at the root LE, run the way the outline runs
+    i0 = min(range(len(xy)), key=lambda i: math.hypot(*xy[i]))    # start at the vertex nearest the root LE
     xy = xy[i0:] + xy[:i0]
     if Polygon(xy).exterior.is_ccw != Polygon(pts).exterior.is_ccw:
         xy = [xy[0]] + xy[:0:-1]
@@ -494,11 +496,12 @@ def main():
     T_stud = a1 / s1 * p["Horn_R"] * 1e-3            # servo torque at which the horn pivot yields
     if clevis:
         Fst = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
-        # half the ball force each: the strap cantilevers from its spacer, the arm takes its own half
-        # at the pivot plus the strap's half at the spacer, both from the hub
-        span = p["Horn_R"] - p["Horn_Strap_X"]
-        s_strap = (Fst / 2 * span) / (5.5 * p["Horn_Strap_T"] ** 2 / 6)
-        s_arm = (Fst / 2 * p["Horn_R"] + Fst / 2 * p["Horn_Strap_X"]) / (5.5 * 2.5 ** 2 / 6)
+        # half the ball force each: the strap cantilevers from its spacer (span |X - R|). At the hub
+        # the arm carries its own half at R plus the strap's force and moment at X: the whole
+        # F x R when the spacer is beyond the pivot, F/2 (R + X) when it is inboard
+        X_, R_ = p["Horn_Strap_X"], p["Horn_R"]
+        s_strap = (Fst / 2 * abs(X_ - R_)) / (5.0 * p["Horn_Strap_T"] ** 2 / 6)   # 5 wide at the spacer
+        s_arm = (Fst / 2 * R_ + Fst / 2 * min(X_, R_)) / (5.5 * 2.5 ** 2 / 6)
         print("    horn clevis (strap %.1f mm 7075, ISO 7380 M2 x %.0f 10.9 in double shear): the pivot yields at"
               " %.1f N m of servo torque (%.1fx stall); at stall the arm sees %.0f MPa (x%.1f) and the strap %.0f MPa"
               " (x%.1f, 7075 yield %.0f assumed)" % (p["Horn_Strap_T"], p["Horn_Screw_L"], T_stud,
@@ -593,7 +596,7 @@ def main():
     # shelf on the servo bay's fin-side web. The stop reaction goes from the rod into the can, so
     # the crank, shaft, bearings and aileron carry only the aero load at the stop angle.
     if p.get("Stop_On"):
-        a_s = p["Stop_Angle"]
+        a_s = p["Stop_Contact"]
         ratio_s = p["Crank_A"] / p["Horn_R"]
         H_s, F_s, yc_s = loads(a_s, ALPHA_DESIGN * ALPHA_MARGIN)
         Fp_s = H_s / (p["Crank_A"] * 1e-3)
