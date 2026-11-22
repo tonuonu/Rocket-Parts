@@ -3,7 +3,7 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 30
+   "value": 31
   },
   {
    "check": "FinCan is one closed solid",

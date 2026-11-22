@@ -129,7 +129,8 @@ def scad_params(airframe):
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     stop_keys = ("Stop_On Stop_Contact Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
-                 " Stop_Shelf_W Stop_Shelf_Arm Horn_Clevis Horn_Strap_T Horn_Screw_L Horn_Strap_X").split()
+                 " Stop_Shelf_W Stop_Shelf_Arm Horn_Clevis Horn_Strap_T Horn_Screw_L Horn_Strap_X Horn_Strap_Shim"
+                 " Horn_Cap_X0 Horn_Cap_X1 Ball_D Horn_Pin_L").split()
     crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
                   "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
     if not OPENSCAD:
@@ -464,17 +465,18 @@ def main():
     eye, pin_d, pin_yield = p["Link_Eye_W"], p["Pivot_D"], 1200.0   # hardened dowel (ISO 8734), yield assumed
     pin_eng = (p["Pivot_L"] - gap) / 2             # dowel length in each cheek
     # M2 x 10 12.9 through the horn arm; the ball load acts Ball_Off (CAD) from the arm mid-plane.
-    # With the horn clevis (Zephyr) the screw (ISO 7380, 10.9) is in double shear between the arm
-    # and the strap, and the 7075 arm (2.5) and strap share the bending.
+    # With the horn clevis cap (Zephyr) the pivot is a Ø2 hardened dowel between the arm and the
+    # cap's strap: a clevis pin, bending M = P (L/4 - b/8) over the plates' mid-planes.
     clevis = bool(p.get("Horn_Clevis"))
-    stud_minor, stud_yield, stud_arm = 1.57, (900.0 if clevis else 1080.0), p["Ball_Off"]
-    a_minor = math.pi * stud_minor ** 2 / 4
-    AL7075 = 500.0                                    # MPa, 7075-T6 yield (arm and strap, assumed)
+    stud_minor, stud_yield, stud_arm = 1.57, 1080.0, p["Ball_Off"]
+    AL7075 = 500.0                                    # MPa, 7075-T6 yield (arm and cap, assumed)
+    if clevis:
+        L_cp = p["Ball_Off"] + p["Ball_D"] / 2 + p["Horn_Strap_Shim"] + p["Horn_Strap_T"] / 2
 
     def horn_stress(Fpp):
-        """(pivot stress, its allowable): bending as a stud, or double shear in the clevis."""
+        """(pivot stress, its allowable): bending as a stud, or as a clevis pin."""
         if clevis:
-            return Fpp / (2 * a_minor), 0.6 * stud_yield
+            return Fpp * (L_cp / 4 - p["Ball_D"] / 8) / (math.pi * 2.0 ** 3 / 32), 1200.0
         return Fpp * stud_arm / (math.pi * stud_minor ** 3 / 32), stud_yield
     print("  crank (clevis: cheeks %.1f x %.0f at the pivot (inner %.1f elsewhere), Ø%.0f x %.0f dowel, %.1f in each"
           " cheek, eye %.1f; no torsion) and horn stud:"
@@ -490,23 +492,34 @@ def main():
         print("    %s: pushrod %.0f N | cheek %.1f MPa (x%.1f) | arm root %.1f MPa (x%.1f) | pin %.0f MPa"
               " (x%.1f) | pin bearing in PC %.1f MPa (x%.1f) | horn pivot %s %.0f MPa (x%.2f)"
               % (lab, Fpp, s_cheek, PC["sigma_in"] / s_cheek, s_root, PC["sigma_in"] / s_root, s_pin,
-                 pin_yield / s_pin, s_brg, PC["sigma_in"] / s_brg, "double shear" if clevis else "M2 stud",
+                 pin_yield / s_pin, s_brg, PC["sigma_in"] / s_brg, "clevis dowel" if clevis else "M2 stud",
                  s_stud, a_stud / s_stud))
     s1, a1 = horn_stress(1.0)
     T_stud = a1 / s1 * p["Horn_R"] * 1e-3            # servo torque at which the horn pivot yields
     if clevis:
+        # free body of the clevis cap, no clamping assumed: the dowel loads the arm and the cap's
+        # strap with P/2 each (Z) at R. The strap cantilevers from the saddle face (X0); the cap's
+        # moment about the cap screw's axis, P/2 (Xc - R), goes into the arm's two edges at the
+        # saddle's ends as a couple, plus P/2 on one edge. The cap screw carries no load in the
+        # plane (it only keeps the cap on the arm). The arm takes the whole P R at the hub.
         Fst = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
-        # half the ball force each: the strap cantilevers from its spacer (span |X - R|). At the hub
-        # the arm carries its own half at R plus the strap's force and moment at X: the whole
-        # F x R when the spacer is beyond the pivot, F/2 (R + X) when it is inboard
-        X_, R_ = p["Horn_Strap_X"], p["Horn_R"]
-        s_strap = (Fst / 2 * abs(X_ - R_)) / (5.0 * p["Horn_Strap_T"] ** 2 / 6)   # 5 wide at the spacer
-        s_arm = (Fst / 2 * R_ + Fst / 2 * min(X_, R_)) / (5.5 * 2.5 ** 2 / 6)
-        print("    horn clevis (strap %.1f mm 7075, ISO 7380 M2 x %.0f 10.9 in double shear): the pivot yields at"
-              " %.1f N m of servo torque (%.1fx stall); at stall the arm sees %.0f MPa (x%.1f) and the strap %.0f MPa"
-              " (x%.1f, 7075 yield %.0f assumed)" % (p["Horn_Strap_T"], p["Horn_Screw_L"], T_stud,
-                                                     T_stud / SERVO["stall_Nm"][8.4], s_arm, AL7075 / s_arm,
-                                                     s_strap, AL7075 / s_strap, AL7075))
+        R_, X0, X1 = p["Horn_R"], p["Horn_Cap_X0"], p["Horn_Cap_X1"]
+        Ls = X1 - X0
+        s_strap = (Fst / 2 * (X0 - R_)) / (5.5 * p["Horn_Strap_T"] ** 2 / 6)
+        M_cap = Fst / 2 * ((X0 + X1) / 2 - R_)
+        F_edge = M_cap / Ls + Fst / 2
+        s_edge = F_edge / (2.5 * 1.0)                  # on the arm's 2.5 mm edge, over about 1 mm
+        s_arm = Fst * R_ / (5.5 * 2.5 ** 2 / 6)
+        s_dw, a_dw = horn_stress(Fst)
+        T_stud = SERVO["stall_Nm"][8.4] * min(a_dw / s_dw, AL7075 / s_arm, AL7075 / s_strap)
+        print("    horn clevis cap (7075; Ø2 x %.0f hardened dowel pivot), free body at full stall, pushrod %.0f N:"
+              % (p["Horn_Pin_L"], Fst))
+        print("      dowel as a clevis pin %.0f MPa (x%.1f) | strap, %.1f mm from the saddle, %.0f MPa (x%.1f) |"
+              " cap moment %.2f N m into the arm's edges: %.0f N over %.1f mm, %.0f MPa on the edge (x%.1f) |"
+              " arm at the hub %.0f MPa (x%.1f) | cap screw: no in-plane load"
+              % (s_dw, a_dw / s_dw, X0 - R_, s_strap, AL7075 / s_strap, M_cap / 1e3, F_edge, Ls, s_edge,
+                 1.5 * AL7075 / s_edge, s_arm, AL7075 / s_arm))
+        print("      the horn yields first at %.2f N m of servo torque (%.2fx stall)" % (T_stud, T_stud / SERVO["stall_Nm"][8.4]))
     else:
         print("    the horn stud (ball %.2f mm off the arm mid-plane) yields at %.2f N m of servo torque"
               " (%.1fx the flight need)" % (stud_arm, T_stud, T_stud / Ts))

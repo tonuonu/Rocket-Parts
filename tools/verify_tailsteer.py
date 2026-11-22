@@ -21,6 +21,8 @@ printed fits, strength or flight behaviour.
 Requires numpy, trimesh, manifold3d, rtree, scipy, shapely.
 OpenSCAD: $OPENSCAD, else /Applications/OpenSCAD-dev.app, else openscad on PATH.
 Usage: verify_tailsteer.py [--airframe Peregrine|Zephyr|both] [--output-dir DIR] [--json FILE] [--export]
+  --json    writes {"checks": [...], "params": {...}} for one airframe (the shape of each
+            verification.json), or {"Peregrine": {...}, "Zephyr": {...}} for both
   --export  also writes each airframe's STLs, DXF and verification.json to
             "STL Files/PeregrineTailSteer/" and "STL Files/ZephyrTailSteer/",
             only if every check of every airframe run passes
@@ -204,7 +206,7 @@ def main():
         print("%s: %d/%d checks passed" % (af, sum(c["passed"] for c in r["checks"]), len(r["checks"])))
     print("%d/%d checks passed" % (n_ok, n_all))
     if a.json:
-        Path(a.json).write_text(json.dumps(runs, indent=1))
+        Path(a.json).write_text(json.dumps(runs[afs[0]] if len(afs) == 1 else runs, indent=1))
     if a.export and n_ok != n_all:
         print("not exported: checks failed, the committed STLs/DXFs stay as they are")
     elif a.export:
@@ -225,7 +227,7 @@ def verify(af, tmp):
     tmp.mkdir(parents=True, exist_ok=True)
     af_def = {"Airframe": '"%s"' % af}
     jobs = [(tmp / (n + ".stl"), pt, af_def) for n, pt in PRINTS.items()]
-    envs = ENVS
+    envs = dict(ENVS, **({"clevis0": 42} if af == "Zephyr" else {}))   # the horn clevis cap (Zephyr)
     jobs += [(tmp / (n + ".stl"), pt, af_def) for n, pt in envs.items()]
     jobs += [(tmp / (n + ".dxf"), pt, af_def, "dxf") for n, pt in DXF.items()]
     logs = {}
@@ -601,6 +603,15 @@ def verify(af, tmp):
             lnk = capsule(cb, hb, 3.5)
         rod = capsule(cb + 4 * u, hb - 4 * u, 1.2)
         parts = {"ail": ail, "crk": crk, "hrn": hrn, "lnk": lnk, "rod": rod, "phi": ph}
+        if "clevis0" in m:
+            # the clevis cap turns with the horn; the horn-end ball link's own body: its eye
+            # (Ø Link_Eye_D across the ball, Link_Eye_W thick along the ball's axis) and its shank
+            cap = m["clevis0"].copy()
+            cap.apply_transform(trimesh.transformations.rotation_matrix(math.radians(ph), ax_dir, ax_pt))
+            ew = 4.6
+            parts["cap"] = cap
+            parts["eye"] = trimesh.util.concatenate([cyl(hb - ax_dir * ew / 2, hb + ax_dir * ew / 2, 3.5),
+                                                     capsule(hb - 3.5 * u, hb - 12 * u, 2.0)])
         if stop_on:
             gap, z0, z1, wd, wh = st[2], st[3], st[4], st[5], st[6]
             # stack positions are fixed on the rod: set at neutral, gap to the shelf each side
@@ -614,6 +625,8 @@ def verify(af, tmp):
                  ("crank/can", P["crk"], can), ("horn/can", P["hrn"], can), ("horn/servo", P["hrn"], stat),
                  ("link/can", P["lnk"], can), ("link/servo", P["lnk"], stat), ("link/covers", P["lnk"], m["covers"]),
                  ("link/lipo", P["lnk"], m["lipo"]), ("rod/crank", P["rod"], P["crk"]), ("horn/covers", P["hrn"], m["covers"])]
+        if "cap" in P:
+            pairs += [("clevis cap/link eye", P["cap"], P["eye"])]
         if stop_on:
             pairs += [("rod/can", P["rod"], can), ("rod/servo", P["rod"], stat), ("rod/covers", P["rod"], m["covers"]),
                       ("rod/lipo", P["rod"], m["lipo"]), ("stop stack/can", P["stk"], can),
@@ -666,7 +679,7 @@ def verify(af, tmp):
         a_cm, a_cp = first_contact(-1), first_contact(1)
         for sg, a_c in ((-1, a_cm), (1, a_cp)):
             record("stop lands at %+.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
-                   % (sg * a_c, a_stop), p["Flap_Max"] + 0.5 <= a_c <= a_stop + 0.3, round(sg * a_c, 2))
+                   % (sg * a_c, a_stop), a_c >= p["Flap_Max"] + 0.5 and abs(a_c - a_stop) <= 0.3, round(sg * a_c, 2))
         # each side swept to its own landing angle
         sweep = sorted({x * 0.25 for x in range(-int(4 * a_cm), int(4 * a_cp) + 1)}
                        | {-(a_cm - 0.05), a_cp - 0.05, -a_cm, a_cp})

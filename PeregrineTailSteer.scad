@@ -11,7 +11,8 @@
 // Tail steering for the Apogee Peregrine and the Apogee Zephyr (camera nose,
 // CATS Vega): a printed PC fin can that replaces the aft 220 mm of the aft
 // body tube. Each of the
-// three fixed plywood fins carries a trailing-edge aileron. The aileron hangs
+// three fixed fins (1/4 in plywood on the Peregrine, 1/4 in carbon plate on
+// the Zephyr) carries a trailing-edge aileron. The aileron hangs
 // on a 4 mm steel shaft that runs radially into the can in two NSK 684AZZ
 // shielded bearings (4 x 9 x 4); the aileron is two halves clamped round the
 // shaft. Inside the can a printed clevis crank on the shaft is driven by an
@@ -246,20 +247,24 @@ Horn_Shim  = 0.3;
 Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
 Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
 Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
-// Zephyr: a horn clevis. A 2 mm 7075 strap sits on the far side of the ball (0.3 shim),
-// from the pivot out to a second hole Horn_Strap_X from the spline, beyond the pivot, where
-// a Ø5 spacer and an M2 screw into the arm's tapped hole hold it (an 18 mm MKS metal single
-// arm). Inboard of the pivot there is no room: the ball's link eye, the spline hub and its
-// retaining screw. The pivot screw (ISO 7380 M2 x 12) is in double shear, so the stop path
-// holds full servo stall.
+// Zephyr: a horn clevis cap, one 7075 part. A saddle straddles the arm's outer end (cheeks
+// on both of the arm's edges, Horn_Cap_X from the spline) and keys the cap against turning;
+// from it a 2 mm strap runs back over the far side of the ball (0.3 shim) to the pivot. The
+// pivot is a Ø2 x 10 hardened dowel pressed through arm, ball and strap, in double shear;
+// an M2 screw into the arm's tapped hole at Horn_Strap_X only keeps the cap on. The arm is
+// MKS's 18 mm metal single arm. Inboard of the pivot there is no room: the ball's link eye,
+// the spline hub and its retaining screw.
 Horn_Clevis  = Airframe == "Zephyr";
 Horn_Strap   = [2.0, 0.3];   // strap thickness, shim between ball and strap
-Horn_Strap_X = 14.5;         // the strap's second hole, from the spline axis (link eye clear by 0.5)
+Horn_Strap_X = 14.5;         // the cap screw's tapped hole in the arm, from the spline axis
+Horn_Cap_X   = [12, 17.5];   // saddle, along the arm (the link eye ends at 11.5)
+Horn_Cap_Cheek = 1.5;        // saddle cheek over each of the arm's edges
 Horn_Arm_L   = Horn_Clevis ? Horn_Strap_X : Horn_R;   // arm hull out to here
 Horn_Screw_Head = [5.5, 3.0];   // arm retaining screw head on the spline (M3 cap head: the larger of M2.5/M3)
 Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5
                + (Horn_Clevis ? Horn_Strap[1] + Horn_Strap[0] : 0);   // grip + 0.5 protrusion
-assert(Horn_Screw_L <= (Horn_Clevis ? 12 : 10), "horn pivot screw too short");
+Horn_Pin_L   = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Strap[1] + Horn_Strap[0];   // clevis dowel grip
+assert(Horn_Clevis ? Horn_Pin_L <= 10 : Horn_Screw_L <= 10, "horn pivot too long for its 10 mm screw/dowel");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
@@ -434,6 +439,7 @@ if (Render_Part == 4) TS_Crank_Print();
 if (Render_Part == 5) TS_Aileron_Print(-1);   // screw half
 if (Render_Part == 8) TS_Aileron_Print(1);    // tapped half
 if (Render_Part == 40) Shaft(Defl);
+if (Render_Part == 42 && Horn_Clevis) Servo_Frame() Horn_Clevis_Cap();   // Zephyr: the clevis cap alone
 if (Render_Part == 38) Aileron_Half(-1, Defl);
 if (Render_Part == 39) Aileron_Half(1, Defl);
 if (Render_Part == 6) TS_Coupon();
@@ -635,26 +641,35 @@ module Horn_Envelope0(phi=0){
         if (Horn_Clevis)   // the arm's retaining screw head on the spline
             translate([0, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Screw_Head[0], h=Horn_Screw_Head[1] + Overlap, $fn=24);
-        // pivot screw: nut on the case side, head beyond the ball
-        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
-            cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
-        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
-            cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
         if (Horn_Clevis) {
-            // strap and its spacer on the centre screw; ISO 7380 button head beyond the strap
-            // 5.5 wide at the pivot, 5 at the spacer end (it clears the fin rib by 0.45)
-            hull() for (x=[-Horn_Strap_X, -Horn_R]) translate([x, -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1]), Servo_ZO])
-                rotate([90,0,0]) cylinder(d=x == -Horn_R ? Horn_Arm_W : 5, h=Horn_Strap[0], $fn=24);
-            translate([-Horn_Strap_X, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
-                cylinder(d=5, h=Horn_Ball_U + Ball_D/2 + Horn_Strap[1] - Horn_Plane - Horn_Arm_T/2 + 2*Overlap, $fn=24);
-            for (x=[-Horn_Strap_X, -Horn_R])
-                translate([x, -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1] + Horn_Strap[0]), Servo_ZO]) rotate([90,0,0])
-                    cylinder(d=3.5, h=1.1, $fn=20);
-        } else
+            // Ø2 dowel through arm, ball and strap (flush both sides)
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=2.0, h=Horn_Pin_L, $fn=16);
+            Horn_Clevis_Cap();
+        } else {
+            // pivot screw: nut on the case side, head beyond the ball
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
+                cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
             translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
+        }
         translate([-Horn_R, -Horn_Ball_U, Servo_ZO]) sphere(d=Ball_D, $fn=24);
     }
+}
+// the clevis cap at phi = 0 (servo frame): saddle over the arm's outer end, strap back to
+// the pivot beyond the ball, and the cap screw's ISO 7380 head. No ball, no dowel: the
+// verifier checks it against the horn-end ball link's eye.
+module Horn_Clevis_Cap(){
+    y_in = -(Horn_Plane - Horn_Arm_T/2);                         // arm's case-side face
+    y_st = -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1]);            // strap's inner face
+    h = Horn_Arm_W/2 + Horn_Cap_Cheek;
+    translate([-Horn_Cap_X[1], y_st, Servo_ZO - h]) cube([Horn_Cap_X[1] - Horn_Cap_X[0], y_in - y_st, 2*h]);
+    // strap: 5.5 wide at the pivot, 5 at the cap screw (it clears the fin rib by 0.45)
+    hull() for (x=[-Horn_Strap_X, -Horn_R]) translate([x, y_st, Servo_ZO])
+        rotate([90,0,0]) cylinder(d=x == -Horn_R ? Horn_Arm_W : 5, h=Horn_Strap[0], $fn=24);
+    translate([-Horn_Strap_X, y_st - Horn_Strap[0], Servo_ZO]) rotate([90,0,0]) cylinder(d=3.5, h=1.1, $fn=20);
 }
 module Lipo_Envelope() Fin_Frame(0) Servo_Frame()
     translate([Lipo_Lx0, -Lipo[0]/2, Lipo_Z0]) cube([Lipo[1], Lipo[0], Lipo[2]]);
@@ -1044,7 +1059,8 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
          Shaft_Flat, " ", Cheek_T_In));
 echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
          Stop_Washer[0], " ", Stop_Washer[1], " ", Stop_Hole_D, " ", Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], " ",
-         Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X));
+         Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X, " ",
+         Horn_Strap[1], " ", Horn_Cap_X[0], " ", Horn_Cap_X[1], " ", Ball_D, " ", Horn_Pin_L));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,
