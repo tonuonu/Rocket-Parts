@@ -338,8 +338,10 @@ Bay_Top     = 121;          // sectors B and C
 // pushrod either side of a shelf on the servo bay's fin-side web. The rod passes the
 // shelf in a Ø3 hole; at +-Stop_Angle of aileron a washer lands on the shelf. The stop
 // reaction goes from the rod into the can: the crank, shaft, bearings and aileron see
-// only the aero load, and the horn's M2 pivot screw (the existing fuse) caps the shelf
-// load at its yield.
+// only the aero load. Nothing in the stop path is a fuse: the shelf load is bounded by
+// the servo's stall (228 N of rod force at 8.4 V), and every part from the horn to the
+// shelf holds that at a factor of 1.5 or more (tailsteer_estimate.py). A sustained stall
+// opens the 7.5 A fuse.
 Stop_On      = Airframe == "Zephyr";
 Stop_Angle   = 6.3;                              // the stacks touch nothing inside this
 Stop_Gap     = Crank_A*sin(Stop_Angle) + 0.04;   // rod travel to the stop; +0.04 for the washer's tilt
@@ -1060,7 +1062,8 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
 echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
          Stop_Washer[0], " ", Stop_Washer[1], " ", Stop_Hole_D, " ", Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], " ",
          Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X, " ",
-         Horn_Strap[1], " ", Horn_Cap_X[0], " ", Horn_Cap_X[1], " ", Ball_D, " ", Horn_Pin_L));
+         Horn_Strap[1], " ", Horn_Cap_X[0], " ", Horn_Cap_X[1], " ", Ball_D, " ", Horn_Pin_L, " ",
+         Link_Eye_W, " ", Link_Eye_D));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,

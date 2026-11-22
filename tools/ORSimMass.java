@@ -8,7 +8,10 @@
 // component would be hidden: the mass is folded into the topmost such override (mass and CG), and
 // the tool exits if that component overrides only one of the two.
 // --fins FILE: "x_mm,y_mm" lines, the freeform outline of "Fin set" in fin coordinates (x aft from
-// the root LE, y out from the body). The root leading edge stays where it was.
+// the root LE, y out from the body). The root leading edge stays where it was. With a mass as well,
+// the mass is taken to already hold the fin change (new minus .ork fins, as tailsteer_estimate.py
+// prints it), so the fin set's mass and CG stay pinned at their .ork values and only its aerodynamics
+// change; OpenRocket would otherwise add the new outline's mass a second time.
 // Run with a JDK (the JRE in OpenRocket.app has no compiler):
 //   java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java FILE.ork [dm_kg x_from_tip_m] [--fins FILE]
 //   e.g. PeregrineL2-CamNose.ork 0.460 1.531 (the tail-steering change)
@@ -70,6 +73,17 @@ public class ORSimMass {
                 System.exit(2);
             }
             double le = fs.getComponentLocations()[0].x;   // root leading edge, from the tip
+            if (dm != 0) {
+                // pin the .ork fin mass and CG (an own override, if any, already does)
+                double m0 = fs.isMassOverridden() ? fs.getOverrideMass() : fs.getComponentMass();
+                double cg0 = fs.isCGOverridden() ? fs.getOverrideCGX() : fs.getComponentCG().x;
+                fs.setMassOverridden(true);
+                fs.setOverrideMass(m0);
+                fs.setCGOverridden(true);
+                fs.setOverrideCGX(cg0);
+                System.err.printf("ORSimMass: fin set mass and CG pinned at the .ork's %.4f kg, %.4f m behind the root LE"
+                    + " (the mass given holds the fin change)%n", m0, cg0);
+            }
             List<Coordinate> pts = new ArrayList<>();
             for (String line : Files.readAllLines(new File(fins).toPath())) {
                 line = line.trim();

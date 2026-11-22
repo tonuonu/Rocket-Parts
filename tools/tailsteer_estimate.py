@@ -69,7 +69,7 @@ AIRFRAME = {
     # the fin outline of --fins-csv).
     "Zephyr": dict(
         ork="Zephyr-CamNose.ork",
-        # ORSimMass with --fins (this outline) and the mass change, J510W; rod exit from tools/or_sim
+        # ORSimMass on the .ork as saved (it is the build), J510W; rod exit from tools/or_sim
         or_tail="J510W: max speed 237.4 m/s, CG 0.900 / CP 1.094 m -> 1.91 cal; rod exit 1.07 cal"
                 " (8 ft rail, 3 m/s wind); 60 in parachute 6.5 m/s",
         # the .ork models the whole build (tail steering included): (None, max speed); ISA, 8 ft rail
@@ -130,7 +130,7 @@ def scad_params(airframe):
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     stop_keys = ("Stop_On Stop_Contact Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
                  " Stop_Shelf_W Stop_Shelf_Arm Horn_Clevis Horn_Strap_T Horn_Screw_L Horn_Strap_X Horn_Strap_Shim"
-                 " Horn_Cap_X0 Horn_Cap_X1 Ball_D Horn_Pin_L").split()
+                 " Horn_Cap_X0 Horn_Cap_X1 Ball_D Horn_Pin_L Link_Eye_W Link_Eye_D").split()
     crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
                   "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
     if not OPENSCAD:
@@ -285,7 +285,7 @@ def or_outline(p, pts):
 def main():
     global V_DESIGN, Q_MAX, OR_STATES, OR_CP, BASE_X, CANARD_NET_PER_DEG, CANARD_ALONE_PER_DEG, STL
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--airframe", "--fin-set", dest="airframe", default="Peregrine", choices=sorted(AIRFRAME))
+    ap.add_argument("--airframe", default="Peregrine", choices=sorted(AIRFRAME))
     ap.add_argument("--fins-csv")
     ap.add_argument("--stl-dir", help="STLs to weigh (default: the airframe's export folder)")
     a = ap.parse_args()
@@ -501,25 +501,28 @@ def main():
         # strap with P/2 each (Z) at R. The strap cantilevers from the saddle face (X0); the cap's
         # moment about the cap screw's axis, P/2 (Xc - R), goes into the arm's two edges at the
         # saddle's ends as a couple, plus P/2 on one edge. The cap screw carries no load in the
-        # plane (it only keeps the cap on the arm). The arm takes the whole P R at the hub.
+        # plane (it only keeps the cap on the arm). The arm takes the whole P R at the hub. The load
+        # lies in the arm's and the strap's plane, so both bend edgewise: Z = t w^2 / 6.
         Fst = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
         R_, X0, X1 = p["Horn_R"], p["Horn_Cap_X0"], p["Horn_Cap_X1"]
         Ls = X1 - X0
-        s_strap = (Fst / 2 * (X0 - R_)) / (5.5 * p["Horn_Strap_T"] ** 2 / 6)
+        s_strap = (Fst / 2 * (X0 - R_)) / (p["Horn_Strap_T"] * 5.0 ** 2 / 6)   # 5 wide (its narrow end)
         M_cap = Fst / 2 * ((X0 + X1) / 2 - R_)
         F_edge = M_cap / Ls + Fst / 2
         s_edge = F_edge / (2.5 * 1.0)                  # on the arm's 2.5 mm edge, over about 1 mm
-        s_arm = Fst * R_ / (5.5 * 2.5 ** 2 / 6)
+        s_arm = Fst * R_ / (2.5 * 5.5 ** 2 / 6)         # arm 2.5 thick, 5.5 wide
         s_dw, a_dw = horn_stress(Fst)
-        T_stud = SERVO["stall_Nm"][8.4] * min(a_dw / s_dw, AL7075 / s_arm, AL7075 / s_strap)
+        weakest = min((a_dw / s_dw, "the dowel"), (AL7075 / s_arm, "the arm at the hub"), (AL7075 / s_strap, "the strap"))
+        T_stud = SERVO["stall_Nm"][8.4] * weakest[0]
         print("    horn clevis cap (7075; Ø2 x %.0f hardened dowel pivot), free body at full stall, pushrod %.0f N:"
               % (p["Horn_Pin_L"], Fst))
-        print("      dowel as a clevis pin %.0f MPa (x%.1f) | strap, %.1f mm from the saddle, %.0f MPa (x%.1f) |"
+        print("      dowel as a clevis pin %.0f MPa (x%.1f) | strap, %.1f mm from the saddle, edgewise, %.0f MPa (x%.1f) |"
               " cap moment %.2f N m into the arm's edges: %.0f N over %.1f mm, %.0f MPa on the edge (x%.1f) |"
-              " arm at the hub %.0f MPa (x%.1f) | cap screw: no in-plane load"
+              " arm at the hub, edgewise, %.0f MPa (x%.1f) | cap screw: no in-plane load"
               % (s_dw, a_dw / s_dw, X0 - R_, s_strap, AL7075 / s_strap, M_cap / 1e3, F_edge, Ls, s_edge,
                  1.5 * AL7075 / s_edge, s_arm, AL7075 / s_arm))
-        print("      the horn yields first at %.2f N m of servo torque (%.2fx stall)" % (T_stud, T_stud / SERVO["stall_Nm"][8.4]))
+        print("      the horn yields first at %s, at %.2f N m of servo torque (%.2fx stall)"
+              % (weakest[1], T_stud, T_stud / SERVO["stall_Nm"][8.4]))
     else:
         print("    the horn stud (ball %.2f mm off the arm mid-plane) yields at %.2f N m of servo torque"
               " (%.1fx the flight need)" % (stud_arm, T_stud, T_stud / Ts))
@@ -712,7 +715,12 @@ def main():
     ymax = max(y for _, y in pts)
     zx = lambda x: p["Fin_Base_X"] - x                       # fin x -> Z above the base
     # ailerons: mass from the STL volume, centroid from the planform
-    ail = lambda h: next(q for q in (STL / ("Aileron%sHalf_%s.stl" % (h, fs)), STL / ("Aileron%sHalf.stl" % h)) if q.exists())
+    def ail(h):
+        q = next((q for q in (STL / ("Aileron%sHalf_%s.stl" % (h, fs)), STL / ("Aileron%sHalf.stl" % h)) if q.exists()), None)
+        if q is None:
+            raise SystemExit("Mass and CG: no Aileron%sHalf STL for %s in %s (run tools/verify_tailsteer.py --export first)"
+                             % (h, fs, STL))
+        return q
     m_ = sum(stl_mass_cg(ail(h), PC["rho_solid"])[0] for h in ("Screw", "Tapped"))
     _, xa = region_moments(pts, p["Flap_Root_Gap"], p["Flap_Span"], p["Hinge_X"] - p["Flap_LE_R"], p["Flap_X_Max"])
     items.append(("ailerons x3 (PC solid)", 3 * m_, zx(xa)))

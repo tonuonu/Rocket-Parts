@@ -355,7 +355,7 @@
    "value": 3.33
   },
   {
-   "check": "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+   "check": "horn (clevis cap and dowel) to can >= 0.3 mm over the travel",
    "passed": true,
    "value": 0.42
   },

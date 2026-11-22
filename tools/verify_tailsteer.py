@@ -605,12 +605,12 @@ def verify(af, tmp):
         parts = {"ail": ail, "crk": crk, "hrn": hrn, "lnk": lnk, "rod": rod, "phi": ph}
         if "clevis0" in m:
             # the clevis cap turns with the horn; the horn-end ball link's own body: its eye
-            # (Ø Link_Eye_D across the ball, Link_Eye_W thick along the ball's axis) and its shank
+            # (Ø Link_Eye_D across the ball, Link_Eye_W thick along the ball's axis; TS_STOP) and its shank
             cap = m["clevis0"].copy()
             cap.apply_transform(trimesh.transformations.rotation_matrix(math.radians(ph), ax_dir, ax_pt))
-            ew = 4.6
+            ew, ed = st[19], st[20]
             parts["cap"] = cap
-            parts["eye"] = trimesh.util.concatenate([cyl(hb - ax_dir * ew / 2, hb + ax_dir * ew / 2, 3.5),
+            parts["eye"] = trimesh.util.concatenate([cyl(hb - ax_dir * ew / 2, hb + ax_dir * ew / 2, ed / 2),
                                                      capsule(hb - 3.5 * u, hb - 12 * u, 2.0)])
         if stop_on:
             gap, z0, z1, wd, wh = st[2], st[3], st[4], st[5], st[6]
@@ -658,7 +658,8 @@ def verify(af, tmp):
     record("aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_fin >= 0.78,
            round(worst_flap_fin, 3))
     record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
-    record("horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+    record(("horn (clevis cap and dowel) to can >= 0.3 mm over the travel" if st[10] else
+            "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel"),
            worst_horn >= 0.3, round(worst_horn, 2))
 
     # ---------- mechanical travel stop (pushrod nuts on a shelf): the servo can drive the linkage
