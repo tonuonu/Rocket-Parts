@@ -405,14 +405,14 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes (66 + 73 checks); writes STLs/DXFs only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes (66 + 77 checks); writes STLs/DXFs only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
 ```
 
 Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `openscad` on the PATH. The verifier needs a build with the manifold backend.
 
-`verification.json` holds the last Peregrine run: 66/66 passed (139/139 with the Zephyr's 73).
+`verification.json` holds the last Peregrine run: 66/66 passed (143/143 with the Zephyr's 77).
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.

@@ -261,10 +261,14 @@ Horn_Cap_X   = [12, 17.5];   // saddle, along the arm (the link eye ends at 11.5
 Horn_Cap_Cheek = 1.5;        // saddle cheek over each of the arm's edges
 Horn_Arm_L   = Horn_Clevis ? Horn_Strap_X : Horn_R;   // arm hull out to here
 Horn_Screw_Head = [5.5, 3.0];   // arm retaining screw head on the spline (M3 cap head: the larger of M2.5/M3)
-Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5
-               + (Horn_Clevis ? Horn_Strap[1] + Horn_Strap[0] : 0);   // grip + 0.5 protrusion
+// Horn_Screw_L: the pivot screw's grip + 0.5 protrusion (Peregrine), or the clevis cap screw's
+// stack: strap, the saddle block (shim + ball + shim) and the arm's tapped hole (Zephyr)
+Horn_Screw_L = Horn_Clevis ? Horn_Strap[0] + Horn_Strap[1] + Ball_D + Horn_Shim + Horn_Arm_T
+                           : Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;
 Horn_Pin_L   = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Strap[1] + Horn_Strap[0];   // clevis dowel grip
-assert(Horn_Clevis ? Horn_Pin_L <= 10 : Horn_Screw_L <= 10, "horn pivot too long for its 10 mm screw/dowel");
+assert(Horn_Screw_L <= 10, Horn_Clevis ? "clevis cap screw stack longer than its M2 x 10"
+                                       : "horn pivot screw too short for its M2 x 10");
+assert(!Horn_Clevis || Horn_Pin_L <= 10, "clevis dowel grip longer than its 2 x 10 dowel");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
@@ -354,6 +358,7 @@ Stop_Hole_D  = 3.0;
 // bridge, never on a cantilever. The web and the floor are extended to the shelf's width.
 Stop_Shelf_Lx = [-Horn_R - Stop_Washer[0]/2, -Horn_R + Stop_Washer[0]/2];   // servo frame
 Stop_Shelf_Ly = [Bay_Ly[0] + Bay_Web_T, Floor_Ly0];
+Stop_Pad_Ly  = 1.6;   // the floor-end pad (the floor extended to the shelf's width): depth along ly from Floor_Ly0
 Stop_Corbel  = [-Horn_Ball_U - Stop_Washer[0]/2 - Stop_Shelf_Ly[0],     // web end, to the footprint
                 Stop_Shelf_Ly[1] - (-Horn_Ball_U + Stop_Washer[0]/2)];   // floor end
 
@@ -366,8 +371,10 @@ Strap_Slot = [2.5, 14];
 // Hatch openings (servo frame, u = -ly)
 // servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0
 // (verifier). Zephyr: 3 mm wider on the fin side for the horn clevis's strap and screw head
-// (its servo sits 1.8 deg further from the fin, so the fillet room stays >= 12 mm).
-Hatch_U   = Airframe == "Zephyr" ? [-23.5, 36.5] : [-23.5, 33.5];
+// (its servo sits 1.8 deg further from the fin, so the fillet room stays >= 12 mm), and 4 mm
+// wider on the -u side: the servo, slid +ly off its horn (Service_Slide), lifts out with its
+// lead stub clear of the band.
+Hatch_U   = Airframe == "Zephyr" ? [-27.5, 36.5] : [-23.5, 33.5];
 Hatch_Z   = [Servo_Zc - Servo_Lug_L/2 - 1, Servo_Zc + Servo_Lug_L/2 + 1];   // passes the lugs
 Hatch_Bat_U = [-11.5, 11.5];  // sector A battery part
 Hatch_Bat_Z1 = 192;
@@ -388,6 +395,15 @@ Hatch_Gap = 0.25;
 Hatch_Screw = 3.4;            // M3 button head through the cover
 Hatch_Insert = [4.0, 6.7];    // ruthex RX-M3x5.7: hole, depth (L+1)
 Hatch_Boss_D = 8.0;
+// the screw on the -u (+ly) edge: above the servo's lead stub (Peregrine), or below the servo's
+// case (Zephyr), clear of the servo's end face when it slides +ly off its horn hub for service
+Hatch_Screw1_Z = Airframe == "Zephyr" ? Hatch_Z[0] + 2.5 : Hatch_Z[1] - 8;
+// Zephyr field service: the horn stays on the captive linkage. A hex key (Service_Key_D across
+// corners) undoes the arm's retaining screw along the spline axis through the hatch (the
+// opening trims the fin-side web clear of it); the servo then slides Service_Slide along +ly
+// off the hub (the spline's engagement + 0.25) and lifts out alone.
+Service_Key_D   = 3.0;    // 2.5 mm hex key, 2.9 across corners
+Service_Slide   = (Servo_Spline_Top - Servo_Case_H - 0.5) + 0.25;
 
 // Rail button boss: ruthex RX-M4x8.1 (also #8-32 body), kit 1010 button
 Rail_Insert = [5.6, 9.6];
@@ -749,7 +765,7 @@ function Hatch_Screws(bat) = let(
         e1 = [Hatch_U[1], Hatch_Z[1]],
         e2 = bat ? [Hatch_Bat_U[1], Hatch_Z[1] + (Hatch_U[1] - Hatch_Bat_U[1])] : [um, Hatch_Z[1] + hw],
         mid = (e1 + e2)/2, n = Hatch_Screw_In/sqrt(2))
-    concat([[Hatch_U[0] - Hatch_Screw_In, Hatch_Z[1] - 8],   // boss and corbel above the servo lead stub
+    concat([[Hatch_U[0] - Hatch_Screw_In, Hatch_Screw1_Z],   // boss and corbel on the +ly edge
             [mid[0] + n, mid[1] + n]],
            bat ? [[Hatch_Bat_U[0] - Hatch_Screw_In_Bat, Hatch_Bat_Z1 - 8]] : []);
 Hatch_Seat_R = R_Out - Hatch_Rebate_D;
@@ -926,7 +942,7 @@ module Servo_Bay(bat=false) Servo_Frame(){
         // web and floor extended over the shelf's width, with 45 deg undersides
         xe = Bay_Floor_X[0] - Stop_Shelf_Lx[0];
         for (e=[0, 1]) let(c = Stop_Corbel[e], y0 = e == 0 ? Stop_Shelf_Ly[0] - Bay_Web_T : Stop_Shelf_Ly[1],
-                           t = e == 0 ? Bay_Web_T : Bay_Floor_X[1] - Bay_Floor_X[0]) if (xe > 0) hull(){
+                           t = e == 0 ? Bay_Web_T : Stop_Pad_Ly) if (xe > 0) hull(){
             translate([Stop_Shelf_Lx[0], y0, Stop_Shelf_Z[0] - c]) cube([xe + Overlap, t, Stop_Shelf_Z[1] - Stop_Shelf_Z[0] + c]);
             translate([Bay_Floor_X[0], y0, Stop_Shelf_Z[0] - c - xe]) cube([Overlap, t, xe]);
         }
@@ -1064,6 +1080,9 @@ echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Sto
          Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X, " ",
          Horn_Strap[1], " ", Horn_Cap_X[0], " ", Horn_Cap_X[1], " ", Ball_D, " ", Horn_Pin_L, " ",
          Link_Eye_W, " ", Link_Eye_D));
+// field service (Zephyr): see Service_Slide
+echo(str("TS_SERVICE ", Horn_Clevis ? 1 : 0, " ", -(Horn_Plane + Horn_Arm_T/2) - Horn_Screw_Head[1], " ",
+         Service_Key_D, " ", Service_Slide));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,

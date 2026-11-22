@@ -497,17 +497,68 @@ def verify(af, tmp):
     record("no hatch screw head on the rail strip (60 +- %.1f deg)" % strip, not bad,
            [round(h[0], 1) for h in heads])
 
-    # ---------- service: servos (with horns) and the LiPo lift straight out through their hatches.
+    # ---------- service: servos and the LiPo lift straight out through their hatches.
     # Sector A has the T-shaped servo + LiPo hatch, sector B a gable-topped servo hatch.
+    # Peregrine: the servo comes out with its horn on. Zephyr (horn clevis and travel stop): the
+    # linkage is captive (pinned at both ends, the rod through the stop shelf), so the horn stays:
+    # its retaining screw is undone along the spline axis through the hatch, the servo slides
+    # off the hub (+ly) and lifts out alone. Each step is checked here.
     def about_z(deg):
         return trimesh.transformations.rotation_matrix(math.radians(deg), [0, 0, 1])
-    for name, parts, sector in (("sector A servo with horn", [m["servo0"], m["horn0"]], 0),
-                                ("sector B servo with horn", [m["servo0"], m["horn0"]], 1),
-                                ("LiPo", [m["lipo"]], 0)):
+    sv = [float(x) for x in echo_values(logs["FinCan"], "TS_SERVICE").split()]
+    captive = bool(sv[0])
+    th = math.radians(p["Servo_Theta"])
+    ly_dir = np.array([-math.sin(th), math.cos(th), 0.0])            # servo frame +ly (output axis, toward the case)
+    spline_pt = np.array([p["Servo_Rc"] * math.cos(th), p["Servo_Rc"] * math.sin(th), p["Servo_ZO"]])
+    lifts = [("LiPo", [m["lipo"]], 0, 0.0)]
+    if captive:
+        key_l, slide = 20.0, sv[3]
+        horn_static = [m["horn0"], m["clevis0"]]
+        for sector in (0, 1):
+            nm = "sector %s" % "AB"[sector]
+            R_ = about_z(120 * sector)
+            # key access: the hex key's short leg, a straight cylinder key_l long from the screw head
+            # out along -ly (the long leg turns it from outside)
+            k0 = spline_pt + sv[1] * ly_dir
+            key = cyl(k0 - 0.05 * ly_dir, k0 - key_l * ly_dir, sv[2] / 2)
+            key.apply_transform(R_)
+            hits = []
+            for n_, B in (("can", can), ("fixed fin", m["fin0"]), ("aileron", m["aileron0"]),
+                          ("horn", m["horn0"]), ("clevis cap", m["clevis0"])):
+                B_ = B.copy(); B_.apply_transform(R_)
+                v = inter(key, B_)
+                if v > 1e-3:
+                    hits.append((n_, round(v, 2)))
+            record("%s: the arm's retaining screw is reachable along the spline axis through the hatch"
+                   " (a Ø%.1f x %.0f mm key leg straight from its head: can, fixed fin, aileron, horn, clevis cap)"
+                   % (nm, sv[2], key_l), not hits, hits or "clear")
+            # slide: the servo alone moves +ly off the hub, the horn stays
+            stuck = []
+            srv = m["servo0"].copy(); srv.apply_transform(R_)
+            hs = trimesh.util.concatenate(horn_static); hs.apply_transform(R_)
+            ld = R_[:3, :3] @ ly_dir
+            for t_ in np.arange(0.25, slide + 0.01, 0.25):
+                b_ = srv.copy(); b_.apply_translation(ld * t_)
+                for n_, B in (("can", can), ("horn", hs)):
+                    v = inter(b_, B)
+                    if v > 1e-3:
+                        stuck.append((float(t_), n_, round(v, 2)))
+            record("%s: the servo slides %.2f mm along its output axis off the horn hub (spline engagement + 0.25),"
+                   " touching nothing" % (nm, slide), not stuck, stuck[:4] or "free")
+            lifts.append(("%s servo, slid off its horn," % nm, [m["servo0"]], sector, slide))
+    else:
+        lifts = [("sector A servo with horn", [m["servo0"], m["horn0"]], 0, 0.0),
+                 ("sector B servo with horn", [m["servo0"], m["horn0"]], 1, 0.0)] + lifts
+    for name, parts, sector, sl in lifts:
         th0 = math.radians(p["Servo_Theta"] + 120 * sector)
         out_dir = np.array([math.cos(th0), math.sin(th0), 0.0])
         body = trimesh.util.concatenate(parts)
+        body.apply_translation(ly_dir * sl)
         body.apply_transform(about_z(120 * sector))
+        others = []
+        if sl:                                  # the horn stays in the can
+            others = [trimesh.util.concatenate(horn_static)]
+            others[0].apply_transform(about_z(120 * sector))
         stuck = []
         for t_ in np.arange(0.5, 30.1, 0.5):
             b_ = body.copy(); b_.apply_translation(out_dir * t_)
@@ -515,10 +566,11 @@ def verify(af, tmp):
             if not all(q.is_volume for q in pieces):
                 stuck.append((float(t_), "non-volume piece"))
                 break
-            v = sum(inter(q, can) for q in pieces)
+            v = sum(inter(q, B) for q in pieces for B in [can] + others)
             if v > 1e-3:
                 stuck.append((float(t_), round(v, 2)))
-        record("%s lifts out through its hatch (0.5-30 mm, no contact)" % name, not stuck, stuck[:4] or "free")
+        record("%s lifts out through its hatch (0.5-30 mm, no contact%s)" % (name, ", horn left in place" if sl else ""),
+               not stuck, stuck[:4] or "free")
 
     # ---------- field service of a hinge, fins glued in place: the aileron halves
     # come off sideways (+-Y), then the shaft slides outward until its inner end
@@ -668,7 +720,7 @@ def verify(af, tmp):
     if stop_on:
         a_stop = st[1]
         free = min(min_gap(pose(d)["stk"], can, n=1500) for d in defl)
-        record("stop stacks to can gap >= 0.1 mm over the flight travel +-%g deg" % p["Flap_Max"], free > 0.1, round(free, 2))
+        record("stop stacks to can gap >= 0.1 mm over the flight travel +-%g deg" % p["Flap_Max"], free >= 0.1, round(free, 2))
         # where the washers actually land (measured, 0.01 deg): the nominal contact less the tilt of the
         # washer as the balls move sideways
         def first_contact(sg):

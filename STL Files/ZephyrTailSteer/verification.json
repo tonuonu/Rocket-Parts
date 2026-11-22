@@ -8,17 +8,17 @@
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "283.0 cm3"
+   "value": "281.0 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
    "passed": true,
-   "value": "8.5 cm3"
+   "value": "9.1 cm3"
   },
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "11.8 cm3"
+   "value": "12.3 cm3"
   },
   {
    "check": "Crank is one closed solid",
@@ -113,7 +113,7 @@
   {
    "check": "can clears covers",
    "passed": true,
-   "value": 0.0007
+   "value": 0.0008
   },
   {
    "check": "can clears tube",
@@ -239,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8428 rays, thin: []"
+   "value": "8219 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -268,27 +268,47 @@
    "check": "no hatch screw head on the rail strip (60 +- 18.0 deg)",
    "passed": true,
    "value": [
-    93.6,
+    98.1,
     31.7,
     81.4,
-    213.6,
-    154.5,
-    333.6,
-    274.5
+    218.1,
+    155.6,
+    338.1,
+    275.6
    ]
   },
   {
-   "check": "sector A servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "check": "sector A: the arm's retaining screw is reachable along the spline axis through the hatch (a \u00d83.0 x 20 mm key leg straight from its head: can, fixed fin, aileron, horn, clevis cap)",
+   "passed": true,
+   "value": "clear"
+  },
+  {
+   "check": "sector A: the servo slides 3.25 mm along its output axis off the horn hub (spline engagement + 0.25), touching nothing",
    "passed": true,
    "value": "free"
   },
   {
-   "check": "sector B servo with horn lifts out through its hatch (0.5-30 mm, no contact)",
+   "check": "sector B: the arm's retaining screw is reachable along the spline axis through the hatch (a \u00d83.0 x 20 mm key leg straight from its head: can, fixed fin, aileron, horn, clevis cap)",
+   "passed": true,
+   "value": "clear"
+  },
+  {
+   "check": "sector B: the servo slides 3.25 mm along its output axis off the horn hub (spline engagement + 0.25), touching nothing",
    "passed": true,
    "value": "free"
   },
   {
    "check": "LiPo lifts out through its hatch (0.5-30 mm, no contact)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "sector A servo, slid off its horn, lifts out through its hatch (0.5-30 mm, no contact, horn left in place)",
+   "passed": true,
+   "value": "free"
+  },
+  {
+   "check": "sector B servo, slid off its horn, lifts out through its hatch (0.5-30 mm, no contact, horn left in place)",
    "passed": true,
    "value": "free"
   },
