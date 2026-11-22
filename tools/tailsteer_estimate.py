@@ -18,7 +18,8 @@ effectiveness scaled to the CFD fin lift slope for authority, and 2-D
 thin-airfoil hinge moments (no 3-D or viscous relief, so conservative) for
 servo and structure sizing.
 
-Usage: tailsteer_estimate.py [--airframe Peregrine|Zephyr] [--fins-csv FILE]
+Usage: tailsteer_estimate.py [--airframe Peregrine|Zephyr] [--fins-csv FILE] [--stl-dir DIR]
+  --stl-dir   the STLs to weigh (default "STL Files/<Airframe>TailSteer/")
   --fins-csv  writes the fin outline OpenRocket should fly with the tail
               steering (fixed fin + aileron, mm, x aft from the root LE): the
               airframe's fin outline less what the aileron clip removes
@@ -749,6 +750,15 @@ def main():
               ("motor tube 38 mm x %.1f" % mmt_l, 55.2 * mmt_l / 279.4, 12.7 + mmt_l / 2),
               AF.get("ring_item", ("plywood CR + eyebolt (kit)", 29.2 + 25.1, p["Ply_CR_Z0"] + 3))] + AF.get("extra", []) + [
               ("rail buttons (kit, unchanged)", 3.8, 200.0)]
+    if p.get("Horn_Clevis"):
+        # horn clevis caps (7075 from the CAD, its cap-screw head included), the pivot dowels
+        # and cap screws, and the travel-stop stacks (M2 nut + Ø6 washer, two per rod)
+        m_, z_ = render_mass_cg(42, 2.81, ['Airframe="%s"' % fs])
+        items += [("horn clevis caps x3 (7075)", 3 * m_, z_),
+                  ("pivot dowels 2 x 10 + cap screws M2 x 10 x3 (steel)",
+                   3 * (math.pi * 1.0 ** 2 * p["Horn_Pin_L"] * 7.85e-3 + 0.30), p["Servo_ZO"]),
+                  ("stop stacks x6 (M2 nut + Ø6 washer, est)", 6 * 0.25,
+                   (p["Stop_Shelf_Z0"] + p["Stop_Shelf_Z1"]) / 2)]
     m_new = sum(x[1] for x in items)
     z_new = sum(x[1] * x[2] for x in items) / m_new
     for nm, mm, zz in items:

@@ -236,7 +236,9 @@ Servo_Lug_Hole_D = 3; Servo_Lug_Hole_X = 31.2; Servo_Lug_Spacing = 39;
 Servo_Wire = [2.2, 10, 7, 4];   // stub beyond the bottom: depth, centre (along L from spline), length, width
 // Horn: the servo's own metal arm, M2 ball stud at Horn_R
 Horn_Hub_D = 8; Horn_Hub_H = 3; Horn_Arm_W = 5.5; Horn_Arm_T = 2.5;
-Horn_R     = Airframe == "Zephyr" ? 8 : 9;   // pivot from the spline axis: its nut clears the servo case at full travel
+// pivot from the spline axis. Peregrine 9: the pivot screw's nut clears the servo case at
+// full travel. Zephyr 8: link ratio 2.0 with the 16 mm crank (no nut: the clevis dowel)
+Horn_R     = Airframe == "Zephyr" ? 8 : 9;
 Horn_Plane = Servo_Case_H/2 + 2.0;   // horn mid-plane above the case centre
 Ball_D     = 4.8;           // M2 ball stud
 // Horn pivot: the 4.8 mm pivot ball on an M2 x 10 12.9 screw through the servo's
@@ -252,14 +254,15 @@ Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
 // from it a 2 mm strap runs back over the far side of the ball (0.3 shim) to the pivot. The
 // pivot is a Ø2 x 10 hardened dowel pressed through arm, ball and strap, in double shear;
 // an M2 screw into the arm's tapped hole at Horn_Strap_X only keeps the cap on. The arm is
-// MKS's 18 mm metal single arm. Inboard of the pivot there is no room: the ball's link eye,
-// the spline hub and its retaining screw.
+// MKS's metal single arm for the 5 mm output, cut to Horn_Cap_X[1] from the spline (flush
+// with the saddle's end). Inboard of the pivot there is no room: the ball's link eye, the
+// spline hub and its retaining screw.
 Horn_Clevis  = Airframe == "Zephyr";
 Horn_Strap   = [2.0, 0.3];   // strap thickness, shim between ball and strap
 Horn_Strap_X = 14.5;         // the cap screw's tapped hole in the arm, from the spline axis
 Horn_Cap_X   = [12, 17.5];   // saddle, along the arm (the link eye ends at 11.5)
 Horn_Cap_Cheek = 1.5;        // saddle cheek over each of the arm's edges
-Horn_Arm_L   = Horn_Clevis ? Horn_Strap_X : Horn_R;   // arm hull out to here
+Horn_Arm_L   = Horn_Clevis ? Horn_Cap_X[1] - Horn_Arm_W/2 : Horn_R;   // arm hull's end centre (Zephyr: cut to 17.5)
 Horn_Screw_Head = [5.5, 3.0];   // arm retaining screw head on the spline (M3 cap head: the larger of M2.5/M3)
 // Horn_Screw_L: the pivot screw's grip + 0.5 protrusion (Peregrine), or the clevis cap screw's
 // stack: strap, the saddle block (shim + ball + shim) and the arm's tapped hole (Zephyr)
@@ -267,7 +270,7 @@ Horn_Screw_L = Horn_Clevis ? Horn_Strap[0] + Horn_Strap[1] + Ball_D + Horn_Shim 
                            : Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;
 Horn_Pin_L   = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Strap[1] + Horn_Strap[0];   // clevis dowel grip
 assert(Horn_Screw_L <= 10, Horn_Clevis ? "clevis cap screw stack longer than its M2 x 10"
-                                       : "horn pivot screw too short for its M2 x 10");
+                                       : "horn pivot stack longer than its M2 x 10");
 assert(!Horn_Clevis || Horn_Pin_L <= 10, "clevis dowel grip longer than its 2 x 10 dowel");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball

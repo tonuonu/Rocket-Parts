@@ -418,14 +418,14 @@
    "value": "footprint [57.0, 57.0, 57.0, 57.0, 57.0, 57.0], 1 mm outside [56.0, 56.0]"
   },
   {
-   "check": "fins and ailerons at full travel stay off the rail",
+   "check": "fins and ailerons at full travel and at the stop landing (-6.39 / +6.39 deg) stay off the rail",
    "passed": true,
    "value": 18.1
   },
   {
-   "check": "fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-5 deg",
+   "check": "fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-5 deg and at the stop landing (-6.39 / +6.39 deg)",
    "passed": true,
-   "value": "fixed fin Z -12.0, aileron lead [15.9, 16.1, 15.9] mm"
+   "value": "fixed fin Z -12.0, aileron lead [15.9, 16.1, 15.9, 15.9, 15.9] mm"
   }
  ],
  "params": {

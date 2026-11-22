@@ -116,15 +116,16 @@ def clear(name, a, b, tol=1e-3):
     return v
 
 
-_SAMPLES = {}
+_SAMPLES = {}   # (id(mesh), n, seed) -> (mesh, points); the mesh is kept so its id is never reused
 
 
 def _samples(mesh, n, seed):
     key = (id(mesh), n, seed)
-    if key not in _SAMPLES:
+    hit = _SAMPLES.get(key)
+    if hit is None or hit[0] is not mesh:
         pts, _ = trimesh.sample.sample_surface_even(mesh, n, seed=seed)
-        _SAMPLES[key] = np.vstack([pts, mesh.vertices])
-    return _SAMPLES[key]
+        hit = _SAMPLES[key] = (mesh, np.vstack([pts, mesh.vertices]))
+    return hit[1]
 
 
 def min_gap(moving, fixed, n=4000, seed=1):
@@ -223,6 +224,7 @@ def main():
 
 
 def verify(af, tmp):
+    _SAMPLES.clear()            # per airframe: no samples of the other airframe's meshes
     """Render one airframe into tmp and run every check on it; returns its parameters."""
     tmp.mkdir(parents=True, exist_ok=True)
     af_def = {"Airframe": '"%s"' % af}
@@ -717,6 +719,7 @@ def verify(af, tmp):
     # ---------- mechanical travel stop (pushrod nuts on a shelf): the servo can drive the linkage
     # anywhere; the stacks must clear the shelf through the flight travel, land on it at
     # +-Stop_Angle, and nothing else may touch over the servo's whole throw up to the stop.
+    stop_lands = []             # the stop's measured landing angles (deg), for the rail and landing checks
     if stop_on:
         a_stop = st[1]
         free = min(min_gap(pose(d)["stk"], can, n=1500) for d in defl)
@@ -730,6 +733,7 @@ def verify(af, tmp):
                 lo, hi = (lo, mid) if inter(pose(sg * mid)["stk"], can) > 1e-3 else (mid, hi)
             return hi
         a_cm, a_cp = first_contact(-1), first_contact(1)
+        stop_lands = [-a_cm, a_cp]
         for sg, a_c in ((-1, a_cm), (1, a_cp)):
             record("stop lands at %+.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
                    % (sg * a_c, a_stop), a_c >= p["Flap_Max"] + 0.5 and abs(a_c - a_stop) <= 0.3, round(sg * a_c, 2))
@@ -776,20 +780,21 @@ def verify(af, tmp):
     T[:3, 3] = [(p["R_Out"] + 2 + 20) * math.cos(ra), (p["R_Out"] + 2 + 20) * math.sin(ra), 0]
     rail_box.apply_transform(T)
     gaps = []
-    for d in (-p["Flap_Max"], p["Flap_Max"]):
+    at_stop = (" and at the stop landing (%+.2f / %+.2f deg)" % tuple(stop_lands)) if stop_lands else ""
+    for d in [-p["Flap_Max"], p["Flap_Max"]] + stop_lands:
         for k in range(3):
             one = m["aileron0"].copy(); one.apply_transform(rot_x(d, Z))
             one.apply_transform(trimesh.transformations.rotation_matrix(math.radians(120 * k), [0, 0, 1]))
             gaps.append(min_gap(one, rail_box, n=800))
     gaps.append(min_gap(m["fins"], rail_box, n=3000))
-    record("fins and ailerons at full travel stay off the rail", min(gaps) > 10, round(min(gaps), 1))
+    record("fins and ailerons at full travel%s stay off the rail" % at_stop, min(gaps) > 10, round(min(gaps), 1))
 
     # ---------- tail-first landing: the fixed fin reaches further aft than every aileron point
     lead = []
-    for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
+    for d in [-p["Flap_Max"], 0, p["Flap_Max"]] + stop_lands:
         a1 = m["aileron0"].copy(); a1.apply_transform(rot_x(d, Z))
         lead.append(a1.bounds[0, 2] - m["fin0"].bounds[0, 2])
-    record("fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg" % p["Flap_Max"],
+    record("fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg%s" % (p["Flap_Max"], at_stop),
            min(lead) >= 3.0,
            "fixed fin Z %.1f, aileron lead %s mm" % (m["fin0"].bounds[0, 2], [round(float(x), 1) for x in lead]))
     return p
