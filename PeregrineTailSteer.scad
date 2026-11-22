@@ -246,8 +246,17 @@ Horn_Shim  = 0.3;
 Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
 Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
 Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
-Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;   // grip + 0.5 protrusion
-assert(Horn_Screw_L <= 10, "horn pivot needs a longer screw than M2 x 10");
+// Zephyr: a horn clevis. A 2 mm 7075 strap sits on the far side of the ball (0.3 shim),
+// from the pivot to a second hole Horn_Strap_X from the spline, where a Ø5 spacer and an
+// M2 screw into the arm's tapped hole hold it. The pivot screw (ISO 7380 M2 x 12) is in
+// double shear: the stop path holds full servo stall. The strap stays clear of the wall,
+// which comes in close beyond the case end.
+Horn_Clevis  = Airframe == "Zephyr";
+Horn_Strap   = [2.0, 0.3];   // strap thickness, shim between ball and strap
+Horn_Strap_X = 4;            // the strap's second hole, from the spline axis
+Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5
+               + (Horn_Clevis ? Horn_Strap[1] + Horn_Strap[0] : 0);   // grip + 0.5 protrusion
+assert(Horn_Screw_L <= (Horn_Clevis ? 12 : 10), "horn pivot screw too short");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
@@ -324,14 +333,19 @@ Bay_Top     = 121;          // sectors B and C
 // only the aero load, and the horn's M2 pivot screw (the existing fuse) caps the shelf
 // load at its yield.
 Stop_On      = Airframe == "Zephyr";
-Stop_Angle   = 6.5;
-Stop_Gap     = Crank_A*sin(Stop_Angle);   // rod travel to the stop (the crank ball's rise)
+Stop_Angle   = 6.3;                              // the stacks touch nothing inside this
+Stop_Gap     = Crank_A*sin(Stop_Angle) + 0.04;   // rod travel to the stop; +0.04 for the washer's tilt
+Stop_Contact = asin(Stop_Gap/Crank_A);           // where the washer lands: about 6.4 deg
 Stop_Shelf_Z = [57, 63];                  // between the two ball-link bodies
 Stop_Washer  = [6, 2.1];                  // M2 large washer + nut: dia, stack height
 Stop_Hole_D  = 3.0;
-Stop_Shelf_Lx = [-Horn_R - 3.75, -Horn_R + 3.75];          // around the rod (servo frame)
-Stop_Shelf_Ly = [Bay_Ly[0] + Bay_Web_T, -Horn_Ball_U + 3.25]; // from the fin-side web past the rod
-Stop_Corbel  = 3.5;                       // 45 deg corbel under the shelf's web edge
+// The shelf bridges from the fin-side web to the floor and spine end (ly Floor_Ly0); 45 deg
+// corbels at both ends run to the washer's footprint, so the lower washer lands on a 6 mm
+// bridge, never on a cantilever. The web and the floor are extended to the shelf's width.
+Stop_Shelf_Lx = [-Horn_R - Stop_Washer[0]/2, -Horn_R + Stop_Washer[0]/2];   // servo frame
+Stop_Shelf_Ly = [Bay_Ly[0] + Bay_Web_T, Floor_Ly0];
+Stop_Corbel  = [-Horn_Ball_U - Stop_Washer[0]/2 - Stop_Shelf_Ly[0],     // web end, to the footprint
+                Stop_Shelf_Ly[1] - (-Horn_Ball_U + Stop_Washer[0]/2)];   // floor end
 
 // LiPo: Tattu 450 mAh 2S 75C long pack (61 x 16 x 15 mm, 28 g), on sector A floor
 Lipo = [15, 16, 61];        // along u (tangential), lx (radial), Z
@@ -340,7 +354,10 @@ Lipo_Lx0 = Bay_Floor_X[1] + 0.3;
 Strap_Slot = [2.5, 14];
 
 // Hatch openings (servo frame, u = -ly)
-Hatch_U   = [-23.5, 33.5];    // servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0 (verifier)
+// servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0
+// (verifier). Zephyr: 3 mm wider on the fin side for the horn clevis's strap and screw head
+// (its servo sits 1.8 deg further from the fin, so the fillet room stays >= 12 mm).
+Hatch_U   = Airframe == "Zephyr" ? [-23.5, 36.5] : [-23.5, 33.5];
 Hatch_Z   = [Servo_Zc - Servo_Lug_L/2 - 1, Servo_Zc + Servo_Lug_L/2 + 1];   // passes the lugs
 Hatch_Bat_U = [-11.5, 11.5];  // sector A battery part
 Hatch_Bat_Z1 = 192;
@@ -617,8 +634,18 @@ module Horn_Envelope0(phi=0){
             cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
         translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
             cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
-        translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
-            cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
+        if (Horn_Clevis) {
+            // strap and its spacer on the centre screw; ISO 7380 button head beyond the strap
+            hull() for (x=[-Horn_Strap_X, -Horn_R]) translate([x, -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1]), Servo_ZO])
+                rotate([90,0,0]) cylinder(d=Horn_Arm_W, h=Horn_Strap[0], $fn=24);
+            translate([-Horn_Strap_X, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=5, h=Horn_Ball_U + Ball_D/2 + Horn_Strap[1] - Horn_Plane - Horn_Arm_T/2 + 2*Overlap, $fn=24);
+            for (x=[-Horn_Strap_X, -Horn_R])
+                translate([x, -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1] + Horn_Strap[0]), Servo_ZO]) rotate([90,0,0])
+                    cylinder(d=3.5, h=1.1, $fn=20);
+        } else
+            translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
+                cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
         translate([-Horn_R, -Horn_Ball_U, Servo_ZO]) sphere(d=Ball_D, $fn=24);
     }
 }
@@ -863,13 +890,21 @@ module Servo_Bay(bat=false) Servo_Frame(){
     }
     // travel-stop shelf (Zephyr): flat underside round the rod, 45 deg corbel at the web
     if (Stop_On) {
+        w = Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0];
         translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0]])
-            cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Stop_Shelf_Ly[1] - Stop_Shelf_Ly[0] + Overlap, Stop_Shelf_Z[1] - Stop_Shelf_Z[0]]);
-        hull(){
-            translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0] - Stop_Corbel])
-                cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Overlap, Stop_Corbel + Overlap]);
-            translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0]])
-                cube([Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], Stop_Corbel, Overlap]);
+            cube([w, Stop_Shelf_Ly[1] - Stop_Shelf_Ly[0] + 2*Overlap, Stop_Shelf_Z[1] - Stop_Shelf_Z[0]]);
+        for (e=[0, 1]) let(c = Stop_Corbel[e], y0 = Stop_Shelf_Ly[e], sg = e == 0 ? 1 : -1) hull(){
+            translate([Stop_Shelf_Lx[0], e == 0 ? y0 - Overlap : y0, Stop_Shelf_Z[0] - c])
+                cube([w, Overlap, c + Overlap]);
+            translate([Stop_Shelf_Lx[0], e == 0 ? y0 - Overlap : y0 - c, Stop_Shelf_Z[0]])
+                cube([w, c + Overlap, Overlap]);
+        }
+        // web and floor extended over the shelf's width, with 45 deg undersides
+        xe = Bay_Floor_X[0] - Stop_Shelf_Lx[0];
+        for (e=[0, 1]) let(c = Stop_Corbel[e], y0 = e == 0 ? Stop_Shelf_Ly[0] - Bay_Web_T : Stop_Shelf_Ly[1],
+                           t = e == 0 ? Bay_Web_T : Bay_Floor_X[1] - Bay_Floor_X[0]) if (xe > 0) hull(){
+            translate([Stop_Shelf_Lx[0], y0, Stop_Shelf_Z[0] - c]) cube([xe + Overlap, t, Stop_Shelf_Z[1] - Stop_Shelf_Z[0] + c]);
+            translate([Bay_Floor_X[0], y0, Stop_Shelf_Z[0] - c - xe]) cube([Overlap, t, xe]);
         }
     }
     // spine on the floor face under both lugs, aft pedestal from the bed
@@ -1000,9 +1035,9 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
          Crank_Win_Y[0], " ", Crank_Hub_D/2, " ", Crank_Arm_X1 - Crank_X0, " ", Pivot_D, " ",
          Pivot_L, " ", Pin_Z[0], " ", Web_Y[1] - Web_Y[0], " ", Hinge_Z + Housing_D/2*sqrt(2), " ",
          Shaft_Flat, " ", Cheek_T_In));
-echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Angle, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
+echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
          Stop_Washer[0], " ", Stop_Washer[1], " ", Stop_Hole_D, " ", Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], " ",
-         -Horn_Ball_U - Stop_Shelf_Ly[0] - Stop_Corbel));
+         Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,

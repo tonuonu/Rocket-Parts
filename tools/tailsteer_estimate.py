@@ -79,7 +79,7 @@ AIRFRAME = {
         env_extra=None, roll_v=(85.1, 272.2),
         or_states=None,               # no stock model: the .ork is the build itself
         or_cp=1.0935, cfd_cp=1.059, base_x=1.39768, sim_label="J510W",
-        canard_net=-0.0035, canard_alone=0.0087,       # REPORT.md, Zephyr section (M 0.25, delta 5)
+        canard_net=None, canard_alone=None,            # no canards on this build
         or_tab=(98.425, 124.46, 30.0355),              # Zephyr.rkt fin tab
         tube_note="cut from the kit's slotted tube, above the slots",
         # loads x Prandtl-Glauert at the design Mach (1.67 at M 0.8; the brief's 1.5 is less)
@@ -129,7 +129,7 @@ def scad_params(airframe):
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     stop_keys = ("Stop_On Stop_Angle Stop_Gap Stop_Shelf_Z0 Stop_Shelf_Z1 Stop_Washer_D Stop_Washer_H Stop_Hole_D"
-                 " Stop_Shelf_W Stop_Shelf_Arm").split()
+                 " Stop_Shelf_W Stop_Shelf_Arm Horn_Clevis Horn_Strap_T Horn_Screw_L Horn_Strap_X").split()
     crank_keys = ("Clevis_Gap Cheek_T Crank_Arm_H Link_Eye_W Crank_Win_Y0 Crank_Hub_R Crank_Arm_W "
                   "Pivot_D Pivot_L Pin_Z0 Web_T Web_Top Shaft_Flat Cheek_T_In").split()
     if not OPENSCAD:
@@ -242,15 +242,37 @@ def stl_mass_cg(path, rho):
     return vol / 1000 * rho, cz / vol
 
 
+def clip_halfplane(P, inside, cross):
+    """Sutherland-Hodgman: clip polygon P by one half-plane (inside(pt) -> bool, cross(a, b) -> point)."""
+    out = []
+    for i in range(len(P)):
+        a_, b_ = P[i - 1], P[i]
+        if inside(b_):
+            if not inside(a_):
+                out.append(cross(a_, b_))
+            out.append(b_)
+        elif inside(a_):
+            out.append(cross(a_, b_))
+    return out
+
+
 def or_outline(p, pts):
     """The fin OpenRocket flies with the tail steering: the fin outline less the part aft of
-    Flap_X_Max below the aileron's outer gap (the clip; nothing for the Peregrine). The
-    aileron's 0.8 mm gaps are left closed."""
-    from shapely.geometry import Polygon, box
-    yt = p["Flap_Span"] + p["Flap_Gap"]
-    out = Polygon(pts).difference(box(p["Flap_X_Max"], -1, 1000, yt))
+    Flap_X_Max below the aileron's outer gap (the clip). The aileron's 0.8 mm gaps are left
+    closed. Stdlib only: neither airframe's clip bites (the fixed fin's swept trailing edge
+    reaches further aft than the aileron), so the outline is returned as is; a future outline
+    whose clip does bite needs shapely for the polygon difference."""
+    X, Y = p["Flap_X_Max"], p["Flap_Span"] + p["Flap_Gap"]
+    q = clip_halfplane(pts, lambda v: v[0] >= X,
+                       lambda a, b: (X, a[1] + (X - a[0]) * (b[1] - a[1]) / (b[0] - a[0])))
+    q = clip_halfplane(q, lambda v: v[1] <= Y,
+                       lambda a, b: (a[0] + (Y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]), Y)) if q else q
+    if not q or area(q) < 1e-6:
+        return [(round(x, 3), round(y, 3)) for x, y in pts], area(pts)
+    from shapely.geometry import Polygon, box        # only when the clip bites
+    out = Polygon(pts).difference(box(X, -1, 1000, Y))
     xy = [(round(x, 3), round(y, 3)) for x, y in list(out.exterior.coords)[:-1]]
-    i0 = xy.index((0.0, 0.0))               # start at the root LE, run the way the kit outline runs
+    i0 = xy.index((0.0, 0.0))               # start at the root LE, run the way the outline runs
     xy = xy[i0:] + xy[:i0]
     if Polygon(xy).exterior.is_ccw != Polygon(pts).exterior.is_ccw:
         xy = [xy[0]] + xy[:0:-1]
@@ -317,9 +339,10 @@ def main():
           % VISCOUS)
     # magnitude only: the roll sense follows from the CAD deflection sign (README), not from here
     print("  |Cl_delta| = %.4f /deg (3 ailerons, all deflected for roll)" % cl_deg)
-    print("  vs canards: net |%.4f| /deg -> %.0fx; canards alone |%.4f| /deg -> %.1fx"
-          % (abs(CANARD_NET_PER_DEG), abs(cl_deg / CANARD_NET_PER_DEG),
-             CANARD_ALONE_PER_DEG, cl_deg / CANARD_ALONE_PER_DEG))
+    if CANARD_NET_PER_DEG:
+        print("  vs canards: net |%.4f| /deg -> %.0fx; canards alone |%.4f| /deg -> %.1fx"
+              % (abs(CANARD_NET_PER_DEG), abs(cl_deg / CANARD_NET_PER_DEG),
+                 CANARD_ALONE_PER_DEG, cl_deg / CANARD_ALONE_PER_DEG))
     print("  1 deg at M 0.25 (q %.0f Pa): %.3f N m; at the design point: %.3f N m" %
           (q25, cl_deg * q25 * A_REF * D_REF, cl_deg * Q_MAX * A_REF * D_REF))
     print("  at full travel (%g deg): Cl %.3f = %.1fx the fins' own induced roll at 4 deg incidence"
@@ -438,8 +461,19 @@ def main():
     arm_w = p["Crank_Arm_W"]
     eye, pin_d, pin_yield = p["Link_Eye_W"], p["Pivot_D"], 1200.0   # hardened dowel (ISO 8734), yield assumed
     pin_eng = (p["Pivot_L"] - gap) / 2             # dowel length in each cheek
-    # M2 x 10 12.9 through the horn arm; the ball load acts Ball_Off (CAD) from the arm mid-plane
-    stud_minor, stud_yield, stud_arm = 1.57, 1080.0, p["Ball_Off"]
+    # M2 x 10 12.9 through the horn arm; the ball load acts Ball_Off (CAD) from the arm mid-plane.
+    # With the horn clevis (Zephyr) the screw (ISO 7380, 10.9) is in double shear between the arm
+    # and the strap, and the 7075 arm (2.5) and strap share the bending.
+    clevis = bool(p.get("Horn_Clevis"))
+    stud_minor, stud_yield, stud_arm = 1.57, (900.0 if clevis else 1080.0), p["Ball_Off"]
+    a_minor = math.pi * stud_minor ** 2 / 4
+    AL7075 = 500.0                                    # MPa, 7075-T6 yield (arm and strap, assumed)
+
+    def horn_stress(Fpp):
+        """(pivot stress, its allowable): bending as a stud, or double shear in the clevis."""
+        if clevis:
+            return Fpp / (2 * a_minor), 0.6 * stud_yield
+        return Fpp * stud_arm / (math.pi * stud_minor ** 3 / 32), stud_yield
     print("  crank (clevis: cheeks %.1f x %.0f at the pivot (inner %.1f elsewhere), Ø%.0f x %.0f dowel, %.1f in each"
           " cheek, eye %.1f; no torsion) and horn stud:"
           % (cheek, arm_h, p["Cheek_T_In"], pin_d, p["Pivot_L"], pin_eng, eye))
@@ -450,14 +484,29 @@ def main():
         L_pin = gap + pin_eng                     # between the cheeks' bearing centres
         s_pin = Fpp * (L_pin / 4 - eye / 8) / (math.pi * pin_d ** 3 / 32)
         s_brg = (Fpp / 2) / (pin_d * pin_eng)
-        s_stud = Fpp * stud_arm / (math.pi * stud_minor ** 3 / 32)
+        s_stud, a_stud = horn_stress(Fpp)
         print("    %s: pushrod %.0f N | cheek %.1f MPa (x%.1f) | arm root %.1f MPa (x%.1f) | pin %.0f MPa"
-              " (x%.1f) | pin bearing in PC %.1f MPa | horn M2 stud %.0f MPa (x%.2f)"
+              " (x%.1f) | pin bearing in PC %.1f MPa (x%.1f) | horn pivot %s %.0f MPa (x%.2f)"
               % (lab, Fpp, s_cheek, PC["sigma_in"] / s_cheek, s_root, PC["sigma_in"] / s_root, s_pin,
-                 pin_yield / s_pin, s_brg, s_stud, stud_yield / s_stud))
-    T_stud = stud_yield * (math.pi * stud_minor ** 3 / 32) / stud_arm * p["Horn_R"] * 1e-3
-    print("    the horn stud (ball %.2f mm off the arm mid-plane) yields at %.2f N m of servo torque"
-          " (%.1fx the flight need)" % (stud_arm, T_stud, T_stud / Ts))
+                 pin_yield / s_pin, s_brg, PC["sigma_in"] / s_brg, "double shear" if clevis else "M2 stud",
+                 s_stud, a_stud / s_stud))
+    s1, a1 = horn_stress(1.0)
+    T_stud = a1 / s1 * p["Horn_R"] * 1e-3            # servo torque at which the horn pivot yields
+    if clevis:
+        Fst = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
+        # half the ball force each: the strap cantilevers from its spacer, the arm takes its own half
+        # at the pivot plus the strap's half at the spacer, both from the hub
+        span = p["Horn_R"] - p["Horn_Strap_X"]
+        s_strap = (Fst / 2 * span) / (5.5 * p["Horn_Strap_T"] ** 2 / 6)
+        s_arm = (Fst / 2 * p["Horn_R"] + Fst / 2 * p["Horn_Strap_X"]) / (5.5 * 2.5 ** 2 / 6)
+        print("    horn clevis (strap %.1f mm 7075, ISO 7380 M2 x %.0f 10.9 in double shear): the pivot yields at"
+              " %.1f N m of servo torque (%.1fx stall); at stall the arm sees %.0f MPa (x%.1f) and the strap %.0f MPa"
+              " (x%.1f, 7075 yield %.0f assumed)" % (p["Horn_Strap_T"], p["Horn_Screw_L"], T_stud,
+                                                     T_stud / SERVO["stall_Nm"][8.4], s_arm, AL7075 / s_arm,
+                                                     s_strap, AL7075 / s_strap, AL7075))
+    else:
+        print("    the horn stud (ball %.2f mm off the arm mid-plane) yields at %.2f N m of servo torque"
+              " (%.1fx the flight need)" % (stud_arm, T_stud, T_stud / Ts))
     f_stud = T_stud / Ts
     Tlug = SERVO["stall_Nm"][8.4]
     print("  servo lugs: stall reaction %.2f N m over 39 mm -> %.0f N per M2.5 bolt; pedestal bearing"
@@ -474,14 +523,25 @@ def main():
     k_pin = p["Pin_D"] / pin_aft * ((pin_aft ** 3 - rs ** 3) / 3)   # T = sigma_max * k_pin (from the shaft surface)
     print("  aileron drive (flat %.2f mm wide, %.0f mm engaged; Ø%.0f dowel %.0f mm aft of the axis):"
           % (flat_w, eng, p["Pin_D"], pin_aft))
-    for lab, T_ in (("flight", H), ("horn-screw yield", T_stud * ratio), ("servo stall 8.4 V", SERVO["stall_Nm"][8.4] * ratio)):
+    cases = [("flight", H)] + ([] if clevis else [("horn-screw yield", T_stud * ratio)]) + \
+        [("servo stall 8.4 V", SERVO["stall_Nm"][8.4] * ratio)]
+    for lab, T_ in cases:
         s_flat = 2 * (T_ * 1e3 / 0.9) / ((flat_w / 2) * eng)
         s_pinpc = T_ * 1e3 / k_pin
         s_pinsh = (T_ * 1e3 / (2 * (p["Shaft_D"] / 2))) / (math.pi * p["Pin_D"] ** 2 / 4)
         print("    %s, %.2f N m at the aileron: D-flat alone peak %.0f MPa | dowel in PC peak %.0f MPa"
               " (x%.1f) | dowel shear %.0f MPa" % (lab, T_, s_flat, s_pinpc, PC["sigma_in"] / s_pinpc, s_pinsh))
-    print("    the dowel carries the torque; the D-flat and clamp only locate. In a jam the horn screw yields"
-          " before the dowel's PC bearing reaches its allowable")
+    # shaft torsion (D-flat section ~0.88 of the round), annealed silver steel, shear yield 0.577 x yield
+    T_tor = 0.577 * SHAFT_YIELD * math.pi * p["Shaft_D"] ** 3 / 16 * 0.88 * 1e-3
+    if clevis:
+        print("    the dowel carries the torque; the D-flat and clamp only locate. In a jam at the aileron the"
+              " fuse is the 4 mm shaft: it yields in torsion at %.2f N m at the aileron (servo %.2f N m, %.0f%% of"
+              " the 8.4 V stall), before the dowel's PC bearing (x%.1f at stall) and every crank part"
+              % (T_tor, T_tor / ratio, 100 * T_tor / ratio / SERVO["stall_Nm"][8.4],
+                 PC["sigma_in"] / (SERVO["stall_Nm"][8.4] * ratio * 1e3 / k_pin)))
+    else:
+        print("    the dowel carries the torque; the D-flat and clamp only locate. In a jam the horn screw yields"
+              " before the dowel's PC bearing reaches its allowable")
     # aileron as a chordwise cantilever from the shaft, root of the widest strip
     cfmax = max(s[2] for s in strips)
     w = F / (Sf * 1e-6)     # mean pressure
@@ -539,7 +599,7 @@ def main():
         Fp_s = H_s / (p["Crank_A"] * 1e-3)
         Ro_s, Ri_s = reactions(F_s, Fp_s, R + yc_s, p["Crank_Xk"])
         sig_s = F_s * (R + yc_s - xo) * 1e-3 * 1e3 / Z
-        print("\nTravel stop at +-%g deg of aileron (pushrod stacks %.2f mm off a %.0f mm shelf at Z %.0f-%.0f):"
+        print("\nTravel stop at +-%.1f deg of aileron (pushrod stacks %.2f mm off a %.0f mm shelf at Z %.0f-%.0f):"
               % (a_s, p["Stop_Gap"], p["Stop_Shelf_Z1"] - p["Stop_Shelf_Z0"], p["Stop_Shelf_Z0"], p["Stop_Shelf_Z1"]))
         print("  shaft and bearings at the stop angle, alpha 6 deg, %.1f kPa effective (aero %.1f N at r %.1f +"
               " pushrod %.1f N; the stop reaction stays in the rod and the can):" % (Q_MAX / 1e3, F_s, R + yc_s, Fp_s))
@@ -549,17 +609,19 @@ def main():
         w_, t_, arm_ = p["Stop_Shelf_W"], p["Stop_Shelf_Z1"] - p["Stop_Shelf_Z0"], p["Stop_Shelf_Arm"]
         a_w = math.pi * ((p["Stop_Washer_D"] / 2) ** 2 - (p["Stop_Hole_D"] / 2) ** 2)
         d_root = 1.6                                   # M2 thread root
-        for lab, Fr in (("servo stall 8.4 V", SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)),
-                        ("horn-screw yield (the fuse)", T_stud / (p["Horn_R"] * 1e-3))):
-            s_sh = Fr * arm_ * 6 / (w_ * t_ ** 2)
-            s_wa = Fr / a_w
-            L_b = p["Servo_ZO"] - p["Stop_Shelf_Z1"]
-            P_cr = math.pi ** 2 * 200e3 * (math.pi * d_root ** 4 / 64) / L_b ** 2
-            print("  %s: rod %.0f N into the shelf | shelf bending %.1f MPa (x%.1f, PC in-layer; %.0f x %.0f section,"
-                  " %.2f mm lever) | washer on the PC %.1f MPa | M2 rod in compression %.0f N vs Euler %.0f N"
-                  % (lab, Fr, s_sh, PC["sigma_in"] / s_sh, w_, t_, arm_, s_wa, Fr, P_cr))
-        print("  crank, shaft, bearings and aileron: aero only at the stop (above); the old pin stop put T/13 mm"
-              " through the shaft outboard of the outer bearing")
+        L_b = p["Servo_ZO"] - (p["Stop_Shelf_Z1"] + p["Stop_Gap"] + p["Stop_Washer_H"])   # upper stack to the horn ball
+        P_cr = math.pi ** 2 * 200e3 * (math.pi * d_root ** 4 / 64) / L_b ** 2
+        Fr = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
+        s_sh = Fr * arm_ * 6 / (w_ * t_ ** 2)          # as a cantilever from the nearer corbel (conservative)
+        s_pv, a_pv = horn_stress(Fr)
+        print("  stop path at full servo stall (8.4 V, rod %.0f N), factor >= 1.5 wanted:" % Fr)
+        print("    shelf %.1f MPa (x%.1f, PC in-layer; %.0f x %.0f section, %.1f mm from the corbel) | washer on the PC"
+              " %.1f MPa | M2 rod tension %.0f MPa (x%.1f, A2-70) | compression vs Euler %.0f N over %.1f mm (x%.1f)"
+              " | horn pivot %.0f MPa (x%.1f)"
+              % (s_sh, PC["sigma_in"] / s_sh, w_, t_, arm_, Fr / a_w, Fr / (math.pi * d_root ** 2 / 4),
+                 450 / (Fr / (math.pi * d_root ** 2 / 4)), P_cr, L_b, P_cr / Fr, s_pv, a_pv / s_pv))
+        print("    the horn-end ball link must hold %.0f N (x1.5 on stall): metal-body links, pull-tested" % (1.5 * Fr))
+        print("  crank, shaft, bearings and aileron: aero only at the stop (above)")
 
     # ---- flutter, rough. Panel flutter by the NACA TN 4197 fin formula (as used in
     # Apogee's flutter calculator) for the aileron and the fixed fin, and the

@@ -8,17 +8,17 @@
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "283.9 cm3"
+   "value": "283.0 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
    "passed": true,
-   "value": "8.0 cm3"
+   "value": "8.5 cm3"
   },
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "11.5 cm3"
+   "value": "11.8 cm3"
   },
   {
    "check": "Crank is one closed solid",
@@ -113,7 +113,7 @@
   {
    "check": "can clears covers",
    "passed": true,
-   "value": 0.0008
+   "value": 0.0007
   },
   {
    "check": "can clears tube",
@@ -219,7 +219,7 @@
   {
    "check": "hatch rebates clear a 10 mm fin-root fillet by >= 2 mm",
    "passed": true,
-   "value": "nearest recess 15.4 mm from a fin face"
+   "value": "nearest recess 12.6 mm from a fin face"
   },
   {
    "check": "servos keep >= 8 mm of air to the motor tube",
@@ -239,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8550 rays, thin: []"
+   "value": "8428 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -269,12 +269,12 @@
    "passed": true,
    "value": [
     93.6,
-    33.4,
+    31.7,
     81.4,
     213.6,
-    157.0,
+    154.5,
     333.6,
-    277.0
+    274.5
    ]
   },
   {
@@ -360,32 +360,37 @@
    "value": 0.65
   },
   {
-   "check": "stop stacks clear the shelf over the flight travel +-5 deg",
+   "check": "stop stacks to can gap >= 0.1 mm over the flight travel +-5 deg",
    "passed": true,
-   "value": 0.41
+   "value": 0.27
   },
   {
-   "check": "stop stacks touch nothing inside +-6.5 deg (the stop angle)",
+   "check": "stop lands at +-6.39 deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal 6.44",
+   "passed": true,
+   "value": 6.39
+  },
+  {
+   "check": "stop stacks touch nothing up to +-6.34 deg (the landing angle less 0.05)",
    "passed": true,
    "value": "free"
   },
   {
-   "check": "stop engages by +-6.8 deg (a washer on the shelf)",
+   "check": "stop engages by +-6.7 deg (a washer on the shelf)",
    "passed": true,
    "value": [
-    1.796,
-    1.769
+    1.475,
+    1.457
    ]
   },
   {
-   "check": "full servo throw: up to the stop (+-6.5 deg aileron, servo -13.1/+13.1 deg, 53 steps) nothing but the stop touches",
+   "check": "full servo throw: up to the stop (+-6.39153 deg aileron, servo -12.9/+12.9 deg, 53 steps) nothing but the stop touches",
    "passed": true,
    "value": 53
   },
   {
-   "check": "stop shelf is >= 5.9 mm deep where the washer lands (measured)",
+   "check": "stop shelf: the washer lands on a flat face supported on both sides within 1 mm of the footprint (a 6 mm bridge, measured)",
    "passed": true,
-   "value": 6.0
+   "value": "footprint [57.0, 57.0, 57.0, 57.0, 57.0, 57.0], 1 mm outside [56.0, 56.0]"
   },
   {
    "check": "fins and ailerons at full travel stay off the rail",

@@ -615,9 +615,11 @@ def verify(af, tmp):
                  ("link/can", P["lnk"], can), ("link/servo", P["lnk"], stat), ("link/covers", P["lnk"], m["covers"]),
                  ("link/lipo", P["lnk"], m["lipo"]), ("rod/crank", P["rod"], P["crk"]), ("horn/covers", P["hrn"], m["covers"])]
         if stop_on:
-            pairs += [("rod/can", P["rod"], can), ("stop stack/can", P["stk"], can),
+            pairs += [("rod/can", P["rod"], can), ("rod/servo", P["rod"], stat), ("rod/covers", P["rod"], m["covers"]),
+                      ("rod/lipo", P["rod"], m["lipo"]), ("stop stack/can", P["stk"], can),
                       ("stop stack/servo", P["stk"], stat), ("stop stack/horn", P["stk"], P["hrn"]),
-                      ("stop stack/crank", P["stk"], P["crk"])]
+                      ("stop stack/crank", P["stk"], P["crk"]), ("stop stack/covers", P["stk"], m["covers"]),
+                      ("stop stack/lipo", P["stk"], m["lipo"])]
         out = []
         for n_, A, B in pairs:
             if n_ in skip:
@@ -651,12 +653,25 @@ def verify(af, tmp):
     # +-Stop_Angle, and nothing else may touch over the servo's whole throw up to the stop.
     if stop_on:
         a_stop = st[1]
-        free = min(min_gap(pose(d)["stk"], can, n=1500) for d in (-p["Flap_Max"], p["Flap_Max"]))
-        record("stop stacks clear the shelf over the flight travel +-%g deg" % p["Flap_Max"], free > 0.1, round(free, 2))
-        sweep = sorted({x * 0.25 for x in range(-int(4 * a_stop), int(4 * a_stop) + 1)} | {-a_stop, a_stop})
-        inside = [d for d in sweep if abs(d) < a_stop - 0.05]
+        free = min(min_gap(pose(d)["stk"], can, n=1500) for d in defl)
+        record("stop stacks to can gap >= 0.1 mm over the flight travel +-%g deg" % p["Flap_Max"], free > 0.1, round(free, 2))
+        # where the washers actually land (measured, 0.01 deg): the nominal contact less the tilt of the
+        # washer as the balls move sideways
+        def first_contact(sg):
+            lo, hi = p["Flap_Max"], a_stop + 1.0
+            for _ in range(10):
+                mid = (lo + hi) / 2
+                lo, hi = (lo, mid) if inter(pose(sg * mid)["stk"], can) > 1e-3 else (mid, hi)
+            return hi
+        a_c = min(first_contact(-1), first_contact(1))
+        record("stop lands at +-%.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
+               % (a_c, a_stop), p["Flap_Max"] + 0.5 <= a_c <= a_stop + 0.3, round(a_c, 2))
+        sweep = sorted({x * 0.25 for x in range(-int(4 * a_c), int(4 * a_c) + 1)} | {-(a_c - 0.05), a_c - 0.05})
+        inside = [d for d in sweep if abs(d) <= a_c - 0.05 + 1e-9]
         early = [d for d in inside if inter(pose(d)["stk"], can) > 1e-3]
-        record("stop stacks touch nothing inside +-%g deg (the stop angle)" % a_stop, not early, early or "free")
+        record("stop stacks touch nothing up to +-%.2f deg (the landing angle less 0.05)" % (a_c - 0.05), not early,
+               early or "free")
+        a_stop = a_c
         late = [inter(pose(sg * (a_stop + 0.3))["stk"], can) for sg in (-1, 1)]
         record("stop engages by +-%.1f deg (a washer on the shelf)" % (a_stop + 0.3), min(late) > 1e-3,
                [round(v, 3) for v in late])
@@ -666,13 +681,26 @@ def verify(af, tmp):
         record("full servo throw: up to the stop (+-%g deg aileron, servo %+.1f/%+.1f deg, %d steps) nothing but"
                " the stop touches" % (a_stop, solve_phi(-a_stop), solve_phi(a_stop), len(sweep)),
                not hits2, hits2[:6] or len(sweep))
-        # shelf section, measured on the mesh: depth (Z) at the rod line and at the corbel end
-        o = np.array([[(rc - p["Horn_R"]) * math.cos(th) - (-p["Horn_Ball_U"] - 3.0) * math.sin(th),
-                       (rc - p["Horn_R"]) * math.sin(th) + (-p["Horn_Ball_U"] - 3.0) * math.cos(th), st[4] + 20]])
-        loc, _, _ = can.ray.intersects_location(o, [[0, 0, -1]], multiple_hits=True)
-        zs = sorted(float(z) for z in loc[:, 2] if st[3] - 10 < z < st[4] + 5)
-        depth = zs[-1] - zs[0] if len(zs) >= 2 else 0.0
-        record("stop shelf is >= 5.9 mm deep where the washer lands (measured)", depth >= 5.9, round(depth, 2))
+        # the lower washer's landing face, measured: rays up from below the shelf. Flat at the shelf's
+        # underside across the washer footprint, and supported on both sides (45 deg corbels reaching
+        # the footprint edge), so it prints as a short bridge, not a cantilever.
+        def fin_xy(lx, ly):
+            return ((rc + lx) * math.cos(th) - ly * math.sin(th), (rc + lx) * math.sin(th) + ly * math.cos(th))
+
+        def underside(lx, ly):
+            x_, y_ = fin_xy(lx, ly)
+            loc, _, _ = can.ray.intersects_location([[x_, y_, st[3] - 15]], [[0, 0, 1]], multiple_hits=True)
+            z_ = sorted(float(z) for z in loc[:, 2] if st[3] - 15 < z < st[4] + 1)
+            return z_[0] if z_ else None
+        rw, hu_ = st[5] / 2, p["Horn_Ball_U"]
+        flat = [underside(-p["Horn_R"] + dx, -hu_ + dy) for dx in (-rw + 0.3, 0, rw - 0.3) for dy in (-rw + 0.3, rw - 0.3)]
+        sides = [underside(-p["Horn_R"], -hu_ + sg * (rw + 1.0)) for sg in (-1, 1)]
+        ok = all(z is not None and abs(z - st[3]) < 0.05 for z in flat) and \
+            all(z is not None and z < st[3] - 0.9 for z in sides)
+        record("stop shelf: the washer lands on a flat face supported on both sides within 1 mm of the footprint"
+               " (a %.0f mm bridge, measured)" % st[5], ok,
+               "footprint %s, 1 mm outside %s" % ([None if z is None else round(z, 2) for z in flat],
+                                                   [None if z is None else round(z, 2) for z in sides]))
 
     # rail: fins and ailerons at full travel stay off the 1010 rail (25.4 wide, face >= R_Out + 2)
     rail_box = trimesh.creation.box(extents=[40, 25.4, 900])
