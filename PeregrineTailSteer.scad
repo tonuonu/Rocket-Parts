@@ -434,6 +434,11 @@ assert(Shaft_X1 > R_Out + Flap_Root_Gap + 20, "shaft engages the aileron by less
 assert(Hinge_Z - Flap_LE_R - Flap_Gap > 0, "hinge too low");
 assert(Fin_Tab_Z[0] - Hinge_Z > Housing_D/2 + 8, "fin tab runs into the hinge block");
 assert(Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Z[0] - Hatch_Rebate, "rail boss under the hatch");
+// the stop window's rebate (narrow, like the fin side, on both of its sides) stays 3 mm off the rail boss
+assert(is_undef(Hatch_Win) || Rail_Aft_Z - Rail_Boss_D/2 > Hatch_Z[0] + 1
+       || Rail_Aft_Z + Rail_Boss_D/2 < Hatch_Win[1][0] - Hatch_Rebate
+       || Hatch_Win[0][0] - Hatch_Rebate_Fin >= (Servo_Theta - Rail_A)*PI/180*R_Out + Rail_Boss_D/2 + 3,
+       "stop window's rebate on the rail boss");
 assert(Servo_Rc + Servo_W/2 < R_In, "servo outside the wall");
 assert(Shaft_X0 > MMT_Bore_R + 1, "shaft into the motor tube");
 // set-screw insert pocket: on the aft side at |Y| <= Set_Insert[0]/2; the arm
@@ -757,10 +762,11 @@ module Hatch_Shell(bat, grow, ra, rb, grow_fin=undef, grow_bat=undef)
         union(){
             Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
                 Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin, grow_bat))), Hatch_Ctr(bat));
-            // the stop window (Zephyr): its own rectangle, fin-side edge on Hatch_U[1]
-            if (!is_undef(Hatch_Win)) let(u=Hatch_Win[0], z=Hatch_Win[1],
+            // the stop window (Zephyr): its own rectangle, fin-side edge on Hatch_U[1]; both of its
+            // sides take the narrow (fin-side) offset, so its rebate stays off the rail boss
+            if (!is_undef(Hatch_Win)) let(u=Hatch_Win[0], z=Hatch_Win[1], gs=is_undef(grow_fin) ? grow : grow_fin,
                     W=[[u[0], z[0]], [u[1], z[0]], [u[1], z[1]], [u[0], z[1]]])
-                Radial_Prism(Sub_Pts(Off_Pts(W, [grow, is_undef(grow_fin) ? grow : grow_fin, grow, grow])),
+                Radial_Prism(Sub_Pts(Off_Pts(W, [grow, gs, grow, gs])),
                              [(u[0] + u[1])/2, (z[0] + z[1])/2]);
         }
         Tube_Shell(ra, rb);

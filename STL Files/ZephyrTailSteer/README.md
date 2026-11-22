@@ -34,12 +34,16 @@ Cl_δ need scaling to this aileron and fin.
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
 | Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at about ±6.4°** on the pushrod |
 | Canards | On the nose | Removed |
-| Tail mass change | +460 g | +888 g against the stock kit fin section |
+| Tail mass change | +460 g | +889 g against the stock kit fin section |
 | Margin at max speed | 2.32 cal | 1.91 cal (OpenRocket model of the build) |
 
-The can, bearings, shaft, servo, crank design, hatches and wiring stay the Peregrine's. At
-±5° the 4 mm shaft and the 684 bearings hold Mach 0.8 with a factor of 2.5 or more, so the
-can only needed a new servo angle for the 2.0 link ratio. Shrinking the aileron instead was
+The bearings, shaft, servo, crank design and wiring stay the Peregrine's. At ±5° the 4 mm
+shaft and the 684 bearings hold Mach 0.8 with a factor of 2.5 or more. The can keeps the
+Peregrine's layout with these changes (see Parts to print and Design choices):
+- the servo at 62.2° for the 2.0 link ratio, and a 16 mm crank;
+- the travel-stop shelf in each servo bay;
+- hatch openings 3 mm wider on the fin side, for the horn clevis, and 4 mm wider on the other side, for servo removal. The screw on that side sits below the servo case;
+- a stop window below each hatch's fin-side corner, with a cover lobe and its own screw. Shrinking the aileron instead was
 not possible: its chord runs from the hinge to the trailing edge, and the hinge (Z 34)
 cannot move aft into the motor retainer's keep-out.
 
@@ -109,7 +113,7 @@ cannot move aft into the motor retainer's keep-out.
   - A Ø5–6 shaft would need a thicker aileron (and fin) for no gain at ±5°.
 - **Link ratio 2.0.** Crank 16 mm and horn 8 mm (Peregrine 14 / 9).
   - The servo turns ±10° for ±5° of aileron, so its gear lash counts half at the aileron.
-  - The servo sits at 62.2° from its fin (Peregrine 60.4°). The hatch opening is 3 mm wider on the fin side than the Peregrine's, for the horn clevis, and its rebate stays 12.6 mm from a fin face (≥ 12 for a 10 mm fillet). It is also 4 mm wider on the other side, and the cover screw on that edge sits below the servo's case instead of above its lead stub, so the servo can slide off its horn and come out (see Servo removal). Below its fin-side corner a stop window (u 15–36.5, Z 51.5–73) opens a side-on path to both stop nuts and their gaps; the cover grows a matching lobe with its own M3 screw below it. At Cp −1 on the design q the lobe sees 70 N of suction, against about 720 N for the button head to pull through the 1.6 mm cover (×10).
+  - The servo sits at 62.2° from its fin (Peregrine 60.4°). The hatch opening is 3 mm wider on the fin side than the Peregrine's, for the horn clevis, and its rebate stays 12.6 mm from a fin face (≥ 12 for a 10 mm fillet). It is also 4 mm wider on the other side, and the cover screw on that edge sits below the servo's case instead of above its lead stub, so the servo can slide off its horn and come out (see Servo removal). Below its fin-side corner a stop window (u 15–36.5, Z 51.5–73) opens a side-on path to both stop nuts and their gaps; the cover grows a matching lobe with its own M3 screw below it. At Cp −1 on the design q the lobe sees 60 N of suction, against about 720 N for the button head to pull through the 1.6 mm cover (×12). The window's rebate is narrow on both sides (3 mm), so it stays 4 mm off the rail-button boss.
 - **Fin can: polycarbonate, as the Peregrine.**
   - Loads on the can stay small. The hatch covers see about 23 kPa of suction (Cp −0.3 × the effective q), which is 22 MPa of bending in the 1.6 mm cover (×2) and 25–37 N per M3 insert.
   - Stagnation heating at M 0.70 is about +25 K, for seconds. PC's HDT is about 130 °C.
@@ -149,7 +153,7 @@ Frame: Z = 0 at the base, +Z forward; x from the nose tip = 1397.68 − Z. Fins 
 
 All the files are in this folder. Print settings are as for the Peregrine (`../PeregrineTailSteer/README.md`, Parts to print; PC per `L2-PrintSettings.md`).
 
-`FinCan.stl`, `HatchServo.stl`, `HatchServoLipo.stl` and `Crank.stl` differ from the Peregrine's (servo at 62.2°, 16 mm crank), so use these. `BearingCoupon.stl` and `ShaftDrillJig.stl` also come from the Zephyr render. `AileronScrewHalf_Zephyr.stl` and `AileronTappedHalf_Zephyr.stl`: 3 each. `FixedFin_Zephyr.dxf`: 3 off in 1/4 in carbon plate (waterjet or CNC).
+`FinCan.stl`, `HatchServo.stl`, `HatchServoLipo.stl` and `Crank.stl` differ from the Peregrine's (servo at 62.2°, 16 mm crank, stop shelf, wider hatches with the stop window, cover lobes), so use these. `BearingCoupon.stl` and `ShaftDrillJig.stl` also come from the Zephyr render. `AileronScrewHalf_Zephyr.stl` and `AileronTappedHalf_Zephyr.stl`: 3 each. `FixedFin_Zephyr.dxf`: 3 off in 1/4 in carbon plate (waterjet or CNC).
 
 ## Checks (hand estimates; confirm against the CFD)
 
@@ -180,14 +184,14 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 
 | Item | Mass | Z |
 |---|---:|---:|
-| FinCan | 335.5 g | 108.5 |
-| Hatch covers ×3 | 40.3 g | 107.7 |
+| FinCan | 336.1 g | 108.4 |
+| Hatch covers ×3 | 39.7 g | 108.4 |
 | Cranks ×3 | 8.1 g | 33.3 |
 | Ailerons ×3 | 30.6 g | 23.5 |
 | Fixed fins ×3, carbon (notched, with tab) | 626.5 g | 97.9 |
 | Shafts, bearings | 22.1 g | 34 |
 | Servos ×3 | 92.1 g | 96.5 |
-| Links, LiPo, switch/fuse/harness, inserts (est.) | 76.0 g | — |
+| Ball links and rods (no horn stud: the dowel is below), LiPo, switch/fuse/harness, inserts (est.) | 74.5 g | — |
 | Paper tube 237.2 mm | 106.5 g | 338.6 |
 | Motor tube 38 × 609.6 | 120.4 g | 317.5 |
 | Kit rings ×2 + eyebolt | 83.5 g | — |
@@ -195,9 +199,10 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 | Horn clevis caps ×3 (7075) | 4.1 g | 86 |
 | Pivot dowels and cap-screw shanks ×3 (steel; the heads are in the caps) | 1.5 g | 86 |
 | Stop stacks ×6 (M2 nut + Ø6 washer, est.) | 1.5 g | 60 |
-| **Total** | **1552.4 g** | **154.5** |
+| Stop-window lobe inserts + M3 screws ×3 (est.) | 2.7 g | 47 |
+| **Total** | **1553.6 g** | **154.4** |
 
-- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +888 g. The OpenRocket model carries +877 g: the clevis caps, dowels, stop stacks and the hatch changes came later. The 11 g at the tail moves the CG about 1 mm aft at max speed, about 0.01 cal.
+- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +889 g. The OpenRocket model carries +877 g: the clevis caps, dowels, stop stacks and the hatch changes came later. The 12 g at the tail moves the CG about 1 mm aft at max speed, about 0.01 cal.
 - **OpenRocket:** `Zephyr-CamNose.ork` carries these parts as components and mass components, with OpenRocket's own masses for the kit parts (see Mass basis). Dry mass is 3.18 kg; with the J510W, 4.26 kg at liftoff.
 - **Stability** (J510W, 8 ft rail, 3 m/s wind):
 
@@ -326,7 +331,7 @@ The verifier checks the key's reach, the slide and the lift-out for both hatch t
 - **Rod exit margin:** 0.98–1.15 cal on an 8 ft rail in 3 m/s wind. If the wind is above 3 m/s, add 150 g of nose ballast: in an earlier run that raised the rod-exit margin by about 0.3 cal, for 8 m/s less top speed.
 - **Recovery bay:** 192 mm × Ø99 (about 1.5 l) holds the 60 in parachute, the shock cord and the protector. It is not checked: pack it before committing to the 24 in motor tube. With the J825R (478 mm) or the J530 (500 mm) as the longest motor, a shorter tube gives the bay more room.
 - **Mach 0.70, not 0.8.** On the component-mass basis no commercial 38 mm motor gets the built rocket above M 0.70. Reaching 0.8 needs about 500 g less mass, or a 54 mm mount (a new hinge layout). The hinge is cleared to M 0.85 either way.
-- **Tail mass +888 g.** The carbon fins are 626 g of it.
+- **Tail mass +889 g.** The carbon fins are 626 g of it.
 - **Servo lash** is unpublished. The bench check decides; at a 2.0 ratio, up to about 0.7° at the servo still meets 0.5° at the aileron.
 - **Travel stop:** the stop angle is set by the nut positions (0.1 mm of gap is about 0.36°), not by print tolerance. Re-set it through the stop window after any rod or ball-link change; a servo swap does not touch it.
 - **Drift:** single deployment at apogee from about 1.5 km.

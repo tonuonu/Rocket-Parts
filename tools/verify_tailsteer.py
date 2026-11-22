@@ -527,8 +527,9 @@ def verify(af, tmp):
             hits = []
             for n_, B in (("can", can), ("fixed fin", m["fin0"]), ("aileron", m["aileron0"]),
                           ("horn", m["horn0"]), ("clevis cap", m["clevis0"])):
-                B_ = B.copy(); B_.apply_transform(R_)
-                v = inter(key, B_)
+                if n_ != "can":                     # the can is whole: only the per-sector parts turn
+                    B = B.copy(); B.apply_transform(R_)
+                v = inter(key, B)
                 if v > 1e-3:
                     hits.append((n_, round(v, 2)))
             record("%s: the arm's retaining screw is reachable along the spline axis through the hatch"
@@ -762,44 +763,51 @@ def verify(af, tmp):
         s_lo, s_hi = (z0 - gap - wh) - Z, (z1 + gap) - Z
         stk_lo = cyl(cb + s_lo * u, cb + (s_lo + wh) * u, wd / 2)
         stk_hi = cyl(cb + s_hi * u, cb + (s_hi + wh) * u, wd / 2)
-        common = [("can", can), ("fixed fin", m["fin0"]), ("aileron", P["ail"]), ("crank", P["crk"]),
-                  ("links", P["lnk"]), ("rod", P["rod"]), ("servo", stat), ("horn", P["hrn"]), ("motor tube", m["mmt"])]
+        per_sector = [("fixed fin", m["fin0"]), ("aileron", P["ail"]), ("crank", P["crk"]),
+                      ("links", P["lnk"]), ("rod", P["rod"]), ("servo", stat), ("horn", P["hrn"])]
         e1_0 = lx_w - np.dot(lx_w, u) * u
         e1_0 /= np.linalg.norm(e1_0)
         blocked_w, blocked_f = [], []
-        for nm_, s0, away, other, z_gap in (("lower", s_lo, -1, stk_hi, (z0 - gap + z0) / 2),
-                                           ("upper", s_hi + 0.5, 1, stk_lo, (z1 + z1 + gap) / 2)):
-            c0 = cb + (s0 + nut_h / 2) * u                     # nut centre
-            zc = (nut_h / 2 + 0.4 - 1.0) * away                # head 2 thick: flush on the washer side
-            for sw in range(-15, 16, 5):
-                e1 = trimesh.transformations.rotation_matrix(math.radians(sw), u)[:3, :3] @ e1_0
-                e2 = np.cross(u, e1)
-                T = np.eye(4); T[:3, 0], T[:3, 1], T[:3, 2] = e1, e2, u
-                T[:3, 3] = c0 + zc * u
-                head = trimesh.creation.cylinder(radius=4.5, height=2.0, sections=48)
-                mouth = trimesh.creation.box(extents=[6.6, 4.1, 3.0])
-                mouth.apply_translation([-3.3 + 2.05, 0, 0])    # e1 -4.55 .. +2.05: the nut's far flat
-                head = trimesh.boolean.difference([head, mouth], engine="manifold")
-                neck = trimesh.creation.box(extents=[26.0, 6.0, 2.0])
-                neck.apply_translation([4.0 + 13.0, 0, 0])      # e1 4 .. 30, out past the skin
-                tool = trimesh.util.concatenate([head, neck]); tool.apply_transform(T)
-                for bn, B in common + [("other stack", other)]:
-                    v = inter(tool, B)
-                    if v > 1e-3:
-                        blocked_w.append((nm_, sw, bn, round(v, 2)))
-            cg = cb + (z_gap - Z) * u                          # the gap's mid-plane on the rod
-            e2 = np.cross(u, e1_0)
-            for off in (2.2, -2.2):
-                f = cyl(cg - 3 * e1_0 + off * e2, cg + 30 * e1_0 + off * e2, 0.85)
-                for bn, B in common + [("stacks", trimesh.util.concatenate([stk_lo, stk_hi]))]:
-                    v = inter(f, B)
-                    if v > 1e-3:
-                        blocked_f.append((nm_, off, bn, round(v, 2)))
-        record("stop nuts reachable through the stop window at neutral, servo in: a 4 mm open-end wrench"
+        # sectors A and B (C is B turned): the tools and the per-sector parts turn, the can stays whole
+        for sector in (0, 1):
+            R_ = trimesh.transformations.rotation_matrix(math.radians(120 * sector), [0, 0, 1])
+            def turned(B):
+                B = B.copy(); B.apply_transform(R_)
+                return B
+            common = [("can", can), ("motor tube", m["mmt"])] + [(n_, turned(B)) for n_, B in per_sector]
+            for nm_, s0, away, other, z_gap in (("lower", s_lo, -1, stk_hi, (z0 - gap + z0) / 2),
+                                               ("upper", s_hi + 0.5, 1, stk_lo, (z1 + z1 + gap) / 2)):
+                c0 = cb + (s0 + nut_h / 2) * u                     # nut centre
+                zc = (nut_h / 2 + 0.4 - 1.0) * away                # head 2 thick: flush on the washer side
+                for sw in range(-15, 16, 5):
+                    e1 = trimesh.transformations.rotation_matrix(math.radians(sw), u)[:3, :3] @ e1_0
+                    e2 = np.cross(u, e1)
+                    T = np.eye(4); T[:3, 0], T[:3, 1], T[:3, 2] = e1, e2, u
+                    T[:3, 3] = c0 + zc * u
+                    head = trimesh.creation.cylinder(radius=4.5, height=2.0, sections=48)
+                    mouth = trimesh.creation.box(extents=[6.6, 4.1, 3.0])
+                    mouth.apply_translation([-3.3 + 2.05, 0, 0])    # e1 -4.55 .. +2.05: the nut's far flat
+                    head = trimesh.boolean.difference([head, mouth], engine="manifold")
+                    neck = trimesh.creation.box(extents=[26.0, 6.0, 2.0])
+                    neck.apply_translation([4.0 + 13.0, 0, 0])      # e1 4 .. 30, out past the skin
+                    tool = trimesh.util.concatenate([head, neck]); tool.apply_transform(T); tool.apply_transform(R_)
+                    for bn, B in common + [("other stack", turned(other))]:
+                        v = inter(tool, B)
+                        if v > 1e-3:
+                            blocked_w.append(("AB"[sector], nm_, sw, bn, round(v, 2)))
+                cg = cb + (z_gap - Z) * u                          # the gap's mid-plane on the rod
+                e2 = np.cross(u, e1_0)
+                for off in (2.2, -2.2):
+                    f = cyl(cg - 3 * e1_0 + off * e2, cg + 30 * e1_0 + off * e2, 0.85); f.apply_transform(R_)
+                    for bn, B in common + [("stacks", turned(trimesh.util.concatenate([stk_lo, stk_hi])))]:
+                        v = inter(f, B)
+                        if v > 1e-3:
+                            blocked_f.append(("AB"[sector], nm_, off, bn, round(v, 2)))
+        record("stop nuts reachable through the stop window at neutral, servo in, sectors A and B: a 4 mm open-end wrench"
                " (Ø9 x 2 head, 6 x 2 neck) on each nut swung +-15 deg about the rod, clear of can, fin, aileron,"
                " crank, links, rod, the other stack, servo, horn and motor tube",
                not blocked_w, blocked_w[:6] or "clear")
-        record("stop gaps reachable through the stop window at neutral: a Ø1.7 feeler in each gap beside"
+        record("stop gaps reachable through the stop window at neutral, sectors A and B: a Ø1.7 feeler in each gap beside"
                " the rod, along the servo's radial, clear of everything but its own gap",
                not blocked_f, blocked_f[:6] or "clear")
         hits2 = []

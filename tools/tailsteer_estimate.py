@@ -651,8 +651,8 @@ def main():
         if p.get("Win_U1", 0) > p.get("Win_U0", 0):
             # the cover's lobe over the stop window hangs below the main cover's screws: one M3 of its
             # own. Load: suction at Cp -1 on the design q (with Prandtl-Glauert) over the lobe (opening
-            # + rebate, fin side narrower); capacity: the button head pulling through the 1.6 mm PC.
-            a_l = ((p["Win_U1"] - p["Win_U0"] + p["Hatch_Rebate"] + p["Hatch_Rebate_Fin"])
+            # + rebate: narrow on both sides, full below); capacity: the button head pulling through the 1.6 mm PC.
+            a_l = ((p["Win_U1"] - p["Win_U0"] + 2 * p["Hatch_Rebate_Fin"])
                    * (p["Hatch_Z0"] - p["Win_Z0"] + p["Hatch_Rebate"]))
             f_l = Q_MAX * 1e-6 * a_l
             f_pt = math.pi * 5.5 * 1.6 * 0.577 * PC["sigma_in"]
@@ -756,7 +756,9 @@ def main():
                3 * math.pi * 4 * (p["Shaft_X1"] - p["Shaft_X0"]) * 7.85e-3, p["Hinge_Z"]),
               ("bearings %s x6" % BEARING["name"], 6 * BEARING["mass"], p["Hinge_Z"]),
               ("servos %s x3" % SERVO["name"], 3 * SERVO["mass"], p["Servo_ZO"] + 10.5),
-              ("ball links, studs, M2 rods, nuts x3 (est)", 3 * 4.0, (p["Hinge_Z"] + p["Servo_ZO"]) / 2),
+              # the horn stud (M2 x 10 + nut, about 0.5 g) only without the clevis, whose dowel is counted below
+              (("ball links, M2 rods, nuts x3 (est)", 3 * 3.5) if p.get("Horn_Clevis") else
+               ("ball links, studs, M2 rods, nuts x3 (est)", 3 * 4.0)) + ((p["Hinge_Z"] + p["Servo_ZO"]) / 2,),
               ("LiPo Tattu 450 mAh 2S (spec)", 28.0, p["Lipo_Z0"] + p["Lipo_L"] / 2),
               ("switch, fuse, 1000 uF, harness (est)", 22.0, 175.0),
               ("inserts, screws, nuts (est)", 14.0, 110.0),
@@ -775,6 +777,10 @@ def main():
                    3 * math.pi * 1.0 ** 2 * (p["Horn_Pin_L"] + p["Horn_Screw_L"]) * 7.85e-3, p["Servo_ZO"]),
                   ("stop stacks x6 (M2 nut + Ø6 washer, est)", 6 * 0.25,
                    (p["Stop_Shelf_Z0"] + p["Stop_Shelf_Z1"]) / 2)]
+    if p.get("Win_U1", 0) > p.get("Win_U0", 0):
+        # stop-window cover lobes: one RX-M3x5.7 insert (0.4 g) and M3 button-head screw (0.5 g) each,
+        # 4.3 mm (Hatch_Screw_In) below the window
+        items.append(("stop-window lobe inserts + M3 screws x3 (est)", 3 * 0.9, p["Win_Z0"] - 4.3))
     m_new = sum(x[1] for x in items)
     z_new = sum(x[1] * x[2] for x in items) / m_new
     for nm, mm, zz in items:
