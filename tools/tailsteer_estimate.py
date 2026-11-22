@@ -107,7 +107,11 @@ ALPHA_MARGIN = 1.5                  # on the CFD fin load
 VISCOUS = 0.85                      # flap effectiveness factor (gap, viscous), estimate
 # ---- parts
 SERVO = dict(name="MKS HV6160", stall_Nm={6.0: 1.422, 7.4: 1.667, 8.4: 1.824}, mass=30.7,
-             speed_s60=0.133)       # retailer/servodatabase figures; 8.4 V torque 18.6 kg cm
+             speed_s60=0.133,       # retailer/servodatabase figures; 8.4 V torque 18.6 kg cm
+             stall_A={6.0: 1.9, 7.4: 2.2, 8.2: 2.5})   # MKS's stall current
+# per-servo PTC (Zephyr): Bourns MF-R090, hold 0.9 A, trip 1.8 A at 23 C (distributor data)
+PTC = dict(name="Bourns MF-R090", hold=0.9, trip=1.8)
+PC_CREEP = 10.0     # MPa, long-term design stress of unfilled PC at 23 C (typical; not measured on prints)
 BEARING = dict(name="NSK 684AZZ", d=4, D=9, B=4, Cr=705.0, C0r=225.0, mass=1.01)
 SHAFT_YIELD = 450.0                 # MPa, annealed silver steel 1.2210 (assumed, typical)
 PC = dict(rho_solid=1.20, fill=1.0, sigma_in=45.0, sigma_cross=20.0)   # printed PC; the can is walls <= 2.4 mm = all perimeters, so solid
@@ -198,7 +202,7 @@ def flap_strips(p, pts, n=120):
         y = y0 + (i + 0.5) * (y1 - y0) / n
         xs = crossings(pts, y)
         le, te = xs[0], xs[1]          # first segment: leading edge to trailing edge
-        te = min(te, p.get("Flap_X_Max", 1e9))   # the clip removes the fin aft of it (Zephyr)
+        te = min(te, p.get("Flap_X_Max", 1e9))   # the aileron clip removes the fin aft of it, if it bites
         cf = te - p["Hinge_X"]
         if cf > 0:
             out.append((y, te - le, cf, (y1 - y0) / n))
@@ -585,8 +589,9 @@ def main():
     q_eff = lambda v: 0.5 * RHO * v * v * (pg(v) if AF["compress"] else 1.0)
     print("\nLoad envelope (%g deg, alpha 6 deg; loads scale with q%s):"
           % (p["Flap_Max"], " x Prandtl-Glauert" if AF["compress"] else ""))
-    print("  at %.2f kPa%s: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f, horn screw %.1f"
-          % (Q_MAX / 1e3, " effective" if AF["compress"] else "", f_servo, f_brg, f_shaft, f_stud))
+    hl = "clevis dowel" if p.get("Horn_Clevis") else "horn screw"     # what sets the horn's factor
+    print("  at %.2f kPa%s: servo %.1fx (6.0 V), bearing C0r/P %.1f, shaft %.1f, %s %.1f"
+          % (Q_MAX / 1e3, " effective" if AF["compress"] else "", f_servo, f_brg, f_shaft, hl, f_stud))
     if AF["compress"]:
         print("  all >= %.1f up to an effective q of %.1f kPa (speed below, with Prandtl-Glauert)"
               % (FACTOR_MIN, q_lim / 1e3))
@@ -594,9 +599,9 @@ def main():
         print("  all >= %.1f up to q = %.1f kPa = %.0f m/s at sea level" % (FACTOR_MIN, q_lim / 1e3, math.sqrt(2 * q_lim / RHO)))
     for v in AF["env_v"]:
         k = q_eff(v) / Q_MAX
-        print("  at %.0f m/s (q %.1f kPa%s): servo %.1fx, C0r/P %.1f, shaft %.1f, horn screw %.1f"
+        print("  at %.0f m/s (q %.1f kPa%s): servo %.1fx, C0r/P %.1f, shaft %.1f, %s %.1f"
               % (v, 0.5 * RHO * v * v / 1e3, ", M %.2f" % (v / A_SOUND) if AF["compress"] else "",
-                 f_servo / k, f_brg / k, f_shaft / k, f_stud / k))
+                 f_servo / k, f_brg / k, f_shaft / k, hl, f_stud / k))
     # compressibility: Prandtl-Glauert scales every aero load by 1/sqrt(1 - M^2)
     if not AF["compress"]:
         print("  with Prandtl-Glauert (loads x 1/sqrt(1 - M^2)): at the design %.1f m/s (M %.2f, x %.2f) servo %.1fx,"
@@ -647,6 +652,15 @@ def main():
                  Fr / (math.pi * d_root ** 2 / 4),
                  450 / (Fr / (math.pi * d_root ** 2 / 4)), P_cr, L_b, P_cr / Fr, s_pv, a_pv / s_pv))
         print("    the horn-end ball link must hold %.0f N (x1.5 on stall): metal-body links, pull-tested" % (1.5 * Fr))
+        # a servo driven into the stop and left there: one stalled servo draws 2.5 A, under the shared
+        # 7.5 A fuse, so the fuse does not end it. The washer bearing is above PC's long-term stress, so
+        # each servo has its own PTC, which trips at stall and so bounds the time at full load.
+        s_w = Fr / a_w
+        print("  sustained stall at the stop: one servo draws %.1f A at 8.2 V (the 7.5 A fuse stays closed); washer"
+              " bearing %.1f MPa against PC's long-term %.0f MPa (x%.2f): not for a sustained load. A %s per servo"
+              " (hold %.1f A, trip %.1f A) trips at stall (%.2fx its trip current) and drops the servo"
+              % (SERVO["stall_A"][8.2], s_w, PC_CREEP, PC_CREEP / s_w, PTC["name"], PTC["hold"], PTC["trip"],
+                 SERVO["stall_A"][8.2] / PTC["trip"]))
         print("  crank, shaft, bearings and aileron: aero only at the stop (above)")
         if p.get("Win_U1", 0) > p.get("Win_U0", 0):
             # the cover's lobe over the stop window hangs below the main cover's screws: one M3 of its
@@ -772,7 +786,12 @@ def main():
         # horn clevis caps (7075 from the CAD, its cap-screw head included), the pivot dowels
         # and cap screws, and the travel-stop stacks (M2 nut + Ø6 washer, two per rod)
         m_, z_ = render_mass_cg(42, 2.81, ['Airframe="%s"' % fs])
-        items += [("horn clevis caps x3 (7075)", 3 * m_, z_),
+        # the CAD cap is the saddle solid with its cap-screw head: take out the arm's slot (the arm is
+        # 5.5 x 2.5 through the saddle) and count the ISO 7380 head (Ø3.5 x 1.1) as steel
+        v_slot = (p["Horn_Cap_X1"] - p["Horn_Cap_X0"]) * 5.5 * p["Horn_Arm_T"]
+        v_head = math.pi * 1.75 ** 2 * 1.1
+        m_ += (-v_slot * 2.81 + v_head * (7.85 - 2.81)) * 1e-3
+        items += [("horn clevis caps x3 (7075, cap-screw heads steel)", 3 * m_, z_),
                   ("pivot dowels 2 x 10 + cap-screw shanks x3 (steel; the heads are in the cap CAD)",
                    3 * math.pi * 1.0 ** 2 * (p["Horn_Pin_L"] + p["Horn_Screw_L"]) * 7.85e-3, p["Servo_ZO"]),
                   ("stop stacks x6 (M2 nut + Ø6 washer, est)", 6 * 0.25,

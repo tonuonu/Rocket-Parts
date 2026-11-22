@@ -284,7 +284,7 @@ flown separable, add a third connector there.
 **Power.**
 - Tattu 2S → 7.5 A fuse → Schurter switch → 1000 µF 16 V low-ESR capacitor → Y harness to the three HV6160s.
 - The pack runs 6.6–8.4 V, inside the HV6160's 4.8–8.4 V.
-- A sustained triple stall opens the fuse. The ailerons then trail to neutral, because the hinge moments are restoring.
+- The fuse protects the wiring against a short. It does not end a stall: one stalled HV6160 draws 2.5 A (MKS, 8.2 V), and three draw 7.5 A, the fuse's rating, which it carries without opening promptly. A stalled servo heats until its own protection or the pack ends it. If one does stop, its aileron trails to neutral, because the hinge moments are restoring. (The Zephyr adds a PTC per servo for its travel stop.)
 
 **Firmware.**
 - Centre the ailerons at apogee, before pyro 1 fires. After connector 2 parts, the servos see no pulses.
@@ -405,14 +405,14 @@ With no includes, the renders print no library echoes and no warnings.
 Python: `pip install -r tools/requirements-tailsteer.txt` (numpy, trimesh, manifold3d, networkx, rtree, scipy, shapely).
 
 ```
-~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes (66 + 79 checks); writes STLs/DXFs only if all pass
+~/.cache/camnose-venv/bin/python -I tools/verify_tailsteer.py --export   # both airframes (66 + 80 checks); writes STLs/DXFs only if all pass
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py          # the numbers above
 ~/.cache/camnose-venv/bin/python -I tools/tailsteer_estimate.py --airframe Zephyr
 ```
 
 Both tools use `$OPENSCAD` if set, else `/Applications/OpenSCAD-dev.app`, else `openscad` on the PATH. The verifier needs a build with the manifold backend.
 
-`verification.json` holds the last Peregrine run: 66/66 passed (145/145 with the Zephyr's 79).
+`verification.json` holds the last Peregrine run: 66/66 passed (146/146 with the Zephyr's 80).
 
 **What the verifier checks:**
 - Every part is one closed solid; the can is ≤ 250.5 mm tall.

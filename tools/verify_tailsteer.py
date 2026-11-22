@@ -697,11 +697,15 @@ def verify(af, tmp):
                 out.append((d, n_, round(v, 3)))
         return out
 
-    worst_flap_can = worst_flap_fin = worst_link = worst_horn = 99.0
+    worst_flap_can = worst_flap_fin = worst_link = worst_horn = worst_rod = 99.0
     hits = []
     for d in defl:
         P = pose(d)
         hits += collisions(d, P)
+        if stop_on:     # the bare M2 rod (Ø2) where it passes the shelf's Ø3 hole
+            cb_, hb_ = crank_ball(d), horn_ball(P["phi"])
+            u_ = (hb_ - cb_) / np.linalg.norm(hb_ - cb_)
+            worst_rod = min(worst_rod, min_gap(cyl(cb_ + 12 * u_, hb_ - 12 * u_, 1.0), can, n=1500))
         worst_flap_can = min(worst_flap_can, min_gap(P["ail"], can))
         worst_flap_fin = min(worst_flap_fin, min_gap(P["ail"], m["fin0"]))
         worst_link = min(worst_link, min_gap(P["lnk"], can, n=1500))
@@ -712,7 +716,11 @@ def verify(af, tmp):
            round(worst_flap_can, 3))
     record("aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_fin >= 0.78,
            round(worst_flap_fin, 3))
-    record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
+    if stop_on:
+        record("ball-link bodies (12 mm from each ball) to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
+        record("M2 rod to the stop shelf's hole gap >= 0.25 mm over the travel", worst_rod >= 0.25, round(worst_rod, 2))
+    else:
+        record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
     record(("horn (clevis cap and dowel) to can >= 0.3 mm over the travel" if st[10] else
             "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel"),
            worst_horn >= 0.3, round(worst_horn, 2))

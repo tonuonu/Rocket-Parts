@@ -373,9 +373,14 @@
    "value": 0.8
   },
   {
-   "check": "pushrod/ball-link envelope to can gap >= 1.2 mm",
+   "check": "ball-link bodies (12 mm from each ball) to can gap >= 1.2 mm",
    "passed": true,
    "value": 3.33
+  },
+  {
+   "check": "M2 rod to the stop shelf's hole gap >= 0.25 mm over the travel",
+   "passed": true,
+   "value": 0.44
   },
   {
    "check": "horn (clevis cap and dowel) to can >= 0.3 mm over the travel",

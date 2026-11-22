@@ -348,7 +348,9 @@ Bay_Top     = 121;          // sectors B and C
 // only the aero load. Nothing in the stop path is a fuse: the shelf load is bounded by
 // the servo's stall (228 N of rod force at 8.4 V), and every part from the horn to the
 // shelf holds that at a factor of 1.5 or more (tailsteer_estimate.py). A sustained stall
-// opens the 7.5 A fuse.
+// does not open the shared 7.5 A fuse (one servo draws 2.5 A), and the washer's bearing on
+// the PC (10.8 MPa) is above PC's long-term stress, so each servo has its own PTC (Bourns
+// MF-R090, trip 1.8 A): it trips at stall and drops the servo, which bounds the load's time.
 Stop_On      = Airframe == "Zephyr";
 Stop_Angle   = 6.3;                              // the stacks touch nothing inside this
 Stop_Gap     = Crank_A*sin(Stop_Angle) + 0.04;   // rod travel to the stop; +0.04 for the washer's tilt
@@ -434,9 +436,9 @@ assert(Shaft_X1 > R_Out + Flap_Root_Gap + 20, "shaft engages the aileron by less
 assert(Hinge_Z - Flap_LE_R - Flap_Gap > 0, "hinge too low");
 assert(Fin_Tab_Z[0] - Hinge_Z > Housing_D/2 + 8, "fin tab runs into the hinge block");
 assert(Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Z[0] - Hatch_Rebate, "rail boss under the hatch");
-// the stop window's rebate (narrow, like the fin side, on both of its sides) stays 3 mm off the rail boss
-assert(is_undef(Hatch_Win) || Rail_Aft_Z - Rail_Boss_D/2 > Hatch_Z[0] + 1
-       || Rail_Aft_Z + Rail_Boss_D/2 < Hatch_Win[1][0] - Hatch_Rebate
+// the stop window's rebate (narrow on both of its sides, full above and below) stays 3 mm off the rail boss
+assert(is_undef(Hatch_Win) || Rail_Aft_Z - Rail_Boss_D/2 - 3 > Hatch_Win[1][1] + Hatch_Rebate
+       || Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Win[1][0] - Hatch_Rebate
        || Hatch_Win[0][0] - Hatch_Rebate_Fin >= (Servo_Theta - Rail_A)*PI/180*R_Out + Rail_Boss_D/2 + 3,
        "stop window's rebate on the rail boss");
 assert(Servo_Rc + Servo_W/2 < R_In, "servo outside the wall");

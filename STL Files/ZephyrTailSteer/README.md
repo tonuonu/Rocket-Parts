@@ -30,7 +30,7 @@ Cl_δ need scaling to this aileron and fin.
 | Aileron | 2623 mm², ±15° | 1282 mm², **±5°** |
 | Link ratio (crank / horn) | 14 / 9 = 1.56 | 16 / 8 = 2.00 (servo lash counts half) |
 | Roll authority at full travel | Cl 1.09 (0.073 /deg × 15°) | Cl 0.32 (0.064 /deg × 5°) = 29× the fins' own induced roll |
-| Factors at the design point (servo / bearing / shaft / horn screw) | 5.7× / 3.4 / 3.1 / 3.8 | 12.1× / 2.8 / 2.5 / 49.1 (the clevis cap; its dowel sets it) |
+| Factors at the design point (servo / bearing / shaft / horn pivot) | 5.7× / 3.4 / 3.1 / 3.8 (horn screw) | 12.1× / 2.8 / 2.5 / 49.1 (clevis dowel) |
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
 | Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at about ±6.4°** on the pushrod |
 | Canards | On the nose | Removed |
@@ -107,7 +107,11 @@ cannot move aft into the motor retainer's keep-out.
     - The washers land at ±6.39° (measured to 0.01°) and bite by 0.3° past it.
     - Up to the stop nothing else touches (aileron, crank, horn, ball links, rod, stacks).
     - It also measures the landing face: flat across the washer's footprint, with material falling away on both sides within 1 mm (a bridge, not a cantilever).
-  - **In a real jam at the aileron** (not at the stop), the fuse is the 4 mm annealed shaft. It yields in torsion at 2.87 N·m at the aileron, which is 1.44 N·m at the servo, 79 % of the 8.4 V stall. That happens before the drive dowel's seat in the PC and before any crank part, whose factors at full stall are 1.9–3.1. The shaft is the field-replaceable part, as for landings. A sustained stall also opens the 7.5 A fuse.
+  - **In a real jam at the aileron** (not at the stop), the fuse is the 4 mm annealed shaft. It yields in torsion at 2.87 N·m at the aileron, which is 1.44 N·m at the servo, 79 % of the 8.4 V stall. That happens before the drive dowel's seat in the PC and before any crank part, whose factors at full stall are 1.9–3.1. The shaft is the field-replaceable part, as for landings. A sustained stall does not open the shared 7.5 A fuse: one stalled servo draws 2.5 A (MKS, 8.2 V).
+  - **Sustained stall at the stop** (end points lost, or a runaway servo): the washer bears on the PC at 10.8 MPa, above PC's long-term design stress of about 10 MPa (typical for unfilled PC at 23 °C; not measured on prints), so the shelf would creep under a stall held for hours.
+  - **Fix: a PTC per servo.** A Bourns MF-R090 (hold 0.9 A, trip 1.8 A at 23 °C) sits in each servo's lead. At stall the servo draws 1.39× the PTC's trip current, so the PTC trips and drops that servo, and the aileron trails to neutral. It also stops the servo cooking itself.
+  - Flight loads are about 1/12 of the stall torque, so the running current stays well under the 0.9 A hold. Check this on the bench: drive each servo through its end points with an ammeter in the lead.
+  - The alternatives were weaker. A metal landing plate under each washer gains little, because the corbels leave only the 6 × 6 mm footprint flat (7.9 MPa at best), and it does not protect the servo. The Vega cannot sense servo current, so firmware cannot detect a stall.
 - **Servo and bearings: MKS HV6160 and NSK 684AZZ, as on the Peregrine.**
   - At the design point the servo margin is 12.1×. The bearings' C0r/P is 2.8, and the shaft's factor is 2.5.
   - A Ø5–6 shaft would need a thicker aileron (and fin) for no gain at ±5°.
@@ -196,11 +200,11 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 | Motor tube 38 × 609.6 | 120.4 g | 317.5 |
 | Kit rings ×2 + eyebolt | 83.5 g | — |
 | Rail buttons | 3.8 g | 200 |
-| Horn clevis caps ×3 (7075) | 4.1 g | 86 |
+| Horn clevis caps ×3 (7075, less the arm's slot; cap-screw heads steel) | 3.7 g | 86 |
 | Pivot dowels and cap-screw shanks ×3 (steel; the heads are in the caps) | 1.5 g | 86 |
 | Stop stacks ×6 (M2 nut + Ø6 washer, est.) | 1.5 g | 60 |
 | Stop-window lobe inserts + M3 screws ×3 (est.) | 2.7 g | 47 |
-| **Total** | **1553.6 g** | **154.4** |
+| **Total** | **1553.2 g** | **154.4** |
 
 - **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +889 g. The OpenRocket model carries +877 g: the clevis caps, dowels, stop stacks and the hatch changes came later. The 12 g at the tail moves the CG about 1 mm aft at max speed, about 0.01 cal.
 - **OpenRocket:** `Zephyr-CamNose.ork` carries these parts as components and mass components, with OpenRocket's own masses for the kit parts (see Mass basis). Dry mass is 3.18 kg; with the J510W, 4.26 kg at liftoff.
@@ -227,7 +231,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | 1146.7 | Kit slotted ring (can seal) | — | Potted pass into the can annulus |
 
 - **Cable:** about 1.0 m of 26 AWG silicone twisted pair (signal + ground), taped along the tube wall in the recovery bay.
-- **Power, switch, fuse and capacitor:** as the Peregrine.
+- **Power, switch, fuse and capacitor:** as the Peregrine, plus a Bourns MF-R090 PTC in each servo's lead (in the Y harness, sector A), so a single stalled servo is cut off (see Design choices).
 - **Firmware:**
   - Limit commands to ±5°.
   - Centre the ailerons before the apogee charge; after the connector parts the servos see no pulses.
@@ -293,6 +297,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | 7075 clevis cap (saddle + strap, machined) + ISO 7380 M2 × 10 | 3 each | Horn clevis (screw into a tapped hole in the arm at 14.5 mm) |
 | Ø2 × 10 hardened dowel (ISO 8734) | 3 (+ spares) | Horn pivot through arm, ball and cap (replaces the M2 × 10 12.9 and its nut) |
 | M3 button-head screw + RX-M3x5.7 insert | 3 each (more than the Peregrine) | Stop-window cover lobes, one per hatch |
+| Bourns MF-R090 PTC (hold 0.9 A, trip 1.8 A) | 3 | One in each servo's lead: cuts off a stalled servo |
 | Metal-body M2 ball links, steel ball | 3 (horn end) | Stop load path: must hold 342 N (pull-test them) |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
 | 26 AWG twisted pair | ~1.0 m | Vega to the tail |
@@ -345,12 +350,12 @@ java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zeph
 ~/.cache/camnose-venv/bin/python -I tools/test_orsimmass.py PeregrineL2-CamNose.ork   # a mass change with --fins counts the fins once
 ```
 
-`verification.json` holds the last Zephyr run: 79/79 passed (145/145 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus nine for the travel stop (two are the wrench's and the feeler's access through the stop window) and four for servo removal (key access and slide, per hatch type; the lift-out checks then start from the slid position). Measured:
+`verification.json` holds the last Zephyr run: 80/80 passed (146/146 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus ten for the travel stop (two are the wrench's and the feeler's access through the stop window, one the M2 rod's gap in the shelf hole) and four for servo removal (key access and slide, per hatch type; the lift-out checks then start from the slid position). Measured:
 - stop stacks ≥ 0.27 mm off the can through ±5°; free up to ±6.34° and landing at ±6.39° (each side measured and swept to its own angle), biting by ±6.69°; nothing else touching over the servo's throw up to the stop (servo ±12.9°, 55 steps, the full pair list including rod and stacks against servo, covers and LiPo, and the clevis cap against the horn-end link eye (ball excluded; 0.5 mm clear)); the landing face flat across the washer footprint and falling away 1 mm on both sides (a 6 mm bridge);
 - servo removal in both hatch types, with the horn left on the captive linkage: a Ø3 × 20 mm key leg along the spline axis reaches the arm's retaining screw clear of the can, fin, aileron, horn and clevis cap; the servo slides 3.25 mm off the hub touching nothing, then lifts 30 mm out clear of the can and the horn; horn to can 0.42 mm over the travel;
 - through the stop window at neutral, with the servo in: a 4 mm open-end wrench (Ø9 × 2 head, 6 × 2 neck) on each stop nut swung ±15°, and a Ø1.7 feeler in each gap, clear of every other part;
 - aileron-to-can and aileron-to-fin gaps 0.8 mm;
-- pushrod links to can 3.3 mm;
+- ball-link bodies to can 3.3 mm, and the M2 rod to the shelf's Ø3 hole 0.44 mm over the travel;
 - fins 18 mm off the rail;
 - fixed fin 12 mm past the base, with the ailerons 15.9 mm short of it.
 
