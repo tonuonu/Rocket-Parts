@@ -10,8 +10,9 @@ each aileron is free through +-Flap_Max with the linkage solved at every
 step (crank, pushrod, horn, servo), with a gap of at least 0.78 mm to the can
 and the fixed fin (0.8 by design) and 1.2 mm from the pushrod links to the can; the aft rail button sits on the 60 deg line at the .ork
 station, its insert pocket is sound, hatch screw heads stay off the rail
-strip and the fins never reach the rail. The Zephyr fin set is rendered and
-its ailerons checked the same way.
+strip and the fins never reach the rail. Every check runs for each airframe
+(Airframe = Peregrine, and Zephyr, the Mach 0.8 build), each into its own
+folder.
 
 Servo, horn, LiPo and switch solids are envelopes (MKS HV6160 drawing,
 Tattu 450 mAh 2S long pack, Schurter 0033.4513). This verifies CAD, not
@@ -19,8 +20,12 @@ printed fits, strength or flight behaviour.
 
 Requires numpy, trimesh, manifold3d, rtree, scipy, shapely.
 OpenSCAD: $OPENSCAD, else /Applications/OpenSCAD-dev.app, else openscad on PATH.
-Usage: verify_tailsteer.py [--output-dir DIR] [--json FILE] [--export]
-  --export  also writes the STLs and DXFs to "STL Files/PeregrineTailSteer/"
+Usage: verify_tailsteer.py [--airframe Peregrine|Zephyr|both] [--output-dir DIR] [--json FILE] [--export]
+  --json    writes {"checks": [...], "params": {...}} for one airframe (the shape of each
+            verification.json), or {"Peregrine": {...}, "Zephyr": {...}} for both
+  --export  also writes each airframe's STLs, DXF and verification.json to
+            "STL Files/PeregrineTailSteer/" and "STL Files/ZephyrTailSteer/",
+            only if every check of every airframe run passes
 """
 import argparse
 import json
@@ -43,29 +48,32 @@ SCAD = REPO / "PeregrineTailSteer.scad"
 OPENSCAD_DEV = "/Applications/OpenSCAD-dev.app/Contents/MacOS/OpenSCAD"
 OPENSCAD = (os.environ.get("OPENSCAD")
             or (OPENSCAD_DEV if os.path.exists(OPENSCAD_DEV) else shutil.which("openscad")))
-OUT_STL = REPO / "STL Files" / "PeregrineTailSteer"
+AIRFRAMES = ("Peregrine", "Zephyr")
+OUT_STL = {af: REPO / "STL Files" / ("%sTailSteer" % af) for af in AIRFRAMES}
 results = []
 
-PRINTS = {   # name: (Render_Part, defines)
-    "FinCan": (1, {}),
-    "HatchServo": (2, {}),
-    "HatchServoLipo": (3, {}),
-    "Crank": (4, {}),
-    "AileronScrewHalf_Peregrine": (5, {}),
-    "AileronTappedHalf_Peregrine": (8, {}),
-    "AileronScrewHalf_Zephyr": (5, {"Fin_Set": '"Zephyr"'}),
-    "AileronTappedHalf_Zephyr": (8, {"Fin_Set": '"Zephyr"'}),
-    "BearingCoupon": (6, {}),
-    "ShaftDrillJig": (9, {}),
+PRINTS = {   # name: Render_Part
+    "FinCan": 1,
+    "HatchServo": 2,
+    "HatchServoLipo": 3,
+    "Crank": 4,
+    "AileronScrewHalf": 5,
+    "AileronTappedHalf": 8,
+    "BearingCoupon": 6,
+    "ShaftDrillJig": 9,
 }
+PER_AIRFRAME = ("AileronScrewHalf", "AileronTappedHalf")   # exported with the airframe's suffix
 ENVS = {
     "servos": 20, "horns": 21, "bearings": 22, "shafts": 23, "cranks": 24,
     "ailerons": 25, "fins": 26, "mmt": 27, "lipo": 28, "switch": 29,
     "covers": 30, "retainer": 31, "aileron0": 32, "crank0": 33, "servo0": 34,
     "horn0": 35, "fin0": 36, "tube": 37, "ail_m": 38, "ail_p": 39, "shaft0": 40,
 }
-ZEPHYR = {"z_aileron0": 32, "z_fin0": 36, "z_fins": 26, "z_ailerons": 25}
-DXF = {"FixedFin_Peregrine": {}, "FixedFin_Zephyr": {"Fin_Set": '"Zephyr"'}}
+DXF = {"FixedFin": 7}
+
+
+def out_name(n, af):
+    return "%s_%s" % (n, af) if n in PER_AIRFRAME or n in DXF else n
 
 
 def record(name, ok, value=None):
@@ -108,15 +116,16 @@ def clear(name, a, b, tol=1e-3):
     return v
 
 
-_SAMPLES = {}
+_SAMPLES = {}   # (id(mesh), n, seed) -> (mesh, points); the mesh is kept so its id is never reused
 
 
 def _samples(mesh, n, seed):
     key = (id(mesh), n, seed)
-    if key not in _SAMPLES:
+    hit = _SAMPLES.get(key)
+    if hit is None or hit[0] is not mesh:
         pts, _ = trimesh.sample.sample_surface_even(mesh, n, seed=seed)
-        _SAMPLES[key] = np.vstack([pts, mesh.vertices])
-    return _SAMPLES[key]
+        hit = _SAMPLES[key] = (mesh, np.vstack([pts, mesh.vertices]))
+    return hit[1]
 
 
 def min_gap(moving, fixed, n=4000, seed=1):
@@ -152,6 +161,17 @@ def rot_x(deg, z0):
     return trimesh.transformations.rotation_matrix(math.radians(deg), [1, 0, 0], [0, 0, z0])
 
 
+def cyl(p0, p1, r):
+    """A circumscribed cylinder from p0 to p1."""
+    p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
+    L = np.linalg.norm(p1 - p0)
+    c = trimesh.creation.cylinder(radius=r / math.cos(math.pi / 32), height=L, sections=32)
+    T = trimesh.geometry.align_vectors([0, 0, 1], (p1 - p0) / L)
+    T[:3, 3] = (p0 + p1) / 2
+    c.apply_transform(T)
+    return c
+
+
 def capsule(p0, p1, r):
     p0, p1 = np.asarray(p0, float), np.asarray(p1, float)
     L = np.linalg.norm(p1 - p0)
@@ -164,20 +184,54 @@ def capsule(p0, p1, r):
 
 
 def main():
+    global results
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--airframe", default="both", choices=list(AIRFRAMES) + ["both"])
     ap.add_argument("--output-dir")
     ap.add_argument("--json")
     ap.add_argument("--export", action="store_true")
     a = ap.parse_args()
     if not OPENSCAD:
         raise SystemExit("OpenSCAD not found: set OPENSCAD to its binary")
-    tmp = Path(a.output_dir) if a.output_dir else Path(tempfile.mkdtemp(prefix="tailsteer-"))
-    tmp.mkdir(parents=True, exist_ok=True)
+    root = Path(a.output_dir) if a.output_dir else Path(tempfile.mkdtemp(prefix="tailsteer-"))
+    afs = AIRFRAMES if a.airframe == "both" else (a.airframe,)
+    runs = {}
+    for af in afs:
+        print("== %s" % af, flush=True)
+        results = []
+        p = verify(af, root / af)
+        runs[af] = {"checks": results, "params": p}
+    n_all = sum(len(r["checks"]) for r in runs.values())
+    n_ok = sum(c["passed"] for r in runs.values() for c in r["checks"])
+    for af, r in runs.items():
+        print("%s: %d/%d checks passed" % (af, sum(c["passed"] for c in r["checks"]), len(r["checks"])))
+    print("%d/%d checks passed" % (n_ok, n_all))
+    if a.json:
+        Path(a.json).write_text(json.dumps(runs[afs[0]] if len(afs) == 1 else runs, indent=1))
+    if a.export and n_ok != n_all:
+        print("not exported: checks failed, the committed STLs/DXFs stay as they are")
+    elif a.export:
+        for af, r in runs.items():
+            out, tmp = OUT_STL[af], root / af
+            out.mkdir(parents=True, exist_ok=True)
+            for n in PRINTS:
+                shutil.copy(tmp / (n + ".stl"), out / (out_name(n, af) + ".stl"))
+            for n in DXF:
+                shutil.copy(tmp / (n + ".dxf"), out / (out_name(n, af) + ".dxf"))
+            (out / "verification.json").write_text(json.dumps(r, indent=1))
+            print("exported to", out)
+    raise SystemExit(0 if n_ok == n_all else 1)
 
-    jobs = [(tmp / (n + ".stl"), p, d) for n, (p, d) in PRINTS.items()]
-    jobs += [(tmp / (n + ".stl"), p, {}) for n, p in ENVS.items()]
-    jobs += [(tmp / (n + ".stl"), p, {"Fin_Set": '"Zephyr"'}) for n, p in ZEPHYR.items()]
-    jobs += [(tmp / (n + ".dxf"), 7, d, "dxf") for n, d in DXF.items()]
+
+def verify(af, tmp):
+    """Render one airframe into tmp and run every check on it; returns its parameters."""
+    _SAMPLES.clear()            # per airframe: no samples of the other airframe's meshes
+    tmp.mkdir(parents=True, exist_ok=True)
+    af_def = {"Airframe": '"%s"' % af}
+    jobs = [(tmp / (n + ".stl"), pt, af_def) for n, pt in PRINTS.items()]
+    envs = dict(ENVS, **({"clevis0": 42} if af == "Zephyr" else {}))   # the horn clevis cap (Zephyr)
+    jobs += [(tmp / (n + ".stl"), pt, af_def) for n, pt in envs.items()]
+    jobs += [(tmp / (n + ".dxf"), pt, af_def, "dxf") for n, pt in DXF.items()]
     logs = {}
     with ThreadPoolExecutor(max_workers=8) as ex:
         futs = {ex.submit(run_scad, *j): j[0].stem for j in jobs}
@@ -192,7 +246,7 @@ def main():
             "Rail_A Rail_Aft_Z Tube_Piece_L Ply_CR_Z0 Flap_Max Sw_A Sw_Z Flap_X_Max Fixed_Aft_X "
             "Lipo_Z0 Lipo_L Ball_Off Horn_Arm_T Pin_D Pin_L Clamp_Relief").split()
     p = dict(zip(keys, P))
-    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(ENVS) + list(ZEPHYR)}
+    m = {n: trimesh.load(tmp / (n + ".stl")) for n in list(PRINTS) + list(envs)}
 
     # ---------- printable parts
     for n in PRINTS:
@@ -424,9 +478,9 @@ def main():
     empty = not can.contains([rail_o + rail_d * 4])[0]
     record("rail-button pocket is open on the 60 deg line at the .ork station", empty,
            [p["Rail_A"], p["Rail_Aft_Z"]])
-    hs = [float(x) for x in echo_values(logs["FinCan"], "TS_SCREWS").replace("[", " ").replace("]", " ")
-          .replace(",", " ").replace("|", " ").split()]
-    scr_a, scr_bc = hs[:6], hs[6:]
+    # sector A's screws | sectors B and C's screws, each a flat [u, z, u, z, ...] list
+    scr_a, scr_bc = ([float(x) for x in half.replace("[", " ").replace("]", " ").replace(",", " ").split()]
+                     for half in echo_values(logs["FinCan"], "TS_SCREWS").split("|"))
     th = math.radians(p["Servo_Theta"])
     worst = 1.0
     heads = []
@@ -445,17 +499,69 @@ def main():
     record("no hatch screw head on the rail strip (60 +- %.1f deg)" % strip, not bad,
            [round(h[0], 1) for h in heads])
 
-    # ---------- service: servos (with horns) and the LiPo lift straight out through their hatches.
+    # ---------- service: servos and the LiPo lift straight out through their hatches.
     # Sector A has the T-shaped servo + LiPo hatch, sector B a gable-topped servo hatch.
+    # Peregrine: the servo comes out with its horn on. Zephyr (horn clevis and travel stop): the
+    # linkage is captive (pinned at both ends, the rod through the stop shelf), so the horn stays:
+    # its retaining screw is undone along the spline axis through the hatch, the servo slides
+    # off the hub (+ly) and lifts out alone. Each step is checked here.
     def about_z(deg):
         return trimesh.transformations.rotation_matrix(math.radians(deg), [0, 0, 1])
-    for name, parts, sector in (("sector A servo with horn", [m["servo0"], m["horn0"]], 0),
-                                ("sector B servo with horn", [m["servo0"], m["horn0"]], 1),
-                                ("LiPo", [m["lipo"]], 0)):
+    sv = [float(x) for x in echo_values(logs["FinCan"], "TS_SERVICE").split()]
+    captive = bool(sv[0])
+    th = math.radians(p["Servo_Theta"])
+    ly_dir = np.array([-math.sin(th), math.cos(th), 0.0])            # servo frame +ly (output axis, toward the case)
+    spline_pt = np.array([p["Servo_Rc"] * math.cos(th), p["Servo_Rc"] * math.sin(th), p["Servo_ZO"]])
+    lifts = [("LiPo", [m["lipo"]], 0, 0.0)]
+    if captive:
+        key_l, slide = 20.0, sv[3]
+        horn_static = [m["horn0"], m["clevis0"]]
+        for sector in (0, 1):
+            nm = "sector %s" % "AB"[sector]
+            R_ = about_z(120 * sector)
+            # key access: the hex key's short leg, a straight cylinder key_l long from the screw head
+            # out along -ly (the long leg turns it from outside)
+            k0 = spline_pt + sv[1] * ly_dir
+            key = cyl(k0 - 0.05 * ly_dir, k0 - key_l * ly_dir, sv[2] / 2)
+            key.apply_transform(R_)
+            hits = []
+            for n_, B in (("can", can), ("fixed fin", m["fin0"]), ("aileron", m["aileron0"]),
+                          ("horn", m["horn0"]), ("clevis cap", m["clevis0"])):
+                if n_ != "can":                     # the can is whole: only the per-sector parts turn
+                    B = B.copy(); B.apply_transform(R_)
+                v = inter(key, B)
+                if v > 1e-3:
+                    hits.append((n_, round(v, 2)))
+            record("%s: the arm's retaining screw is reachable along the spline axis through the hatch"
+                   " (a Ø%.1f x %.0f mm key leg straight from its head: can, fixed fin, aileron, horn, clevis cap)"
+                   % (nm, sv[2], key_l), not hits, hits or "clear")
+            # slide: the servo alone moves +ly off the hub, the horn stays
+            stuck = []
+            srv = m["servo0"].copy(); srv.apply_transform(R_)
+            hs = trimesh.util.concatenate(horn_static); hs.apply_transform(R_)
+            ld = R_[:3, :3] @ ly_dir
+            for t_ in np.arange(0.25, slide + 0.01, 0.25):
+                b_ = srv.copy(); b_.apply_translation(ld * t_)
+                for n_, B in (("can", can), ("horn", hs)):
+                    v = inter(b_, B)
+                    if v > 1e-3:
+                        stuck.append((float(t_), n_, round(v, 2)))
+            record("%s: the servo slides %.2f mm along its output axis off the horn hub (spline engagement + 0.25),"
+                   " touching nothing" % (nm, slide), not stuck, stuck[:4] or "free")
+            lifts.append(("%s servo, slid off its horn," % nm, [m["servo0"]], sector, slide))
+    else:
+        lifts = [("sector A servo with horn", [m["servo0"], m["horn0"]], 0, 0.0),
+                 ("sector B servo with horn", [m["servo0"], m["horn0"]], 1, 0.0)] + lifts
+    for name, parts, sector, sl in lifts:
         th0 = math.radians(p["Servo_Theta"] + 120 * sector)
         out_dir = np.array([math.cos(th0), math.sin(th0), 0.0])
         body = trimesh.util.concatenate(parts)
+        body.apply_translation(ly_dir * sl)
         body.apply_transform(about_z(120 * sector))
+        others = []
+        if sl:                                  # the horn stays in the can
+            others = [trimesh.util.concatenate(horn_static)]
+            others[0].apply_transform(about_z(120 * sector))
         stuck = []
         for t_ in np.arange(0.5, 30.1, 0.5):
             b_ = body.copy(); b_.apply_translation(out_dir * t_)
@@ -463,10 +569,11 @@ def main():
             if not all(q.is_volume for q in pieces):
                 stuck.append((float(t_), "non-volume piece"))
                 break
-            v = sum(inter(q, can) for q in pieces)
+            v = sum(inter(q, B) for q in pieces for B in [can] + others)
             if v > 1e-3:
                 stuck.append((float(t_), round(v, 2)))
-        record("%s lifts out through its hatch (0.5-30 mm, no contact)" % name, not stuck, stuck[:4] or "free")
+        record("%s lifts out through its hatch (0.5-30 mm, no contact%s)" % (name, ", horn left in place" if sl else ""),
+               not stuck, stuck[:4] or "free")
 
     # ---------- field service of a hinge, fins glued in place: the aileron halves
     # come off sideways (+-Y), then the shaft slides outward until its inner end
@@ -516,7 +623,8 @@ def main():
     record("pushrod axial at neutral (balls in line)", np.hypot(*(b0 - h0)[:2]) < 0.05,
            round(float(np.hypot(*(b0 - h0)[:2])), 4))
     fm = p["Flap_Max"]
-    defl = sorted({-fm, fm, 0.0, -5.0, 5.0} | {5.0 * k for k in range(-int(fm // 5), int(fm // 5) + 1)})
+    step = 5.0 if fm > 8 else 0.5     # small travel: 0.5 deg steps
+    defl = sorted({-fm, fm, 0.0, -5.0, 5.0} | {step * k for k in range(-int(fm // step), int(fm // step) + 1)})
     phis = {d: solve_phi(d) for d in defl}
     record("servo travel for +-%.0f deg aileron is within +-35 deg" % p["Flap_Max"],
            max(abs(v) for v in phis.values()) <= 35,
@@ -529,36 +637,213 @@ def main():
     ax_dir = np.array([-math.sin(th), math.cos(th), 0.0])
     ax_pt = np.array([rc * math.cos(th), rc * math.sin(th), zo])
     stat = m["servo0"]
-    worst_flap_can = worst_flap_fin = worst_link = worst_horn = 99.0
-    hits = []
-    for d in defl:
+    st = [float(x) for x in echo_values(logs["FinCan"], "TS_STOP").split()]
+    stop_on = bool(st[0])
+
+    def pose(d):
+        """Every moving part at aileron d (deg), with the linkage solved. With the travel stop the
+        pushrod is split into its two ball-link bodies (12 mm from each ball), the rod, and the
+        two nut-and-washer stop stacks either side of the shelf."""
+        ph = solve_phi(d)
         R = rot_x(d, Z)
         ail = m["aileron0"].copy(); ail.apply_transform(R)
         crk = m["crank0"].copy(); crk.apply_transform(R)
         hrn = m["horn0"].copy()
-        hrn.apply_transform(trimesh.transformations.rotation_matrix(math.radians(phis[d]), ax_dir, ax_pt))
-        lnk = capsule(crank_ball(d), horn_ball(phis[d]), 3.5)
-        rod = capsule(crank_ball(d) + np.array([0, 0, 4]), horn_ball(phis[d]) - np.array([0, 0, 4]), 1.2)
-        for n_, A, B in (("aileron/can", ail, can), ("aileron/fixed fin", ail, m["fin0"]),
-                         ("crank/can", crk, can), ("horn/can", hrn, can), ("horn/servo", hrn, stat),
-                         ("link/can", lnk, can), ("link/servo", lnk, stat), ("link/covers", lnk, m["covers"]),
-                         ("link/lipo", lnk, m["lipo"]), ("rod/crank", rod, crk), ("horn/covers", hrn, m["covers"])):
+        hrn.apply_transform(trimesh.transformations.rotation_matrix(math.radians(ph), ax_dir, ax_pt))
+        cb, hb = crank_ball(d), horn_ball(ph)
+        u = (hb - cb) / np.linalg.norm(hb - cb)
+        if stop_on:
+            lnk = trimesh.util.concatenate([capsule(cb, cb + 12 * u, 3.5), capsule(hb - 12 * u, hb, 3.5)])
+        else:
+            lnk = capsule(cb, hb, 3.5)
+        rod = capsule(cb + 4 * u, hb - 4 * u, 1.2)
+        parts = {"ail": ail, "crk": crk, "hrn": hrn, "lnk": lnk, "rod": rod, "phi": ph}
+        if "clevis0" in m:
+            # the clevis cap turns with the horn; the horn-end ball link's own body: its eye
+            # (Ø Link_Eye_D across the ball, Link_Eye_W thick along the ball's axis; TS_STOP) and its shank
+            cap = m["clevis0"].copy()
+            cap.apply_transform(trimesh.transformations.rotation_matrix(math.radians(ph), ax_dir, ax_pt))
+            ew, ed = st[19], st[20]
+            parts["cap"] = cap
+            parts["eye"] = trimesh.util.concatenate([cyl(hb - ax_dir * ew / 2, hb + ax_dir * ew / 2, ed / 2),
+                                                     capsule(hb - 3.5 * u, hb - 12 * u, 2.0)])
+        if stop_on:
+            gap, z0, z1, wd, wh = st[2], st[3], st[4], st[5], st[6]
+            # stack positions are fixed on the rod: set at neutral, gap to the shelf each side
+            s_lo, s_hi = (z0 - gap - wh) - Z, (z1 + gap) - Z            # along the rod from the crank ball
+            parts["stk"] = trimesh.util.concatenate([cyl(cb + s_lo * u, cb + (s_lo + wh) * u, wd / 2),
+                                                     cyl(cb + s_hi * u, cb + (s_hi + wh) * u, wd / 2)])
+        return parts
+
+    def collisions(d, P, skip=()):
+        pairs = [("aileron/can", P["ail"], can), ("aileron/fixed fin", P["ail"], m["fin0"]),
+                 ("crank/can", P["crk"], can), ("horn/can", P["hrn"], can), ("horn/servo", P["hrn"], stat),
+                 ("link/can", P["lnk"], can), ("link/servo", P["lnk"], stat), ("link/covers", P["lnk"], m["covers"]),
+                 ("link/lipo", P["lnk"], m["lipo"]), ("rod/crank", P["rod"], P["crk"]), ("horn/covers", P["hrn"], m["covers"])]
+        if "cap" in P:
+            pairs += [("clevis cap/link eye", P["cap"], P["eye"])]
+        if stop_on:
+            pairs += [("rod/can", P["rod"], can), ("rod/servo", P["rod"], stat), ("rod/covers", P["rod"], m["covers"]),
+                      ("rod/lipo", P["rod"], m["lipo"]), ("stop stack/can", P["stk"], can),
+                      ("stop stack/servo", P["stk"], stat), ("stop stack/horn", P["stk"], P["hrn"]),
+                      ("stop stack/crank", P["stk"], P["crk"]), ("stop stack/covers", P["stk"], m["covers"]),
+                      ("stop stack/lipo", P["stk"], m["lipo"])]
+        out = []
+        for n_, A, B in pairs:
+            if n_ in skip:
+                continue
             v = inter(A, B)
             if v > 1e-3:
-                hits.append((d, n_, round(v, 3)))
-        worst_flap_can = min(worst_flap_can, min_gap(ail, can))
-        worst_flap_fin = min(worst_flap_fin, min_gap(ail, m["fin0"]))
-        worst_link = min(worst_link, min_gap(lnk, can, n=1500))
-        worst_horn = min(worst_horn, min_gap(hrn, can, n=1500))   # (the horn sits on the servo spline)
-    record("aileron travel +-%.0f deg: nothing collides (aileron, crank, pushrod, horn)" % p["Flap_Max"],
-           not hits, hits[:6] if hits else len(defl))
+                out.append((d, n_, round(v, 3)))
+        return out
+
+    worst_flap_can = worst_flap_fin = worst_link = worst_horn = worst_rod = 99.0
+    hits = []
+    for d in defl:
+        P = pose(d)
+        hits += collisions(d, P)
+        if stop_on:     # the bare M2 rod (Ø2) where it passes the shelf's Ø3 hole
+            cb_, hb_ = crank_ball(d), horn_ball(P["phi"])
+            u_ = (hb_ - cb_) / np.linalg.norm(hb_ - cb_)
+            worst_rod = min(worst_rod, min_gap(cyl(cb_ + 12 * u_, hb_ - 12 * u_, 1.0), can, n=1500))
+        worst_flap_can = min(worst_flap_can, min_gap(P["ail"], can))
+        worst_flap_fin = min(worst_flap_fin, min_gap(P["ail"], m["fin0"]))
+        worst_link = min(worst_link, min_gap(P["lnk"], can, n=1500))
+        worst_horn = min(worst_horn, min_gap(P["hrn"], can, n=1500))   # (the horn sits on the servo spline)
+    record("aileron travel +-%.0f deg in %d steps: nothing collides (aileron, crank, pushrod, horn%s)"
+           % (p["Flap_Max"], len(defl), ", stop stacks" if stop_on else ""), not hits, hits[:6] if hits else len(defl))
     record("aileron to can gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_can >= 0.78,
            round(worst_flap_can, 3))
     record("aileron to fixed fin gap >= 0.78 mm over the travel (0.8 by design)", worst_flap_fin >= 0.78,
            round(worst_flap_fin, 3))
-    record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
-    record("horn (nut as its across-corners circle) to can >= 0.3 mm over the travel",
+    if stop_on:
+        record("ball-link bodies (12 mm from each ball) to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
+        record("M2 rod to the stop shelf's hole gap >= 0.25 mm over the travel", worst_rod >= 0.25, round(worst_rod, 2))
+    else:
+        record("pushrod/ball-link envelope to can gap >= 1.2 mm", worst_link >= 1.2, round(worst_link, 2))
+    record(("horn (clevis cap and dowel) to can >= 0.3 mm over the travel" if st[10] else
+            "horn (nut as its across-corners circle) to can >= 0.3 mm over the travel"),
            worst_horn >= 0.3, round(worst_horn, 2))
+
+    # ---------- mechanical travel stop (pushrod nuts on a shelf): the servo can drive the linkage
+    # anywhere; the stacks must clear the shelf through the flight travel, land on it at
+    # +-Stop_Angle, and nothing else may touch over the servo's whole throw up to the stop.
+    stop_lands = []             # the stop's measured landing angles (deg), for the rail and landing checks
+    if stop_on:
+        a_stop = st[1]
+        free = min(min_gap(pose(d)["stk"], can, n=1500) for d in defl)
+        record("stop stacks to can gap >= 0.1 mm over the flight travel +-%g deg" % p["Flap_Max"], free >= 0.1, round(free, 2))
+        # where the washers actually land (measured, 0.01 deg): the nominal contact less the tilt of the
+        # washer as the balls move sideways
+        def first_contact(sg):
+            lo, hi = p["Flap_Max"], a_stop + 1.0
+            for _ in range(10):
+                mid = (lo + hi) / 2
+                lo, hi = (lo, mid) if inter(pose(sg * mid)["stk"], can) > 1e-3 else (mid, hi)
+            return hi
+        a_cm, a_cp = first_contact(-1), first_contact(1)
+        stop_lands = [-a_cm, a_cp]
+        for sg, a_c in ((-1, a_cm), (1, a_cp)):
+            record("stop lands at %+.2f deg: past the flight travel by >= 0.5 deg and within 0.3 deg of the nominal %.2f"
+                   % (sg * a_c, a_stop), a_c >= p["Flap_Max"] + 0.5 and abs(a_c - a_stop) <= 0.3, round(sg * a_c, 2))
+        # each side swept to its own landing angle
+        sweep = sorted({x * 0.25 for x in range(-int(4 * a_cm), int(4 * a_cp) + 1)}
+                       | {-(a_cm - 0.05), a_cp - 0.05, -a_cm, a_cp})
+        inside = [d for d in sweep if -(a_cm - 0.05) - 1e-9 <= d <= a_cp - 0.05 + 1e-9]
+        early = [d for d in inside if inter(pose(d)["stk"], can) > 1e-3]
+        record("stop stacks touch nothing from %+.2f to %+.2f deg (each landing angle less 0.05)"
+               % (-(a_cm - 0.05), a_cp - 0.05), not early, early or "free")
+        late = [inter(pose(-(a_cm + 0.3))["stk"], can), inter(pose(a_cp + 0.3)["stk"], can)]
+        record("stop engages by %+.2f / %+.2f deg (a washer on the shelf)" % (-(a_cm + 0.3), a_cp + 0.3),
+               min(late) > 1e-3, [round(v, 3) for v in late])
+        # setting the stops, at neutral with the servo in and the cover off: through the stop window a
+        # 4 mm open-end wrench (15 deg head, flipped each stroke) turns each nut, and a 1.8 mm feeler
+        # gauges each gap. Wrench: a round Ø9 x 2 head round the nut (4.1 mouth) and a 6 x 2 neck out
+        # along the servo's radial past the skin, swung +-15 deg about the rod. Feeler: Ø1.7 (just
+        # under the gap) in the gap beside the rod, along the same radial. Bodies: can, fixed fin,
+        # aileron, crank, links, rod, the other stack (the feeler: both stacks), servo, horn, motor tube.
+        gap, z0, z1, wd, wh = st[2], st[3], st[4], st[5], st[6]
+        nut_h = wh - 0.5                                   # M2 nut 1.6 under/over a 0.5 washer
+        lx_w = np.array([math.cos(th), math.sin(th), 0.0])  # servo frame +lx (outward)
+        P = pose(0.0)
+        cb, hb = crank_ball(0.0), horn_ball(P["phi"])
+        u = (hb - cb) / np.linalg.norm(hb - cb)
+        s_lo, s_hi = (z0 - gap - wh) - Z, (z1 + gap) - Z
+        stk_lo = cyl(cb + s_lo * u, cb + (s_lo + wh) * u, wd / 2)
+        stk_hi = cyl(cb + s_hi * u, cb + (s_hi + wh) * u, wd / 2)
+        per_sector = [("fixed fin", m["fin0"]), ("aileron", P["ail"]), ("crank", P["crk"]),
+                      ("links", P["lnk"]), ("rod", P["rod"]), ("servo", stat), ("horn", P["hrn"])]
+        e1_0 = lx_w - np.dot(lx_w, u) * u
+        e1_0 /= np.linalg.norm(e1_0)
+        blocked_w, blocked_f = [], []
+        # sectors A and B (C is B turned): the tools and the per-sector parts turn, the can stays whole
+        for sector in (0, 1):
+            R_ = trimesh.transformations.rotation_matrix(math.radians(120 * sector), [0, 0, 1])
+            def turned(B):
+                B = B.copy(); B.apply_transform(R_)
+                return B
+            common = [("can", can), ("motor tube", m["mmt"])] + [(n_, turned(B)) for n_, B in per_sector]
+            for nm_, s0, away, other, z_gap in (("lower", s_lo, -1, stk_hi, (z0 - gap + z0) / 2),
+                                               ("upper", s_hi + 0.5, 1, stk_lo, (z1 + z1 + gap) / 2)):
+                c0 = cb + (s0 + nut_h / 2) * u                     # nut centre
+                zc = (nut_h / 2 + 0.4 - 1.0) * away                # head 2 thick: flush on the washer side
+                for sw in range(-15, 16, 5):
+                    e1 = trimesh.transformations.rotation_matrix(math.radians(sw), u)[:3, :3] @ e1_0
+                    e2 = np.cross(u, e1)
+                    T = np.eye(4); T[:3, 0], T[:3, 1], T[:3, 2] = e1, e2, u
+                    T[:3, 3] = c0 + zc * u
+                    head = trimesh.creation.cylinder(radius=4.5, height=2.0, sections=48)
+                    mouth = trimesh.creation.box(extents=[6.6, 4.1, 3.0])
+                    mouth.apply_translation([-3.3 + 2.05, 0, 0])    # e1 -4.55 .. +2.05: the nut's far flat
+                    head = trimesh.boolean.difference([head, mouth], engine="manifold")
+                    neck = trimesh.creation.box(extents=[26.0, 6.0, 2.0])
+                    neck.apply_translation([4.0 + 13.0, 0, 0])      # e1 4 .. 30, out past the skin
+                    tool = trimesh.util.concatenate([head, neck]); tool.apply_transform(T); tool.apply_transform(R_)
+                    for bn, B in common + [("other stack", turned(other))]:
+                        v = inter(tool, B)
+                        if v > 1e-3:
+                            blocked_w.append(("AB"[sector], nm_, sw, bn, round(v, 2)))
+                cg = cb + (z_gap - Z) * u                          # the gap's mid-plane on the rod
+                e2 = np.cross(u, e1_0)
+                for off in (2.2, -2.2):
+                    f = cyl(cg - 3 * e1_0 + off * e2, cg + 30 * e1_0 + off * e2, 0.85); f.apply_transform(R_)
+                    for bn, B in common + [("stacks", turned(trimesh.util.concatenate([stk_lo, stk_hi])))]:
+                        v = inter(f, B)
+                        if v > 1e-3:
+                            blocked_f.append(("AB"[sector], nm_, off, bn, round(v, 2)))
+        record("stop nuts reachable through the stop window at neutral, servo in, sectors A and B: a 4 mm open-end wrench"
+               " (Ø9 x 2 head, 6 x 2 neck) on each nut swung +-15 deg about the rod, clear of can, fin, aileron,"
+               " crank, links, rod, the other stack, servo, horn and motor tube",
+               not blocked_w, blocked_w[:6] or "clear")
+        record("stop gaps reachable through the stop window at neutral, sectors A and B: a Ø1.7 feeler in each gap beside"
+               " the rod, along the servo's radial, clear of everything but its own gap",
+               not blocked_f, blocked_f[:6] or "clear")
+        hits2 = []
+        for d in sweep:
+            hits2 += collisions(d, pose(d), skip=("stop stack/can",))
+        record("full servo throw: up to each stop (%+.2f / %+.2f deg aileron, servo %+.1f / %+.1f deg, %d steps) nothing"
+               " but the stop touches" % (-a_cm, a_cp, solve_phi(-a_cm), solve_phi(a_cp), len(sweep)),
+               not hits2, hits2[:6] or len(sweep))
+        # the lower washer's landing face, measured: rays up from below the shelf. Flat at the shelf's
+        # underside across the washer footprint, and supported on both sides (45 deg corbels reaching
+        # the footprint edge), so it prints as a short bridge, not a cantilever.
+        def fin_xy(lx, ly):
+            return ((rc + lx) * math.cos(th) - ly * math.sin(th), (rc + lx) * math.sin(th) + ly * math.cos(th))
+
+        def underside(lx, ly):
+            x_, y_ = fin_xy(lx, ly)
+            loc, _, _ = can.ray.intersects_location([[x_, y_, st[3] - 15]], [[0, 0, 1]], multiple_hits=True)
+            z_ = sorted(float(z) for z in loc[:, 2] if st[3] - 15 < z < st[4] + 1)
+            return z_[0] if z_ else None
+        rw, hu_ = st[5] / 2, p["Horn_Ball_U"]
+        flat = [underside(-p["Horn_R"] + dx, -hu_ + dy) for dx in (-rw + 0.3, 0, rw - 0.3) for dy in (-rw + 0.3, rw - 0.3)]
+        sides = [underside(-p["Horn_R"], -hu_ + sg * (rw + 1.0)) for sg in (-1, 1)]
+        ok = all(z is not None and abs(z - st[3]) < 0.05 for z in flat) and \
+            all(z is not None and z < st[3] - 0.9 for z in sides)
+        record("stop shelf: the washer lands on a flat face supported on both sides within 1 mm of the footprint"
+               " (a %.0f mm bridge, measured)" % st[5], ok,
+               "footprint %s, 1 mm outside %s" % ([None if z is None else round(z, 2) for z in flat],
+                                                   [None if z is None else round(z, 2) for z in sides]))
 
     # rail: fins and ailerons at full travel stay off the 1010 rail (25.4 wide, face >= R_Out + 2)
     rail_box = trimesh.creation.box(extents=[40, 25.4, 900])
@@ -566,50 +851,24 @@ def main():
     T[:3, 3] = [(p["R_Out"] + 2 + 20) * math.cos(ra), (p["R_Out"] + 2 + 20) * math.sin(ra), 0]
     rail_box.apply_transform(T)
     gaps = []
-    for d in (-p["Flap_Max"], p["Flap_Max"]):
+    at_stop = (" and at the stop landing (%+.2f / %+.2f deg)" % tuple(stop_lands)) if stop_lands else ""
+    for d in [-p["Flap_Max"], p["Flap_Max"]] + stop_lands:
         for k in range(3):
             one = m["aileron0"].copy(); one.apply_transform(rot_x(d, Z))
             one.apply_transform(trimesh.transformations.rotation_matrix(math.radians(120 * k), [0, 0, 1]))
             gaps.append(min_gap(one, rail_box, n=800))
     gaps.append(min_gap(m["fins"], rail_box, n=3000))
-    record("fins and ailerons at full travel stay off the rail", min(gaps) > 10, round(min(gaps), 1))
+    record("fins and ailerons at full travel%s stay off the rail" % at_stop, min(gaps) > 10, round(min(gaps), 1))
 
     # ---------- tail-first landing: the fixed fin reaches further aft than every aileron point
-    for fs_, fin_, ail_ in (("Peregrine", m["fin0"], m["aileron0"]), ("Zephyr", m["z_fin0"], m["z_aileron0"])):
-        lead = []
-        for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
-            a1 = ail_.copy(); a1.apply_transform(rot_x(d, Z))
-            lead.append(a1.bounds[0, 2] - fin_.bounds[0, 2])
-        record("%s: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg"
-               % (fs_, p["Flap_Max"]), min(lead) >= 3.0,
-               "fixed fin Z %.1f, aileron lead %s mm" % (fin_.bounds[0, 2], [round(float(x), 1) for x in lead]))
-
-    # ---------- Zephyr fin set
-    zh = []
-    for d in (-p["Flap_Max"], 0, p["Flap_Max"]):
-        ail = m["z_aileron0"].copy(); ail.apply_transform(rot_x(d, Z))
-        for n_, B in (("can", can), ("fixed fin", m["z_fin0"])):
-            if inter(ail, B) > 1e-3:
-                zh.append((d, n_))
-    record("Zephyr: ailerons free through the travel (can, fixed fin)", not zh, zh or "ok")
-    clear("Zephyr: can clears the fixed fins", can, m["z_fins"])
-
-    # ---------- report
-    n_ok = sum(r["passed"] for r in results)
-    print("%d/%d checks passed" % (n_ok, len(results)))
-    if a.json:
-        Path(a.json).write_text(json.dumps({"checks": results, "params": p}, indent=1))
-    if a.export and n_ok != len(results):
-        print("not exported: checks failed, the committed STLs/DXFs stay as they are")
-    elif a.export:
-        OUT_STL.mkdir(parents=True, exist_ok=True)
-        for n in PRINTS:
-            shutil.copy(tmp / (n + ".stl"), OUT_STL / (n + ".stl"))
-        for n in DXF:
-            shutil.copy(tmp / (n + ".dxf"), OUT_STL / (n + ".dxf"))
-        (OUT_STL / "verification.json").write_text(json.dumps({"checks": results, "params": p}, indent=1))
-        print("exported to", OUT_STL)
-    raise SystemExit(0 if n_ok == len(results) else 1)
+    lead = []
+    for d in [-p["Flap_Max"], 0, p["Flap_Max"]] + stop_lands:
+        a1 = m["aileron0"].copy(); a1.apply_transform(rot_x(d, Z))
+        lead.append(a1.bounds[0, 2] - m["fin0"].bounds[0, 2])
+    record("fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-%.0f deg%s" % (p["Flap_Max"], at_stop),
+           min(lead) >= 3.0,
+           "fixed fin Z %.1f, aileron lead %s mm" % (m["fin0"].bounds[0, 2], [round(float(x), 1) for x in lead]))
+    return p
 
 
 if __name__ == "__main__":

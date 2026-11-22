@@ -1,4 +1,5 @@
-# tools/verify_tailsteer.py (tailsteer_estimate.py is stdlib-only)
+# tools/verify_tailsteer.py (tailsteer_estimate.py is stdlib-only; it imports shapely only when
+# an aileron clip bites the fin outline, so shapely is optional for it)
 numpy>=1.26,<3
 trimesh>=4.5,<5
 manifold3d>=3,<4

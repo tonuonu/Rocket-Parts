@@ -3,7 +3,7 @@
   {
    "check": "all parts render without warnings",
    "passed": true,
-   "value": 37
+   "value": 30
   },
   {
    "check": "FinCan is one closed solid",
@@ -26,24 +26,14 @@
    "value": "2.0 cm3"
   },
   {
-   "check": "AileronScrewHalf_Peregrine is one closed solid",
+   "check": "AileronScrewHalf is one closed solid",
    "passed": true,
    "value": "8.5 cm3"
   },
   {
-   "check": "AileronTappedHalf_Peregrine is one closed solid",
+   "check": "AileronTappedHalf is one closed solid",
    "passed": true,
    "value": "8.5 cm3"
-  },
-  {
-   "check": "AileronScrewHalf_Zephyr is one closed solid",
-   "passed": true,
-   "value": "5.7 cm3"
-  },
-  {
-   "check": "AileronTappedHalf_Zephyr is one closed solid",
-   "passed": true,
-   "value": "5.7 cm3"
   },
   {
    "check": "BearingCoupon is one closed solid",
@@ -331,7 +321,7 @@
    "value": 1.558
   },
   {
-   "check": "aileron travel +-15 deg: nothing collides (aileron, crank, pushrod, horn)",
+   "check": "aileron travel +-15 deg in 7 steps: nothing collides (aileron, crank, pushrod, horn)",
    "passed": true,
    "value": 7
   },
@@ -361,24 +351,9 @@
    "value": 12.0
   },
   {
-   "check": "Peregrine: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
+   "check": "fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
    "passed": true,
    "value": "fixed fin Z -76.1, aileron lead [37.3, 35.5, 37.3] mm"
-  },
-  {
-   "check": "Zephyr: fixed fin reaches >= 3 mm further aft than the aileron at 0 and +-15 deg",
-   "passed": true,
-   "value": "fixed fin Z -4.7, aileron lead [5.3, 5.0, 5.3] mm"
-  },
-  {
-   "check": "Zephyr: ailerons free through the travel (can, fixed fin)",
-   "passed": true,
-   "value": "ok"
-  },
-  {
-   "check": "Zephyr: can clears the fixed fins",
-   "passed": true,
-   "value": 0.0
   }
  ],
  "params": {

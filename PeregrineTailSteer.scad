@@ -3,14 +3,16 @@
 // Filename: PeregrineTailSteer.scad
 // by Tõnu Samuel
 // Created: 11/21/2026
-// Revision: 0.1.6  11/21/2026
+// Revision: 0.2.0  11/21/2026
 // Units: mm
 // ***********************************
 //  ***** Notes *****
 //
-// Tail steering for the Apogee Peregrine (camera nose, CATS Vega): a printed
-// PC fin can that replaces the aft 220 mm of the aft body tube. Each of the
-// three fixed plywood fins carries a trailing-edge aileron. The aileron hangs
+// Tail steering for the Apogee Peregrine and the Apogee Zephyr (camera nose,
+// CATS Vega): a printed PC fin can that replaces the aft 220 mm of the aft
+// body tube. Each of the
+// three fixed fins (1/4 in plywood on the Peregrine, 1/4 in carbon plate on
+// the Zephyr) carries a trailing-edge aileron. The aileron hangs
 // on a 4 mm steel shaft that runs radially into the can in two NSK 684AZZ
 // shielded bearings (4 x 9 x 4); the aileron is two halves clamped round the
 // shaft. Inside the can a printed clevis crank on the shaft is driven by an
@@ -54,6 +56,8 @@
 // 0.1.6  11/21/2026  Review 6 nits: inner clevis cheek spot-faced to Cheek_T at the
 //                    pivot (bore 10.2 for the Ø2 x 10 dowel); horn stack derived from
 //                    Horn_Arm_T/Ball_D/Horn_Shim; TS_CRANK echo for the estimate.
+// 0.2.0  11/21/2026  Airframe = "Peregrine" | "Zephyr": the Zephyr Mach 0.8 build from new
+//                    (carbon fins, +-5 deg, link 2.0, 24 in motor tube); Peregrine unchanged.
 //
 // ***********************************
 //  ***** for STL output *****
@@ -74,13 +78,24 @@ Overlap = 0.05;
 // ============================================
 // AIRFRAME (PeregrineFinCan.scad v0.5.0 test-print values; .ork 101.6/99.06)
 // ============================================
+// The Apogee Peregrine and Zephyr (kit 04997) share their aft section: the
+// same AT-98/18 slotted tube, AT-38/11 motor tube 12.7 mm inside the tube end,
+// plywood rings at 25.4 and 155.575 mm and rail buttons at 104.775 and
+// 403.225 mm from the aft tube's front (PeregrineL2-CamNose.ork and Apogee's
+// Zephyr.rkt agree to the 0.001 mm). Airframe = "Zephyr" is a Mach 0.8 build
+// from the kit: its own fins (FinZ_Pts), +-5 deg aileron travel, a 2.0 link
+// ratio (crank 16, horn 8, so the servo angle and the can differ) and a 24 in
+// motor tube. Airframe = "Peregrine" leaves every Peregrine part as it was.
+Airframe  = "Peregrine";    // "Peregrine" or "Zephyr"
+assert(Airframe == "Peregrine" || Airframe == "Zephyr", "Airframe must be Peregrine or Zephyr");
 Body_OD   = 101.5;          // measured kit tube OD
 Body_ID   = 99.0;           // measured kit tube ID
 R_Out     = Body_OD/2;
 Wall      = 2.4;            // 6 perimeters (L2-PrintSettings.md)
 R_In      = R_Out - Wall;
 MMT_OD    = 41.53;          // Apogee 38 mm motor tube (.ork 0.0207645 m radius)
-MMT_L     = 279.4;          // 11 in, kit length (.ork)
+// Peregrine: 11 in, kit length (.ork). Zephyr: 24 in, for 38/1080 J motors up to 584 mm
+MMT_L     = Airframe == "Zephyr" ? 609.6 : 279.4;
 MMT_Z0    = 12.7;           // aft end above the base (.ork: bottom -0.0127)
 Glue_Gap  = 0.2;            // radial epoxy gap at every MMT contact
 MMT_Bore_R = MMT_OD/2 + Glue_Gap;
@@ -108,20 +123,26 @@ Fin_A      = [0, 120, 240];
 // ============================================
 // FIN OUTLINE (.ork freeform points, mm; x aft from root LE, y out)
 // ============================================
-Fin_Set = "Peregrine";      // "Peregrine" or "Zephyr"
+Fin_Set = Airframe;         // "Peregrine" or "Zephyr"
+assert(Fin_Set == Airframe, "Fin_Set follows Airframe; set Airframe instead");
 FinP_Pts = [[0,0],[50.8,41.91],[93.98,76.2],[127.0,95.25],[152.4,105.41],
             [177.8,111.76],[203.2,114.3],[228.6,112.776],[254.0,107.442],
             [279.4,98.552],[304.8,85.09],[317.5,76.454],[324.104,71.12],
             [324.983,69.4722],[323.342,68.326],[304.8,63.754],[279.4,49.276],
             [266.7,36.576],[259.08,25.4],[254.0,15.494],[248.92,0]];
 FinP_Base_X = 248.92;       // root TE at the tube end
-// Apogee Zephyr (cfd/airframes/zephyr_camnose.json): body end at x 245.034
-FinZ_Pts = [[0,0],[150.749,112.852],[223.749,112.852],[269.494,12.548],
-            [245.034,12.548],[228.27,0]];
+// Zephyr, Mach 0.8 build: 1/4 in (6.35 mm) carbon-fibre plate fins, root chord
+// and root LE station of the kit (Apogee DWG 04997: root LE 245.034 above the
+// tube end), span 125 (kit 112.9), tip chord 90, straight trailing edge swept
+// aft to 12 mm past the base. The larger span keeps ~2.0 cal at max speed with
+// the heavier tail; the swept TE puts the fixed fin's tip, not an aileron,
+// first on the ground. (Kit outline: [[0,0],[150.749,112.852],[223.749,112.852],
+// [269.494,12.548],[245.034,12.548],[228.27,0]].)
+FinZ_Pts = [[0,0],[167,125],[257,125],[228.27,0]];
 FinZ_Base_X = 245.034;
 Fin_Pts    = Fin_Set=="Zephyr" ? FinZ_Pts : FinP_Pts;
 Fin_Base_X = Fin_Set=="Zephyr" ? FinZ_Base_X : FinP_Base_X;
-Fin_T      = 6.35;          // 1/4 in Baltic birch plywood, as both kits
+Fin_T      = 6.35;          // 1/4 in: Baltic birch plywood (Peregrine), carbon-fibre plate (Zephyr)
 Fin_Slot_W = Fin_T + 0.5;
 Fin_Tab_Z  = [55, 175];     // through-the-wall tab, glued to the motor tube
 Fin_Slot_End_Clear = 0.5;
@@ -137,7 +158,9 @@ Flap_Root_Gap = 0.8;        // root edge above the body surface
 Flap_Gap      = 0.8;        // to the fixed fin, LE and outer edge
 Flap_LE_R     = Fin_T/2;    // round leading edge about the shaft
 Hinge_X       = Fin_Base_X - Hinge_Z;   // in fin coordinates
-Flap_Max      = 15;         // mechanical travel checked, +-deg
+// travel checked, +-deg. Zephyr: +-5 sizes the hinge for Mach 0.8 with factor >= 2 and
+// still gives ~30x the fins' own induced roll (tools/tailsteer_estimate.py)
+Flap_Max      = Airframe == "Zephyr" ? 5 : 15;
 // The aileron is two halves split on the fin's mid-plane, clamped round the
 // shaft by M2 countersunk screws from the -Y face into tapped holes in the +Y
 // half. Undo them and the halves come off sideways, then the shaft slides out
@@ -167,9 +190,8 @@ assert(Clamp_Screw_L <= Fin_T/2 + Clamp_Tap_L - 0.3, "clamp screw bottoms out in
 assert(Fin_T/2 - Clamp_Tap_L >= 0.5, "tap hole leaves under 0.5 mm of +Y skin");
 // Tail-first landing: the fixed fin must reach further aft than any aileron
 // point. The aileron is clipped Skid_Margin forward of the notched fixed fin's
-// aft-most point. Peregrine: no clip (fixed fin tip 35 mm aft of the
-// aileron). Zephyr: the clip removes the aileron's share of the kit fin's
-// aft extension below the notch.
+// aft-most point. Neither fin set is clipped: the Peregrine's fixed fin tip
+// reaches 35 mm aft of the aileron, the Zephyr's swept TE 16 mm.
 Skid_Margin   = 5;
 function Fixed_Aft_X() = let(yt = Flap_Span + Flap_Gap, xn = Hinge_X - Flap_LE_R - Flap_Gap,
         P = Fin_Pts, n = len(P),
@@ -214,7 +236,9 @@ Servo_Lug_Hole_D = 3; Servo_Lug_Hole_X = 31.2; Servo_Lug_Spacing = 39;
 Servo_Wire = [2.2, 10, 7, 4];   // stub beyond the bottom: depth, centre (along L from spline), length, width
 // Horn: the servo's own metal arm, M2 ball stud at Horn_R
 Horn_Hub_D = 8; Horn_Hub_H = 3; Horn_Arm_W = 5.5; Horn_Arm_T = 2.5;
-Horn_R     = 9;             // pivot from the spline axis: its nut clears the servo case at full travel
+// pivot from the spline axis. Peregrine 9: the pivot screw's nut clears the servo case at
+// full travel. Zephyr 8: link ratio 2.0 with the 16 mm crank (no nut: the clevis dowel)
+Horn_R     = Airframe == "Zephyr" ? 8 : 9;
 Horn_Plane = Servo_Case_H/2 + 2.0;   // horn mid-plane above the case centre
 Ball_D     = 4.8;           // M2 ball stud
 // Horn pivot: the 4.8 mm pivot ball on an M2 x 10 12.9 screw through the servo's
@@ -225,12 +249,37 @@ Horn_Shim  = 0.3;
 Horn_Nut   = [4.6, 1.6];    // M2 nut: across corners, thickness
 Horn_Head  = [3.8, 2.0];    // M2 socket head: dia, height
 Ball_Off   = Horn_Arm_T/2 + Horn_Shim + Ball_D/2;
-Horn_Screw_L = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;   // grip + 0.5 protrusion
-assert(Horn_Screw_L <= 10, "horn pivot needs a longer screw than M2 x 10");
+// Zephyr: a horn clevis cap, one 7075 part. A saddle straddles the arm's outer end (cheeks
+// on both of the arm's edges, Horn_Cap_X from the spline) and keys the cap against turning;
+// from it a 2 mm strap runs back over the far side of the ball (0.3 shim) to the pivot. The
+// pivot is a Ø2 x 10 hardened dowel pressed through arm, ball and strap, in double shear;
+// an M2 screw into the arm's tapped hole at Horn_Strap_X only keeps the cap on. The arm is
+// MKS's metal single arm for the 5 mm output, cut to Horn_Cap_X[1] from the spline (flush
+// with the saddle's end). Inboard of the pivot there is no room: the ball's link eye, the
+// spline hub and its retaining screw.
+Horn_Clevis  = Airframe == "Zephyr";
+Horn_Strap   = [2.0, 0.3];   // strap thickness, shim between ball and strap
+Horn_Strap_X = 14.5;         // the cap screw's tapped hole in the arm, from the spline axis
+Horn_Cap_X   = [12, 17.5];   // saddle, along the arm (the link eye ends at 11.5)
+Horn_Cap_Cheek = 1.5;        // saddle cheek over each of the arm's edges
+Horn_Arm_L   = Horn_Clevis ? Horn_Cap_X[1] - Horn_Arm_W/2 : Horn_R;   // arm hull's end centre (Zephyr: cut to 17.5)
+Horn_Screw_Head = [5.5, 3.0];   // arm retaining screw head on the spline (M3 cap head: the larger of M2.5/M3)
+// Horn_Screw_L: the pivot screw's grip + 0.5 protrusion (Peregrine), or the clevis cap screw's
+// stack: strap, the saddle block (shim + ball + shim) and the arm's tapped hole (Zephyr)
+Horn_Screw_L = Horn_Clevis ? Horn_Strap[0] + Horn_Strap[1] + Ball_D + Horn_Shim + Horn_Arm_T
+                           : Horn_Arm_T + Horn_Shim + Ball_D + Horn_Nut[1] + 0.5;
+Horn_Pin_L   = Horn_Arm_T + Horn_Shim + Ball_D + Horn_Strap[1] + Horn_Strap[0];   // clevis dowel grip
+assert(Horn_Screw_L <= 10, Horn_Clevis ? "clevis cap screw stack longer than its M2 x 10"
+                                       : "horn pivot stack longer than its M2 x 10");
+assert(!Horn_Clevis || Horn_Pin_L <= 10, "clevis dowel grip longer than its 2 x 10 dowel");
 Link_Eye_D = 7.0;           // ball-link body envelope
 Link_Eye_W = 4.6;           // ball-link eye width across the ball
 Pushrod_L  = 52;            // ball centre to ball centre, M2 threaded rod
-Crank_A    = 14;            // crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the servo, and its hatch, further from the fin)
+// crank arm, shaft axis to ball centre (sets the servo angle: a longer arm puts the
+// servo, and its hatch, further from the fin). Zephyr: 16 with an 8 mm horn, a 2.0
+// link ratio, so the servo's gear lash counts half at the aileron (its +-5 deg travel
+// needs only +-10 deg of servo).
+Crank_A    = Airframe == "Zephyr" ? 16 : 14;
 // Servo placement: the case lies flat (W radial) with its centre at Servo_Rc
 // in the fin frame; the horn points inward. The angle is solved so the horn
 // ball sits axially over the crank ball (pushrod parallel to the axis).
@@ -292,6 +341,32 @@ Ped_Z_Fwd   = [Servo_ZO - Servo_Spline_Off + Servo_L + 0.3, Servo_Zc + Servo_Lug
 Bay_Top_A   = 200;          // sector A: floor carries the LiPo up to here
 Bay_Top     = 121;          // sectors B and C
 
+// Mechanical travel stop (Zephyr): two M2 nuts, each over a Ø6 washer, locked on the
+// pushrod either side of a shelf on the servo bay's fin-side web. The rod passes the
+// shelf in a Ø3 hole; at +-Stop_Angle of aileron a washer lands on the shelf. The stop
+// reaction goes from the rod into the can: the crank, shaft, bearings and aileron see
+// only the aero load. Nothing in the stop path is a fuse: the shelf load is bounded by
+// the servo's stall (228 N of rod force at 8.4 V), and every part from the horn to the
+// shelf holds that at a factor of 1.5 or more (tailsteer_estimate.py). A sustained stall
+// does not open the shared 7.5 A fuse (one servo draws 2.5 A), and the washer's bearing on
+// the PC (10.8 MPa) is above PC's long-term stress, so each servo has its own PTC (Bourns
+// MF-R090, trip 1.8 A): it trips at stall and drops the servo, which bounds the load's time.
+Stop_On      = Airframe == "Zephyr";
+Stop_Angle   = 6.3;                              // the stacks touch nothing inside this
+Stop_Gap     = Crank_A*sin(Stop_Angle) + 0.04;   // rod travel to the stop; +0.04 for the washer's tilt
+Stop_Contact = asin(Stop_Gap/Crank_A);           // where the washer lands: about 6.4 deg
+Stop_Shelf_Z = [57, 63];                  // between the two ball-link bodies
+Stop_Washer  = [6, 2.1];                  // M2 large washer + nut: dia, stack height
+Stop_Hole_D  = 3.0;
+// The shelf bridges from the fin-side web to the floor and spine end (ly Floor_Ly0); 45 deg
+// corbels at both ends run to the washer's footprint, so the lower washer lands on a 6 mm
+// bridge, never on a cantilever. The web and the floor are extended to the shelf's width.
+Stop_Shelf_Lx = [-Horn_R - Stop_Washer[0]/2, -Horn_R + Stop_Washer[0]/2];   // servo frame
+Stop_Shelf_Ly = [Bay_Ly[0] + Bay_Web_T, Floor_Ly0];
+Stop_Pad_Ly  = 1.6;   // the floor-end pad (the floor extended to the shelf's width): depth along ly from Floor_Ly0
+Stop_Corbel  = [-Horn_Ball_U - Stop_Washer[0]/2 - Stop_Shelf_Ly[0],     // web end, to the footprint
+                Stop_Shelf_Ly[1] - (-Horn_Ball_U + Stop_Washer[0]/2)];   // floor end
+
 // LiPo: Tattu 450 mAh 2S 75C long pack (61 x 16 x 15 mm, 28 g), on sector A floor
 Lipo = [15, 16, 61];        // along u (tangential), lx (radial), Z
 Lipo_Z0 = 128;
@@ -299,7 +374,12 @@ Lipo_Lx0 = Bay_Floor_X[1] + 0.3;
 Strap_Slot = [2.5, 14];
 
 // Hatch openings (servo frame, u = -ly)
-Hatch_U   = [-23.5, 33.5];    // servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0 (verifier)
+// servo part: arc at R_Out from the servo angle; the servo with its horn lifts out from 33.0
+// (verifier). Zephyr: 3 mm wider on the fin side for the horn clevis's strap and screw head
+// (its servo sits 1.8 deg further from the fin, so the fillet room stays >= 12 mm), and 4 mm
+// wider on the -u side: the servo, slid +ly off its horn (Service_Slide), lifts out with its
+// lead stub clear of the band.
+Hatch_U   = Airframe == "Zephyr" ? [-27.5, 36.5] : [-23.5, 33.5];
 Hatch_Z   = [Servo_Zc - Servo_Lug_L/2 - 1, Servo_Zc + Servo_Lug_L/2 + 1];   // passes the lugs
 Hatch_Bat_U = [-11.5, 11.5];  // sector A battery part
 Hatch_Bat_Z1 = 192;
@@ -320,6 +400,20 @@ Hatch_Gap = 0.25;
 Hatch_Screw = 3.4;            // M3 button head through the cover
 Hatch_Insert = [4.0, 6.7];    // ruthex RX-M3x5.7: hole, depth (L+1)
 Hatch_Boss_D = 8.0;
+// Zephyr: a window below the servo hatch's fin-side corner (u, Z ranges) opens a radial path to
+// both travel-stop nuts and their gaps: a 4 mm open-end wrench and a 1.8 mm feeler set them
+// at neutral, with the servo in. The cover grows a matching lobe, held by its own screw below
+// the window, 4 mm in from its -u edge: off the rail strip, and clear of the crank-end link.
+Hatch_Win = Airframe == "Zephyr" ? [[15, Hatch_U[1]], [51.5, Hatch_Z[0] + 1]] : undef;
+// the screw on the -u (+ly) edge: above the servo's lead stub (Peregrine), or below the servo's
+// case (Zephyr), clear of the servo's end face when it slides +ly off its horn hub for service
+Hatch_Screw1_Z = Airframe == "Zephyr" ? Hatch_Z[0] + 2.5 : Hatch_Z[1] - 8;
+// Zephyr field service: the horn stays on the captive linkage. A hex key (Service_Key_D across
+// corners) undoes the arm's retaining screw along the spline axis through the hatch (the
+// opening trims the fin-side web clear of it); the servo then slides Service_Slide along +ly
+// off the hub (the spline's engagement + 0.25) and lifts out alone.
+Service_Key_D   = 3.0;    // 2.5 mm hex key, 2.9 across corners
+Service_Slide   = (Servo_Spline_Top - Servo_Case_H - 0.5) + 0.25;
 
 // Rail button boss: ruthex RX-M4x8.1 (also #8-32 body), kit 1010 button
 Rail_Insert = [5.6, 9.6];
@@ -342,6 +436,11 @@ assert(Shaft_X1 > R_Out + Flap_Root_Gap + 20, "shaft engages the aileron by less
 assert(Hinge_Z - Flap_LE_R - Flap_Gap > 0, "hinge too low");
 assert(Fin_Tab_Z[0] - Hinge_Z > Housing_D/2 + 8, "fin tab runs into the hinge block");
 assert(Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Z[0] - Hatch_Rebate, "rail boss under the hatch");
+// the stop window's rebate (narrow on both of its sides, full above and below) stays 3 mm off the rail boss
+assert(is_undef(Hatch_Win) || Rail_Aft_Z - Rail_Boss_D/2 - 3 > Hatch_Win[1][1] + Hatch_Rebate
+       || Rail_Aft_Z + Rail_Boss_D/2 + 3 < Hatch_Win[1][0] - Hatch_Rebate
+       || Hatch_Win[0][0] - Hatch_Rebate_Fin >= (Servo_Theta - Rail_A)*PI/180*R_Out + Rail_Boss_D/2 + 3,
+       "stop window's rebate on the rail boss");
 assert(Servo_Rc + Servo_W/2 < R_In, "servo outside the wall");
 assert(Shaft_X0 > MMT_Bore_R + 1, "shaft into the motor tube");
 // set-screw insert pocket: on the aft side at |Y| <= Set_Insert[0]/2; the arm
@@ -373,6 +472,7 @@ if (Render_Part == 4) TS_Crank_Print();
 if (Render_Part == 5) TS_Aileron_Print(-1);   // screw half
 if (Render_Part == 8) TS_Aileron_Print(1);    // tapped half
 if (Render_Part == 40) Shaft(Defl);
+if (Render_Part == 42 && Horn_Clevis) Servo_Frame() Horn_Clevis_Cap();   // Zephyr: the clevis cap alone
 if (Render_Part == 38) Aileron_Half(-1, Defl);
 if (Render_Part == 39) Aileron_Half(1, Defl);
 if (Render_Part == 6) TS_Coupon();
@@ -568,18 +668,41 @@ module Horn_Envelope0(phi=0){
         hull(){
             translate([0, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Arm_W, h=Horn_Arm_T, center=true, $fn=24);
-            translate([-Horn_R, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
+            translate([-Horn_Arm_L, -Horn_Plane, Servo_ZO]) rotate([90,0,0])
                 cylinder(d=Horn_Arm_W, h=Horn_Arm_T, center=true, $fn=24);
         }
-        // pivot screw: nut on the case side, head beyond the ball
-        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
-            cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
-        translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
-            cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
-        translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
-            cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
+        if (Horn_Clevis)   // the arm's retaining screw head on the spline
+            translate([0, -(Horn_Plane + Horn_Arm_T/2) + Overlap, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=Horn_Screw_Head[0], h=Horn_Screw_Head[1] + Overlap, $fn=24);
+        if (Horn_Clevis) {
+            // Ø2 dowel through arm, ball and strap (flush both sides)
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=2.0, h=Horn_Pin_L, $fn=16);
+            Horn_Clevis_Cap();
+        } else {
+            // pivot screw: nut on the case side, head beyond the ball
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2, Servo_ZO]) rotate([-90,0,0])
+                cylinder(d=Horn_Nut[0], h=Horn_Nut[1], $fn=24);   // any nut angle
+            translate([-Horn_R, -Horn_Plane + Horn_Arm_T/2 + Horn_Nut[1] + 0.5, Servo_ZO]) rotate([90,0,0])
+                cylinder(d=2.0, h=Horn_Screw_L, $fn=16);
+            translate([-Horn_R, -(Horn_Ball_U + Ball_D/2), Servo_ZO]) rotate([90,0,0])
+                cylinder(d=Horn_Head[0], h=Horn_Head[1], $fn=20);
+        }
         translate([-Horn_R, -Horn_Ball_U, Servo_ZO]) sphere(d=Ball_D, $fn=24);
     }
+}
+// the clevis cap at phi = 0 (servo frame): saddle over the arm's outer end, strap back to
+// the pivot beyond the ball, and the cap screw's ISO 7380 head. No ball, no dowel: the
+// verifier checks it against the horn-end ball link's eye.
+module Horn_Clevis_Cap(){
+    y_in = -(Horn_Plane - Horn_Arm_T/2);                         // arm's case-side face
+    y_st = -(Horn_Ball_U + Ball_D/2 + Horn_Strap[1]);            // strap's inner face
+    h = Horn_Arm_W/2 + Horn_Cap_Cheek;
+    translate([-Horn_Cap_X[1], y_st, Servo_ZO - h]) cube([Horn_Cap_X[1] - Horn_Cap_X[0], y_in - y_st, 2*h]);
+    // strap: 5.5 wide at the pivot, 5 at the cap screw (it clears the fin rib by 0.45)
+    hull() for (x=[-Horn_Strap_X, -Horn_R]) translate([x, y_st, Servo_ZO])
+        rotate([90,0,0]) cylinder(d=x == -Horn_R ? Horn_Arm_W : 5, h=Horn_Strap[0], $fn=24);
+    translate([-Horn_Strap_X, y_st - Horn_Strap[0], Servo_ZO]) rotate([90,0,0]) cylinder(d=3.5, h=1.1, $fn=20);
 }
 module Lipo_Envelope() Fin_Frame(0) Servo_Frame()
     translate([Lipo_Lx0, -Lipo[0]/2, Lipo_Z0]) cube([Lipo[1], Lipo[0], Lipo[2]]);
@@ -638,8 +761,16 @@ module Radial_Prism(P, c, r0=28, r1=75) let(N=len(P))
                convexity=6);
 module Hatch_Shell(bat, grow, ra, rb, grow_fin=undef, grow_bat=undef)
     intersection(){
-        Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
-            Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin, grow_bat))), Hatch_Ctr(bat));
+        union(){
+            Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
+                Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin, grow_bat))), Hatch_Ctr(bat));
+            // the stop window (Zephyr): its own rectangle, fin-side edge on Hatch_U[1]; both of its
+            // sides take the narrow (fin-side) offset, so its rebate stays off the rail boss
+            if (!is_undef(Hatch_Win)) let(u=Hatch_Win[0], z=Hatch_Win[1], gs=is_undef(grow_fin) ? grow : grow_fin,
+                    W=[[u[0], z[0]], [u[1], z[0]], [u[1], z[1]], [u[0], z[1]]])
+                Radial_Prism(Sub_Pts(Off_Pts(W, [grow, gs, grow, gs])),
+                             [(u[0] + u[1])/2, (z[0] + z[1])/2]);
+        }
         Tube_Shell(ra, rb);
     }
 // undo the servo frame (for axis-centred solids inside Servo_Frame)
@@ -657,8 +788,9 @@ function Hatch_Screws(bat) = let(
         e1 = [Hatch_U[1], Hatch_Z[1]],
         e2 = bat ? [Hatch_Bat_U[1], Hatch_Z[1] + (Hatch_U[1] - Hatch_Bat_U[1])] : [um, Hatch_Z[1] + hw],
         mid = (e1 + e2)/2, n = Hatch_Screw_In/sqrt(2))
-    concat([[Hatch_U[0] - Hatch_Screw_In, Hatch_Z[1] - 8],   // boss and corbel above the servo lead stub
+    concat([[Hatch_U[0] - Hatch_Screw_In, Hatch_Screw1_Z],   // boss and corbel on the +ly edge
             [mid[0] + n, mid[1] + n]],
+           is_undef(Hatch_Win) ? [] : [[Hatch_Win[0][0] + 4, Hatch_Win[1][0] - Hatch_Screw_In]],
            bat ? [[Hatch_Bat_U[0] - Hatch_Screw_In_Bat, Hatch_Bat_Z1 - 8]] : []);
 Hatch_Seat_R = R_Out - Hatch_Rebate_D;
 // radial cylinders on the screw axes; a, b: radius range relative to the seat face
@@ -729,6 +861,8 @@ module TS_Can() difference(){
     for (k=[0:2]) Fin_Frame(k) Servo_Frame(){
         Lug_Holes();
         if (k==0) Strap_Slots();
+        if (Stop_On) translate([-Horn_R, -Horn_Ball_U, Stop_Shelf_Z[0] - 1])
+            cylinder(d=Stop_Hole_D, h=Stop_Shelf_Z[1] - Stop_Shelf_Z[0] + 2, $fn=24);
     }
     Rail_Hole();
     Switch_Hole();
@@ -817,6 +951,25 @@ module Servo_Bay(bat=false) Servo_Frame(){
     for (ly=[Bay_Ly[0], Bay_Ly[1]]) intersection(){
         translate([Bay_Floor_X[0], ly, 0]) cube([30, Bay_Web_T, top]);
         Fin_Inv() cylinder(r=R_In + Overlap, h=Can_L, $fn=192);
+    }
+    // travel-stop shelf (Zephyr): flat underside round the rod, 45 deg corbel at the web
+    if (Stop_On) {
+        w = Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0];
+        translate([Stop_Shelf_Lx[0], Stop_Shelf_Ly[0] - Overlap, Stop_Shelf_Z[0]])
+            cube([w, Stop_Shelf_Ly[1] - Stop_Shelf_Ly[0] + 2*Overlap, Stop_Shelf_Z[1] - Stop_Shelf_Z[0]]);
+        for (e=[0, 1]) let(c = Stop_Corbel[e], y0 = Stop_Shelf_Ly[e], sg = e == 0 ? 1 : -1) hull(){
+            translate([Stop_Shelf_Lx[0], e == 0 ? y0 - Overlap : y0, Stop_Shelf_Z[0] - c])
+                cube([w, Overlap, c + Overlap]);
+            translate([Stop_Shelf_Lx[0], e == 0 ? y0 - Overlap : y0 - c, Stop_Shelf_Z[0]])
+                cube([w, c + Overlap, Overlap]);
+        }
+        // web and floor extended over the shelf's width, with 45 deg undersides
+        xe = Bay_Floor_X[0] - Stop_Shelf_Lx[0];
+        for (e=[0, 1]) let(c = Stop_Corbel[e], y0 = e == 0 ? Stop_Shelf_Ly[0] - Bay_Web_T : Stop_Shelf_Ly[1],
+                           t = e == 0 ? Bay_Web_T : Stop_Pad_Ly) if (xe > 0) hull(){
+            translate([Stop_Shelf_Lx[0], y0, Stop_Shelf_Z[0] - c]) cube([xe + Overlap, t, Stop_Shelf_Z[1] - Stop_Shelf_Z[0] + c]);
+            translate([Bay_Floor_X[0], y0, Stop_Shelf_Z[0] - c - xe]) cube([Overlap, t, xe]);
+        }
     }
     // spine on the floor face under both lugs, aft pedestal from the bed
     translate([Spine_X[0], Ped_Ly[0], 0]) cube([Spine_X[1] - Spine_X[0], Ped_Ly[1] - Ped_Ly[0], Ped_Z_Fwd[1]]);
@@ -946,8 +1099,18 @@ echo(str("TS_CRANK ", Clevis_Gap, " ", Cheek_T, " ", Crank_Arm_H, " ", Link_Eye_
          Crank_Win_Y[0], " ", Crank_Hub_D/2, " ", Crank_Arm_X1 - Crank_X0, " ", Pivot_D, " ",
          Pivot_L, " ", Pin_Z[0], " ", Web_Y[1] - Web_Y[0], " ", Hinge_Z + Housing_D/2*sqrt(2), " ",
          Shaft_Flat, " ", Cheek_T_In));
+echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Stop_Shelf_Z[0], " ", Stop_Shelf_Z[1], " ",
+         Stop_Washer[0], " ", Stop_Washer[1], " ", Stop_Hole_D, " ", Stop_Shelf_Lx[1] - Stop_Shelf_Lx[0], " ",
+         Stop_Washer[0]/2, " ", Horn_Clevis ? 1 : 0, " ", Horn_Strap[0], " ", Horn_Screw_L, " ", Horn_Strap_X, " ",
+         Horn_Strap[1], " ", Horn_Cap_X[0], " ", Horn_Cap_X[1], " ", Ball_D, " ", Horn_Pin_L, " ",
+         Link_Eye_W, " ", Link_Eye_D));
+// field service (Zephyr): see Service_Slide
+echo(str("TS_SERVICE ", Horn_Clevis ? 1 : 0, " ", -(Horn_Plane + Horn_Arm_T/2) - Horn_Screw_Head[1], " ",
+         Service_Key_D, " ", Service_Slide, " ",
+         is_undef(Hatch_Win) ? "0 0 0 0" : str(Hatch_Win[0][0], " ", Hatch_Win[0][1], " ", Hatch_Win[1][0], " ", Hatch_Win[1][1]),
+         " ", Hatch_Rebate, " ", Hatch_Rebate_Fin, " ", Hatch_Z[0]));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
-echo(str("PeregrineTailSteer 0.1.6: fin set ", Fin_Set, ", servo at ", Servo_Theta,
+echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,
          " deg from its fin, crank ball r ", Crank_Xk, ", link ratio ", Link_Ratio,
          ", bearing spacing ", Brg_Spacing, ", shaft ", Shaft_L, " mm"));
