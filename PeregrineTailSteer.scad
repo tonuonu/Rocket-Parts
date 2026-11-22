@@ -398,6 +398,11 @@ Hatch_Gap = 0.25;
 Hatch_Screw = 3.4;            // M3 button head through the cover
 Hatch_Insert = [4.0, 6.7];    // ruthex RX-M3x5.7: hole, depth (L+1)
 Hatch_Boss_D = 8.0;
+// Zephyr: a window below the servo hatch's fin-side corner (u, Z ranges) opens a radial path to
+// both travel-stop nuts and their gaps: a 4 mm open-end wrench and a 1.8 mm feeler set them
+// at neutral, with the servo in. The cover grows a matching lobe, held by its own screw below
+// the window, 4 mm in from its -u edge: off the rail strip, and clear of the crank-end link.
+Hatch_Win = Airframe == "Zephyr" ? [[15, Hatch_U[1]], [51.5, Hatch_Z[0] + 1]] : undef;
 // the screw on the -u (+ly) edge: above the servo's lead stub (Peregrine), or below the servo's
 // case (Zephyr), clear of the servo's end face when it slides +ly off its horn hub for service
 Hatch_Screw1_Z = Airframe == "Zephyr" ? Hatch_Z[0] + 2.5 : Hatch_Z[1] - 8;
@@ -749,8 +754,15 @@ module Radial_Prism(P, c, r0=28, r1=75) let(N=len(P))
                convexity=6);
 module Hatch_Shell(bat, grow, ra, rb, grow_fin=undef, grow_bat=undef)
     intersection(){
-        Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
-            Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin, grow_bat))), Hatch_Ctr(bat));
+        union(){
+            Radial_Prism(Sub_Pts(Off_Pts(Hatch_Pts(bat),
+                Hatch_G(bat, grow, is_undef(grow_fin) ? grow : grow_fin, grow_bat))), Hatch_Ctr(bat));
+            // the stop window (Zephyr): its own rectangle, fin-side edge on Hatch_U[1]
+            if (!is_undef(Hatch_Win)) let(u=Hatch_Win[0], z=Hatch_Win[1],
+                    W=[[u[0], z[0]], [u[1], z[0]], [u[1], z[1]], [u[0], z[1]]])
+                Radial_Prism(Sub_Pts(Off_Pts(W, [grow, is_undef(grow_fin) ? grow : grow_fin, grow, grow])),
+                             [(u[0] + u[1])/2, (z[0] + z[1])/2]);
+        }
         Tube_Shell(ra, rb);
     }
 // undo the servo frame (for axis-centred solids inside Servo_Frame)
@@ -770,6 +782,7 @@ function Hatch_Screws(bat) = let(
         mid = (e1 + e2)/2, n = Hatch_Screw_In/sqrt(2))
     concat([[Hatch_U[0] - Hatch_Screw_In, Hatch_Screw1_Z],   // boss and corbel on the +ly edge
             [mid[0] + n, mid[1] + n]],
+           is_undef(Hatch_Win) ? [] : [[Hatch_Win[0][0] + 4, Hatch_Win[1][0] - Hatch_Screw_In]],
            bat ? [[Hatch_Bat_U[0] - Hatch_Screw_In_Bat, Hatch_Bat_Z1 - 8]] : []);
 Hatch_Seat_R = R_Out - Hatch_Rebate_D;
 // radial cylinders on the screw axes; a, b: radius range relative to the seat face
@@ -1085,7 +1098,9 @@ echo(str("TS_STOP ", Stop_On ? 1 : 0, " ", Stop_Contact, " ", Stop_Gap, " ", Sto
          Link_Eye_W, " ", Link_Eye_D));
 // field service (Zephyr): see Service_Slide
 echo(str("TS_SERVICE ", Horn_Clevis ? 1 : 0, " ", -(Horn_Plane + Horn_Arm_T/2) - Horn_Screw_Head[1], " ",
-         Service_Key_D, " ", Service_Slide));
+         Service_Key_D, " ", Service_Slide, " ",
+         is_undef(Hatch_Win) ? "0 0 0 0" : str(Hatch_Win[0][0], " ", Hatch_Win[0][1], " ", Hatch_Win[1][0], " ", Hatch_Win[1][1]),
+         " ", Hatch_Rebate, " ", Hatch_Rebate_Fin, " ", Hatch_Z[0]));
 echo(str("TS_CLAMP ", Clamp_Screw_L, " ", Fin_T, " ", [for (c=Clamp_Screws) each Clamp_Pos(c)]));
 echo(str("TS_SCREWS ", [for (s=Hatch_Screws(true)) each s], " | ", [for (s=Hatch_Screws(false)) each s]));
 echo(str("PeregrineTailSteer 0.2.0: airframe ", Airframe, ", fin set ", Fin_Set, ", servo at ", Servo_Theta,

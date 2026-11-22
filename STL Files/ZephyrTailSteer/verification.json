@@ -8,17 +8,17 @@
   {
    "check": "FinCan is one closed solid",
    "passed": true,
-   "value": "281.0 cm3"
+   "value": "279.6 cm3"
   },
   {
    "check": "HatchServo is one closed solid",
    "passed": true,
-   "value": "9.1 cm3"
+   "value": "10.1 cm3"
   },
   {
    "check": "HatchServoLipo is one closed solid",
    "passed": true,
-   "value": "12.3 cm3"
+   "value": "13.3 cm3"
   },
   {
    "check": "Crank is one closed solid",
@@ -53,7 +53,7 @@
   {
    "check": "hatch covers print standing (<= 250)",
    "passed": true,
-   "value": 148.0
+   "value": 169.5
   },
   {
    "check": "supportless: no downward patch wider than 7 mm (inscribed circle)",
@@ -239,7 +239,7 @@
   {
    "check": "outer wall >= 2.25 mm (radial rays entering at the OD)",
    "passed": true,
-   "value": "8219 rays, thin: []"
+   "value": "7841 rays, thin: []"
   },
   {
    "check": "bearing housing walls >= 1.95 mm (2.0 nominal)",
@@ -270,11 +270,14 @@
    "value": [
     98.1,
     31.7,
+    40.8,
     81.4,
     218.1,
     155.6,
+    160.8,
     338.1,
-    275.6
+    275.6,
+    280.8
    ]
   },
   {
@@ -406,6 +409,16 @@
     1.475,
     1.471
    ]
+  },
+  {
+   "check": "stop nuts reachable through the stop window at neutral, servo in: a 4 mm open-end wrench (\u00d89 x 2 head, 6 x 2 neck) on each nut swung +-15 deg about the rod, clear of can, fin, aileron, crank, links, rod, the other stack, servo, horn and motor tube",
+   "passed": true,
+   "value": "clear"
+  },
+  {
+   "check": "stop gaps reachable through the stop window at neutral: a \u00d81.7 feeler in each gap beside the rod, along the servo's radial, clear of everything but its own gap",
+   "passed": true,
+   "value": "clear"
   },
   {
    "check": "full servo throw: up to each stop (-6.39 / +6.39 deg aileron, servo -12.9 / +12.9 deg, 55 steps) nothing but the stop touches",

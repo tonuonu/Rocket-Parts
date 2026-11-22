@@ -224,8 +224,8 @@ def main():
 
 
 def verify(af, tmp):
-    _SAMPLES.clear()            # per airframe: no samples of the other airframe's meshes
     """Render one airframe into tmp and run every check on it; returns its parameters."""
+    _SAMPLES.clear()            # per airframe: no samples of the other airframe's meshes
     tmp.mkdir(parents=True, exist_ok=True)
     af_def = {"Airframe": '"%s"' % af}
     jobs = [(tmp / (n + ".stl"), pt, af_def) for n, pt in PRINTS.items()]
@@ -478,9 +478,9 @@ def verify(af, tmp):
     empty = not can.contains([rail_o + rail_d * 4])[0]
     record("rail-button pocket is open on the 60 deg line at the .ork station", empty,
            [p["Rail_A"], p["Rail_Aft_Z"]])
-    hs = [float(x) for x in echo_values(logs["FinCan"], "TS_SCREWS").replace("[", " ").replace("]", " ")
-          .replace(",", " ").replace("|", " ").split()]
-    scr_a, scr_bc = hs[:6], hs[6:]
+    # sector A's screws | sectors B and C's screws, each a flat [u, z, u, z, ...] list
+    scr_a, scr_bc = ([float(x) for x in half.replace("[", " ").replace("]", " ").replace(",", " ").split()]
+                     for half in echo_values(logs["FinCan"], "TS_SCREWS").split("|"))
     th = math.radians(p["Servo_Theta"])
     worst = 1.0
     heads = []
@@ -747,6 +747,61 @@ def verify(af, tmp):
         late = [inter(pose(-(a_cm + 0.3))["stk"], can), inter(pose(a_cp + 0.3)["stk"], can)]
         record("stop engages by %+.2f / %+.2f deg (a washer on the shelf)" % (-(a_cm + 0.3), a_cp + 0.3),
                min(late) > 1e-3, [round(v, 3) for v in late])
+        # setting the stops, at neutral with the servo in and the cover off: through the stop window a
+        # 4 mm open-end wrench (15 deg head, flipped each stroke) turns each nut, and a 1.8 mm feeler
+        # gauges each gap. Wrench: a round Ø9 x 2 head round the nut (4.1 mouth) and a 6 x 2 neck out
+        # along the servo's radial past the skin, swung +-15 deg about the rod. Feeler: Ø1.7 (just
+        # under the gap) in the gap beside the rod, along the same radial. Bodies: can, fixed fin,
+        # aileron, crank, links, rod, the other stack (the feeler: both stacks), servo, horn, motor tube.
+        gap, z0, z1, wd, wh = st[2], st[3], st[4], st[5], st[6]
+        nut_h = wh - 0.5                                   # M2 nut 1.6 under/over a 0.5 washer
+        lx_w = np.array([math.cos(th), math.sin(th), 0.0])  # servo frame +lx (outward)
+        P = pose(0.0)
+        cb, hb = crank_ball(0.0), horn_ball(P["phi"])
+        u = (hb - cb) / np.linalg.norm(hb - cb)
+        s_lo, s_hi = (z0 - gap - wh) - Z, (z1 + gap) - Z
+        stk_lo = cyl(cb + s_lo * u, cb + (s_lo + wh) * u, wd / 2)
+        stk_hi = cyl(cb + s_hi * u, cb + (s_hi + wh) * u, wd / 2)
+        common = [("can", can), ("fixed fin", m["fin0"]), ("aileron", P["ail"]), ("crank", P["crk"]),
+                  ("links", P["lnk"]), ("rod", P["rod"]), ("servo", stat), ("horn", P["hrn"]), ("motor tube", m["mmt"])]
+        e1_0 = lx_w - np.dot(lx_w, u) * u
+        e1_0 /= np.linalg.norm(e1_0)
+        blocked_w, blocked_f = [], []
+        for nm_, s0, away, other, z_gap in (("lower", s_lo, -1, stk_hi, (z0 - gap + z0) / 2),
+                                           ("upper", s_hi + 0.5, 1, stk_lo, (z1 + z1 + gap) / 2)):
+            c0 = cb + (s0 + nut_h / 2) * u                     # nut centre
+            zc = (nut_h / 2 + 0.4 - 1.0) * away                # head 2 thick: flush on the washer side
+            for sw in range(-15, 16, 5):
+                e1 = trimesh.transformations.rotation_matrix(math.radians(sw), u)[:3, :3] @ e1_0
+                e2 = np.cross(u, e1)
+                T = np.eye(4); T[:3, 0], T[:3, 1], T[:3, 2] = e1, e2, u
+                T[:3, 3] = c0 + zc * u
+                head = trimesh.creation.cylinder(radius=4.5, height=2.0, sections=48)
+                mouth = trimesh.creation.box(extents=[6.6, 4.1, 3.0])
+                mouth.apply_translation([-3.3 + 2.05, 0, 0])    # e1 -4.55 .. +2.05: the nut's far flat
+                head = trimesh.boolean.difference([head, mouth], engine="manifold")
+                neck = trimesh.creation.box(extents=[26.0, 6.0, 2.0])
+                neck.apply_translation([4.0 + 13.0, 0, 0])      # e1 4 .. 30, out past the skin
+                tool = trimesh.util.concatenate([head, neck]); tool.apply_transform(T)
+                for bn, B in common + [("other stack", other)]:
+                    v = inter(tool, B)
+                    if v > 1e-3:
+                        blocked_w.append((nm_, sw, bn, round(v, 2)))
+            cg = cb + (z_gap - Z) * u                          # the gap's mid-plane on the rod
+            e2 = np.cross(u, e1_0)
+            for off in (2.2, -2.2):
+                f = cyl(cg - 3 * e1_0 + off * e2, cg + 30 * e1_0 + off * e2, 0.85)
+                for bn, B in common + [("stacks", trimesh.util.concatenate([stk_lo, stk_hi]))]:
+                    v = inter(f, B)
+                    if v > 1e-3:
+                        blocked_f.append((nm_, off, bn, round(v, 2)))
+        record("stop nuts reachable through the stop window at neutral, servo in: a 4 mm open-end wrench"
+               " (Ø9 x 2 head, 6 x 2 neck) on each nut swung +-15 deg about the rod, clear of can, fin, aileron,"
+               " crank, links, rod, the other stack, servo, horn and motor tube",
+               not blocked_w, blocked_w[:6] or "clear")
+        record("stop gaps reachable through the stop window at neutral: a Ø1.7 feeler in each gap beside"
+               " the rod, along the servo's radial, clear of everything but its own gap",
+               not blocked_f, blocked_f[:6] or "clear")
         hits2 = []
         for d in sweep:
             hits2 += collisions(d, pose(d), skip=("stop stack/can",))

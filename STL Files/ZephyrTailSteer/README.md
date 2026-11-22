@@ -34,7 +34,7 @@ Cl_δ need scaling to this aileron and fin.
 | Cleared to (all factors ≥ 2) | 164 m/s (155 with Prandtl–Glauert) | M 0.85 with Prandtl–Glauert (288 m/s ISA, 277 m/s on a −5 °C day) |
 | Travel limit | Servo end points and firmware | End points and firmware (mandatory), plus a **mechanical stop at about ±6.4°** on the pushrod |
 | Canards | On the nose | Removed |
-| Tail mass change | +460 g | +886 g against the stock kit fin section |
+| Tail mass change | +460 g | +888 g against the stock kit fin section |
 | Margin at max speed | 2.32 cal | 1.91 cal (OpenRocket model of the build) |
 
 The can, bearings, shaft, servo, crank design, hatches and wiring stay the Peregrine's. At
@@ -82,12 +82,12 @@ cannot move aft into the motor retainer's keep-out.
       | Part | At full stall | Factor |
       |---|---|---|
       | Shelf (taken as a cantilever 3 mm from the nearer corbel) | 19.0 MPa | ×2.4 |
-      | Washer on the PC | 10.8 MPa | ≥ ×2 |
+      | Washer on the PC, across the layers (allowable 20 MPa) | 10.8 MPa | ×1.86 |
       | M2 rod, tension | 113 MPa | ×4.0 |
       | M2 rod, compression (19.1 mm from the upper stack to the horn ball) | 228 N against Euler 1740 N | ×7.6 |
       | Horn pivot: Ø2 × 10 hardened dowel as a clevis pin, M = P (L/4 − b/8) | 381 MPa | ×3.1 |
       | Clevis cap's strap, cantilevered 4 mm from the saddle, edgewise (2 × 5 mm) | 55 MPa | ×9.1 |
-      | Cap moment 0.77 N·m into the arm's two edges at the saddle ends (254 N on one edge) | 102 MPa bearing | ×7.4 |
+      | Saddle ends on the arm's two edges, 5.5 mm apart: the cap is a lever about them (197 N inner, 83 N outer) | 79 MPa bearing | ×9.5 |
       | Cap screw (M2 into the arm's tapped hole) | no in-plane load | — |
       | Servo arm (7075), at the hub, edgewise (2.5 × 5.5 mm): the whole F × 8 mm | 145 MPa | ×3.5 |
       | Horn-end ball link | 342 N (×1.5) | metal-body links, pull-tested |
@@ -95,7 +95,7 @@ cannot move aft into the motor retainer's keep-out.
     - **Horn clevis cap:** the old single-shear M2 stud would have yielded at 104 N, so a drive into the stop would have bent it.
       - **The part:** one 7075 cap. A saddle straddles the outer end of MKS's metal single arm, cut to 17.5 mm (the saddle spans 12–17.5 mm from the spline), with 1.5 mm cheeks over both of the arm's edges. From the saddle a 2 mm strap runs back over the far side of the ball (0.3 shim) to the pivot.
       - **The pivot:** a Ø2 × 10 hardened dowel pressed through the arm, a shim, the ball, a shim and the strap.
-      - **Why a keyed saddle:** a strap held by one screw would turn about that screw. The ball load gives a moment of 0.77 N·m about the screw's axis, more than the screw's clamp can hold, and the pivot would fall back to single shear. The saddle's cheeks take that moment on the arm's edges. An M2 screw into a tapped hole at 14.5 mm only keeps the cap on; none of the numbers above count on its clamp.
+      - **Why a keyed saddle:** a strap held by one screw would turn about that screw. The ball load gives a moment of 0.74 N·m about the screw's axis, more than the screw's clamp can hold, and the pivot would fall back to single shear. The saddle's cheeks take that moment on the arm's edges. An M2 screw into a tapped hole at 14.5 mm only keeps the cap on; none of the numbers above count on its clamp.
       - **Space:** the cap clears the ball link's eye by 0.5 mm and the fin rib by 0.45 mm. Nothing fits inboard of the pivot: the link eye, the spline hub and the arm's retaining screw (modelled as an M3 cap head, Ø5.5 × 3, the larger of the likely sizes; check it).
       - **Weakest part:** the dowel, which yields at 5.74 N·m of servo torque (×3.15 on stall). The load lies in the plane of the arm and the strap, so both bend edgewise; the arm at the hub follows at ×3.5.
   - **What the verifier checks:** it sweeps the servo's whole reachable throw in 0.25° steps.
@@ -109,7 +109,7 @@ cannot move aft into the motor retainer's keep-out.
   - A Ø5–6 shaft would need a thicker aileron (and fin) for no gain at ±5°.
 - **Link ratio 2.0.** Crank 16 mm and horn 8 mm (Peregrine 14 / 9).
   - The servo turns ±10° for ±5° of aileron, so its gear lash counts half at the aileron.
-  - The servo sits at 62.2° from its fin (Peregrine 60.4°). The hatch opening is 3 mm wider on the fin side than the Peregrine's, for the horn clevis, and its rebate stays 12.6 mm from a fin face (≥ 12 for a 10 mm fillet). It is also 4 mm wider on the other side, and the cover screw on that edge sits below the servo's case instead of above its lead stub, so the servo can slide off its horn and come out (see Servo removal).
+  - The servo sits at 62.2° from its fin (Peregrine 60.4°). The hatch opening is 3 mm wider on the fin side than the Peregrine's, for the horn clevis, and its rebate stays 12.6 mm from a fin face (≥ 12 for a 10 mm fillet). It is also 4 mm wider on the other side, and the cover screw on that edge sits below the servo's case instead of above its lead stub, so the servo can slide off its horn and come out (see Servo removal). Below its fin-side corner a stop window (u 15–36.5, Z 51.5–73) opens a side-on path to both stop nuts and their gaps; the cover grows a matching lobe with its own M3 screw below it. At Cp −1 on the design q the lobe sees 70 N of suction, against about 720 N for the button head to pull through the 1.6 mm cover (×10).
 - **Fin can: polycarbonate, as the Peregrine.**
   - Loads on the can stay small. The hatch covers see about 23 kPa of suction (Cp −0.3 × the effective q), which is 22 MPa of bending in the 1.6 mm cover (×2) and 25–37 N per M3 insert.
   - Stagnation heating at M 0.70 is about +25 K, for seconds. PC's HDT is about 130 °C.
@@ -180,8 +180,8 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 
 | Item | Mass | Z |
 |---|---:|---:|
-| FinCan | 337.2 g | 108.4 |
-| Hatch covers ×3 | 36.5 g | 113.1 |
+| FinCan | 335.5 g | 108.5 |
+| Hatch covers ×3 | 40.3 g | 107.7 |
 | Cranks ×3 | 8.1 g | 33.3 |
 | Ailerons ×3 | 30.6 g | 23.5 |
 | Fixed fins ×3, carbon (notched, with tab) | 626.5 g | 97.9 |
@@ -193,11 +193,11 @@ New aft section, Z above the base (carbon 1.5 g/cm³, PC 1.20 g/cm³ solid; the 
 | Kit rings ×2 + eyebolt | 83.5 g | — |
 | Rail buttons | 3.8 g | 200 |
 | Horn clevis caps ×3 (7075) | 4.1 g | 86 |
-| Pivot dowels and cap screws ×3 (steel) | 1.6 g | 86 |
+| Pivot dowels and cap-screw shanks ×3 (steel; the heads are in the caps) | 1.5 g | 86 |
 | Stop stacks ×6 (M2 nut + Ø6 washer, est.) | 1.5 g | 60 |
-| **Total** | **1550.5 g** | **154.7** |
+| **Total** | **1552.4 g** | **154.5** |
 
-- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +886 g. The OpenRocket model carries +877 g: the clevis caps, dowels, stop stacks and the wider hatches came later. The 9 g at the tail moves the CG about 0.8 mm aft at max speed, under 0.01 cal.
+- **Against the stock kit fin section:** the kit's tube, plywood fins with tabs, motor tube, rings, eyebolt and buttons come to 664.6 g at Z 141.1. Epoxy and paint are left out of both. The change is +888 g. The OpenRocket model carries +877 g: the clevis caps, dowels, stop stacks and the hatch changes came later. The 11 g at the tail moves the CG about 1 mm aft at max speed, about 0.01 cal.
 - **OpenRocket:** `Zephyr-CamNose.ork` carries these parts as components and mass components, with OpenRocket's own masses for the kit parts (see Mass basis). Dry mass is 3.18 kg; with the J510W, 4.26 kg at liftoff.
 - **Stability** (J510W, 8 ft rail, 3 m/s wind):
 
@@ -231,7 +231,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 ## Build order from the bare kit
 
 1. Print `BearingCoupon.stl` and check the bearing seats, the shaft through the wall and the crank, as for the Peregrine.
-2. Print the can, hatches, cranks and aileron halves from this folder. Fit the inserts: 7 × RX-M3x5.7, 1 × RX-M4x8.1, 3 × RX-M3x4.0 SHORT.
+2. Print the can, hatches, cranks and aileron halves from this folder. Fit the inserts: 10 × RX-M3x5.7 (one more per hatch, for the stop-window lobe), 1 × RX-M4x8.1, 3 × RX-M3x4.0 SHORT.
 3. **Tubes.**
    - Cut 220 mm off the aft end of the kit's slotted aft tube. The cut-off piece, which carries all the slots, is scrap.
    - **Check the can shoulder (OD 98.4) in this tube and the can's 101.5 OD against it.** These figures were measured on the Peregrine's tube. Sand the shoulder for a slip fit if needed.
@@ -266,9 +266,9 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
     - **Servo in:** put the servo into its bay 3.25 mm toward the far web, hold the aileron and the arm at neutral, and slide the spline into the arm's hub on the nearest tooth (as in Servo removal, in reverse).
     - Fit the lug bolts.
     - Fit the arm's retaining screw (thread-locked; removable grade, it is undone for servo removal).
-    - With the aileron centred, set each stop washer 1.80 mm off the shelf with a feeler (a 1.8 mm drill shank). Lock the nuts with thread locker.
+    - **Set the stops through the stop window** (below the servo hatch's fin-side corner, under the cover's lobe), with the servo in and the aileron centred. Put a 1.8 mm feeler (a drill shank) into each gap between washer and shelf, run that stack's nut onto the washer with a 4 mm open-end wrench (15° head: flip it each stroke), and pull the feeler. Lock the nuts with thread locker. The verifier checks both the wrench's and the feeler's paths.
     - **Program the end points to ±10° of servo (±5° of aileron). This is mandatory**; the ±6.4° stop is only the backup.
-    - Check by commanding full travel: the washers must not touch the shelf.
+    - Check by commanding full travel: the aileron reaches ±5° without the servo stalling, and, seen side-on through the stop window, the washers stay off the shelf.
 14. **Wiring and LiPo:** in sector A, as for the Peregrine. The nose-joint connector gets its lanyards.
 15. **Rail buttons:** the aft one in the can's insert, the forward one with the kit weld nut at x 1045.3. **Retainer:** AeroPack RA38L on the motor tube's aft end.
 16. **Bench:**
@@ -287,6 +287,7 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 | MKS metal single arm, 5 mm output (cut to 17.5 mm) | 3 | Horn (instead of the stock arm) |
 | 7075 clevis cap (saddle + strap, machined) + ISO 7380 M2 × 10 | 3 each | Horn clevis (screw into a tapped hole in the arm at 14.5 mm) |
 | Ø2 × 10 hardened dowel (ISO 8734) | 3 (+ spares) | Horn pivot through arm, ball and cap (replaces the M2 × 10 12.9 and its nut) |
+| M3 button-head screw + RX-M3x5.7 insert | 3 each (more than the Peregrine) | Stop-window cover lobes, one per hatch |
 | Metal-body M2 ball links, steel ball | 3 (horn end) | Stop load path: must hold 342 N (pull-test them) |
 | JST RCY pair + Kevlar | 1 (not 2) | Only the nose joint separates |
 | 26 AWG twisted pair | ~1.0 m | Vega to the tail |
@@ -296,14 +297,14 @@ One separation joint: nose shoulder / forward tube at x 483.3. The Vega fires th
 Unchanged from the Peregrine list:
 - NSK 684AZZ ×6, Ø4 silver steel, MKS HV6160 ×3, ball links;
 - Ø2 × 10 and Ø2 × 14 dowels, M2 × 5 clamp screws;
-- inserts and screws, Tattu 450 mAh 2S, Schurter switch, fuse, capacitor;
+- the other inserts and screws, Tattu 450 mAh 2S, Schurter switch, fuse, capacitor;
 - AeroPack RA38L.
 
 The kit's plastic nose cone, spacer rails and fins are not used.
 
 ## Servo removal (field)
 
-The linkage is captive: both ball links are pinned, and the rod passes through the stop shelf between its two stacks. So the horn, its clevis cap, the ball link and the rod stay in the can on the crank, and the servo comes off its horn. Nothing in the stop needs resetting.
+The linkage is captive: both ball links are pinned, and the rod passes through the stop shelf between its two stacks. So the horn, its clevis cap, the ball link and the rod stay in the can on the crank, and the servo comes off its horn. A servo swap cannot move the stops: the shelf, rod, stacks, links and crank are not touched. They need resetting only after a rod or ball-link change, through the stop window as in the build (step 13).
 
 1. Remove the hatch cover.
 2. Undo the arm's retaining screw on the spline. Put a hex key's short leg into the screw along the spline axis, from the fin side: it passes the fin-side web's trimmed outer edge and leaves through the hatch opening. Turn it in part turns with the long leg, outside the can.
@@ -315,7 +316,7 @@ To refit, reverse the steps:
 - Centre the new servo at 1520 µs and hold the aileron at neutral.
 - Slide the spline into the hub on the nearest tooth, then fit the lug bolts and the retaining screw (thread-locked).
 - If the tooth leaves the aileron off neutral, trim it with the servo's centre setting.
-- Check the end points (±10° of servo) and that the washers do not touch the shelf at full command.
+- Check the end points (±10° of servo): at full command the aileron reaches ±5° without stalling, and the washers stay off the shelf (seen through the stop window).
 
 The verifier checks the key's reach, the slide and the lift-out for both hatch types. The arm's retaining screw is modelled as an M3 cap head (2.5 mm key); check the real size, which sets the key.
 
@@ -325,9 +326,9 @@ The verifier checks the key's reach, the slide and the lift-out for both hatch t
 - **Rod exit margin:** 0.98–1.15 cal on an 8 ft rail in 3 m/s wind. If the wind is above 3 m/s, add 150 g of nose ballast: in an earlier run that raised the rod-exit margin by about 0.3 cal, for 8 m/s less top speed.
 - **Recovery bay:** 192 mm × Ø99 (about 1.5 l) holds the 60 in parachute, the shock cord and the protector. It is not checked: pack it before committing to the 24 in motor tube. With the J825R (478 mm) or the J530 (500 mm) as the longest motor, a shorter tube gives the bay more room.
 - **Mach 0.70, not 0.8.** On the component-mass basis no commercial 38 mm motor gets the built rocket above M 0.70. Reaching 0.8 needs about 500 g less mass, or a 54 mm mount (a new hinge layout). The hinge is cleared to M 0.85 either way.
-- **Tail mass +886 g.** The carbon fins are 626 g of it.
+- **Tail mass +888 g.** The carbon fins are 626 g of it.
 - **Servo lash** is unpublished. The bench check decides; at a 2.0 ratio, up to about 0.7° at the servo still meets 0.5° at the aileron.
-- **Travel stop:** the stop angle is set by the nut positions (0.1 mm of gap is about 0.36°), not by print tolerance. Re-check the gaps after any pushrod adjustment.
+- **Travel stop:** the stop angle is set by the nut positions (0.1 mm of gap is about 0.36°), not by print tolerance. Re-set it through the stop window after any rod or ball-link change; a servo swap does not touch it.
 - **Drift:** single deployment at apogee from about 1.5 km.
 
 ## Verification
@@ -339,9 +340,10 @@ java -Djava.awt.headless=true -cp OpenRocket-24.12.jar tools/ORSimMass.java Zeph
 ~/.cache/camnose-venv/bin/python -I tools/test_orsimmass.py PeregrineL2-CamNose.ork   # a mass change with --fins counts the fins once
 ```
 
-`verification.json` holds the last Zephyr run: 77/77 passed (143/143 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus seven for the travel stop and four for servo removal (key access and slide, per hatch type; the lift-out checks then start from the slid position). Measured:
+`verification.json` holds the last Zephyr run: 79/79 passed (145/145 with the Peregrine's 66). The checks are those of the Peregrine (every part a closed supportless solid, clearances, walls, bearings, clamp screws, play, fillet room, air gaps, rail, servo and LiPo lift-out, shaft extraction with the fins glued, travel with the linkage solved in 0.5° steps, gaps over the travel, tail-first landing), run on the Zephyr render, plus nine for the travel stop (two are the wrench's and the feeler's access through the stop window) and four for servo removal (key access and slide, per hatch type; the lift-out checks then start from the slid position). Measured:
 - stop stacks ≥ 0.27 mm off the can through ±5°; free up to ±6.34° and landing at ±6.39° (each side measured and swept to its own angle), biting by ±6.69°; nothing else touching over the servo's throw up to the stop (servo ±12.9°, 55 steps, the full pair list including rod and stacks against servo, covers and LiPo, and the clevis cap against the horn-end link eye (ball excluded; 0.5 mm clear)); the landing face flat across the washer footprint and falling away 1 mm on both sides (a 6 mm bridge);
 - servo removal in both hatch types, with the horn left on the captive linkage: a Ø3 × 20 mm key leg along the spline axis reaches the arm's retaining screw clear of the can, fin, aileron, horn and clevis cap; the servo slides 3.25 mm off the hub touching nothing, then lifts 30 mm out clear of the can and the horn; horn to can 0.42 mm over the travel;
+- through the stop window at neutral, with the servo in: a 4 mm open-end wrench (Ø9 × 2 head, 6 × 2 neck) on each stop nut swung ±15°, and a Ø1.7 feeler in each gap, clear of every other part;
 - aileron-to-can and aileron-to-fin gaps 0.8 mm;
 - pushrod links to can 3.3 mm;
 - fins 18 mm off the rail;

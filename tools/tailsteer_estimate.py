@@ -142,7 +142,10 @@ def scad_params(airframe):
         subprocess.run([OPENSCAD, "-o", out, "-D", "Render_Part=-1", "-D", 'Airframe="%s"' % airframe,
                         str(REPO / "PeregrineTailSteer.scad")], capture_output=True, text=True, check=True)
         for line in open(out):
-            for tag, ks in (("TS_PARAMS", keys), ("TS_CRANK", crank_keys), ("TS_STOP", stop_keys)):
+            svc_keys = ("Svc_Captive Svc_Key_Ly Svc_Key_D Svc_Slide Win_U0 Win_U1 Win_Z0 Win_Z1 Hatch_Rebate"
+                        " Hatch_Rebate_Fin Hatch_Z0").split()
+            for tag, ks in (("TS_PARAMS", keys), ("TS_CRANK", crank_keys), ("TS_STOP", stop_keys),
+                            ("TS_SERVICE", svc_keys)):
                 if tag in line:
                     v = [float(x) for x in line.split(tag, 1)[1].strip().strip('"').split()]
                     p.update(zip(ks, v))
@@ -447,7 +450,7 @@ def main():
         xs = crossings(pts, y) or [0, 0]
         aft_flap = max(aft_flap, min(xs[1], p["Flap_X_Max"]))
     aft_flap -= p["Fin_Base_X"]
-    print("  aft of the base: notched fixed fin %.1f mm, aileron %.1f mm (clipped %.0f mm ahead of the"
+    print("  aft of the base: notched fixed fin %.1f mm, aileron %.1f mm (%.0f mm short of the"
           " fixed fin): tail-first, the fixed fin touches first" % (aft_fixed, aft_flap, aft_fixed - aft_flap))
 
     # ---- printed-part stresses
@@ -499,29 +502,31 @@ def main():
     T_stud = a1 / s1 * p["Horn_R"] * 1e-3            # servo torque at which the horn pivot yields
     if clevis:
         # free body of the clevis cap, no clamping assumed: the dowel loads the arm and the cap's
-        # strap with P/2 each (Z) at R. The strap cantilevers from the saddle face (X0); the cap's
-        # moment about the cap screw's axis, P/2 (Xc - R), goes into the arm's two edges at the
-        # saddle's ends as a couple, plus P/2 on one edge. The cap screw carries no load in the
-        # plane (it only keeps the cap on the arm). The arm takes the whole P R at the hub. The load
-        # lies in the arm's and the strap's plane, so both bend edgewise: Z = t w^2 / 6.
+        # strap with P/2 each (Z) at R. The strap cantilevers from the saddle face (X0). The cap is
+        # held only by the arm's two edges at the saddle's ends (X0, X1): a lever about them, so
+        # the inner end takes P/2 (X1 - R)/Ls and the outer end P/2 (X0 - R)/Ls, in opposite
+        # directions. The cap screw carries no load in the plane (it only keeps the cap on the arm).
+        # The arm takes the whole P R at the hub. The load lies in the arm's and the strap's plane,
+        # so both bend edgewise: Z = t w^2 / 6.
         Fst = SERVO["stall_Nm"][8.4] / (p["Horn_R"] * 1e-3)
         R_, X0, X1 = p["Horn_R"], p["Horn_Cap_X0"], p["Horn_Cap_X1"]
         Ls = X1 - X0
         s_strap = (Fst / 2 * (X0 - R_)) / (p["Horn_Strap_T"] * 5.0 ** 2 / 6)   # 5 wide (its narrow end)
-        M_cap = Fst / 2 * ((X0 + X1) / 2 - R_)
-        F_edge = M_cap / Ls + Fst / 2
-        s_edge = F_edge / (2.5 * 1.0)                  # on the arm's 2.5 mm edge, over about 1 mm
+        F_in, F_out = Fst / 2 * (X1 - R_) / Ls, Fst / 2 * (X0 - R_) / Ls   # saddle-end reactions
+        s_edge = F_in / (2.5 * 1.0)                    # on the arm's 2.5 mm edge, over about 1 mm
+        a_edge = 1.5 * AL7075                          # bearing allowable
         s_arm = Fst * R_ / (2.5 * 5.5 ** 2 / 6)         # arm 2.5 thick, 5.5 wide
         s_dw, a_dw = horn_stress(Fst)
-        weakest = min((a_dw / s_dw, "the dowel"), (AL7075 / s_arm, "the arm at the hub"), (AL7075 / s_strap, "the strap"))
+        weakest = min((a_dw / s_dw, "the dowel"), (AL7075 / s_arm, "the arm at the hub"), (AL7075 / s_strap, "the strap"),
+                      (a_edge / s_edge, "the arm's edge under the saddle"))
         T_stud = SERVO["stall_Nm"][8.4] * weakest[0]
         print("    horn clevis cap (7075; Ø2 x %.0f hardened dowel pivot), free body at full stall, pushrod %.0f N:"
               % (p["Horn_Pin_L"], Fst))
         print("      dowel as a clevis pin %.0f MPa (x%.1f) | strap, %.1f mm from the saddle, edgewise, %.0f MPa (x%.1f) |"
-              " cap moment %.2f N m into the arm's edges: %.0f N over %.1f mm, %.0f MPa on the edge (x%.1f) |"
+              " saddle ends on the arm's edges (%.1f mm apart): %.0f N inner / %.0f N outer, %.0f MPa bearing (x%.1f) |"
               " arm at the hub, edgewise, %.0f MPa (x%.1f) | cap screw: no in-plane load"
-              % (s_dw, a_dw / s_dw, X0 - R_, s_strap, AL7075 / s_strap, M_cap / 1e3, F_edge, Ls, s_edge,
-                 1.5 * AL7075 / s_edge, s_arm, AL7075 / s_arm))
+              % (s_dw, a_dw / s_dw, X0 - R_, s_strap, AL7075 / s_strap, Ls, F_in, F_out, s_edge,
+                 a_edge / s_edge, s_arm, AL7075 / s_arm))
         print("      the horn yields first at %s, at %.2f N m of servo torque (%.2fx stall)"
               % (weakest[1], T_stud, T_stud / SERVO["stall_Nm"][8.4]))
     else:
@@ -636,12 +641,23 @@ def main():
         s_pv, a_pv = horn_stress(Fr)
         print("  stop path at full servo stall (8.4 V, rod %.0f N), factor >= 1.5 wanted:" % Fr)
         print("    shelf %.1f MPa (x%.1f, PC in-layer; %.0f x %.0f section, %.1f mm from the corbel) | washer on the PC"
-              " %.1f MPa | M2 rod tension %.0f MPa (x%.1f, A2-70) | compression vs Euler %.0f N over %.1f mm (x%.1f)"
+              " %.1f MPa (x%.2f, PC across the layers, %.0f MPa) | M2 rod tension %.0f MPa (x%.1f, A2-70) | compression vs Euler %.0f N over %.1f mm (x%.1f)"
               " | horn pivot %.0f MPa (x%.1f)"
-              % (s_sh, PC["sigma_in"] / s_sh, w_, t_, arm_, Fr / a_w, Fr / (math.pi * d_root ** 2 / 4),
+              % (s_sh, PC["sigma_in"] / s_sh, w_, t_, arm_, Fr / a_w, PC["sigma_cross"] / (Fr / a_w), PC["sigma_cross"],
+                 Fr / (math.pi * d_root ** 2 / 4),
                  450 / (Fr / (math.pi * d_root ** 2 / 4)), P_cr, L_b, P_cr / Fr, s_pv, a_pv / s_pv))
         print("    the horn-end ball link must hold %.0f N (x1.5 on stall): metal-body links, pull-tested" % (1.5 * Fr))
         print("  crank, shaft, bearings and aileron: aero only at the stop (above)")
+        if p.get("Win_U1", 0) > p.get("Win_U0", 0):
+            # the cover's lobe over the stop window hangs below the main cover's screws: one M3 of its
+            # own. Load: suction at Cp -1 on the design q (with Prandtl-Glauert) over the lobe (opening
+            # + rebate, fin side narrower); capacity: the button head pulling through the 1.6 mm PC.
+            a_l = ((p["Win_U1"] - p["Win_U0"] + p["Hatch_Rebate"] + p["Hatch_Rebate_Fin"])
+                   * (p["Hatch_Z0"] - p["Win_Z0"] + p["Hatch_Rebate"]))
+            f_l = Q_MAX * 1e-6 * a_l
+            f_pt = math.pi * 5.5 * 1.6 * 0.577 * PC["sigma_in"]
+            print("  stop-window cover lobe: %.0f mm2, %.0f N of suction at Cp -1 and %.1f kPa; its M3 button head"
+                  " pulls through the 1.6 mm PC at %.0f N (x%.0f)" % (a_l, f_l, Q_MAX / 1e3, f_pt, f_pt / f_l))
 
     # ---- flutter, rough. Panel flutter by the NACA TN 4197 fin formula (as used in
     # Apogee's flutter calculator) for the aileron and the fixed fin, and the
@@ -755,8 +771,8 @@ def main():
         # and cap screws, and the travel-stop stacks (M2 nut + Ø6 washer, two per rod)
         m_, z_ = render_mass_cg(42, 2.81, ['Airframe="%s"' % fs])
         items += [("horn clevis caps x3 (7075)", 3 * m_, z_),
-                  ("pivot dowels 2 x 10 + cap screws M2 x 10 x3 (steel)",
-                   3 * (math.pi * 1.0 ** 2 * p["Horn_Pin_L"] * 7.85e-3 + 0.30), p["Servo_ZO"]),
+                  ("pivot dowels 2 x 10 + cap-screw shanks x3 (steel; the heads are in the cap CAD)",
+                   3 * math.pi * 1.0 ** 2 * (p["Horn_Pin_L"] + p["Horn_Screw_L"]) * 7.85e-3, p["Servo_ZO"]),
                   ("stop stacks x6 (M2 nut + Ø6 washer, est)", 6 * 0.25,
                    (p["Stop_Shelf_Z0"] + p["Stop_Shelf_Z1"]) / 2)]
     m_new = sum(x[1] for x in items)
